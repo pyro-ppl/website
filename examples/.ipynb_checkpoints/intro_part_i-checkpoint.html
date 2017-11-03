@@ -1,0 +1,762 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Models in Pyro: From Primitive Distributions to Stochastic Functions &mdash; Pyro Tutorials  documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Pyro Tutorials  documentation" href="../index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html">
+          
+
+          
+            
+            <img src="../_static/pyro_logo_wide.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_part_ii.html#Next-Steps">Next Steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bayesian_regression.html">Bayesian Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dmm.html">Modeling Polyphonic Music with a Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../air.html">Attend Infer Repeat</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Pyro Tutorials</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Models in Pyro: From Primitive Distributions to Stochastic Functions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/.ipynb_checkpoints/intro_part_i-checkpoint.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #303F9F;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #D84315;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 8ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #cfcfcf;
+    border-radius: 2px;
+    background: #f7f7f7;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.pngmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-bold { font-weight: bold; }
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="c1"># import some dependencies</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="kn">import</span> <span class="n">Variable</span>
+
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="Models-in-Pyro:-From-Primitive-Distributions-to-Stochastic-Functions">
+<h1>Models in Pyro: From Primitive Distributions to Stochastic Functions<a class="headerlink" href="#Models-in-Pyro:-From-Primitive-Distributions-to-Stochastic-Functions" title="Permalink to this headline">¶</a></h1>
+<p>The basic unit of Pyro programs is the <em>stochastic function</em>. This is an
+arbitrary Python callable that combines two ingredients:</p>
+<ul class="simple">
+<li>deterministic Python code; and</li>
+<li>primitive stochastic functions</li>
+</ul>
+<p>Concretely, a stochastic function can be any Python object with a
+<code class="docutils literal"><span class="pre">__call__()</span></code> method, like a function, a method, or a PyTorch
+<code class="docutils literal"><span class="pre">nn.Module</span></code>.</p>
+<p>Throughout the tutorials and documentation, we will often call
+stochastic functions <em>models</em>, since stochastic functions can be used to
+represent simplified or abstract descriptions of a process by which data
+are generated. Expressing models as stochastic functions in Pyro means
+that models can be composed, reused, imported, and serialized just like
+regular Python callables.</p>
+<p>Without further ado, let’s introduce one of our basic building blocks:
+primitive stochastic functions.</p>
+<div class="section" id="Primitive-Stochastic-Functions">
+<h2>Primitive Stochastic Functions<a class="headerlink" href="#Primitive-Stochastic-Functions" title="Permalink to this headline">¶</a></h2>
+<p>Primitive stochastic functions, or distributions, are an important class
+of stochastic functions for which we can explicitly compute the
+probability of the outputs given the inputs. Pyro includes a standalone
+<a class="reference external" href="http://docs.pyro.ai/distributions.html">library</a>,
+<code class="docutils literal"><span class="pre">pyro.distributions</span></code>, of GPU-accelerated multivariate probability
+distributions built on PyTorch. This comes with various familiar
+distributions like the bernoulli and uniform distributions, but users
+can implement custom distributions by subclassing
+<code class="docutils literal"><span class="pre">pyro.distributions.Distribution</span></code>.</p>
+<p>Using primitive stochastic functions is easy. For example, to draw a
+sample <code class="docutils literal"><span class="pre">x</span></code> from the unit normal distribution <span class="math">\(\mathcal{N}(0,1)\)</span>
+we do the following:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="n">mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>   <span class="c1"># mean zero</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># unit variance</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>      <span class="c1"># x is a sample from N(0,1)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Variable containing:
+ 1.6869
+[torch.FloatTensor of size 1]
+
+</pre></div></div>
+</div>
+<p>Importantly, <code class="docutils literal"><span class="pre">dist.normal</span></code> is a <em>function</em> that takes parameters and
+<code class="docutils literal"><span class="pre">dist.normal(...)</span></code> returns a sample. Note that the parameters passed
+to <code class="docutils literal"><span class="pre">dist.normal</span></code> are PyTorch <code class="docutils literal"><span class="pre">Variables</span></code>. This is necessary because
+we want to make use of PyTorch’s fast tensor math and autograd
+capabilities. To score the sample <code class="docutils literal"><span class="pre">x</span></code>, i.e.&nbsp;to compute its log
+probability according to the distribution <span class="math">\(\mathcal{N}(0,1)\)</span>, we
+simply do the following:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="n">log_p_x</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="o">.</span><span class="n">log_pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">log_p_x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Variable containing:
+-2.3417
+[torch.FloatTensor of size 1]
+
+</pre></div></div>
+</div>
+<p>Note that the arguments to the <code class="docutils literal"><span class="pre">log_pdf</span></code> method are: first, the value
+to score (i.e. <code class="docutils literal"><span class="pre">x</span></code>), followed by the arguments to the distribution
+(i.e. <code class="docutils literal"><span class="pre">mu</span></code> and <code class="docutils literal"><span class="pre">sigma</span></code>).</p>
+</div>
+<div class="section" id="The-pyro.sample-Primitive">
+<h2>The <code class="docutils literal"><span class="pre">pyro.sample</span></code> Primitive<a class="headerlink" href="#The-pyro.sample-Primitive" title="Permalink to this headline">¶</a></h2>
+<p>One of the core language primitives in Pyro is the <code class="docutils literal"><span class="pre">pyro.sample</span></code>
+statement. Using <code class="docutils literal"><span class="pre">pyro.sample</span></code> is as simple as calling a primitive
+stochastic function with one important difference:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;my_sample&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Variable containing:
+-0.8290
+[torch.FloatTensor of size 1]
+
+</pre></div></div>
+</div>
+<p>Just like a direct call to <code class="docutils literal"><span class="pre">dist.normal</span></code>, this returns a sample from
+the unit normal distribution. The crucial difference is that this sample
+is <em>named</em>. Pyro’s backend uses these names to uniquely identify sample
+statements and <em>change their behavior at runtime</em> depending on how the
+enclosing stochastic function is being used. As we will see, this is how
+Pyro can implement the various manipulations that underlie inference
+algorithms.</p>
+<p>We’ve seen how <code class="docutils literal"><span class="pre">pyro.sample</span></code> interacts with a primitive stochastic
+function like <code class="docutils literal"><span class="pre">dist.normal</span></code>. Things are no different for an arbitrary
+stochastic function <code class="docutils literal"><span class="pre">fn()</span></code>. For example we might have:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;my_sample&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This results in a named sample from <code class="docutils literal"><span class="pre">fn</span></code> with value <code class="docutils literal"><span class="pre">x</span></code> and
+arguments <code class="docutils literal"><span class="pre">arg1</span></code> and <code class="docutils literal"><span class="pre">arg2</span></code> passed to <code class="docutils literal"><span class="pre">fn</span></code>.</p>
+</div>
+<div class="section" id="A-Simple-Model">
+<h2>A Simple Model<a class="headerlink" href="#A-Simple-Model" title="Permalink to this headline">¶</a></h2>
+<p>Now that we’ve introduced <code class="docutils literal"><span class="pre">pyro.sample</span></code> and <code class="docutils literal"><span class="pre">pyro.distributions</span></code> we
+can write a simple model. Since we’re ultimately interested in
+probabilistic programming because we want to model things in the real
+world, let’s choose something concrete.</p>
+<p>Let’s suppose we have a bunch of data with daily mean temperatures and
+cloud cover. We want to reason about how temperature interacts with
+whether it was sunny or cloudy. A simple stochastic function that does
+that is given by:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">weather</span><span class="p">():</span>
+    <span class="n">cloudy</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;cloudy&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span>
+                         <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">0.3</span><span class="p">])))</span>
+    <span class="n">cloudy</span> <span class="o">=</span> <span class="s1">&#39;cloudy&#39;</span> <span class="k">if</span> <span class="n">cloudy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="s1">&#39;sunny&#39;</span>
+    <span class="n">mean_temp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cloudy&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">55.0</span><span class="p">],</span> <span class="s1">&#39;sunny&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">75.0</span><span class="p">]}[</span><span class="n">cloudy</span><span class="p">]</span>
+    <span class="n">sigma_temp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cloudy&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="s1">&#39;sunny&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.0</span><span class="p">]}[</span><span class="n">cloudy</span><span class="p">]</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
+                       <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">mean_temp</span><span class="p">)),</span>
+                       <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">sigma_temp</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">cloudy</span><span class="p">,</span> <span class="n">temp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">weather</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#39;sunny&#39;, 62.1190299987793)
+(&#39;cloudy&#39;, 58.74806213378906)
+(&#39;sunny&#39;, 79.73405456542969)
+</pre></div></div>
+</div>
+<p>Let’s go through this line-by-line. First, in lines 2-3 we use
+<code class="docutils literal"><span class="pre">pyro.sample</span></code> to define a binary random variable ‘cloudy’, which is
+given by a draw from the bernoulli distribution with a parameter of
+<code class="docutils literal"><span class="pre">0.3</span></code>. Since the bernoulli distributions returns <code class="docutils literal"><span class="pre">0</span></code>s or <code class="docutils literal"><span class="pre">1</span></code>s,
+in line 4 we convert the value <code class="docutils literal"><span class="pre">cloud</span></code> to a string so that return
+values of <code class="docutils literal"><span class="pre">weather</span></code> are easier to parse. So according to this model
+30% of the time it’s cloudy and 70% of the time it’s sunny.</p>
+<p>In lines 5-6 we define the parameters we’re going to use to sample the
+temperature in lines 7-9. These parameters depend on the particular
+value of <code class="docutils literal"><span class="pre">cloudy</span></code> we sampled in line 2. For example, the mean
+temperature is 55 degrees (Fahrenheit) on cloudy days and 75 degrees on
+sunny days. Finally we return the two values <code class="docutils literal"><span class="pre">cloudy</span></code> and <code class="docutils literal"><span class="pre">temp</span></code> in
+line 10.</p>
+<p>Procedurally, <code class="docutils literal"><span class="pre">weather()</span></code> is a non-deterministic Python callable that
+returns two random samples. Because the randomness is invoked with
+<code class="docutils literal"><span class="pre">pyro.sample</span></code>, however, it is much more than that. In particular
+<code class="docutils literal"><span class="pre">weather()</span></code> specifies a joint probability distribution over two named
+random variables: <code class="docutils literal"><span class="pre">cloudy</span></code> and <code class="docutils literal"><span class="pre">temp</span></code>. As such, it defines a
+probabilistic model that we can reason about using the techniques of
+probability theory. For example we might ask: if I observe a temperature
+of 70 degrees, how likely is it to be cloudy? How to formulate and
+answer these kinds of questions will be the subject of the next
+tutorial.</p>
+<p>We’ve now seen how to define a simple model. Building off of it is easy.
+For example:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">ice_cream_sales</span><span class="p">():</span>
+    <span class="n">cloudy</span><span class="p">,</span> <span class="n">temp</span> <span class="o">=</span> <span class="n">weather</span><span class="p">()</span>
+    <span class="n">expected_sales</span> <span class="o">=</span> <span class="p">[</span><span class="mi">200</span><span class="p">]</span> <span class="k">if</span> <span class="n">cloudy</span> <span class="o">==</span> <span class="s1">&#39;sunny&#39;</span> <span class="ow">and</span> <span class="n">temp</span> <span class="o">&gt;</span> <span class="mf">80.0</span> <span class="k">else</span> <span class="p">[</span><span class="mi">50</span><span class="p">]</span>
+    <span class="n">ice_cream</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;ice_cream&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
+                            <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">expected_sales</span><span class="p">)),</span>
+                            <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">10.0</span><span class="p">])))</span>
+    <span class="k">return</span> <span class="n">ice_cream</span>
+</pre></div>
+</div>
+</div>
+<p>This kind of modularity, familiar to any programmer, is obviously very
+powerful. But is it powerful enough to encompass all the different kinds
+of models we’d like to express?</p>
+</div>
+<div class="section" id="Universality:-Stochastic-Recursion,-Higher-order-Stochastic-Functions,-and-Random-Control-Flow">
+<h2>Universality: Stochastic Recursion, Higher-order Stochastic Functions, and Random Control Flow<a class="headerlink" href="#Universality:-Stochastic-Recursion,-Higher-order-Stochastic-Functions,-and-Random-Control-Flow" title="Permalink to this headline">¶</a></h2>
+<p>Because Pyro is embedded in Python, stochastic functions can contain
+arbitrarily complex deterministic Python and randomness can freely
+affect control flow. For example, we can construct recursive functions
+that terminate their recursion nondeterministically, provided we take
+care to pass <code class="docutils literal"><span class="pre">pyro.sample</span></code> unique sample names whenever it’s called.
+For example we can define a geometric distribution like so:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">geometric</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">x</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">geometric</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">geometric</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">]))))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Variable containing:
+ 0
+[torch.FloatTensor of size 1]
+
+</pre></div></div>
+</div>
+<p>Note that the names <code class="docutils literal"><span class="pre">x_0</span></code>, <code class="docutils literal"><span class="pre">x_1</span></code>, etc., in <code class="docutils literal"><span class="pre">geometric()</span></code> are
+generated dynamically and that different executions can have different
+numbers of named random variables.</p>
+<p>We are also free to define stochastic functions that accept as input or
+produce as output other stochastic functions:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">normal_product</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="n">z1</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z1&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">z2</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z2&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">z1</span> <span class="o">*</span> <span class="n">z2</span>
+    <span class="k">return</span> <span class="n">y</span>
+
+<span class="k">def</span> <span class="nf">make_normal_normal</span><span class="p">():</span>
+    <span class="n">mu_latent</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;mu_latent&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
+                            <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span>
+                            <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)))</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">normal_product</span><span class="p">(</span><span class="n">mu_latent</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fn</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">make_normal_normal</span><span class="p">()(</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Variable containing:
+ 0.8229
+[torch.FloatTensor of size 1]
+
+</pre></div></div>
+</div>
+<p>Here <code class="docutils literal"><span class="pre">make_normal_normal()</span></code> is a stochastic function that takes one
+argument and which, upon execution, generates three named random
+variables.</p>
+<p>The fact that Pyro supports arbitrary Python code like this—iteration,
+recursion, higher-order functions, etc.—in conjuction with random
+control flow means that Pyro stochastic functions are <em>universal</em>,
+i.e.&nbsp;they can be used to represent any computable probability
+distribution. As we will see in subsequent tutorials, this is incredibly
+powerful.</p>
+<p>It is worth emphasizing that this is one reason why Pyro is built on top
+of PyTorch: dynamic computational graphs are an important ingredient in
+allowing for universal models that can benefit from GPU-accelerated
+tensor math.</p>
+</div>
+<div class="section" id="Next-Steps">
+<h2>Next Steps<a class="headerlink" href="#Next-Steps" title="Permalink to this headline">¶</a></h2>
+<p>We’ve shown how we can use stochastic functions and primitive
+distributions to represent models in Pyro. In order to learn models from
+data and reason about them we need to be able to do inference. This is
+the subject of the <a class="reference external" href="http://pyro.ai/examples/intro_part_ii.html">next
+tutorial</a>.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Uber AI Labs.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

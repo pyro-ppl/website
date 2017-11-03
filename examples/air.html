@@ -13,6 +13,8 @@
 
   
   
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
   
   
 
@@ -26,7 +28,7 @@
 
   
   
-    <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
   
 
   
@@ -39,7 +41,7 @@
         <link rel="prev" title="Modeling Polyphonic Music with a Deep Markov Model" href="dmm.html"/> 
 
   
-  <script src="static/js/modernizr.min.js"></script>
+  <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
@@ -60,7 +62,7 @@
 
           
             
-            <img src="static/pyro_logo_small.png" class="logo" />
+            <img src="_static/pyro_logo_wide.png" class="logo" />
           
           </a>
 
@@ -90,6 +92,9 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html#Next-Steps">Next Steps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
@@ -113,7 +118,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Inference">Inference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Data-dependent-baselines">Data dependent baselines</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Putting-it-altogether">Putting it altogether</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Putting-it-all-together">Putting it all together</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Improvements">Improvements</a></li>
@@ -380,17 +385,18 @@ div.nboutput div.output_area.stderr {
 </style>
 <div class="section" id="Attend-Infer-Repeat">
 <h1>Attend Infer Repeat<a class="headerlink" href="#Attend-Infer-Repeat" title="Permalink to this headline">¶</a></h1>
-<p>In this tutorial we will implement the “Attend Infer Repeat” (AIR) model
-[1] and apply it to the multi-mnist dataset.</p>
-<p>A <a class="reference external" href="https://github.com/uber/pyro/blob/dev/examples/air/air.py">standalone
+<p>In this tutorial we will implement the model and inference strategy
+described in “Attend, Infer, Repeat: Fast Scene Understanding with
+Generative Models” (AIR) [1] and apply it to the multi-mnist dataset.</p>
+<p>A <a class="reference external" href="https://github.com/uber/pyro/tree/dev/examples/air">standalone
 implementation</a>
 is also available.</p>
-<p style="border: 1px solid red; padding: 1em"><p>Current status: Pyro has everything needed to describe this model and
-inference strategy, but we have yet to collect any experimental results.
-We will add results to this tutorial once we have them.</p>
-</p><div class="nbinput docutils container">
+<div class="admonition note">
+Current status: We can describe this model and inference strategy in
+Pyro, but we have yet to finalize our experimental results.</div>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [1]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -409,22 +415,15 @@ We will add results to this tutorial once we have them.</p>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Populating the interactive namespace from numpy and matplotlib
-</pre></div></div>
-</div>
 <div class="section" id="Introduction">
 <h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
-<p>AIR is a generative model of scenes. In this tutorial we will use it to
-model images from dataset this is simialar to the multi-mnist dataset in
-[1]. Here are some data points from this data set:</p>
-<div class="nbinput docutils container">
+<p>The model described in [1] is a generative model of scenes. In this
+tutorial we will use it to model images from a dataset that is similar
+to the multi-mnist dataset in [1]. Here are some data points from this
+data set:</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [2]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -438,30 +437,6 @@ model images from dataset this is simialar to the multi-mnist dataset in
 <span class="n">show_images</span><span class="p">(</span><span class="n">mnist</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">14</span><span class="p">])</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">IOError</span>                                   Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-2-c5fa54938bca&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-intense-fg ansi-bold">      1</span> fn <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">&#39;../../examples/air/data/multi_mnist_train_uint8.npz&#39;</span>
-<span class="ansi-green-fg">----&gt; 2</span><span class="ansi-red-fg"> </span>mnist <span class="ansi-blue-fg">=</span> Variable<span class="ansi-blue-fg">(</span>torch<span class="ansi-blue-fg">.</span>from_numpy<span class="ansi-blue-fg">(</span>np<span class="ansi-blue-fg">.</span>load<span class="ansi-blue-fg">(</span>fn<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">&#39;x&#39;</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">.</span>astype<span class="ansi-blue-fg">(</span>np<span class="ansi-blue-fg">.</span>float32<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">/</span> <span class="ansi-cyan-fg">255.</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-green-fg">def</span> show_images<span class="ansi-blue-fg">(</span>imgs<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">      4</span>     figure<span class="ansi-blue-fg">(</span>figsize<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">12</span><span class="ansi-blue-fg">,</span><span class="ansi-cyan-fg">4</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">      5</span>     <span class="ansi-green-fg">for</span> i<span class="ansi-blue-fg">,</span> img <span class="ansi-green-fg">in</span> enumerate<span class="ansi-blue-fg">(</span>imgs<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">/usr/local/lib/python2.7/site-packages/numpy/lib/npyio.pyc</span> in <span class="ansi-cyan-fg">load</span><span class="ansi-blue-fg">(file, mmap_mode, allow_pickle, fix_imports, encoding)</span>
-<span class="ansi-green-intense-fg ansi-bold">    368</span>     own_fid <span class="ansi-blue-fg">=</span> False
-<span class="ansi-green-intense-fg ansi-bold">    369</span>     <span class="ansi-green-fg">if</span> isinstance<span class="ansi-blue-fg">(</span>file<span class="ansi-blue-fg">,</span> basestring<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 370</span><span class="ansi-red-fg">         </span>fid <span class="ansi-blue-fg">=</span> open<span class="ansi-blue-fg">(</span>file<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">&#34;rb&#34;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    371</span>         own_fid <span class="ansi-blue-fg">=</span> True
-<span class="ansi-green-intense-fg ansi-bold">    372</span>     <span class="ansi-green-fg">elif</span> is_pathlib_path<span class="ansi-blue-fg">(</span>file<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-red-fg">IOError</span>: [Errno 2] No such file or directory: &#39;../../examples/air/data/multi_mnist_train_uint8.npz&#39;
-</pre></div></div>
 </div>
 <p>To get an idea where we’re heading, we first give a brief overview of
 the model and the approach we’ll take to inference. We’ll follow the
@@ -480,15 +455,14 @@ be located within a larger image (<code class="docutils literal"><span class="pr
 additively to produce the final image <code class="docutils literal"><span class="pre">x</span></code>.</p>
 <p>Here’s a picture (reproduced from [1]) that shows two steps of this
 process:</p>
-<p>Inference in performed in this model using <a class="reference external" href="http://pyro.ai/examples/svi_part_i.html">amortized variational
-inference</a>. The parameters
-of the neural network are also optimized during inference. Performing
-inference in such rich models is always difficult, but the presence of
-discrete choices (the number of steps in this case) makes inference in
-this model particularly tricky. For this reason the authors use a
-technique called data dependent baselines to achieve good performance.
-This technique can be implemented in Pyro, and we’ll see how later in
-the tutorial.</p>
+<p>Inference in performed in this model using <a class="reference external" href="svi_part_i.html">amortized stochastic
+variational inference</a> (SVI). The parameters of the
+neural network are also optimized during inference. Performing inference
+in such rich models is always difficult, but the presence of discrete
+choices (the number of steps in this case) makes inference in this model
+particularly tricky. For this reason the authors use a technique called
+data dependent baselines to achieve good performance. This technique can
+be implemented in Pyro, and we’ll see how later in the tutorial.</p>
 </div>
 <div class="section" id="Model">
 <h2>Model<a class="headerlink" href="#Model" title="Permalink to this headline">¶</a></h2>
@@ -506,7 +480,7 @@ object, as well as its pose.</li>
 <p>This can be expressed in Pyro like so:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [3]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -554,8 +528,8 @@ object, as well as its pose.</li>
 </div>
 </div>
 <p>Hopefully the use of <code class="docutils literal"><span class="pre">pyro.sample</span></code> and PyTorch networks within a model
-seem familiar at this point. If not you might want to review earlier
-parts of the tutorial. One thing to note is that we include the current
+seem familiar at this point. If not you might want to review the <a class="reference external" href="vae.html">VAE
+tutorial</a>. One thing to note is that we include the current
 step <code class="docutils literal"><span class="pre">t</span></code> in the name passed to <code class="docutils literal"><span class="pre">pyro.sample</span></code> to ensure that names
 are unique across steps.</p>
 <p>The <code class="docutils literal"><span class="pre">object_to_image</span></code> function is specific to this model and warrants
@@ -564,9 +538,10 @@ output a small image, and that we would like to add this to the output
 image after performing any translation and scaling required to achieve
 the pose (location and size) described by <code class="docutils literal"><span class="pre">z_where</span></code>. It’s not clear
 how to do this, and in particular it’s not obvious that this can be
-implemented in a way that preserves the differentiability of our model.
-However, it turns out we can do this this using a spatial transformer
-network (STN) [2].</p>
+implemented in a way that preserves the differentiability of our model,
+which we require in order to perform <a class="reference external" href="svi_part_i.html">SVI</a>. However,
+it turns out we can do this this using a spatial transformer network
+(STN) [2].</p>
 <p>Happily for us, PyTorch makes it easy to implement a STN using its
 <code class="docutils literal"><span class="pre">`grid_sample</span></code> &lt;<a class="reference external" href="http://pytorch.org/docs/master/nn.html#grid-sample">http://pytorch.org/docs/master/nn.html#grid-sample</a>&gt;`__
 and
@@ -576,12 +551,12 @@ doing a little extra work to massage <code class="docutils literal"><span class=
 format.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [4]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">expand_z_where</span><span class="p">(</span><span class="n">z_where</span><span class="p">):</span>
-    <span class="c1"># Takes three vectors, and massages them into 2x3 matrices with elements like so:</span>
+    <span class="c1"># Takes 3-dimensional vectors, and massages them into 2x3 matrices with elements like so:</span>
     <span class="c1"># [s,x,y] -&gt; [[s,0,x],</span>
     <span class="c1">#             [0,s,y]]</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">z_where</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -606,7 +581,7 @@ network and places it within a larger image with the desired pose.</p>
 to clarify this:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [5]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -620,16 +595,8 @@ to clarify this:</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-5-76958b9a4703&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-intense-fg ansi-bold">      1</span> pyro<span class="ansi-blue-fg">.</span>set_rng_seed<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">      2</span> samples <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span>model_step_sketch<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span> <span class="ansi-green-fg">for</span> _ <span class="ansi-green-fg">in</span> range<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">5</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">]</span>
-<span class="ansi-green-fg">----&gt; 3</span><span class="ansi-red-fg"> </span>show_images<span class="ansi-blue-fg">(</span>samples<span class="ansi-blue-fg">)</span>
-
-<span class="ansi-red-fg">NameError</span>: name &#39;show_images&#39; is not defined
-</pre></div></div>
+<img alt="_images/air_9_0.png" src="_images/air_9_0.png" />
+</div>
 </div>
 </div>
 <div class="section" id="Generating-an-entire-image">
@@ -642,7 +609,7 @@ of steps is the geometric distribution, which can be expressed as
 follows:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [6]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -688,7 +655,7 @@ to a distribution over images with a geometrically distributed number of
 steps.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [7]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -706,7 +673,7 @@ steps.</p>
 <p>Let’s visualize some samples from this distribution:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [8]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -721,16 +688,8 @@ steps.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-8-b0875338af3b&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-intense-fg ansi-bold">      2</span> x_empty <span class="ansi-blue-fg">=</span> ng_zeros<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> <span class="ansi-cyan-fg">50</span><span class="ansi-blue-fg">,</span> <span class="ansi-cyan-fg">50</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">      3</span> samples <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span>geom_prior<span class="ansi-blue-fg">(</span>x_empty<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span> <span class="ansi-green-fg">for</span> _ <span class="ansi-green-fg">in</span> range<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">5</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">]</span>
-<span class="ansi-green-fg">----&gt; 4</span><span class="ansi-red-fg"> </span>show_images<span class="ansi-blue-fg">(</span>samples<span class="ansi-blue-fg">)</span>
-
-<span class="ansi-red-fg">NameError</span>: name &#39;show_images&#39; is not defined
-</pre></div></div>
+<img alt="_images/air_15_0.png" src="_images/air_15_0.png" />
+</div>
 </div>
 <div class="section" id="Aside:-Vectorized-mini-batches">
 <h4>Aside: Vectorized mini-batches<a class="headerlink" href="#Aside:-Vectorized-mini-batches" title="Permalink to this headline">¶</a></h4>
@@ -743,7 +702,7 @@ sample from our model can take a different number of steps, and hence
 make a different number of choices.</p>
 <p>One way around this is to arrange for all samples to take the same
 number of steps. Of course, we still want to have differing numbers of
-objects in the images we generate, so we will take the occurance of a
+objects in the images we generate, so we will take the occurence of a
 successful Bernoulli trial to indicate that we should stop adding the
 objects we generate to the output image, and use some other criteria to
 decide when to stop making further steps.</p>
@@ -759,12 +718,12 @@ batch take steps until a successful Bernoulli trial has occured in each,
 as this would retain the geometric prior.)</p>
 <p>Here’s an updated model step function that implements this idea. The
 only changes from <code class="docutils literal"><span class="pre">model_step_sketch</span></code> are that we now conditionally
-add the object to the output image based on the outcome for a new
-Bernoulli random draw, and we’ve added a new parameter <code class="docutils literal"><span class="pre">n</span></code> that
+add the object to the output image based on a value sampled from a
+Bernoulli distribution, and we’ve added a new parameter <code class="docutils literal"><span class="pre">n</span></code> that
 specifies the size of the mini batch.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [9]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -772,7 +731,7 @@ specifies the size of the mini batch.</p>
 
     <span class="c1"># Sample variable indicating whether to add this object to the output.</span>
 
-    <span class="c1"># We multiple the success probability of 0.5 by the value sampled for this</span>
+    <span class="c1"># We multiply the success probability of 0.5 by the value sampled for this</span>
     <span class="c1"># choice in the previous step. By doing so we add objects to the output until</span>
     <span class="c1"># the first 0 is sampled, after which we add no further objects.</span>
     <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">prev_z_pres</span><span class="p">)</span>
@@ -808,7 +767,7 @@ model’s ability to generalize to images with more digits than are
 present in the dataset.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [10]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -825,7 +784,7 @@ present in the dataset.</p>
 some samples to get a feel for this distribution:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [11]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -838,15 +797,8 @@ some samples to get a feel for this distribution:</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-11-ecaf4d598920&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-intense-fg ansi-bold">      1</span> pyro<span class="ansi-blue-fg">.</span>set_rng_seed<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">87678</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-fg">----&gt; 2</span><span class="ansi-red-fg"> </span>show_images<span class="ansi-blue-fg">(</span>prior<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">5</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-red-fg">NameError</span>: name &#39;show_images&#39; is not defined
-</pre></div></div>
+<img alt="_images/air_21_0.png" src="_images/air_21_0.png" />
+</div>
 </div>
 </div>
 <div class="section" id="Specifying-the-likelihood">
@@ -859,10 +811,10 @@ forward to implement using <code class="docutils literal"><span class="pre">pyro
 package the prior and likelihood into a single function. This is also a
 convenient place to introduce <code class="docutils literal"><span class="pre">iarange</span></code>, which we use to implement
 data subsampling, and to register the networks we would like to optimize
-with <code class="docutils literal"><span class="pre">pyro.module</span></code>. (LINK: iarange, module docs)</p>
+with <code class="docutils literal"><span class="pre">pyro.module</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [12]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -882,25 +834,24 @@ with <code class="docutils literal"><span class="pre">pyro.module</span></code>.
 </div>
 <div class="section" id="Guide">
 <h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this headline">¶</a></h2>
-<p>Following [1] we will perform <a class="reference external" href="http://pyro.ai/examples/svi_part_i.html">amortized variational
-inference</a> in this model.
-Pyro provides general purpose machinery that implements most of this
-inference strategy, but as we have seen in earlier tutorials we are
-required to provide a model specific guide. What we call a guide in Pyro
-is exactly the entity called the “inference network” in the paper.</p>
+<p>Following [1] we will perform <a class="reference external" href="svi_part_i.html">amortized stochastic variational
+inference</a> in this model. Pyro provides general
+purpose machinery that implements most of this inference strategy, but
+as we have seen in earlier tutorials we are required to provide a model
+specific guide. What we call a guide in Pyro is exactly the entity
+called the “inference network” in the paper.</p>
 <p>We will structure the guide around a recurrent network to allow the
 guide to capture (some of) the dependencies we expect to be present in
 the true posterior. At each step the recurrent network will generate the
 parameters for the choices made within the step. The values sampled will
 be fed back into the recurrent network so that this information can be
 used when computing the parameters for the next step. The guide for the
-<a class="reference external" href="http://pyro.ai/examples/dmm/dmm_tutorial.html">Deep Markov Model</a>
-shares a similar structure.</p>
+<a class="reference external" href="dmm.html">Deep Markov Model</a> shares a similar structure.</p>
 <p>As in the model, the core of the guide is the logic for a single step.
 Here’s a sketch of an implementation of this:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [13]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -931,17 +882,17 @@ Here’s a sketch of an implementation of this:</p>
 describes a crucial improvement we can make to the code above. Recall
 that the guide will output information about an object’s pose and its
 latent code at each step. The improvement we can make is based on the
-observation that once we have infered the pose of an object, we can do a
-better job of infering its latent code if we use the pose information to
-crop the object from the input image, and pass the result (which we’ll
-call a “window”) through an additional network in order to compute the
-parameters of the latent code. We’ll call this additional network the
-“encoder” below.</p>
+observation that once we have inferred the pose of an object, we can do
+a better job of inferring its latent code if we use the pose information
+to crop the object from the input image, and pass the result (which
+we’ll call a “window”) through an additional network in order to compute
+the parameters of the latent code. We’ll call this additional network
+the “encoder” below.</p>
 <p>Here’s how we can implement this improved guide, and a fleshed out
 implementation of the networks involved:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [14]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -1013,7 +964,7 @@ on a larger image, and the latter crops a small image from a larger
 image.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [15]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -1042,7 +993,7 @@ image.</p>
 <p>So far we’ve considered the model and the guide in isolation, but we
 gain an interesting perspective if we zoom out and look at the model and
 guide computation as a whole. Doing so, we see that at each step AIR
-includes a sub-computation that has the same structure as a <a class="reference external" href="http://pyro.ai/examples/svi_part_i.html">Variational
+includes a sub-computation that has the same structure as a <a class="reference external" href="vae.html">Variational
 Auto-encoder</a> (VAE).</p>
 <p>To see this, notice that the guide passes the window through a neural
 network (the encoder) to generate the parameters of the distribution
@@ -1071,13 +1022,12 @@ discrete choices in the model.</p>
 <div class="section" id="Data-dependent-baselines">
 <h3>Data dependent baselines<a class="headerlink" href="#Data-dependent-baselines" title="Permalink to this headline">¶</a></h3>
 <p>Happily for us, Pyro includes support for data dependent baselines. If
-you are not already familiar with this idea, you might want to read <a class="reference external" href="http://pyro.ai/examples/svi_part_iii.html">our
-introduction</a> before
-continuing. As model authors we only have to implement the neural
-network, pass it our data as input, and feed its output to
-<code class="docutils literal"><span class="pre">pyro.sample</span></code>. Pyro’s inference back-end will ensure that the baseline
-is included in the gradient estimator used for inference, and that the
-network parameters are updated appropriately.</p>
+you are not already familiar with this idea, you might want to read <a class="reference external" href="svi_part_iii.html">our
+introduction</a> before continuing. As model authors
+we only have to implement the neural network, pass it our data as input,
+and feed its output to <code class="docutils literal"><span class="pre">pyro.sample</span></code>. Pyro’s inference back-end will
+ensure that the baseline is included in the gradient estimator used for
+inference, and that the network parameters are updated appropriately.</p>
 <p>Let’s see how we can add data dependent baselines to our AIR
 implementation. We need a neural network that can output a (scalar)
 baseline value at each discrete choice in the guide, having received a
@@ -1088,7 +1038,7 @@ and indeed we will again use a recurrent network.</p>
 implements a single step of the RNN we’ve just described:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [16]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -1112,7 +1062,7 @@ implements a single step of the RNN we’ve just described:</p>
 them to the baseline network. This is important as the baseline network
 and the guide network are entirely separate networks optimized with
 different objectives. Without this, gradients would flow from the
-baseline network in to the guide network. When using data dependent
+baseline network into the guide network. When using data dependent
 baselines we must do this whenever we feed values sampled by the guide
 into the baselines network. (If we don’t we’ll trigger a PyTorch
 run-time error.)</p>
@@ -1125,7 +1075,7 @@ We’ll also write a <code class="docutils literal"><span class="pre">guide</spa
 in order to provide a guide for the whole model.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [17]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -1184,14 +1134,14 @@ in order to provide a guide for the whole model.</p>
 </div>
 </div>
 </div>
-<div class="section" id="Putting-it-altogether">
-<h3>Putting it altogether<a class="headerlink" href="#Putting-it-altogether" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="Putting-it-all-together">
+<h3>Putting it all together<a class="headerlink" href="#Putting-it-all-together" title="Permalink to this headline">¶</a></h3>
 <p>We have now completed the implementation of the model and the guide. As
 we have already seen in earlier tutorials, we need write only a few more
 lines of code to begin performing inference:</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [18]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
@@ -1209,51 +1159,47 @@ lines of code to begin performing inference:</p>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-18-e65499f789a9&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>data <span class="ansi-blue-fg">=</span> mnist<span class="ansi-blue-fg">.</span>view<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">,</span> <span class="ansi-cyan-fg">50</span> <span class="ansi-blue-fg">*</span> <span class="ansi-cyan-fg">50</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">      2</span>
-<span class="ansi-green-intense-fg ansi-bold">      3</span> svi = SVI(model,
-<span class="ansi-green-intense-fg ansi-bold">      4</span>           guide<span class="ansi-blue-fg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">      5</span>           optim<span class="ansi-blue-fg">.</span>Adam<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">{</span><span class="ansi-blue-fg">&#39;lr&#39;</span><span class="ansi-blue-fg">:</span> <span class="ansi-cyan-fg">1e-4</span><span class="ansi-blue-fg">}</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span>
-
-<span class="ansi-red-fg">NameError</span>: name &#39;mnist&#39; is not defined
-</pre></div></div>
-</div>
 <p>One key detail here is that we pass the <code class="docutils literal"><span class="pre">trace_graph=True</span></code> option to
-<code class="docutils literal"><span class="pre">SVI</span></code>. This enables a more <a class="reference external" href="http://pyro.ai/examples/svi_part_iii.html">sophisticated gradient
-estimator</a> (implicity used
-in [1]) that further reduces the variance of gradient estimates by
-making use of independence information included in the model. Use of
-this feature is necessary in order to achieve good results in the
-presence of discrete choices.</p>
+<code class="docutils literal"><span class="pre">SVI</span></code>. This enables a more <a class="reference external" href="svi_part_iii.html">sophisticated gradient
+estimator</a> (implicity used in [1]) that further
+reduces the variance of gradient estimates by making use of independence
+information included in the model. Use of this feature is necessary in
+order to achieve good results in the presence of discrete choices.</p>
 </div>
 </div>
 <div class="section" id="Improvements">
 <h2>Improvements<a class="headerlink" href="#Improvements" title="Permalink to this headline">¶</a></h2>
-<p>Here are a few ways in which the implementation given here might be
-improved:</p>
+<p>Our <a class="reference external" href="https://github.com/uber/pyro/tree/dev/examples/air">standalone AIR
+implementation</a>
+includes a few simple improvements to the basic recipe given in this
+tutorial:</p>
 <ul class="simple">
 <li>It is reported to be useful in practice to use a different learning
 rate for the baseline network. In [1] a learning rate of <code class="docutils literal"><span class="pre">1e-4</span></code> was
 used for the guide network, and a learning rate of <code class="docutils literal"><span class="pre">1e-3</span></code> was used
 for the baseline network. This is straight forward to implement in
-Pyro by tagging modules (LINK: modules tagging docs) associated with
-the baseline network and passing multiple learning rates to the
-optimizer.</li>
-<li>Use bigger neural networks.</li>
-<li>Use optimizable parameters for the initial guide state.</li>
+Pyro by tagging modules associated with the baseline network and
+passing multiple learning rates to the optimizer. (See the section on
+<a class="reference external" href="svi_part_i.html#Optimizers">optimizers</a> in part I of the SVI
+tutorial for more detail.)</li>
+<li>Use of larger neural networks.</li>
+<li>Use of optimizable parameters for the initial guide state.</li>
 </ul>
 </div>
 <div class="section" id="Results">
 <h2>Results<a class="headerlink" href="#Results" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal"><span class="pre">TODO:</span> <span class="pre">Add</span> <span class="pre">results</span></code></p>
+<div class="admonition note">
+This section will be updated with more results.</div>
+<p>The following images show the progress made by our <a class="reference external" href="https://github.com/uber/pyro/tree/dev/examples/air">standalone
+implementation</a>
+during an inference run. The top image shows four data points from the
+training set. The bottom image is a visualization of a sample from the
+guide (for these data points) that shows the values sampled for
+<code class="docutils literal"><span class="pre">z_pres</span></code> and <code class="docutils literal"><span class="pre">z_where</span></code>. It also shows reconstructions of the input
+obtained by passing the sample from the guide back through the model to
+generate an output image.</p>
+<p>Note that at this stage of inference the locations of most of the digits
+are inferred accurately but object counts are not.</p>
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
@@ -1316,16 +1262,16 @@ Simonyan and Andrew Zisserman</p>
             SOURCELINK_SUFFIX: '.txt'
         };
     </script>
-      <script type="text/javascript" src="static/jquery.js"></script>
-      <script type="text/javascript" src="static/underscore.js"></script>
-      <script type="text/javascript" src="static/doctools.js"></script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
   
   
-    <script type="text/javascript" src="static/js/theme.js"></script>
+    <script type="text/javascript" src="_static/js/theme.js"></script>
   
 
   
