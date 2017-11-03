@@ -37,7 +37,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials  documentation" href="index.html"/> 
+    <link rel="top" title="Pyro Tutorials  documentation" href="index.html"/>
+        <link rel="prev" title="Attend Infer Repeat" href="air.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -90,17 +91,37 @@
             
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html#Next-Steps">Next Steps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dmm.html">Modeling Polyphonic Music with a Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Semi-Supervised VAE</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#The-Challenges-of-Inference">The Challenges of Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#First-Variant:-Standard-objective-function,-naive-estimator">First Variant: Standard objective function, naive estimator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Network-Definitions">Network Definitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#MNIST-Pre-Processing">MNIST Pre-Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#The-Objective-Function">The Objective Function</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Interlude:-Summing-Out-Discrete-Latents">Interlude: Summing Out Discrete Latents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Second-Variant:-Standard-Objective-Function,-Better-Estimator">Second Variant: Standard Objective Function, Better Estimator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Third-Variant:-Adding-a-Term-to-the-Objective">Third Variant: Adding a Term to the Objective</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Results">Results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Latent-Space-Visualization">Latent Space Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Conditional-image-generation">Conditional image generation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Final-thoughts">Final thoughts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#References">References</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -399,9 +420,7 @@ going to make this a latent variable model with a local latent variable
 Even with this set of choices, a number of model variants are possible:
 we’re going to focus on the model variant depicted in Figure 1 (this is
 model M2 in reference [1]).</p>
-<figure><center><figcaption><p>Figure 1: our semi-supervised generative model (c.f. model M2 in
-reference [1])</p>
-</figcaption></center></figure><p>For convenience—and since we’re going to model MNIST in our experiments
+<center><figure><img src="_static/img/ss_vae_m2.png" style="width: 180px;"><center><figcaption> <font size="+1"><b>Figure 1</b>: our semi-supervised generative model </font>(c.f. model M2 in reference [1])</figcaption></center></figure></center><p>For convenience—and since we’re going to model MNIST in our experiments
 below—let’s suppose the <span class="math">\(\{ {\bf x}_i \}\)</span> are images and the
 <span class="math">\(\{ {\bf y}_i \}\)</span> are digit labels. In this model setup, the
 latent random variable <span class="math">\({\bf z}_i\)</span> and the (partially observed)
@@ -456,36 +475,29 @@ labeled data</li>
 <h2>First Variant: Standard objective function, naive estimator<a class="headerlink" href="#First-Variant:-Standard-objective-function,-naive-estimator" title="Permalink to this headline">¶</a></h2>
 <p>As discussed in the introduction, we’re considering the model depicted
 in Figure 1. In more detail, the model has the following structure:</p>
-<table><col width="300"><col width="500"><tr><td><p>$ p({<a href="#id1"><span class="problematic" id="id2">:raw-latex:`\bf y`</span></a>}) =
-Cat({<a href="#id3"><span class="problematic" id="id4">:raw-latex:`\bf y`</span></a>}<sub>|</sub>{<a href="#id5"><span class="problematic" id="id6">:raw-latex:`\bf \pi`</span></a>})<span class="math">\(&lt;/td&gt;  &lt;td &gt; multinomial (or categorical) prior for the class label  &lt;/tr&gt;  &lt;tr&gt;  &lt;td&gt;\)</span>
-p({<a href="#id7"><span class="problematic" id="id8">:raw-latex:`\bf z`</span></a>}) =
-<a href="#id9"><span class="problematic" id="id10">:raw-latex:`\mathcal{N}`({:raw-latex:`</span></a>bf z`}<sub>|</sub>{<a href="#id11"><span class="problematic" id="id12">:raw-latex:`\bf 0,I`</span></a>})$</p>
-</td><td><p>unit normal prior for the latent code <span class="math">\(\bf z\)</span></p>
-</tr><div class="highlight-default"><div class="highlight"><pre><span></span>&lt;tr&gt;
-    &lt;td&gt;$ p_{\theta}({\bf x}~|~{\bf z,y}) = Bernoulli\left({\bf x}~|~\mu\left({\bf z,y}\right)\right)$ &lt;/td&gt;
-    &lt;td&gt; parameterized Bernoulli likelihood function; &lt;br&gt; $\mu\left({\bf z,y}\right)$ corresponds to `decoder` in the code
-&lt;/tr&gt;
-</pre></div>
-</div>
-</table><p>We structure the components of our guide <span class="math">\(q_{\phi}(.)\)</span> as follows:</p>
-<table><col width="300"><col width="500"><tr><td><p>$
-q_{<a href="#id13"><span class="problematic" id="id14">:raw-latex:`\phi`</span></a>}({<a href="#id15"><span class="problematic" id="id16">:raw-latex:`\bf y`</span></a>}<sub>|</sub>{<a href="#id17"><span class="problematic" id="id18">:raw-latex:`\bf x`</span></a>})
-=
-Cat({<a href="#id19"><span class="problematic" id="id20">:raw-latex:`\bf y`</span></a>}<sub>|</sub>{<a href="#id21"><span class="problematic" id="id22">:raw-latex:`\bf \alpha`</span></a>}_{<a href="#id23"><span class="problematic" id="id24">:raw-latex:`\phi`</span></a>}:raw-latex:<cite>left`({:raw-latex:</cite>bf x`}:raw-latex:<cite>right</cite>))$</p>
-</td><td><p>parameterized multinomial (or categorical) distribution;
+<ul class="simple">
+<li><span class="math">\(p({\bf y}) = Cat({\bf y}~|~{\bf \pi})\)</span>: multinomial (or
+categorical) prior for the class label</li>
+<li><span class="math">\(p({\bf z}) = \mathcal{N}({\bf z}~|~{\bf 0,I})\)</span>: unit normal
+prior for the latent code <span class="math">\(\bf z\)</span></li>
+<li><span class="math">\(p_{\theta}({\bf x}~|~{\bf z,y}) = Bernoulli\left({\bf x}~|~\mu\left({\bf z,y}\right)\right)\)</span>:
+parameterized Bernoulli likelihood function;
+<span class="math">\(\mu\left({\bf z,y}\right)\)</span> corresponds to <code class="docutils literal"><span class="pre">decoder</span></code> in the
+code</li>
+</ul>
+<p>We structure the components of our guide <span class="math">\(q_{\phi}(.)\)</span> as follows:</p>
+<ul class="simple">
+<li><span class="math">\(q_{\phi}({\bf y}~|~{\bf x}) = Cat({\bf y}~|~{\bf \alpha}_{\phi}\left({\bf x}\right))\)</span>:
+parameterized multinomial (or categorical) distribution;
 <span class="math">\({\bf \alpha}_{\phi}\left({\bf x}\right)\)</span> corresponds to
-<code class="docutils literal"><span class="pre">encoder_y</span></code> in the code</p>
-</td></tr><tr><td><p>$
-q_{<a href="#id25"><span class="problematic" id="id26">:raw-latex:`\phi`</span></a>}({<a href="#id27"><span class="problematic" id="id28">:raw-latex:`\bf z`</span></a>}<sub>|</sub>{<a href="#id29"><span class="problematic" id="id30">:raw-latex:`\bf x, y`</span></a>})
-=
-<a href="#id31"><span class="problematic" id="id32">:raw-latex:`\mathcal{N}`({:raw-latex:`</span></a>bf z`}<sub>|</sub>{<a href="#id33"><span class="problematic" id="id34">:raw-latex:`\bf \mu`</span></a>}<em>{:raw-latex:`phi`}:raw-latex:`left`({:raw-latex:`bf x, y`}:raw-latex:`right`),
-{:raw-latex:`bf sigma^2`</em>{<a href="#id35"><span class="problematic" id="id36">:raw-latex:`\phi`</span></a>}:raw-latex:<cite>left`(x,
-y:raw-latex:</cite>right`)})$</p>
-</td><td><p>parameterized normal distribution;
+<code class="docutils literal"><span class="pre">encoder_y</span></code> in the code</li>
+<li><span class="math">\(q_{\phi}({\bf z}~|~{\bf x, y}) = \mathcal{N}({\bf z}~|~{\bf \mu}_{\phi}\left({\bf x, y}\right), {\bf \sigma^2_{\phi}\left(x, y\right)})\)</span>:
+parameterized normal distribution;
 <span class="math">\({\bf \mu}_{\phi}\left({\bf x, y}\right)\)</span> and
-<span class="math">\({\bf \sigma^2_{\phi}\left(x, y\right)}\)</span> correspond to the neural
-digit classifier <code class="docutils literal"><span class="pre">encoder_z</span></code> in the code</p>
-</td></tr></table><p>These choices reproduce the structure of model M2 and its corresponding
+<span class="math">\({\bf \sigma^2_{\phi}\left(x, y\right)}\)</span> correspond to the
+neural digit classifier <code class="docutils literal"><span class="pre">encoder_z</span></code> in the code</li>
+</ul>
+<p>These choices reproduce the structure of model M2 and its corresponding
 inference network in reference [1].</p>
 <p>We translate this model and guide pair into Pyro code below. Note that:
 1. The labels <code class="docutils literal"><span class="pre">ys</span></code>, which are represented with a one-hot encoding, are
@@ -597,9 +609,22 @@ time is degraded by the noise inherent in the sampling of the
 categorical variables (see Figure 2 and Table 1 at the end of this
 tutorial). To deal with this we’re going to need a better ELBO gradient
 estimator.</p>
-<figure><table><tr><td></td><td></td></tr></table><figcaption><p>Figure 2: Variant 1 (Left) Training losses for the case with 3000
-supervised examples. (Right) Test and validation accuracies.</p>
-</figcaption></figure></div>
+<center><figure>
+    <table>
+        <tr>
+            <td style="width: 450px">
+                <img src="_static/img/exp_1_losses_24_3000.png?2"  style="width: 450px;">
+            </td>
+            <td style="width: 450px">
+                <img src="_static/img/exp_1_acc_24_3000.png?2" style="width: 450px;">
+            </td>
+        </tr>
+    </table>
+    <figcaption>
+        <font size="+1"><b>Figure 2:</b> Variant 1</font> <b>(Left)</b> Training losses for the case with 3000 supervised examples.
+        <b>(Right)</b> Test and validation accuracies.
+    </figcaption>
+</figure></center></div>
 </div>
 <div class="section" id="Interlude:-Summing-Out-Discrete-Latents">
 <h2>Interlude: Summing Out Discrete Latents<a class="headerlink" href="#Interlude:-Summing-Out-Discrete-Latents" title="Permalink to this headline">¶</a></h2>
@@ -645,9 +670,22 @@ the course of training. More importantly, this single modification
 improved test accuracy from around <code class="docutils literal"><span class="pre">20%</span></code> to about <code class="docutils literal"><span class="pre">90%</span></code> for the case
 of <span class="math">\(3000\)</span> labeled examples. See Table 1 for the full results. This
 is great, but can we do better?</p>
-<figure><table><tr><td></td><td></td></tr></table><figcaption><p>Figure 3: Variant 2 (Left) Training losses for the case with 3000
-supervised examples. (Right) Test and validation accuracies.</p>
-</figcaption></figure></div>
+<center><figure>
+    <table>
+        <tr>
+            <td>
+                <img src="_static/img/exp_2_losses_56_3000.png?2"  style="width: 450px;">
+            </td>
+            <td>
+                <img src="_static/img/exp_2_acc_56_3000.png?2" style="width: 450px;">
+            </td>
+        </tr>
+    </table>
+    <figcaption>
+        <font size="+1"><b>Figure 3:</b> Variant 2</font> <b>(Left)</b> Training losses for the case with 3000 supervised examples.
+        <b>(Right)</b> Test and validation accuracies.
+    </figcaption>
+</figure></center></div>
 <div class="section" id="Third-Variant:-Adding-a-Term-to-the-Objective">
 <h2>Third Variant: Adding a Term to the Objective<a class="headerlink" href="#Third-Variant:-Adding-a-Term-to-the-Objective" title="Permalink to this headline">¶</a></h2>
 <p>For the two variants we’ve explored so far, the classifier
@@ -705,22 +743,35 @@ accuracy for the case with <span class="math">\(3000\)</span> labeled examples i
 <code class="docutils literal"><span class="pre">90%</span></code> to <code class="docutils literal"><span class="pre">96%</span></code> (see Figure 4 below and Table 1 in the next section).
 Note that we used validation accuracy to select the hyperparameter
 <span class="math">\(\alpha'\)</span>.</p>
-<figure><table><tr><td></td><td></td></tr></table><figcaption><p>Figure 4: Variant 3 (Left) Training losses for the case with 3000
-supervised examples. (Right) Test and validation accuracies.</p>
-</figcaption></figure></div>
+<center><figure>
+    <table>
+        <tr>
+            <td>
+                <img src="_static/img/exp_3_losses_112_3000.png?2"  style="width: 450px;">
+            </td>
+            <td>
+                <img src="_static/img/exp_3_acc_112_3000.png?2" style="width: 450px;">
+            </td>
+        </tr>
+    </table>
+    <figcaption>
+        <font size="+1"><b>Figure 4:</b> Variant 3</font> <b>(Left)</b> Training losses for the case with 3000 supervised examples.
+        <b>(Right)</b> Test and validation accuracies.
+    </figcaption>
+</figure></center></div>
 <div class="section" id="Results">
 <h2>Results<a class="headerlink" href="#Results" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="docutils">
 <colgroup>
+<col width="20%" />
+<col width="18%" />
+<col width="18%" />
+<col width="18%" />
 <col width="25%" />
-<col width="17%" />
-<col width="17%" />
-<col width="17%" />
-<col width="23%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Supervised
-data size</th>
+data</th>
 <th class="head">First
 variant</th>
 <th class="head">Second
@@ -733,44 +784,40 @@ classifier</th>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>100</td>
-<td>0.2007(0.
-0353)</td>
-<td>0.2254(0.
-0346)</td>
-<td>0.9319(0.
-0060)</td>
-<td>0.7712(0.0159
-)</td>
+<td>0.2007(0.0
+353)</td>
+<td>0.2254(0.0
+346)</td>
+<td>0.9319(0.0
+060)</td>
+<td>0.7712(0.0159)</td>
 </tr>
 <tr class="row-odd"><td>600</td>
-<td>0.1791(0.
-0244)</td>
-<td>0.6939(0.
-0345)</td>
-<td>0.9437(0.
-0070)</td>
-<td>0.8716(0.0064
-)</td>
+<td>0.1791(0.0
+244)</td>
+<td>0.6939(0.0
+345)</td>
+<td>0.9437(0.0
+070)</td>
+<td>0.8716(0.0064)</td>
 </tr>
 <tr class="row-even"><td>1000</td>
-<td>0.2006(0.
-0295)</td>
-<td>0.7562(0.
-0235)</td>
-<td>0.9487(0.
-0038)</td>
-<td>0.8863(0.0025
-)</td>
+<td>0.2006(0.0
+295)</td>
+<td>0.7562(0.0
+235)</td>
+<td>0.9487(0.0
+038)</td>
+<td>0.8863(0.0025)</td>
 </tr>
 <tr class="row-odd"><td>3000</td>
-<td>0.1982(0.
-0522)</td>
-<td>0.8932(0.
-0159)</td>
-<td>0.9582(0.
-0012)</td>
-<td>0.9108(0.0015
-)</td>
+<td>0.1982(0.0
+522)</td>
+<td>0.8932(0.0
+159)</td>
+<td>0.9582(0.0
+012)</td>
+<td>0.9108(0.0015)</td>
 </tr>
 </tbody>
 </table>
@@ -796,9 +843,18 @@ regime where we have few labeled data points that semi-supervised
 learning is particularly attractive.</p>
 <div class="section" id="Latent-Space-Visualization">
 <h3>Latent Space Visualization<a class="headerlink" href="#Latent-Space-Visualization" title="Permalink to this headline">¶</a></h3>
-<figure><table><tr><td></td></tr></table><center><figcaption><p>Figure 5: Latent space embedding for variant 3 with 3000 supervised
-examples</p>
-</figcaption></center></figure><p>We use T-SNE to reduce the dimensionality of the latent <span class="math">\(\bf z\)</span>
+<center><figure>
+    <table>
+        <tr>
+            <td>
+                <img src="_static/img/third_embedding.png?3" style="width: 450px;">
+            </td>
+        </tr>
+    </table> <center>
+    <figcaption>
+        <font size="+1"><b>Figure 5:</b> Latent space embedding for variant 3 with 3000 supervised examples</font>
+    </figcaption> </center>
+</figure></center><p>We use T-SNE to reduce the dimensionality of the latent <span class="math">\(\bf z\)</span>
 from <span class="math">\(50\)</span> to <span class="math">\(2\)</span> and visualize the 10 digit classes in
 Figure 5. Note that the structure of the embedding is quite different
 than that in the <a class="reference external" href="http://pyro.ai/examples/vae.html">VAE</a> case, where
@@ -810,9 +866,47 @@ observed) labels.</p>
 </div>
 <div class="section" id="Conditional-image-generation">
 <h3>Conditional image generation<a class="headerlink" href="#Conditional-image-generation" title="Permalink to this headline">¶</a></h3>
-<figure><table><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr></table><center><figcaption><p>Figure 6: Conditional samples obtained by fixing the class label and
-varying <span class="math">\({\bf z}\)</span> (for variant 3 with 3000 supervised examples)</p>
-</figcaption></center></figure><p>We sampled <span class="math">\(100\)</span> images for each class label (<span class="math">\(0\)</span> to
+<center><figure>
+    <table>
+        <tr>
+            <td>
+                <img src="_static/img/conditional_samples/0.jpg"  style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/1.jpg" style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/2.jpg"  style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/3.jpg" style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/4.jpg"  style="width: 200px;">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <img src="_static/img/conditional_samples/5.jpg"  style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/6.jpg" style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/7.jpg"  style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/8.jpg" style="width: 200px;">
+            </td>
+            <td>
+                <img src="_static/img/conditional_samples/9.jpg"  style="width: 200px;">
+            </td>
+        </tr>
+    </table> <center>
+    <figcaption>
+        <font size="+1"><b>Figure 6:</b> Conditional samples obtained by fixing the class label and varying <b>z</b> (for variant 3 with 3000 supervised examples)</font>
+    </figcaption> </center>
+</figure></center><p>We sampled <span class="math">\(100\)</span> images for each class label (<span class="math">\(0\)</span> to
 <span class="math">\(9\)</span>) by sampling different values of the latent variable
 <span class="math">\({\bf z}\)</span>. The diversity of handwriting styles exhibited by each
 digit is consistent with what we saw in the T-SNE visualization,
@@ -830,8 +924,7 @@ a small fraction of the possible model and inference setups that are
 possible. There is no reason to expect that one variant is best;
 depending on the dataset and application, there will be reason to prefer
 one over another. And there a lot of variants (see Figure 7)!</p>
-<figure><figcaption><center><p>Figure 7: A zoo of semi-supervised generative models</p>
-</center></figcaption></figure><p>Some of these variants clearly make more sense than others, but a priori
+<center><figure><img src="_static/img/ss_vae_zoo.png" style="width: 300px;"><figcaption> <center><font size="+1"><b>Figure 7</b>: A zoo of semi-supervised generative models </font> </center></figcaption></figure></center><p>Some of these variants clearly make more sense than others, but a priori
 it’s difficult to know which ones are worth trying out. This is
 especially true once we open the door to more complicated setups, like
 the two models at the bottom of the figure, which include an always
@@ -868,6 +961,13 @@ Torr</p>
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="air.html" class="btn btn-neutral" title="Attend Infer Repeat" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

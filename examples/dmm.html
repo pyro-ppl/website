@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Modeling Polyphonic Music with a Deep Markov Model &mdash; Pyro Tutorials  documentation</title>
+  <title>Deep Markov Model &mdash; Pyro Tutorials  documentation</title>
   
 
   
@@ -95,13 +95,12 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html#Next-Steps">Next Steps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Modeling Polyphonic Music with a Deep Markov Model</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deep Markov Model</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#The-Model">The Model</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#The-Gated-Transition-and-the-Emitter">The Gated Transition and the Emitter</a></li>
@@ -132,6 +131,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
 </ul>
 
             
@@ -176,7 +176,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Modeling Polyphonic Music with a Deep Markov Model</li>
+      <li>Deep Markov Model</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -389,8 +389,8 @@ div.nboutput div.output_area.stderr {
     margin-right: 4px;  /* make room for the exclamation icon */
 }
 </style>
-<div class="section" id="Modeling-Polyphonic-Music-with-a-Deep-Markov-Model">
-<h1>Modeling Polyphonic Music with a Deep Markov Model<a class="headerlink" href="#Modeling-Polyphonic-Music-with-a-Deep-Markov-Model" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="Deep-Markov-Model">
+<h1>Deep Markov Model<a class="headerlink" href="#Deep-Markov-Model" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="Introduction">
 <h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p>We’re going to build a deep probabilistic model for sequential data: the
@@ -439,25 +439,24 @@ will see, assembling them will be straightforward. Let’s get to work.</p>
 <h2>The Model<a class="headerlink" href="#The-Model" title="Permalink to this headline">¶</a></h2>
 <p>A convenient way to describe the high-level structure of the model is
 with a graphical model.</p>
-<p><figure><figcaption><p>Figure 1: The model rolled out for <span class="math">\(T=3\)</span> time steps. The joint
-distribution is
-<span class="math">\(p({\bf x}_{123} , {\bf z}_{123})=p({\bf x}_1|{\bf z}_1)p({\bf x}_2|{\bf z}_2)p({\bf x}_3|{\bf z}_3)p({\bf z}_1)p({\bf z}_2|{\bf z}_1)p({\bf z}_3|{\bf z}_2)\)</span></p>
-</figcaption></figure><p>Here, we’ve rolled out the model assuming that the sequence of
+<center><figure><img src="_static/img/model.png" style="width: 500px;"><figcaption> <font size="+1"><b>Figure 1</b>: The model rolled out for T=3 time steps.</font></figcaption></figure></center><p>Here, we’ve rolled out the model assuming that the sequence of
 observations is of length three:
 <span class="math">\(\{{\bf x}_1, {\bf x}_2, {\bf x}_3\}\)</span>. Mirroring the sequence of
 observations we also have a sequence of latent random variables:
 <span class="math">\(\{{\bf z}_1, {\bf z}_2, {\bf z}_3\}\)</span>. The figure encodes the
-structure of the model. Conditioned on <span class="math">\({\bf z}_t\)</span>, each
-observation <span class="math">\({\bf x}_t\)</span> is independent of the other observations.
-This can be read off from the fact that each <span class="math">\({\bf x}_t\)</span> only
-depends on the corresponding latent <span class="math">\({\bf z}_t\)</span>, as indicated by
-the downward pointing arrows. We can also read off the markov property
-of the model: each latent <span class="math">\({\bf z}_t\)</span>, when conditioned on the
-previous latent <span class="math">\({\bf z}_{t-1}\)</span>, is independent of all previous
-latents $ { {<a href="#id1"><span class="problematic" id="id2">:raw-latex:`\bf z`</span></a>}<em>{t-2}, {:raw-latex:`bf z`}</em>{t-3},
-…}$. This effectively says that everything one needs to know about the
-state of the system at time <span class="math">\(t\)</span> is encapsulated by the latent
-<span class="math">\({\bf z}_{t}\)</span>.</p>
+structure of the model. The corresponding joint distribution is</p>
+<div class="math">
+\[p({\bf x}_{123} , {\bf z}_{123})=p({\bf x}_1|{\bf z}_1)p({\bf x}_2|{\bf z}_2)p({\bf x}_3|{\bf z}_3)p({\bf z}_1)p({\bf z}_2|{\bf z}_1)p({\bf z}_3|{\bf z}_2)\]</div>
+<p>Conditioned on <span class="math">\({\bf z}_t\)</span>, each observation <span class="math">\({\bf x}_t\)</span> is
+independent of the other observations. This can be read off from the
+fact that each <span class="math">\({\bf x}_t\)</span> only depends on the corresponding
+latent <span class="math">\({\bf z}_t\)</span>, as indicated by the downward pointing arrows.
+We can also read off the markov property of the model: each latent
+<span class="math">\({\bf z}_t\)</span>, when conditioned on the previous latent
+<span class="math">\({\bf z}_{t-1}\)</span>, is independent of all previous latents
+<span class="math">\(\{ {\bf z}_{t-2}, {\bf z}_{t-3}, ...\}\)</span>. This effectively says
+that everything one needs to know about the state of the system at time
+<span class="math">\(t\)</span> is encapsulated by the latent <span class="math">\({\bf z}_{t}\)</span>.</p>
 <p>We will assume that the observation likelihoods, i.e.&nbsp;the probability
 distributions <span class="math">\(p({{\bf x}_t}|{{\bf z}_t})\)</span> that control the
 observations, are given by the bernoulli distribution. This is an
@@ -834,9 +833,7 @@ case we need to support variable-length sequences, it’s only natural
 that <span class="math">\(f(\cdot)\)</span> have a RNN in the loop. Before we look at the
 various component parts that make up our <span class="math">\(f(\cdot)\)</span> in detail,
 let’s look at a computational graph that encodes the basic structure:</p>
-<p><figure><figcaption><p>Figure 2: The guide <span class="math">\(q({\bf z}_{1:3} | {\bf x}_{1:3})\)</span> rolled out
-for <span class="math">\(T=3\)</span> time steps.</p>
-</figcaption></figure><p>At the bottom of the figure we have our sequence of three observations.
+<p><center><figure><img src="_static/img/guide.png" style="width: 400px;"><figcaption> <font size="+1"><b>Figure 2</b>: The guide $q({\bf z}_{1:3} | {\bf x}_{1:3})$ rolled out for $T=3$ time steps. </font></figcaption></figure></center><p>At the bottom of the figure we have our sequence of three observations.
 These observations will be consumed by a RNN that reads the observations
 from right to left and outputs three hidden states
 <span class="math">\(\{ {\bf h}_1, {\bf h}_2,{\bf h}_3\}\)</span>. Note that this computation
@@ -1541,9 +1538,7 @@ reassuring. It seems that, at least for this dataset, not using analytic
 expressions for the KL divergences doesn’t degrade the quality of the
 learned model (although, as discussed above, the training probably takes
 somewhat longer).</p>
-<figure><figcaption><p>Figure 3: Progress on the test set NLL as training progresses for a
-sample training run.</p>
-</figcaption></figure><p>In the figure we show how the test NLL progresses during training for a
+<figure><img src="_static/img/test_nll.png" style="width: 400px;"><center><figcaption> <font size="-1"><b>Figure 3</b>: Progress on the test set NLL as training progresses for a sample training run. </font></figcaption></figure></center><p>In the figure we show how the test NLL progresses during training for a
 single sample run (one with a rather conservative learning rate). Most
 of the progress is during the first 3000 epochs or so, with some
 marginal gains if we let training go on for longer. On a GeForce GTX
