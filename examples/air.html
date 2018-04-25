@@ -8,12 +8,10 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Attend Infer Repeat &mdash; Pyro Tutorials  documentation</title>
+  <title>Attend Infer Repeat &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
   
 
   
-  
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
   
   
   
@@ -37,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials  documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
         <link rel="next" title="The Semi-Supervised VAE" href="ss-vae.html"/>
         <link rel="prev" title="Deep Markov Model" href="dmm.html"/> 
 
@@ -70,6 +68,10 @@
           
             
             
+              <div class="version">
+                pytorch-0.3-279-gdafa1ddd
+              </div>
+            
           
 
           
@@ -91,13 +93,17 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+              <p class="caption"><span class="caption-text">Introduction:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro 0.2</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
@@ -127,6 +133,12 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributed:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 </ul>
 
             
@@ -350,7 +362,11 @@ div.nboutput div.output_area.stderr {
 .ansi-white-intense-fg { color: #A1A6B2; }
 .ansi-white-intense-bg { background-color: #A1A6B2; }
 
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
 .ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
 
 /* CSS overrides for sphinx_rtd_theme */
 
@@ -392,27 +408,38 @@ Generative Models” (AIR) [1] and apply it to the multi-mnist dataset.</p>
 <p>A <a class="reference external" href="https://github.com/uber/pyro/tree/dev/examples/air">standalone
 implementation</a>
 is also available.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="o">%</span><span class="k">pylab</span> inline
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
-<span class="kn">from</span> <span class="nn">observations</span> <span class="kn">import</span> <span class="n">multi_mnist</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.optim</span> <span class="kn">as</span> <span class="nn">optim</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.util</span> <span class="kn">import</span> <span class="n">ng_zeros</span><span class="p">,</span> <span class="n">ng_ones</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="kn">import</span> <span class="n">Variable</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="kn">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">relu</span><span class="p">,</span> <span class="n">sigmoid</span><span class="p">,</span> <span class="n">softplus</span><span class="p">,</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">affine_grid</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span></span>%pylab inline
+import os
+from collections import namedtuple
+from observations import multi_mnist
+import pyro
+import pyro.optim as optim
+from pyro.infer import SVI, TraceGraph_ELBO
+import pyro.distributions as dist
+import pyro.poutine as poutine
+import torch
+import torch.nn as nn
+from torch.nn.functional import relu, sigmoid, softplus, grid_sample, affine_grid
+import numpy as np
+
+smoke_test = (&#39;CI&#39; in os.environ)
+pyro.enable_validation(True)
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Populating the interactive namespace from numpy and matplotlib
+</pre></div></div>
 </div>
 <div class="section" id="Introduction">
 <h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
@@ -422,22 +449,22 @@ to the multi-mnist dataset in [1]. Here are some data points from this
 data set:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">inpath</span> <span class="o">=</span> <span class="s1">&#39;../../examples/air/data&#39;</span>
-<span class="p">(</span><span class="n">X_np</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">_</span> <span class="o">=</span> <span class="n">multi_mnist</span><span class="p">(</span><span class="n">inpath</span><span class="p">,</span> <span class="n">max_digits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
-<span class="n">X_np</span> <span class="o">=</span> <span class="n">X_np</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">X_np</span> <span class="o">/=</span> <span class="mf">255.0</span>
-<span class="n">mnist</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X_np</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">show_images</span><span class="p">(</span><span class="n">imgs</span><span class="p">):</span>
-    <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">imgs</span><span class="p">):</span>
-        <span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">imgs</span><span class="p">),</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
-        <span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">mnist</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">14</span><span class="p">])</span>
+<span></span>inpath = &#39;../../examples/air/data&#39;
+(X_np, _), _ = multi_mnist(inpath, max_digits=2, canvas_size=50, seed=42)
+X_np = X_np.astype(np.float32)
+X_np /= 255.0
+mnist = torch.from_numpy(X_np)
+def show_images(imgs):
+    figure(figsize=(8, 2))
+    for i, img in enumerate(imgs):
+        subplot(1, len(imgs), i + 1)
+        axis(&#39;off&#39;)
+        imshow(img.data.numpy(), cmap=&#39;gray&#39;)
+show_images(mnist[9:14])
 </pre></div>
 </div>
 </div>
@@ -472,8 +499,8 @@ process:</p>
 <b>Figure 1:</b> Two steps of the generative process.
 </figcaption>
 </figure>
-</center><p>Inference is performed in this model using <a class="reference external" href="svi_part_i.html">amortized stochastic
-variational inference</a> (SVI). The parameters of the
+</center><p>Inference is performed in this model using <a class="reference internal" href="svi_part_i.html"><span class="doc">amortized stochastic
+variational inference</span></a> (SVI). The parameters of the
 neural network are also optimized during inference. Performing inference
 in such rich models is always difficult, but the presence of discrete
 choices (the number of steps in this case) makes inference in this model
@@ -497,58 +524,56 @@ object, as well as its pose.</li>
 <p>This can be expressed in Pyro like so:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="c1"># Create the neural network. This takes a latent code, z_what, to pixel intensities.</span>
-<span class="k">class</span> <span class="nc">Decoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Decoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+<span></span># Create the neural network. This takes a latent code, z_what, to pixel intensities.
+class Decoder(nn.Module):
+    def __init__(self):
+        super(Decoder, self).__init__()
+        self.l1 = nn.Linear(50, 200)
+        self.l2 = nn.Linear(200, 400)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_what</span><span class="p">):</span>
-        <span class="n">h</span> <span class="o">=</span> <span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l1</span><span class="p">(</span><span class="n">z_what</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l2</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
+    def forward(self, z_what):
+        h = relu(self.l1(z_what))
+        return sigmoid(self.l2(h))
 
-<span class="n">decode</span> <span class="o">=</span> <span class="n">Decoder</span><span class="p">()</span>
+decode = Decoder()
 
-<span class="n">z_where_prior_mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
-<span class="n">z_where_prior_sigma</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
-<span class="n">z_what_prior_mu</span> <span class="o">=</span> <span class="n">ng_zeros</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
-<span class="n">z_what_prior_sigma</span> <span class="o">=</span> <span class="n">ng_ones</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+z_where_prior_loc = torch.tensor([3., 0., 0.])
+z_where_prior_scale = torch.tensor([0.1, 1., 1.])
+z_what_prior_loc = torch.zeros(50)
+z_what_prior_scale = torch.ones(50)
 
-<span class="k">def</span> <span class="nf">prior_step_sketch</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-    <span class="c1"># Sample object pose. This is a 3-dimensional vector representing x,y position and size.</span>
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
-                          <span class="n">z_where_prior_mu</span><span class="p">,</span>
-                          <span class="n">z_where_prior_sigma</span><span class="p">,</span>
-                          <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+def prior_step_sketch(t):
+    # Sample object pose. This is a 3-dimensional vector representing x,y position and size.
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_prior_loc.expand(1, -1),
+                                      z_where_prior_scale.expand(1, -1))
+                              .independent(1))
 
-    <span class="c1"># Sample object code. This is a 50-dimensional vector.</span>
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
-                         <span class="n">z_what_prior_mu</span><span class="p">,</span>
-                         <span class="n">z_what_prior_sigma</span><span class="p">,</span>
-                         <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    # Sample object code. This is a 50-dimensional vector.
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_prior_loc.expand(1, -1),
+                                     z_what_prior_scale.expand(1, -1))
+                             .independent(1))
 
-    <span class="c1"># Map code to pixel space using the neural network.</span>
-    <span class="n">y_att</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">z_what</span><span class="p">)</span>
+    # Map code to pixel space using the neural network.
+    y_att = decode(z_what)
 
-    <span class="c1"># Position/scale object within larger image.</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">object_to_image</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">y_att</span><span class="p">)</span>
+    # Position/scale object within larger image.
+    y = object_to_image(z_where, y_att)
 
-    <span class="k">return</span> <span class="n">y</span>
+    return y
 </pre></div>
 </div>
 </div>
 <p>Hopefully the use of <code class="docutils literal"><span class="pre">pyro.sample</span></code> and PyTorch networks within a model
-seem familiar at this point. If not you might want to review the <a class="reference external" href="vae.html">VAE
-tutorial</a>. One thing to note is that we include the current
-step <code class="docutils literal"><span class="pre">t</span></code> in the name passed to <code class="docutils literal"><span class="pre">pyro.sample</span></code> to ensure that names
-are unique across steps.</p>
+seem familiar at this point. If not you might want to review the <a class="reference internal" href="vae.html"><span class="doc">VAE
+tutorial</span></a>. One thing to note is that we include the
+current step <code class="docutils literal"><span class="pre">t</span></code> in the name passed to <code class="docutils literal"><span class="pre">pyro.sample</span></code> to ensure that
+names are unique across steps.</p>
 <p>The <code class="docutils literal"><span class="pre">object_to_image</span></code> function is specific to this model and warrants
 further attention. Recall that the neural network (<code class="docutils literal"><span class="pre">decode</span></code> here) will
 output a small image, and that we would like to add this to the output
@@ -556,9 +581,9 @@ image after performing any translation and scaling required to achieve
 the pose (location and size) described by <code class="docutils literal"><span class="pre">z_where</span></code>. It’s not clear
 how to do this, and in particular it’s not obvious that this can be
 implemented in a way that preserves the differentiability of our model,
-which we require in order to perform <a class="reference external" href="svi_part_i.html">SVI</a>. However,
-it turns out we can do this this using a spatial transformer network
-(STN) [2].</p>
+which we require in order to perform <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI</span></a>.
+However, it turns out we can do this this using a spatial transformer
+network (STN) [2].</p>
 <p>Happily for us, PyTorch makes it easy to implement a STN using its
 <a class="reference external" href="http://pytorch.org/docs/master/nn.html#grid-sample">grid_sample</a> and
 <a class="reference external" href="http://pytorch.org/docs/master/nn.html#affine-grid">affine_grid</a>
@@ -567,25 +592,25 @@ doing a little extra work to massage <code class="docutils literal"><span class=
 format.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">expand_z_where</span><span class="p">(</span><span class="n">z_where</span><span class="p">):</span>
-    <span class="c1"># Takes 3-dimensional vectors, and massages them into 2x3 matrices with elements like so:</span>
-    <span class="c1"># [s,x,y] -&gt; [[s,0,x],</span>
-    <span class="c1">#             [0,s,y]]</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">z_where</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">expansion_indices</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">ng_zeros</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">z_where</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">expansion_indices</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span></span>def expand_z_where(z_where):
+    # Takes 3-dimensional vectors, and massages them into 2x3 matrices with elements like so:
+    # [s,x,y] -&gt; [[s,0,x],
+    #             [0,s,y]]
+    n = z_where.size(0)
+    expansion_indices = torch.LongTensor([1, 0, 2, 0, 1, 3])
+    out = torch.cat((torch.zeros([1, 1]).expand(n, 1), z_where), 1)
+    return torch.index_select(out, 1, expansion_indices).view(n, 2, 3)
 
-<span class="k">def</span> <span class="nf">object_to_image</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">theta</span> <span class="o">=</span> <span class="n">expand_z_where</span><span class="p">(</span><span class="n">z_where</span><span class="p">)</span>
-    <span class="n">grid</span> <span class="o">=</span> <span class="n">affine_grid</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)))</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">grid_sample</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">grid</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+def object_to_image(z_where, obj):
+    n = obj.size(0)
+    theta = expand_z_where(z_where)
+    grid = affine_grid(theta, torch.Size((n, 1, 50, 50)))
+    out = grid_sample(obj.view(n, 1, 20, 20), grid)
+    return out.view(n, 50, 50)
 </pre></div>
 </div>
 </div>
@@ -597,13 +622,13 @@ network and places it within a larger image with the desired pose.</p>
 to clarify this:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">prior_step_sketch</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span></span>pyro.set_rng_seed(0)
+samples = [prior_step_sketch(0)[0] for _ in range(5)]
+show_images(samples)
 </pre></div>
 </div>
 </div>
@@ -625,22 +650,22 @@ of steps is the geometric distribution, which can be expressed as
 follows:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="n">num_trials</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">]))</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;x{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_trials</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">num_trials</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">geom</span><span class="p">(</span><span class="n">num_trials</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span></span>pyro.set_rng_seed(0)
+def geom(num_trials=0):
+    p = torch.tensor([0.5])
+    x = pyro.sample(&#39;x{}&#39;.format(num_trials), dist.Bernoulli(p))
+    if x[0] == 1:
+        return num_trials
+    else:
+        return geom(num_trials + 1)
 
-<span class="c1"># Generate some samples.</span>
-<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;sampled {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">geom</span><span class="p">()))</span>
+# Generate some samples.
+for _ in range(5):
+    print(&#39;sampled {}&#39;.format(geom()))
 </pre></div>
 </div>
 </div>
@@ -649,11 +674,11 @@ follows:</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-sampled 8
 sampled 2
-sampled 0
+sampled 3
 sampled 0
 sampled 1
+sampled 0
 </pre></div></div>
 </div>
 <p>This is a direct translation of the definition of the geometric
@@ -671,32 +696,32 @@ to a distribution over images with a geometrically distributed number of
 steps.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">geom_prior</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">]))</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;i{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">x</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">prior_step_sketch</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">geom_prior</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span></span>def geom_prior(x, step=0):
+    p = torch.tensor([0.5])
+    i = pyro.sample(&#39;i{}&#39;.format(step), dist.Bernoulli(p))
+    if i[0] == 1:
+        return x
+    else:
+        x = x + prior_step_sketch(step)
+        return geom_prior(x, step + 1)
 </pre></div>
 </div>
 </div>
 <p>Let’s visualize some samples from this distribution:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
-<span class="n">x_empty</span> <span class="o">=</span> <span class="n">ng_zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">geom_prior</span><span class="p">(</span><span class="n">x_empty</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span></span>pyro.set_rng_seed(4)
+x_empty = torch.zeros(1, 50, 50)
+samples = [geom_prior(x_empty)[0] for _ in range(5)]
+show_images(samples)
 </pre></div>
 </div>
 </div>
@@ -733,11 +758,11 @@ geometric prior.)</p>
 <p>To address the second part we will take the following steps:</p>
 <ol class="arabic simple">
 <li>Only add objects to the output while a sample is active.</li>
-<li>Use the <code class="docutils literal"><span class="pre">log_pdf_mask</span></code> argument of <code class="docutils literal"><span class="pre">pyro.sample</span></code> to set the log
-probability of random choices made by complete samples to zero.
-(Since the <a class="reference external" href="svi_part_iii.html">SVI loss</a> is a weighted sum of log
-probabilities, setting a choice’s log probability to zero effectively
-removes its contribution to the loss.)</li>
+<li>Set the log probability of random choices made by complete samples to
+zero. (Since the <a class="reference internal" href="svi_part_iii.html"><span class="doc">SVI loss</span></a> is a weighted sum
+of log probabilities, setting a choice’s log probability to zero
+effectively removes its contribution to the loss.) This is achieved
+using the <code class="docutils literal"><span class="pre">mask()</span></code> method of distributions.</li>
 </ol>
 <p>(Looking ahead, we’ll need to take similar measures when we implement
 the guide and add baselines later in this tutorial.)</p>
@@ -752,45 +777,45 @@ summary, the changes from <code class="docutils literal"><span class="pre">prior
 batch.</li>
 <li>We now conditionally add the object to the output image based on a
 value sampled from a Bernoulli distribution.</li>
-<li>We use <code class="docutils literal"><span class="pre">log_pdf_mask</span></code> to zero out the log probability of random
-choices made by complete samples.</li>
+<li>We use <code class="docutils literal"><span class="pre">mask()</span></code> to zero out the log probability of random choices
+made by complete samples.</li>
 </ol>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">prior_step</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">prev_x</span><span class="p">,</span> <span class="n">prev_z_pres</span><span class="p">):</span>
+<span></span>def prior_step(n, t, prev_x, prev_z_pres):
 
-    <span class="c1"># Sample variable indicating whether to add this object to the output.</span>
+    # Sample variable indicating whether to add this object to the output.
 
-    <span class="c1"># We multiply the success probability of 0.5 by the value sampled for this</span>
-    <span class="c1"># choice in the previous step. By doing so we add objects to the output until</span>
-    <span class="c1"># the first 0 is sampled, after which we add no further objects.</span>
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">prev_z_pres</span><span class="p">)</span>
+    # We multiply the success probability of 0.5 by the value sampled for this
+    # choice in the previous step. By doing so we add objects to the output until
+    # the first 0 is sampled, after which we add no further objects.
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(0.5 * prev_z_pres)
+                             .independent(1))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
-                          <span class="n">z_where_prior_mu</span><span class="p">,</span>
-                          <span class="n">z_where_prior_sigma</span><span class="p">,</span>
-                          <span class="n">batch_size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-                          <span class="n">log_pdf_mask</span><span class="o">=</span><span class="n">z_pres</span><span class="p">)</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_prior_loc.expand(n, -1),
+                                      z_where_prior_scale.expand(n, -1))
+                              .mask(z_pres)
+                              .independent(1))
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
-                         <span class="n">z_what_prior_mu</span><span class="p">,</span>
-                         <span class="n">z_what_prior_sigma</span><span class="p">,</span>
-                         <span class="n">batch_size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
-                         <span class="n">log_pdf_mask</span><span class="o">=</span><span class="n">z_pres</span><span class="p">)</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_prior_loc.expand(n, -1),
+                                     z_what_prior_scale.expand(n, -1))
+                             .mask(z_pres)
+                             .independent(1))
 
-    <span class="n">y_att</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">z_what</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">object_to_image</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">y_att</span><span class="p">)</span>
+    y_att = decode(z_what)
+    y = object_to_image(z_where, y_att)
 
-    <span class="c1"># Combine the image generated at this step with the image so far.</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">prev_x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">z_pres</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    # Combine the image generated at this step with the image so far.
+    x = prev_x + y * z_pres.view(-1, 1, 1)
 
-    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">z_pres</span>
+    return x, z_pres
 </pre></div>
 </div>
 </div>
@@ -802,16 +827,16 @@ avoid using one or more steps in order to correctly count the number of
 objects in the input.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">prior</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">ng_zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">ng_ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-        <span class="n">x</span><span class="p">,</span> <span class="n">z_pres</span> <span class="o">=</span> <span class="n">prior_step</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z_pres</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">x</span>
+<span></span>def prior(n):
+    x = torch.zeros(n, 50, 50)
+    z_pres = torch.ones(n, 1)
+    for t in range(3):
+        x, z_pres = prior_step(n, t, x, z_pres)
+    return x
 </pre></div>
 </div>
 </div>
@@ -819,12 +844,12 @@ objects in the input.</p>
 some samples to get a feel for this distribution:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">87678</span><span class="p">)</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">prior</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span></span>pyro.set_rng_seed(121)
+show_images(prior(5))
 </pre></div>
 </div>
 </div>
@@ -849,18 +874,19 @@ data subsampling, and to register the networks we would like to optimize
 with <code class="docutils literal"><span class="pre">pyro.module</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># Register network for optimization.</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;decode&quot;</span><span class="p">,</span> <span class="n">decode</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="k">as</span> <span class="n">indices</span><span class="p">:</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">prior</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
-        <span class="n">sd</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.3</span> <span class="o">*</span> <span class="n">ng_ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">obs</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
+<span></span>def model(data):
+    # Register network for optimization.
+    pyro.module(&quot;decode&quot;, decode)
+    with pyro.iarange(&#39;data&#39;, data.size(0)) as indices:
+        batch = data[indices]
+        x = prior(batch.size(0)).view(-1, 50 * 50)
+        sd = (0.3 * torch.ones(1)).expand_as(x)
+        pyro.sample(&#39;obs&#39;, dist.Normal(x, sd).independent(1),
+                    obs=batch)
 </pre></div>
 </div>
 </div>
@@ -869,8 +895,8 @@ with <code class="docutils literal"><span class="pre">pyro.module</span></code>.
 </div>
 <div class="section" id="Guide">
 <h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this headline">¶</a></h2>
-<p>Following [1] we will perform <a class="reference external" href="svi_part_i.html">amortized stochastic variational
-inference</a> in this model. Pyro provides general
+<p>Following [1] we will perform <a class="reference internal" href="svi_part_i.html"><span class="doc">amortized stochastic variational
+inference</span></a> in this model. Pyro provides general
 purpose machinery that implements most of this inference strategy, but
 as we have seen in earlier tutorials we are required to provide a model
 specific guide. What we call a guide in Pyro is exactly the entity
@@ -881,35 +907,35 @@ the true posterior. At each step the recurrent network will generate the
 parameters for the choices made within the step. The values sampled will
 be fed back into the recurrent network so that this information can be
 used when computing the parameters for the next step. The guide for the
-<a class="reference external" href="dmm.html">Deep Markov Model</a> shares a similar structure.</p>
+<a class="reference internal" href="dmm.html"><span class="doc">Deep Markov Model</span></a> shares a similar structure.</p>
 <p>As in the model, the core of the guide is the logic for a single step.
 Here’s a sketch of an implementation of this:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">guide_step_basic</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
+<span></span>def guide_step_basic(t, data, prev):
 
-    <span class="c1"># The RNN takes the images and choices from the previous step as input.</span>
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">h</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">c</span><span class="p">))</span>
+    # The RNN takes the images and choices from the previous step as input.
+    rnn_input = torch.cat((data, prev.z_where, prev.z_what, prev.z_pres), 1)
+    h, c = rnn(rnn_input, (prev.h, prev.c))
 
-    <span class="c1"># Compute parameters for all choices made this step, by passing</span>
-    <span class="c1"># the RNN hidden start through another neural network.</span>
-    <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_mu</span><span class="p">,</span> <span class="n">z_where_sigma</span><span class="p">,</span> <span class="n">z_what_mu</span><span class="p">,</span> <span class="n">z_what_sigma</span> <span class="o">=</span> <span class="n">predict_basic</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    # Compute parameters for all choices made this step, by passing
+    # the RNN hidden start through another neural network.
+    z_pres_p, z_where_loc, z_where_scale, z_what_loc, z_what_scale = predict_basic(h)
 
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">z_pres_p</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">)</span>
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(z_pres_p * prev.z_pres))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">z_where_mu</span><span class="p">,</span> <span class="n">z_where_sigma</span><span class="p">)</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_loc, z_where_scale))
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">z_what_mu</span><span class="p">,</span> <span class="n">z_what_sigma</span><span class="p">)</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_loc, z_what_scale))
 
-    <span class="k">return</span> <span class="c1"># values for next step</span>
+    return # values for next step
 </pre></div>
 </div>
 </div>
@@ -927,67 +953,70 @@ the “encoder” below.</p>
 implementation of the networks involved:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTMCell</span><span class="p">(</span><span class="mi">2554</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+<span></span>rnn = nn.LSTMCell(2554, 256)
 
-<span class="c1"># Takes pixel intensities of the attention window to parameters (mean,</span>
-<span class="c1"># standard deviation) of the distribution over the latent code,</span>
-<span class="c1"># z_what.</span>
-<span class="k">class</span> <span class="nc">Encoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Encoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+# Takes pixel intensities of the attention window to parameters (mean,
+# standard deviation) of the distribution over the latent code,
+# z_what.
+class Encoder(nn.Module):
+    def __init__(self):
+        super(Encoder, self).__init__()
+        self.l1 = nn.Linear(400, 200)
+        self.l2 = nn.Linear(200, 100)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">h</span> <span class="o">=</span> <span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l1</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">l2</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">a</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">50</span><span class="p">],</span> <span class="n">softplus</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span> <span class="mi">50</span><span class="p">:])</span>
+    def forward(self, data):
+        h = relu(self.l1(data))
+        a = self.l2(h)
+        return a[:, 0:50], softplus(a[:, 50:])
 
-<span class="n">encode</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">()</span>
+encode = Encoder()
 
-<span class="c1"># Takes the guide RNN hidden state to parameters of</span>
-<span class="c1"># the guide distributions over z_where and z_pres.</span>
-<span class="k">class</span> <span class="nc">Predict</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Predict</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+# Takes the guide RNN hidden state to parameters of
+# the guide distributions over z_where and z_pres.
+class Predict(nn.Module):
+    def __init__(self, ):
+        super(Predict, self).__init__()
+        self.l = nn.Linear(256, 7)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">l</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
-        <span class="n">z_pres_p</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># Squish to [0,1]</span>
-        <span class="n">z_where_mu</span> <span class="o">=</span> <span class="n">a</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
-        <span class="n">z_where_sigma</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">:])</span> <span class="c1"># Squish to &gt;0</span>
-        <span class="k">return</span> <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_mu</span><span class="p">,</span> <span class="n">z_where_sigma</span>
+    def forward(self, h):
+        a = self.l(h)
+        z_pres_p = sigmoid(a[:, 0:1]) # Squish to [0,1]
+        z_where_loc = a[:, 1:4]
+        z_where_scale = softplus(a[:, 4:]) # Squish to &gt;0
+        return z_pres_p, z_where_loc, z_where_scale
 
-<span class="n">predict</span> <span class="o">=</span> <span class="n">Predict</span><span class="p">()</span>
+predict = Predict()
 
-<span class="k">def</span> <span class="nf">guide_step_improved</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
+def guide_step_improved(t, data, prev):
 
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">h</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">c</span><span class="p">))</span>
-    <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_mu</span><span class="p">,</span> <span class="n">z_where_sigma</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    rnn_input = torch.cat((data, prev.z_where, prev.z_what, prev.z_pres), 1)
+    h, c = rnn(rnn_input, (prev.h, prev.c))
+    z_pres_p, z_where_loc, z_where_scale = predict(h)
 
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">z_pres_p</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">)</span>
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(z_pres_p * prev.z_pres)
+                             .independent(1))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">z_where_mu</span><span class="p">,</span> <span class="n">z_where_sigma</span><span class="p">)</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_loc, z_where_scale)
+                              .independent(1))
 
-    <span class="c1"># New. Crop a small window from the input.</span>
-    <span class="n">x_att</span> <span class="o">=</span> <span class="n">image_to_object</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    # New. Crop a small window from the input.
+    x_att = image_to_object(z_where, data)
 
-    <span class="c1"># Compute the parameter of the distribution over z_what</span>
-    <span class="c1"># by passing the window through the encoder network.</span>
-    <span class="n">z_what_mu</span><span class="p">,</span> <span class="n">z_what_sigma</span> <span class="o">=</span> <span class="n">encode</span><span class="p">(</span><span class="n">x_att</span><span class="p">)</span>
+    # Compute the parameter of the distribution over z_what
+    # by passing the window through the encoder network.
+    z_what_loc, z_what_scale = encode(x_att)
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">z_what_mu</span><span class="p">,</span> <span class="n">z_what_sigma</span><span class="p">)</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_loc, z_what_scale)
+                             .independent(1))
 
-    <span class="k">return</span> <span class="c1"># values for next step</span>
+    return # values for next step
 </pre></div>
 </div>
 </div>
@@ -999,27 +1028,27 @@ on a larger image, and the latter crops a small image from a larger
 image.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">z_where_inv</span><span class="p">(</span><span class="n">z_where</span><span class="p">):</span>
-    <span class="c1"># Take a batch of z_where vectors, and compute their &quot;inverse&quot;.</span>
-    <span class="c1"># That is, for each row compute:</span>
-    <span class="c1"># [s,x,y] -&gt; [1/s,-x/s,-y/s]</span>
-    <span class="c1"># These are the parameters required to perform the inverse of the</span>
-    <span class="c1"># spatial transform performed in the generative model.</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">z_where</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">ng_ones</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">z_where</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="n">z_where</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span> <span class="o">/</span> <span class="n">z_where</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">out</span>
+<span></span>def z_where_inv(z_where):
+    # Take a batch of z_where vectors, and compute their &quot;inverse&quot;.
+    # That is, for each row compute:
+    # [s,x,y] -&gt; [1/s,-x/s,-y/s]
+    # These are the parameters required to perform the inverse of the
+    # spatial transform performed in the generative model.
+    n = z_where.size(0)
+    out = torch.cat((torch.ones([1, 1]).type_as(z_where).expand(n, 1), -z_where[:, 1:]), 1)
+    out = out / z_where[:, 0:1]
+    return out
 
-<span class="k">def</span> <span class="nf">image_to_object</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">theta_inv</span> <span class="o">=</span> <span class="n">expand_z_where</span><span class="p">(</span><span class="n">z_where_inv</span><span class="p">(</span><span class="n">z_where</span><span class="p">))</span>
-    <span class="n">grid</span> <span class="o">=</span> <span class="n">affine_grid</span><span class="p">(</span><span class="n">theta_inv</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)))</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">grid_sample</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="n">grid</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+def image_to_object(z_where, image):
+    n = image.size(0)
+    theta_inv = expand_z_where(z_where_inv(z_where))
+    grid = affine_grid(theta_inv, torch.Size((n, 1, 20, 20)))
+    out = grid_sample(image.view(n, 1, 50, 50), grid)
+    return out.view(n, -1)
 </pre></div>
 </div>
 </div>
@@ -1028,8 +1057,8 @@ image.</p>
 <p>So far we’ve considered the model and the guide in isolation, but we
 gain an interesting perspective if we zoom out and look at the model and
 guide computation as a whole. Doing so, we see that at each step AIR
-includes a sub-computation that has the same structure as a <a class="reference external" href="vae.html">Variational
-Auto-encoder</a> (VAE).</p>
+includes a sub-computation that has the same structure as a <a class="reference internal" href="vae.html"><span class="doc">Variational
+Auto-encoder</span></a> (VAE).</p>
 <p>To see this, notice that the guide passes the window through a neural
 network (the encoder) to generate the parameters of the distribution
 over a latent code, and the model passes samples from this latent code
@@ -1057,21 +1086,21 @@ choices in the model makes inference trickier than in a model in which
 all choices can be reparameterized. The underlying problem we face is
 that the gradient estimates we use in the optimization performed by
 variational inference have much higher variance in the presence of
-<a class="reference external" href="svi_part_iii.html#Tricky-Case:-Non-reparameterizable-Random-Variables">non-reparameterizable
-choices</a>.</p>
+<a class="reference internal" href="svi_part_iii.html#Tricky-Case:-Non-reparameterizable-Random-Variables"><span class="std std-ref">non-reparameterizable
+choices</span></a>.</p>
 <p>To bring this variance under control, the paper applies a technique
 called “data dependent baselines” (AKA “neural baselines”) to the
 discrete choices in the model.</p>
 <div class="section" id="Data-dependent-baselines">
 <h3>Data dependent baselines<a class="headerlink" href="#Data-dependent-baselines" title="Permalink to this headline">¶</a></h3>
 <p>Happily for us, Pyro includes support for data dependent baselines. If
-you are not already familiar with this idea, you might want to read <a class="reference external" href="svi_part_iii.html#Baselines-in-Pyro">our
-introduction</a> before continuing.
-As model authors we only have to implement the neural network, pass it
-our data as input, and feed its output to <code class="docutils literal"><span class="pre">pyro.sample</span></code>. Pyro’s
-inference back-end will ensure that the baseline is included in the
-gradient estimator used for inference, and that the network parameters
-are updated appropriately.</p>
+you are not already familiar with this idea, you might want to read <a class="reference internal" href="svi_part_iii.html#Baselines-in-Pyro"><span class="std std-ref">our
+introduction</span></a> before
+continuing. As model authors we only have to implement the neural
+network, pass it our data as input, and feed its output to
+<code class="docutils literal"><span class="pre">pyro.sample</span></code>. Pyro’s inference back-end will ensure that the baseline
+is included in the gradient estimator used for inference, and that the
+network parameters are updated appropriately.</p>
 <p>Let’s see how we can add data dependent baselines to our AIR
 implementation. We need a neural network that can output a (scalar)
 baseline value at each discrete choice in the guide, having received a
@@ -1082,23 +1111,23 @@ and indeed we will again use a recurrent network.</p>
 implements a single step of the RNN we’ve just described:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">bl_rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTMCell</span><span class="p">(</span><span class="mi">2554</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
-<span class="n">bl_predict</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span></span>bl_rnn = nn.LSTMCell(2554, 256)
+bl_predict = nn.Linear(256, 1)
 
-<span class="c1"># Use an RNN to compute the baseline value. This network takes the</span>
-<span class="c1"># input images and the values samples so far as input.</span>
-<span class="k">def</span> <span class="nf">baseline_step</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">x</span><span class="p">,</span>
-                           <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span>
-                           <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span>
-                           <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="o">.</span><span class="n">detach</span><span class="p">()),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span> <span class="o">=</span> <span class="n">bl_rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">bl_h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">bl_c</span><span class="p">))</span>
-    <span class="n">bl_value</span> <span class="o">=</span> <span class="n">bl_predict</span><span class="p">(</span><span class="n">bl_h</span><span class="p">)</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span>
-    <span class="k">return</span> <span class="n">bl_value</span><span class="p">,</span> <span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span>
+# Use an RNN to compute the baseline value. This network takes the
+# input images and the values samples so far as input.
+def baseline_step(x, prev):
+    rnn_input = torch.cat((x,
+                           prev.z_where.detach(),
+                           prev.z_what.detach(),
+                           prev.z_pres.detach()), 1)
+    bl_h, bl_c = bl_rnn(rnn_input, (prev.bl_h, prev.bl_c))
+    bl_value = bl_predict(bl_h) * prev.z_pres
+    return bl_value, bl_h, bl_c
 </pre></div>
 </div>
 </div>
@@ -1114,8 +1143,8 @@ network. (If we don’t we’ll trigger a PyTorch run-time error.)</p>
 <code class="docutils literal"><span class="pre">z_pres</span></code> from the previous step. This relieves the baseline network
 from the burdon of having to output accurate predictions for completed
 samples. (The outputs for completed samples will be multiplied by zero,
-so the derivative of the <a class="reference external" href="svi_part_iii.html#Neural-Baselines">baseline
-loss</a> for these outputs will be
+so the derivative of the <a class="reference internal" href="svi_part_iii.html#Neural-Baselines"><span class="std std-ref">baseline
+loss</span></a> for these outputs will be
 zero.) It’s OK to do this because in effect we’ve already removed random
 choices for completed samples from the inference objective, so there’s
 no need to apply any variance reduction to them.</p>
@@ -1125,69 +1154,74 @@ guide. Our final <code class="docutils literal"><span class="pre">guide_step</sp
 <ol class="arabic simple">
 <li>We now call the <code class="docutils literal"><span class="pre">baseline_step</span></code> helper and pass the baseline value
 it returns to <code class="docutils literal"><span class="pre">pyro.sample</span></code>.</li>
-<li>We’ve added <code class="docutils literal"><span class="pre">log_pdf_mask</span></code> arguments to <code class="docutils literal"><span class="pre">pyro.sample</span></code> calls.
-These serve exactly the same purpose as the masks added to the model.
-(See the earlier discussion for the motivation behind this change.)</li>
+<li>We now mask out the <code class="docutils literal"><span class="pre">z_where</span></code> and <code class="docutils literal"><span class="pre">z_what</span></code> choices for complete
+sample. This serves exactly the same purpose as the masks added to
+the model. (See the earlier discussion for the motivation behind this
+change.)</li>
 </ol>
 <p>We’ll also write a <code class="docutils literal"><span class="pre">guide</span></code> function that will iterate <code class="docutils literal"><span class="pre">guide_step</span></code>
 in order to provide a guide for the whole model.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">GuideState</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;GuideState&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;bl_h&#39;</span><span class="p">,</span> <span class="s1">&#39;bl_c&#39;</span><span class="p">,</span> <span class="s1">&#39;z_pres&#39;</span><span class="p">,</span> <span class="s1">&#39;z_where&#39;</span><span class="p">,</span> <span class="s1">&#39;z_what&#39;</span><span class="p">])</span>
-<span class="k">def</span> <span class="nf">initial_guide_state</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">GuideState</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">ng_zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">c</span><span class="o">=</span><span class="n">ng_zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">bl_h</span><span class="o">=</span><span class="n">ng_zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">bl_c</span><span class="o">=</span><span class="n">ng_zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">z_pres</span><span class="o">=</span><span class="n">ng_ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                      <span class="n">z_where</span><span class="o">=</span><span class="n">ng_zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
-                      <span class="n">z_what</span><span class="o">=</span><span class="n">ng_zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<span></span>GuideState = namedtuple(&#39;GuideState&#39;, [&#39;h&#39;, &#39;c&#39;, &#39;bl_h&#39;, &#39;bl_c&#39;, &#39;z_pres&#39;, &#39;z_where&#39;, &#39;z_what&#39;])
+def initial_guide_state(n):
+    return GuideState(h=torch.zeros(n, 256),
+                      c=torch.zeros(n, 256),
+                      bl_h=torch.zeros(n, 256),
+                      bl_c=torch.zeros(n, 256),
+                      z_pres=torch.ones(n, 1),
+                      z_where=torch.zeros(n, 3),
+                      z_what=torch.zeros(n, 50))
 
-<span class="k">def</span> <span class="nf">guide_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
+def guide_step(t, data, prev):
 
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">h</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">c</span><span class="p">))</span>
-    <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_mu</span><span class="p">,</span> <span class="n">z_where_sigma</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    rnn_input = torch.cat((data, prev.z_where, prev.z_what, prev.z_pres), 1)
+    h, c = rnn(rnn_input, (prev.h, prev.c))
+    z_pres_p, z_where_loc, z_where_scale = predict(h)
 
-    <span class="c1"># Here we compute the baseline value, and pass it to sample.</span>
-    <span class="n">baseline_value</span><span class="p">,</span> <span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span> <span class="o">=</span> <span class="n">baseline_step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">)</span>
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span>
-                         <span class="n">z_pres_p</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">,</span>
-                         <span class="n">baseline</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">baseline_value</span><span class="o">=</span><span class="n">baseline_value</span><span class="p">))</span>
+    # Here we compute the baseline value, and pass it to sample.
+    baseline_value, bl_h, bl_c = baseline_step(data, prev)
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(z_pres_p * prev.z_pres)
+                             .independent(1),
+                         infer=dict(baseline=dict(baseline_value=baseline_value.squeeze(-1))))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">z_where_mu</span><span class="p">,</span> <span class="n">z_where_sigma</span><span class="p">)</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_loc, z_where_scale)
+                              .mask(z_pres)
+                              .independent(1))
 
-    <span class="n">x_att</span> <span class="o">=</span> <span class="n">image_to_object</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    x_att = image_to_object(z_where, data)
 
-    <span class="n">z_what_mu</span><span class="p">,</span> <span class="n">z_what_sigma</span> <span class="o">=</span> <span class="n">encode</span><span class="p">(</span><span class="n">x_att</span><span class="p">)</span>
+    z_what_loc, z_what_scale = encode(x_att)
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="n">z_what_mu</span><span class="p">,</span> <span class="n">z_what_sigma</span><span class="p">)</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_loc, z_what_scale)
+                             .mask(z_pres)
+                             .independent(1))
 
-    <span class="k">return</span> <span class="n">GuideState</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">bl_h</span><span class="o">=</span><span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span><span class="o">=</span><span class="n">bl_c</span><span class="p">,</span> <span class="n">z_pres</span><span class="o">=</span><span class="n">z_pres</span><span class="p">,</span> <span class="n">z_where</span><span class="o">=</span><span class="n">z_where</span><span class="p">,</span> <span class="n">z_what</span><span class="o">=</span><span class="n">z_what</span><span class="p">)</span>
+    return GuideState(h=h, c=c, bl_h=bl_h, bl_c=bl_c, z_pres=z_pres, z_where=z_where, z_what=z_what)
 
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># Register networks for optimization.</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;rnn&#39;</span><span class="p">,</span> <span class="n">rnn</span><span class="p">),</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;predict&#39;</span><span class="p">,</span> <span class="n">predict</span><span class="p">),</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;encode&#39;</span><span class="p">,</span> <span class="n">encode</span><span class="p">),</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;bl_rnn&#39;</span><span class="p">,</span> <span class="n">bl_rnn</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;bl_predict&#39;</span><span class="p">,</span> <span class="n">bl_predict</span><span class="p">)</span>
+def guide(data):
+    # Register networks for optimization.
+    pyro.module(&#39;rnn&#39;, rnn),
+    pyro.module(&#39;predict&#39;, predict),
+    pyro.module(&#39;encode&#39;, encode),
+    pyro.module(&#39;bl_rnn&#39;, bl_rnn)
+    pyro.module(&#39;bl_predict&#39;, bl_predict)
 
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span> <span class="k">as</span> <span class="n">indices</span><span class="p">:</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
-        <span class="n">state</span> <span class="o">=</span> <span class="n">initial_guide_state</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-        <span class="n">steps</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-            <span class="n">state</span> <span class="o">=</span> <span class="n">guide_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
-            <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">steps</span>
+    with pyro.iarange(&#39;data&#39;, data.size(0), subsample_size=64) as indices:
+        batch = data[indices]
+        state = initial_guide_state(batch.size(0))
+        steps = []
+        for t in range(3):
+            state = guide_step(t, batch, state)
+            steps.append(state)
+        return steps
 </pre></div>
 </div>
 </div>
@@ -1197,30 +1231,42 @@ in order to provide a guide for the whole model.</p>
 <p>We have now completed the implementation of the model and the guide. As
 we have seen in earlier tutorials, we need write only a few more lines
 of code to begin performing inference:</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [ ]:
+<span></span>In [18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">data</span> <span class="o">=</span> <span class="n">mnist</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+<span></span>data = mnist.view(-1, 50 * 50)
 
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
-          <span class="n">guide</span><span class="p">,</span>
-          <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">}),</span>
-          <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;ELBO&#39;</span><span class="p">,</span>
-          <span class="n">trace_graph</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+svi = SVI(model,
+          guide,
+          optim.Adam({&#39;lr&#39;: 1e-4}),
+          loss=TraceGraph_ELBO())
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;i={}, elbo={:.2f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">loss</span> <span class="o">/</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+for i in range(5):
+    loss = svi.step(data)
+    print(&#39;i={}, elbo={:.2f}&#39;.format(i, loss / data.size(0)))
 </pre></div>
 </div>
 </div>
-<p>One key detail here is that we pass the <code class="docutils literal"><span class="pre">trace_graph=True</span></code> option to
-<code class="docutils literal"><span class="pre">SVI</span></code>. This indicates that we wish to use the gradient estimator that
-supports data dependent baselines. This estimator also <a class="reference external" href="svi_part_iii.html#Reducing-Variance-via-Dependency-Structure">reduces the
-variance</a>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+i=0, elbo=2806.79
+i=1, elbo=3656.81
+i=2, elbo=3222.37
+i=3, elbo=3872.77
+i=4, elbo=2818.27
+</pre></div></div>
+</div>
+<p>One key detail here is that we use a <code class="docutils literal"><span class="pre">TraceGraph_ELBO</span></code> loss rather
+than a simpler <code class="docutils literal"><span class="pre">Trace_ELBO</span></code>. This indicates that we wish to use the
+gradient estimator that supports data dependent baselines. This
+estimator also <a class="reference internal" href="svi_part_iii.html#Reducing-Variance-via-Dependency-Structure"><span class="std std-ref">reduces the
+variance</span></a>
 of gradient estimates by making use of independence information included
 in the model. Something similar is implicity used in [1], and is
 necessary in order to achieve good results on this model.</p>
@@ -1290,7 +1336,7 @@ guide to turn most steps off.</li>
 rate for the baseline network. This is straight forward to implement
 in Pyro by tagging modules associated with the baseline network and
 passing multiple learning rates to the optimizer. (See the section on
-<a class="reference external" href="svi_part_i.html#Optimizers">optimizers</a> in part I of the SVI
+<a class="reference internal" href="svi_part_i.html#Optimizers"><span class="std std-ref">optimizers</span></a> in part I of the SVI
 tutorial for more detail.) In [1] a learning rate of <code class="docutils literal"><span class="pre">1e-4</span></code> was
 used for the guide network, and a learning rate of <code class="docutils literal"><span class="pre">1e-3</span></code> was used
 for the baseline network. We found it necessary to use a larger
@@ -1333,7 +1379,7 @@ Simonyan and Andrew Zisserman</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Uber AI Labs.
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
@@ -1355,8 +1401,7 @@ Simonyan and Andrew Zisserman</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'',
-            LANGUAGE:'None',
+            VERSION:'0.2.0-a0+88254ac',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -1366,7 +1411,7 @@ Simonyan and Andrew Zisserman</p>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

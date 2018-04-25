@@ -1,0 +1,1033 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Tensor shapes in Pyro 0.2 &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
+        <link rel="next" title="Variational Autoencoders" href="vae.html"/>
+        <link rel="prev" title="SVI Part III: ELBO Gradient Estimators" href="svi_part_iii.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/pyro_logo_wide.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                pytorch-0.3-279-gdafa1ddd
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Introduction:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tensor shapes in Pyro 0.2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Summary:">Summary:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Table-of-Contents">Table of Contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Distributions-shapes:-batch_shape-and-event_shape">Distributions shapes: <code class="docutils literal"><span class="pre">batch_shape</span></code> and <code class="docutils literal"><span class="pre">event_shape</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Examples">Examples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Reshaping-distributions">Reshaping distributions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#It-is-always-safe-to-assume-dependence">It is always safe to assume dependence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Declaring-independent-dims-with-iarange">Declaring independent dims with <code class="docutils literal"><span class="pre">iarange</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Subsampling-tensors-inside-an-iarange">Subsampling tensors inside an <code class="docutils literal"><span class="pre">iarange</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Broadcasting-to-allow-parallel-enumeration">Broadcasting to allow parallel enumeration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Writing-parallelizable-code">Writing parallelizable code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributed:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyro Tutorials</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Tensor shapes in Pyro 0.2</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tensor_shapes.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #303F9F;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #D84315;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 8ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #cfcfcf;
+    border-radius: 2px;
+    background: #f7f7f7;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.pngmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="Tensor-shapes-in-Pyro-0.2">
+<h1>Tensor shapes in Pyro 0.2<a class="headerlink" href="#Tensor-shapes-in-Pyro-0.2" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial introduces Pyro’s organization of tensor dimensions.
+Before starting, you should familiarize yourself with <a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">PyTorch
+broadcasting
+semantics</a>.</p>
+<div class="section" id="Summary:">
+<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>While you are learning or debugging, set
+<code class="docutils literal"><span class="pre">pyro.enable_validation(True)</span></code>.</li>
+<li>Tensors broadcast by aligning on the right:
+<code class="docutils literal"><span class="pre">torch.ones(3,4,5)</span> <span class="pre">+</span> <span class="pre">torch.ones(5)</span></code>.</li>
+<li>Distribution <code class="docutils literal"><span class="pre">.sample().shape</span> <span class="pre">==</span> <span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape</span></code>.</li>
+<li>Distribution <code class="docutils literal"><span class="pre">.log_prob(x).shape</span> <span class="pre">==</span> <span class="pre">batch_shape</span></code> (but not
+<code class="docutils literal"><span class="pre">event_shape</span></code>!).</li>
+<li>Use <code class="docutils literal"><span class="pre">my_dist.expand_by([2,3,4])</span></code> to draw a batch of samples.</li>
+<li>Use <code class="docutils literal"><span class="pre">my_dist.independent(1)</span></code> to declare a dimension as dependent.</li>
+<li>Use <code class="docutils literal"><span class="pre">with</span> <span class="pre">pyro.iarange('name',</span> <span class="pre">size):</span></code> to declare a dimension as
+independent.</li>
+<li>All dimensions must be declared either dependent or independent.</li>
+<li>Try to support batching on the left. This lets Pyro auto-parallelize.<ul>
+<li>use negative indices like <code class="docutils literal"><span class="pre">x.sum(-1)</span></code> rather than <code class="docutils literal"><span class="pre">x.sum(2)</span></code></li>
+<li>use ellipsis notation like <code class="docutils literal"><span class="pre">pixel</span> <span class="pre">=</span> <span class="pre">image[...,</span> <span class="pre">i,</span> <span class="pre">j]</span></code></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="Table-of-Contents">
+<h2>Table of Contents<a class="headerlink" href="#Table-of-Contents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="#dist-shapes">Distribution shapes</a><ul>
+<li><a class="reference external" href="#dist-examples">Examples</a></li>
+<li><a class="reference external" href="#dist-reshape">Reshaping distributions</a></li>
+<li><a class="reference external" href="#assume-dependence">It is always safe to assume dependence</a></li>
+</ul>
+</li>
+<li><cite>Declaring independence with ``iarange`</cite> &lt;#iarange&gt;`__</li>
+<li><cite>Subsampling inside ``iarange`</cite> &lt;#subsampling&gt;`__</li>
+<li><a class="reference external" href="#subsampling">Broadcasting to allow Parallel Enumeration</a><ul>
+<li><a class="reference external" href="#parallelizable">Writing parallelizable code</a></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>import os
+import torch
+import pyro
+from torch.distributions import constraints
+from pyro.distributions import Bernoulli, Categorical, MultivariateNormal, Normal
+from pyro.infer import Trace_ELBO, TraceEnum_ELBO, config_enumerate
+from pyro.optim import Adam
+
+smoke_test = (&#39;CI&#39; in os.environ)
+pyro.enable_validation(True)    # &lt;---- This is always a good idea!
+
+# We&#39;ll ue this helper to check our models are correct.
+def test_model(model, guide, loss):
+    pyro.clear_param_store()
+    loss.loss(model, guide)
+</pre></div>
+</div>
+</div>
+<div class="section" id="Distributions-shapes:-batch_shape-and-event_shape">
+<h3>Distributions shapes: <code class="docutils literal"><span class="pre">batch_shape</span></code> and <code class="docutils literal"><span class="pre">event_shape</span></code><a class="headerlink" href="#Distributions-shapes:-batch_shape-and-event_shape" title="Permalink to this headline">¶</a></h3>
+<p>PyTorch <code class="docutils literal"><span class="pre">Tensor</span></code>s have a single <code class="docutils literal"><span class="pre">.shape</span></code> attribute, but
+<code class="docutils literal"><span class="pre">Distribution</span></code>s have two shape attributions with special meaning:
+<code class="docutils literal"><span class="pre">.batch_shape</span></code> and <code class="docutils literal"><span class="pre">.event_shape</span></code>. These two combine to define the
+total shape of a sample</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span>
+</pre></div>
+</div>
+<p>Indices over <code class="docutils literal"><span class="pre">.batch_shape</span></code> denote independent random variables,
+whereas indices over <code class="docutils literal"><span class="pre">.event_shape</span></code> denote dependent random variables.
+Because the dependent random variables define probability together, the
+<code class="docutils literal"><span class="pre">.log_prob()</span></code> method only produces a single number for each event of
+shape <code class="docutils literal"><span class="pre">.event_shape</span></code>. Thus the total shape of <code class="docutils literal"><span class="pre">.log_prob()</span></code> is
+<code class="docutils literal"><span class="pre">.batch_shape</span></code>:</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal"><span class="pre">Distribution.sample()</span></code> method also takes a
+<code class="docutils literal"><span class="pre">sample_shape</span></code> parameter that indexes over independent identically
+distributed (iid) random varables, so that</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="n">x2</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_shape</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">x2</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">sample_shape</span> <span class="o">+</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="n">event_shape</span>
+</pre></div>
+</div>
+<p>In summary</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>      <span class="o">|</span>      <span class="n">iid</span>     <span class="o">|</span> <span class="n">independent</span> <span class="o">|</span> <span class="n">dependent</span>
+<span class="o">------+--------------+-------------+------------</span>
+<span class="n">shape</span> <span class="o">=</span> <span class="n">sample_shape</span> <span class="o">+</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="n">event_shape</span>
+</pre></div>
+</div>
+<p>For example univariate distributions have empty event shape (because
+each number is an independent event). Distributions over vectors like
+<code class="docutils literal"><span class="pre">MultivariateNormal</span></code> have <code class="docutils literal"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">1</span></code>. Distributions
+over matrices like <code class="docutils literal"><span class="pre">InverseWishart</span></code> have <code class="docutils literal"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">2</span></code>.</p>
+<div class="section" id="Examples">
+<h4>Examples<a class="headerlink" href="#Examples" title="Permalink to this headline">¶</a></h4>
+<p>The simplest distribution shape is a single univariate distribution.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>d = Bernoulli(0.5)
+assert d.batch_shape == ()
+assert d.event_shape == ()
+x = d.sample()
+assert x.shape == ()
+assert d.log_prob(x).shape == ()
+</pre></div>
+</div>
+</div>
+<p>Distributions can be batched by passing in batched parameters.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>d = Bernoulli(0.5 * torch.ones(3,4))
+assert d.batch_shape == (3, 4)
+assert d.event_shape == ()
+x = d.sample()
+assert x.shape == (3, 4)
+assert d.log_prob(x).shape == (3, 4)
+</pre></div>
+</div>
+</div>
+<p>Another way to batch distributions is via the <code class="docutils literal"><span class="pre">.expand_by()</span></code> method.
+This only works if parameters are identical along the leftmost
+dimensions.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>d = Bernoulli(torch.tensor([0.1, 0.2, 0.3, 0.4])).expand_by([3])
+assert d.batch_shape == (3, 4)
+assert d.event_shape == ()
+x = d.sample()
+assert x.shape == (3, 4)
+assert d.log_prob(x).shape == (3, 4)
+</pre></div>
+</div>
+</div>
+<p>Multivariate distributions have nonempty <code class="docutils literal"><span class="pre">.event_shape</span></code>. For these
+distributions, the shapes of <code class="docutils literal"><span class="pre">.sample()</span></code> and <code class="docutils literal"><span class="pre">.log_prob(x)</span></code> differ:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>d = MultivariateNormal(torch.zeros(3), torch.eye(3, 3))
+assert d.batch_shape == ()
+assert d.event_shape == (3,)
+x = d.sample()
+assert x.shape == (3,)            # == batch_shape + event_shape
+assert d.log_prob(x).shape == ()  # == batch_shape
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Reshaping-distributions">
+<h4>Reshaping distributions<a class="headerlink" href="#Reshaping-distributions" title="Permalink to this headline">¶</a></h4>
+<p>In Pyro you can treat a univariate distribution as multivariate by
+calling the <code class="docutils literal"><span class="pre">.independent(_)</span></code> property.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>d = Bernoulli(0.5 * torch.ones(3,4)).independent(1)
+assert d.batch_shape == (3,)
+assert d.event_shape == (4,)
+x = d.sample()
+assert x.shape == (3, 4)
+assert d.log_prob(x).shape == (3,)
+</pre></div>
+</div>
+</div>
+<p>While you work with Pyro programs, keep in mind that samples have shape
+<code class="docutils literal"><span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape</span></code>, whereas <code class="docutils literal"><span class="pre">.log_prob(x)</span></code> values have
+shape <code class="docutils literal"><span class="pre">batch_shape</span></code>. You’ll need to ensure that <code class="docutils literal"><span class="pre">batch_shape</span></code> is
+carefully controlled by either trimming it down with <code class="docutils literal"><span class="pre">.independent(n)</span></code>
+or by declaring dimensions as independent via <code class="docutils literal"><span class="pre">pyro.iarange</span></code>.</p>
+</div>
+<div class="section" id="It-is-always-safe-to-assume-dependence">
+<h4>It is always safe to assume dependence<a class="headerlink" href="#It-is-always-safe-to-assume-dependence" title="Permalink to this headline">¶</a></h4>
+<p>Often in Pyro we’ll declare some dimensions as dependent even though
+they are in fact independent, e.g.</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">10</span><span class="p">])</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This is useful for two reasons: First it allows us to easily swap in a
+<code class="docutils literal"><span class="pre">MultivariateNormal</span></code> distribution later. Second it simplifies the code
+a bit since we don’t need an <code class="docutils literal"><span class="pre">iarange</span></code> (see below) as in</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;x_iarange&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">10</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>The difference between these two versions is that the second version
+with <code class="docutils literal"><span class="pre">iarange</span></code> informs Pyro that it can make use of independence
+information when estimating gradients, whereas in the first version Pyro
+must assume they are dependent (even though the normals are in fact
+independent). This is analogous to d-separation in graphical models: it
+is always safe to add edges and assume variables <em>may</em> be dependent
+(i.e.&nbsp;to widen the model class), but it is unsafe to assume independence
+when variables are actually dependent (i.e.&nbsp;narrowing the model class so
+the true model lies outside of the class, as in mean field). In practice
+Pyro’s SVI inference algorithm uses reparameterized gradient estimators
+for <code class="docutils literal"><span class="pre">Normal</span></code> distributions so both gradient estimators have the same
+performance.</p>
+</div>
+</div>
+<div class="section" id="Declaring-independent-dims-with-iarange">
+<h3>Declaring independent dims with <code class="docutils literal"><span class="pre">iarange</span></code><a class="headerlink" href="#Declaring-independent-dims-with-iarange" title="Permalink to this headline">¶</a></h3>
+<p>Pyro models can use the context manager
+<a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.iarange">pyro.iarange</a>
+to declare that certain batch dimensions are independent. Inference
+algorithms can then take advantage of this independence to
+e.g.&nbsp;construct lower variance gradient estimators or to enumerate in
+linear space rather than exponential space. An example of an independent
+dimension is the index over data in a minibatch: each datum should be
+independent of all others.</p>
+<p>The simplest way to declare a dimension as independent is to declare the
+rightmost batch dimension as independent via a simple</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;my_iarange&quot;</span><span class="p">):</span>
+    <span class="c1"># within this context, batch dimension -1 is independent</span>
+</pre></div>
+</div>
+<p>We recommend always providing an optional size argument to aid in
+debugging shapes</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;my_iarange&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">my_data</span><span class="p">)):</span>
+    <span class="c1"># within this context, batch dimension -1 is independent</span>
+</pre></div>
+</div>
+<p>Starting with Pyro 0.2 you can additionally nest <code class="docutils literal"><span class="pre">iaranges</span></code>, e.g.&nbsp;if
+you have per-pixel independence:</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;x_axis&quot;</span><span class="p">,</span> <span class="mi">320</span><span class="p">):</span>
+    <span class="c1"># within this context, batch dimension -1 is independent</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;y_axis&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">):</span>
+        <span class="c1"># within this context, batch dimensions -2 and -1 are independent</span>
+</pre></div>
+</div>
+<p>Note that we always count from the right by using negative indices like
+-2, -1.</p>
+<p>Finally if you want to mix and match <code class="docutils literal"><span class="pre">iarange</span></code>s for e.g.&nbsp;noise that
+depends only on <code class="docutils literal"><span class="pre">x</span></code>, some noise that depends only on <code class="docutils literal"><span class="pre">y</span></code>, and some
+noise that depends on both, you can declare multiple <code class="docutils literal"><span class="pre">iaranges</span></code> and
+use them as reusable context managers. In this case Pyro cannot
+automatically allocate a dimension, so you need to provide a <code class="docutils literal"><span class="pre">dim</span></code>
+argument (again counting from the right):</p>
+<div class="highlight-py"><div class="highlight"><pre><span></span><span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;x_axis&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;y_axis&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+    <span class="c1"># within this context, batch dimension -2 is independent</span>
+<span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+    <span class="c1"># within this context, batch dimension -3 is independent</span>
+<span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+    <span class="c1"># within this context, batch dimensions -3 and -2 are independent</span>
+</pre></div>
+</div>
+<p>Let’s take a closer look at batch sizes within <code class="docutils literal"><span class="pre">iarange</span></code>s.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>def model1():
+    a = pyro.sample(&quot;a&quot;, Normal(0, 1))
+    b = pyro.sample(&quot;b&quot;, Normal(torch.zeros(2), 1).independent(1))
+    with pyro.iarange(&quot;c_iarange&quot;, 2):
+        c = pyro.sample(&quot;c&quot;, Normal(torch.zeros(2), 1))
+    with pyro.iarange(&quot;d_iarange&quot;, 3):
+        d = pyro.sample(&quot;d&quot;, Normal(torch.zeros(3,4,5), 1).independent(2))
+    assert a.shape == ()       # batch_shape == ()     event_shape == ()
+    assert b.shape == (2,)     # batch_shape == ()     event_shape == (2,)
+    assert c.shape == (2,)     # batch_shape == (2,)   event_sahpe == ()
+    assert d.shape == (3,4,5)  # batch_shape == (3,)   event_shape == (4,5)
+
+    x_axis = pyro.iarange(&quot;x_axis&quot;, 3, dim=-2)
+    y_axis = pyro.iarange(&quot;y_axis&quot;, 2, dim=-3)
+    with x_axis:
+        x = pyro.sample(&quot;x&quot;, Normal(0, 1).expand_by([3, 1]))
+    with y_axis:
+        y = pyro.sample(&quot;y&quot;, Normal(0, 1).expand_by([2, 1, 1]))
+    with x_axis, y_axis:
+        xy = pyro.sample(&quot;xy&quot;, Normal(0, 1).expand_by([2, 3, 1]))
+        z = pyro.sample(&quot;z&quot;, Normal(0, 1).expand_by([2, 3, 1, 5]).independent(1))
+    assert x.shape == (3, 1)        # batch_shape == (3,1)     event_shape == ()
+    assert y.shape == (2, 1, 1)     # batch_shape == (2,1,1)   event_shape == ()
+    assert xy.shape == (2, 3, 1)    # batch_shape == (2,3,1)   event_shape == ()
+    assert z.shape == (2, 3, 1, 5)  # batch_shape == (2,3,1)   event_shape == (5,)
+
+test_model(model1, model1, Trace_ELBO())
+</pre></div>
+</div>
+</div>
+<p>It is helpful to visualize the <code class="docutils literal"><span class="pre">.shape</span></code>s of each sample site by
+aligning them at the boundary between <code class="docutils literal"><span class="pre">batch_shape</span></code> and
+<code class="docutils literal"><span class="pre">event_shape</span></code>: dimensions to the right will be summed out in
+<code class="docutils literal"><span class="pre">.log_prob()</span></code> and dimensions to the left will remain.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">batch</span> <span class="n">dims</span> <span class="o">|</span> <span class="n">event</span> <span class="n">dims</span>
+<span class="o">-----------+-----------</span>
+           <span class="o">|</span>        <span class="n">a</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+           <span class="o">|</span><span class="mi">2</span>       <span class="n">b</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+           <span class="o">|</span>                        <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+           <span class="o">|</span>        <span class="k">with</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+          <span class="mi">2</span><span class="o">|</span>            <span class="n">c</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+           <span class="o">|</span>        <span class="k">with</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+          <span class="mi">3</span><span class="o">|</span><span class="mi">4</span> <span class="mi">5</span>         <span class="n">d</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+           <span class="o">|</span>                       <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+           <span class="o">|</span>
+           <span class="o">|</span>        <span class="n">x_axis</span> <span class="o">=</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+           <span class="o">|</span>        <span class="n">y_axis</span> <span class="o">=</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+           <span class="o">|</span>        <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>            <span class="n">x</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+           <span class="o">|</span>        <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+      <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>            <span class="n">y</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+           <span class="o">|</span>        <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+      <span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>            <span class="n">xy</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;xy&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+      <span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span>           <span class="n">z</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+           <span class="o">|</span>                       <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>As an exercise, try to tabulate the shapes of sample sites in one of
+your own programs.</p>
+</div>
+<div class="section" id="Subsampling-tensors-inside-an-iarange">
+<h3>Subsampling tensors inside an <code class="docutils literal"><span class="pre">iarange</span></code><a class="headerlink" href="#Subsampling-tensors-inside-an-iarange" title="Permalink to this headline">¶</a></h3>
+<p>One of the main uses of
+<a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.iarange">iarange</a> is
+to subsample data. This is possible within an <code class="docutils literal"><span class="pre">iarange</span></code> because data
+are independent, so the expected value of the loss on, say, half the
+data should be half the expected loss on the full data.</p>
+<p>To subsample data, you need to inform Pyro of both the original data
+size and the subsample size; Pyro will then choose a random subset of
+data and yield the set of indices.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>data = torch.arange(100)
+
+def model2():
+    mean = pyro.param(&quot;mean&quot;, torch.zeros(len(data)))
+    with pyro.iarange(&quot;data&quot;, len(data), subsample_size=10) as ind:
+        assert len(ind) == 10    # ind is a LongTensor that indexes the subsample.
+        batch = data[ind]        # Select a minibatch of data.
+        mean_batch = mean[ind]   # Take care to select the relevant per-datum parameters.
+        # Do stuff with batch:
+        x = pyro.sample(&quot;x&quot;, Normal(mean_batch, 1), obs=batch)
+        assert len(x) == 10
+
+test_model(model2, guide=lambda: None, loss=Trace_ELBO())
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Broadcasting-to-allow-parallel-enumeration">
+<h3>Broadcasting to allow parallel enumeration<a class="headerlink" href="#Broadcasting-to-allow-parallel-enumeration" title="Permalink to this headline">¶</a></h3>
+<p>Pyro 0.2 introduces the ability to enumerate discrete latent variables
+in parallel. This can significantly reduce the variance of gradient
+estimators when learning a posterior via
+<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.svi.SVI">SVI</a>.</p>
+<p>To use discrete enumeration, Pyro needs to allocate tensor dimension
+that it can use for enumeration. To avoid conflicting with other
+dimensions that we want to use for <code class="docutils literal"><span class="pre">iarange</span></code>s, we need to declare a
+budget of the maximum number of tensor dimensions we’ll use. This budget
+is called <code class="docutils literal"><span class="pre">max_iarange_nesting</span></code> and is an argument to
+<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html">SVI</a> (the argument
+is simply passed through to
+<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a>).</p>
+<p>To understand <code class="docutils literal"><span class="pre">max_iarange_nesting</span></code> and how Pyro allocates dimensions
+for enumeration, let’s revisit <code class="docutils literal"><span class="pre">model1()</span></code> from above. This time we’ll
+map out three types of dimensions: enumeration dimensions on the left
+(Pyro takes control of these), batch dimensions in the middle, and event
+dimensions on the right.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>      <span class="n">max_iarange_nesting</span> <span class="o">=</span> <span class="mi">3</span>
+           <span class="o">|&lt;---&gt;|</span>
+<span class="n">enumeration</span><span class="o">|</span><span class="n">batch</span><span class="o">|</span><span class="n">event</span>
+<span class="o">-----------+-----+-----</span>
+           <span class="o">|.</span> <span class="o">.</span> <span class="o">.|</span>      <span class="n">a</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+           <span class="o">|.</span> <span class="o">.</span> <span class="o">.|</span><span class="mi">2</span>     <span class="n">b</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+           <span class="o">|</span>     <span class="o">|</span>                      <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+           <span class="o">|.</span> <span class="o">.</span> <span class="mi">2</span><span class="o">|</span>          <span class="n">c</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+           <span class="o">|.</span> <span class="o">.</span> <span class="mi">3</span><span class="o">|</span><span class="mi">4</span> <span class="mi">5</span>       <span class="n">d</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+           <span class="o">|</span>     <span class="o">|</span>                     <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+           <span class="o">|</span>     <span class="o">|</span>
+           <span class="o">|</span>     <span class="o">|</span>      <span class="n">x_axis</span> <span class="o">=</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+           <span class="o">|</span>     <span class="o">|</span>      <span class="n">y_axis</span> <span class="o">=</span> <span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+           <span class="o">|.</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>          <span class="n">x</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+           <span class="o">|</span><span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>          <span class="n">y</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+           <span class="o">|</span><span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>          <span class="n">xy</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;xy&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+           <span class="o">|</span><span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span>         <span class="n">z</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">]))</span>
+           <span class="o">|</span>     <span class="o">|</span>                     <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Note that it is safe to overprovision <code class="docutils literal"><span class="pre">max_iarange_nesting=4</span></code> but we
+cannot underprovision <code class="docutils literal"><span class="pre">max_iarange_nesting=2</span></code> (or Pyro will error).
+Let’s see how this works in practice.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>@config_enumerate(default=&quot;parallel&quot;)
+def model3():
+    p = pyro.param(&quot;p&quot;, torch.arange(6) / 6)
+    locs = pyro.param(&quot;locs&quot;, torch.tensor([-1., 1.]))
+
+    a = pyro.sample(&quot;a&quot;, Categorical(torch.ones(6) / 6))
+    b = pyro.sample(&quot;b&quot;, Bernoulli(p[a]))  # Note this depends on a.
+    with pyro.iarange(&quot;c_iarange&quot;, 4):
+        c = pyro.sample(&quot;c&quot;, Bernoulli(0.3).expand_by([4]))
+        with pyro.iarange(&quot;d_iarange&quot;, 5):
+            d = pyro.sample(&quot;d&quot;, Bernoulli(0.4).expand_by([5,4]))
+            e_loc = locs[d.long()].unsqueeze(-1)
+            e_scale = torch.arange(1, 8)
+            e = pyro.sample(&quot;e&quot;, Normal(e_loc, e_scale)
+                            .independent(1))  # Note this depends on d.
+
+    #                   enumerated|batch|event dims
+    assert a.shape == (         6, 1, 1   )  # Six enumerated values of the Categorical.
+    assert b.shape == (      2, 6, 1, 1   )  # 2 enumerated Bernoullis x 6 Categoricals.
+    assert c.shape == (   2, 1, 1, 1, 4   )  # Only 2 Bernoullis; does not depend on a or b.
+    assert d.shape == (2, 1, 1, 1, 5, 4   )  # Only two Bernoullis.
+    assert e.shape == (2, 1, 1, 1, 5, 4, 7)  # This is sampled and depends on d.
+
+    assert e_loc.shape   == (2, 1, 1, 1, 5, 4, 1,)
+    assert e_scale.shape == (                  7,)
+
+test_model(model3, model3, TraceEnum_ELBO(max_iarange_nesting=2))
+</pre></div>
+</div>
+</div>
+<p>Let’s take a closer look at those dimensions. First note that Pyro
+allocates enumeration dims starting from the right at
+<code class="docutils literal"><span class="pre">max_iarange_nesting</span></code>: Pyro allocates dim -3 to enumerate <code class="docutils literal"><span class="pre">a</span></code>, then
+dim -4 to enumerate <code class="docutils literal"><span class="pre">b</span></code>, then dim -5 to enumerate <code class="docutils literal"><span class="pre">c</span></code>, and finally
+dim -6 to enumerate <code class="docutils literal"><span class="pre">d</span></code>. Next note that variables only have extent
+(size &gt; 1) in dimensions they depend on. This helps keep tensors small
+and computation cheap. We can draw a similar map of the tensor
+dimensions:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>     <span class="n">max_iarange_nesting</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="o">|&lt;-&gt;|</span>
+<span class="n">enumeration</span> <span class="n">batch</span> <span class="n">event</span>
+<span class="o">------------|---|-----</span>
+           <span class="mi">6</span><span class="o">|</span><span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>     <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span><span class="p">))</span>
+         <span class="mi">2</span> <span class="mi">1</span><span class="o">|</span><span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>     <span class="n">b</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">a</span><span class="p">]))</span>
+            <span class="o">|</span>   <span class="o">|</span>     <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;c_iarange&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+       <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">1</span> <span class="mi">4</span><span class="o">|</span>         <span class="n">c</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">4</span><span class="p">]))</span>
+            <span class="o">|</span>   <span class="o">|</span>         <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;d_iarange&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+     <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span> <span class="mi">4</span><span class="o">|</span>             <span class="n">d</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">]))</span>
+     <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span> <span class="mi">4</span><span class="o">|</span><span class="mi">1</span>            <span class="n">e_loc</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">long</span><span class="p">()]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="o">|</span>   <span class="o">|</span><span class="mi">7</span>            <span class="n">e_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+     <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span> <span class="mi">4</span><span class="o">|</span><span class="mi">7</span>            <span class="n">e</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">e_loc</span><span class="p">,</span> <span class="n">e_scale</span><span class="p">)</span>
+            <span class="o">|</span>   <span class="o">|</span>                             <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="section" id="Writing-parallelizable-code">
+<h4>Writing parallelizable code<a class="headerlink" href="#Writing-parallelizable-code" title="Permalink to this headline">¶</a></h4>
+<p>It can be tricky to write Pyro models that correctly handle parallelized
+sample sites. Two tricks help:
+<a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">broadcasting</a>
+and <a class="reference external" href="http://python-reference.readthedocs.io/en/latest/docs/brackets/ellipsis.html">ellipsis
+slicing</a>.
+Let’s look at a contrived model to see how these work in practice. Our
+aim is to write a model that works both with and without enumeration.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>width = 8
+height = 10
+sparse_pixels = torch.LongTensor([[3, 2], [3, 5], [3, 9], [7, 1]])
+enumerated = None  # set to either True or False below
+
+def fun(observe):
+    p_x = pyro.param(&quot;p_x&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)
+    p_y = pyro.param(&quot;p_y&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)
+    x_axis = pyro.iarange(&#39;x_axis&#39;, width, dim=-2)
+    y_axis = pyro.iarange(&#39;y_axis&#39;, height, dim=-1)
+
+    # Note that the shapes of these sites depend on whether Pyro is enumerating.
+    with x_axis:
+        x_active = pyro.sample(&quot;x_active&quot;, Bernoulli(p_x).expand_by([width, 1]))
+    with y_axis:
+        y_active = pyro.sample(&quot;y_active&quot;, Bernoulli(p_y).expand_by([height]))
+    if enumerated:
+        assert x_active.shape  == (2, width, 1)
+        assert y_active.shape  == (2, 1, 1, height)
+    else:
+        assert x_active.shape  == (width, 1)
+        assert y_active.shape  == (height,)
+
+    # The first trick is to broadcast. This works with or without enumeration.
+    p = 0.1 + 0.5 * x_active * y_active
+    if enumerated:
+        assert p.shape == (2, 2, width, height)
+    else:
+        assert p.shape == (width, height)
+
+    # The second trick is to index using ellipsis slicing.
+    # This allows Pyro to add arbitrary dimensions on the left.
+    dense_pixels = torch.zeros_like(p)
+    for x, y in sparse_pixels:
+        dense_pixels[..., x, y] = 1
+    if enumerated:
+        assert dense_pixels.shape == (2, 2, width, height)
+    else:
+        assert dense_pixels.shape == (width, height)
+
+    with x_axis, y_axis:
+        if observe:
+            pyro.sample(&quot;pixels&quot;, Bernoulli(p), obs=dense_pixels)
+
+def model4():
+    fun(observe=True)
+
+@config_enumerate(default=&quot;parallel&quot;)
+def guide4():
+    fun(observe=False)
+
+# Test without enumeration.
+enumerated = False
+test_model(model4, guide4, Trace_ELBO())
+
+# Test with enumeration.
+enumerated = True
+test_model(model4, guide4, TraceEnum_ELBO(max_iarange_nesting=2))
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="vae.html" class="btn btn-neutral float-right" title="Variational Autoencoders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="svi_part_iii.html" class="btn btn-neutral" title="SVI Part III: ELBO Gradient Estimators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0-a0+88254ac',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

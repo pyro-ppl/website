@@ -8,12 +8,10 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Bayesian Regression &mdash; Pyro Tutorials  documentation</title>
+  <title>Bayesian Regression &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
   
 
   
-  
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
   
   
   
@@ -37,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials  documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
         <link rel="next" title="Deep Markov Model" href="dmm.html"/>
         <link rel="prev" title="Variational Autoencoders" href="vae.html"/> 
 
@@ -70,6 +68,10 @@
           
             
             
+              <div class="version">
+                pytorch-0.3-279-gdafa1ddd
+              </div>
+            
           
 
           
@@ -91,13 +93,17 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+              <p class="caption"><span class="caption-text">Introduction:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro 0.2</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Bayesian Regression</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Setup">Setup</a></li>
@@ -117,6 +123,12 @@
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributed:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 </ul>
 
             
@@ -340,7 +352,11 @@ div.nboutput div.output_area.stderr {
 .ansi-white-intense-fg { color: #A1A6B2; }
 .ansi-white-intense-bg { background-color: #A1A6B2; }
 
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
 .ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
 
 /* CSS overrides for sphinx_rtd_theme */
 
@@ -401,16 +417,18 @@ Bayesian linear regression.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="kn">as</span> <span class="nn">nn</span>
+<span></span>import os
+import numpy as np
+import torch
+import torch.nn as nn
 
-<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="kn">import</span> <span class="n">Variable</span>
-
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">Normal</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+import pyro
+from pyro.distributions import Normal
+from pyro.infer import SVI, Trace_ELBO
+from pyro.optim import Adam
+# for CI testing
+smoke_test = (&#39;CI&#39; in os.environ)
+pyro.enable_validation(True)
 </pre></div>
 </div>
 </div>
@@ -425,15 +443,19 @@ Bayesian linear regression.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># size of toy data</span>
-<span class="n">p</span> <span class="o">=</span> <span class="mi">1</span>    <span class="c1"># number of features</span>
+<span></span>N = 100  # size of toy data
 
-<span class="k">def</span> <span class="nf">build_linear_dataset</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">noise_std</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">X</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise_std</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">X</span><span class="p">)),</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+def build_linear_dataset(N, p=1, noise_std=0.01):
+    X = np.random.rand(N, p)
+    # w = 3
+    w = 3 * np.ones(p)
+    # b = 1
+    y = np.matmul(X, w) + np.repeat(1, N) + np.random.normal(0, noise_std, size=N)
+    y = y.reshape(N, 1)
+    X, y = torch.tensor(X).type(torch.Tensor), torch.tensor(y).type(torch.Tensor)
+    data = torch.cat((X, y), 1)
+    assert data.shape == (N, p + 1)
+    return data
 </pre></div>
 </div>
 </div>
@@ -447,22 +469,24 @@ for this. Our input <span class="math">\(X\)</span> is a matrix of size <span cl
 our output <span class="math">\(y\)</span> is a vector of size <span class="math">\(p \times 1\)</span>. The
 function <code class="docutils literal"><span class="pre">nn.Linear(p,</span> <span class="pre">1)</span></code> defines a linear transformation of the form
 <span class="math">\(Xw + b\)</span> where <span class="math">\(w\)</span> is the weight matrix and <span class="math">\(b\)</span> is the
-additive bias.</p>
+additive bias. As you can see, we can easily make this a logistic
+regression by adding a non-linearity in the <code class="docutils literal"><span class="pre">forward()</span></code> method.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">class</span> <span class="nc">RegressionModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">RegressionModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span></span>class RegressionModel(nn.Module):
+    def __init__(self, p):
+        # p = number of features
+        super(RegressionModel, self).__init__()
+        self.linear = nn.Linear(p, 1)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    def forward(self, x):
+        return self.linear(x)
 
-<span class="n">regression_model</span> <span class="o">=</span> <span class="n">RegressionModel</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+regression_model = RegressionModel(1)
 </pre></div>
 </div>
 </div>
@@ -479,62 +503,65 @@ learning rate of <code class="docutils literal"><span class="pre">0.01</span></c
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">loss_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">size_average</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<span class="n">optim</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">regression_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
-<span class="n">num_iterations</span> <span class="o">=</span> <span class="mi">500</span>
+<span></span>loss_fn = torch.nn.MSELoss(size_average=False)
+optim = torch.optim.Adam(regression_model.parameters(), lr=0.05)
+num_iterations = 1000 if not smoke_test else 2
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">build_linear_dataset</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-    <span class="n">x_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">y_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iterations</span><span class="p">):</span>
-        <span class="c1"># run the model forward on the data</span>
-        <span class="n">y_pred</span> <span class="o">=</span> <span class="n">regression_model</span><span class="p">(</span><span class="n">x_data</span><span class="p">)</span>
-        <span class="c1"># calculate the mse loss</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_data</span><span class="p">)</span>
-        <span class="c1"># initialize gradients to zero</span>
-        <span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-        <span class="c1"># backpropagate</span>
-        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-        <span class="c1"># take a gradient step</span>
-        <span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">50</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[iteration </span><span class="si">%04d</span><span class="s2">] loss: </span><span class="si">%.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-    <span class="c1"># Inspect learned parameters</span>
-    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Learned parameters:&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">regression_model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
-        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+def main():
+    data = build_linear_dataset(N)
+    x_data = data[:, :-1]
+    y_data = data[:, -1]
+    for j in range(num_iterations):
+        # run the model forward on the data
+        y_pred = regression_model(x_data).squeeze(-1)
+        # calculate the mse loss
+        loss = loss_fn(y_pred, y_data)
+        # initialize gradients to zero
+        optim.zero_grad()
+        # backpropagate
+        loss.backward()
+        # take a gradient step
+        optim.step()
+        if (j + 1) % 50 == 0:
+            print(&quot;[iteration %04d] loss: %.4f&quot; % (j + 1, loss.item()))
+    # Inspect learned parameters
+    print(&quot;Learned parameters:&quot;)
+    for name, param in regression_model.named_parameters():
+        print(&quot;%s: %.3f&quot; % (name, param.data.numpy()))
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">()</span>
+if __name__ == &#39;__main__&#39;:
+    main()
 </pre></div>
 </div>
 </div>
 <p><strong>Sample Output</strong>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">iteration</span> <span class="mi">0050</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">4405.9824</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0100</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">2636.4561</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0150</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">1497.4330</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0200</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">811.6588</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0250</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">429.7031</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0300</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">234.2143</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0350</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">142.6732</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0400</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">103.5445</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0450</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">88.2896</span>
-<span class="p">[</span><span class="n">iteration</span> <span class="mi">0500</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">82.8650</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">iteration</span> <span class="mi">0400</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0105</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0450</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0096</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0500</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0550</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0600</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0650</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0700</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0750</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0800</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0850</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0900</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">0950</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
+<span class="p">[</span><span class="n">iteration</span> <span class="mi">1000</span><span class="p">]</span> <span class="n">loss</span><span class="p">:</span> <span class="mf">0.0095</span>
 <span class="n">Learned</span> <span class="n">parameters</span><span class="p">:</span>
-<span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="p">:</span> <span class="mf">2.996</span>
-<span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">:</span> <span class="mf">1.094</span>
+<span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="p">:</span> <span class="mf">3.004</span>
+<span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">:</span> <span class="mf">0.997</span>
 </pre></div>
 </div>
 <p>Not too bad - you can see that the regressor learned parameters that
 were pretty close to the ground truth of <span class="math">\(w = 3, b = 1\)</span>. But how
 confident should we be in these point estimates?</p>
-<p>Bayesian modeling (see
-<a class="reference external" href="http://mlg.eng.cam.ac.uk/zoubin/papers/NatureReprint15.pdf">here</a>
-for an overview) offers a systematic framework for reasoning about model
-uncertainty. Instead of just learning point estimates, we’re going to
-learn a <em>distribution</em> over values of the parameters <span class="math">\(w\)</span> and
-<span class="math">\(b\)</span> that are consistent with the observed data.</p>
+<p><a class="reference external" href="http://mlg.eng.cam.ac.uk/zoubin/papers/NatureReprint15.pdf">Bayesian
+modeling</a>
+offers a systematic framework for reasoning about model uncertainty.
+Instead of just learning point estimates, we’re going to learn a
+<em>distribution</em> over values of the parameters <span class="math">\(w\)</span> and <span class="math">\(b\)</span>
+that are consistent with the observed data.</p>
 </div>
 <div class="section" id="Bayesian-Regression">
 <h2>Bayesian Regression<a class="headerlink" href="#Bayesian-Regression" title="Permalink to this headline">¶</a></h2>
@@ -558,14 +585,14 @@ setting. For example:</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">sigma</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="c1"># define a unit normal prior</span>
-<span class="n">prior</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
-<span class="c1"># overload the parameters in the regression module with samples from the prior</span>
-<span class="n">lifted_module</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">random_module</span><span class="p">(</span><span class="s2">&quot;regression_module&quot;</span><span class="p">,</span> <span class="n">regression_model</span><span class="p">,</span> <span class="n">prior</span><span class="p">)</span>
-<span class="c1"># sample a regressor from the prior</span>
-<span class="n">sampled_reg_model</span> <span class="o">=</span> <span class="n">lifted_module</span><span class="p">()</span>
+<span></span>loc = torch.zeros(1, 1)
+scale = torch.ones(1, 1)
+# define a unit normal prior
+prior = Normal(loc, scale)
+# overload the parameters in the regression module with samples from the prior
+lifted_module = pyro.random_module(&quot;regression_module&quot;, regression_model, prior)
+# sample a regressor from the prior
+sampled_reg_model = lifted_module()
 </pre></div>
 </div>
 </div>
@@ -588,24 +615,27 @@ generate the data.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># Create unit normal priors over the parameters</span>
-    <span class="n">x_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">y_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">)),</span> <span class="n">Variable</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
-    <span class="n">bias_mu</span><span class="p">,</span> <span class="n">bias_sigma</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="n">Variable</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-    <span class="n">w_prior</span><span class="p">,</span> <span class="n">b_prior</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">),</span> <span class="n">Normal</span><span class="p">(</span><span class="n">bias_mu</span><span class="p">,</span> <span class="n">bias_sigma</span><span class="p">)</span>
-    <span class="n">priors</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;linear.weight&#39;</span><span class="p">:</span> <span class="n">w_prior</span><span class="p">,</span> <span class="s1">&#39;linear.bias&#39;</span><span class="p">:</span> <span class="n">b_prior</span><span class="p">}</span>
-    <span class="c1"># lift module parameters to random variables sampled from the priors</span>
-    <span class="n">lifted_module</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">random_module</span><span class="p">(</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="n">regression_model</span><span class="p">,</span> <span class="n">priors</span><span class="p">)</span>
-    <span class="c1"># sample a regressor (which also samples w and b)</span>
-    <span class="n">lifted_reg_model</span> <span class="o">=</span> <span class="n">lifted_module</span><span class="p">()</span>
-    <span class="c1"># run the regressor forward conditioned on data</span>
-    <span class="n">prediction_mean</span> <span class="o">=</span> <span class="n">lifted_reg_model</span><span class="p">(</span><span class="n">x_data</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
-    <span class="c1"># condition on the observed data</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span>
-                <span class="n">Normal</span><span class="p">(</span><span class="n">prediction_mean</span><span class="p">,</span> <span class="n">Variable</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)))),</span>
-                <span class="n">obs</span><span class="o">=</span><span class="n">y_data</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+<span></span>def model(data):
+    # Create unit normal priors over the parameters
+    loc, scale = torch.zeros(1, 1), 10 * torch.ones(1, 1)
+    bias_loc, bias_scale = torch.zeros(1), 10 * torch.ones(1)
+    w_prior = Normal(loc, scale).independent(1)
+    b_prior = Normal(bias_loc, bias_scale).independent(1)
+    priors = {&#39;linear.weight&#39;: w_prior, &#39;linear.bias&#39;: b_prior}
+    # lift module parameters to random variables sampled from the priors
+    lifted_module = pyro.random_module(&quot;module&quot;, regression_model, priors)
+    # sample a regressor (which also samples w and b)
+    lifted_reg_model = lifted_module()
+    with pyro.iarange(&quot;map&quot;, N):
+        x_data = data[:, :-1]
+        y_data = data[:, -1]
+
+        # run the regressor forward conditioned on data
+        prediction_mean = lifted_reg_model(x_data).squeeze(-1)
+        # condition on the observed data
+        pyro.sample(&quot;obs&quot;,
+                    Normal(prediction_mean, 0.1 * torch.ones(data.size(0))),
+                    obs=y_data)
 </pre></div>
 </div>
 </div>
@@ -617,43 +647,41 @@ parameterized family of distributions over <span class="math">\(w\)</span> and <
 Writing down a guide will proceed in close analogy to the construction
 of our model, with the key difference that the guide parameters need to
 be trainable. To do this we register the guide parameters in the
-ParamStore using <code class="docutils literal"><span class="pre">pyro.param()</span></code> and make sure each PyTorch
-<code class="docutils literal"><span class="pre">Variable</span></code> has the flag <code class="docutils literal"><span class="pre">requires_grad</span></code> set to <code class="docutils literal"><span class="pre">True</span></code>.</p>
+ParamStore using <code class="docutils literal"><span class="pre">pyro.param()</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">softplus</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">()</span>
+<span></span>softplus = torch.nn.Softplus()
 
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># define our variational parameters</span>
-    <span class="n">w_mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="c1"># note that we initialize our sigmas to be pretty narrow</span>
-    <span class="n">w_log_sig</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="o">-</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span>
-                         <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="n">b_mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="n">b_log_sig</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="o">-</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
-                         <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="c1"># register learnable params in the param store</span>
-    <span class="n">mw_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_mean_weight&quot;</span><span class="p">,</span> <span class="n">w_mu</span><span class="p">)</span>
-    <span class="n">sw_param</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_log_sigma_weight&quot;</span><span class="p">,</span> <span class="n">w_log_sig</span><span class="p">))</span>
-    <span class="n">mb_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_mean_bias&quot;</span><span class="p">,</span> <span class="n">b_mu</span><span class="p">)</span>
-    <span class="n">sb_param</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_log_sigma_bias&quot;</span><span class="p">,</span> <span class="n">b_log_sig</span><span class="p">))</span>
-    <span class="c1"># guide distributions for w and b</span>
-    <span class="n">w_dist</span><span class="p">,</span> <span class="n">b_dist</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mw_param</span><span class="p">,</span> <span class="n">sw_param</span><span class="p">),</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mb_param</span><span class="p">,</span> <span class="n">sb_param</span><span class="p">)</span>
-    <span class="n">dists</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;linear.weight&#39;</span><span class="p">:</span> <span class="n">w_dist</span><span class="p">,</span> <span class="s1">&#39;linear.bias&#39;</span><span class="p">:</span> <span class="n">b_dist</span><span class="p">}</span>
-    <span class="c1"># overload the parameters in the module with random samples</span>
-    <span class="c1"># from the guide distributions</span>
-    <span class="n">lifted_module</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">random_module</span><span class="p">(</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="n">regression_model</span><span class="p">,</span> <span class="n">dists</span><span class="p">)</span>
-    <span class="c1"># sample a regressor (which also samples w and b)</span>
-    <span class="k">return</span> <span class="n">lifted_module</span><span class="p">()</span>
+def guide(data):
+    # define our variational parameters
+    w_loc = torch.randn(1, 1)
+    # note that we initialize our scales to be pretty narrow
+    w_log_sig = torch.tensor(-3.0 * torch.ones(1, 1) + 0.05 * torch.randn(1, 1))
+    b_loc = torch.randn(1)
+    b_log_sig = torch.tensor(-3.0 * torch.ones(1) + 0.05 * torch.randn(1))
+    # register learnable params in the param store
+    mw_param = pyro.param(&quot;guide_mean_weight&quot;, w_loc)
+    sw_param = softplus(pyro.param(&quot;guide_log_scale_weight&quot;, w_log_sig))
+    mb_param = pyro.param(&quot;guide_mean_bias&quot;, b_loc)
+    sb_param = softplus(pyro.param(&quot;guide_log_scale_bias&quot;, b_log_sig))
+    # guide distributions for w and b
+    w_dist = Normal(mw_param, sw_param).independent(1)
+    b_dist = Normal(mb_param, sb_param).independent(1)
+    dists = {&#39;linear.weight&#39;: w_dist, &#39;linear.bias&#39;: b_dist}
+    # overload the parameters in the module with random samples
+    # from the guide distributions
+    lifted_module = pyro.random_module(&quot;module&quot;, regression_model, dists)
+    # sample a regressor (which also samples w and b)
+    return lifted_module()
 </pre></div>
 </div>
 </div>
 <p>Note that we choose Gaussians for both guide distributions. Also, to
-ensure positivity, we pass each log sigma through a <code class="docutils literal"><span class="pre">softplus()</span></code>
+ensure positivity, we pass each log scale through a <code class="docutils literal"><span class="pre">softplus()</span></code>
 transformation (an alternative to ensure positivity would be an
 <code class="docutils literal"><span class="pre">exp()</span></code>-transformation).</p>
 </div>
@@ -661,25 +689,24 @@ transformation (an alternative to ensure positivity would be an
 <div class="section" id="Inference">
 <h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
 <p>To do inference we’ll use stochastic variational inference (SVI) (for an
-introduction to SVI, see <a class="reference external" href="svi_part_i">SVI Part I</a>). Just like in the
-non-Bayesian linear regression, each iteration in our training loop will
-take a gradient step, with the difference that in this case, we’ll use
-the ELBO objective instead of the MSE loss.</p>
-<p>The Pyro backend will construct the ELBO objective function for us; this
-logic is handled by the <code class="docutils literal"><span class="pre">SVI</span></code> class:</p>
+introduction to SVI, see <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI Part I</span></a>). Just like
+in the non-Bayesian linear regression, each iteration of our training
+loop will take a gradient step, with the difference that in this case,
+we’ll use the ELBO objective instead of the MSE loss by constructing a
+<code class="docutils literal"><span class="pre">Trace_ELBO</span></code> object that we pass to <code class="docutils literal"><span class="pre">SVI</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">})</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;ELBO&quot;</span><span class="p">)</span>
+<span></span>optim = Adam({&quot;lr&quot;: 0.05})
+svi = SVI(model, guide, optim, loss=Trace_ELBO())
 </pre></div>
 </div>
 </div>
 <p>Here <code class="docutils literal"><span class="pre">Adam</span></code> is a thin wrapper around <code class="docutils literal"><span class="pre">torch.optim.Adam</span></code> (see
-<a class="reference external" href="svi_part_i#Optimizers">here</a> for a discussion). The complete
+<a class="reference internal" href="svi_part_i.html#Optimizers"><span class="std std-ref">here</span></a> for a discussion). The complete
 training loop is as follows:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
@@ -687,17 +714,17 @@ training loop is as follows:</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">build_linear_dataset</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iterations</span><span class="p">):</span>
-        <span class="c1"># calculate the loss and take a gradient step</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">j</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[iteration </span><span class="si">%04d</span><span class="s2">] loss: </span><span class="si">%.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">loss</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span><span class="p">)))</span>
+<span></span>def main():
+    pyro.clear_param_store()
+    data = build_linear_dataset(N)
+    for j in range(num_iterations):
+        # calculate the loss and take a gradient step
+        loss = svi.step(data)
+        if j % 100 == 0:
+            print(&quot;[iteration %04d] loss: %.4f&quot; % (j + 1, loss / float(N)))
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">()</span>
+if __name__ == &#39;__main__&#39;:
+    main()
 </pre></div>
 </div>
 </div>
@@ -715,58 +742,56 @@ result:</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_param_names</span><span class="p">():</span>
-    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">]: </span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+<span></span>for name in pyro.get_param_store().get_all_param_names():
+    print(&quot;[%s]: %.3f&quot; % (name, pyro.param(name).data.numpy()))
 </pre></div>
 </div>
 </div>
 <p><strong>Sample Output</strong>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">guide_log_sigma_weight</span><span class="p">]:</span> <span class="o">-</span><span class="mf">3.217</span>
-<span class="p">[</span><span class="n">guide_log_sigma_bias</span><span class="p">]:</span> <span class="o">-</span><span class="mf">3.164</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">guide_log_scale_weight</span><span class="p">]:</span> <span class="o">-</span><span class="mf">3.217</span>
+<span class="p">[</span><span class="n">guide_log_scale_bias</span><span class="p">]:</span> <span class="o">-</span><span class="mf">3.164</span>
 <span class="p">[</span><span class="n">guide_mean_weight</span><span class="p">]:</span> <span class="mf">2.966</span>
 <span class="p">[</span><span class="n">guide_mean_bias</span><span class="p">]:</span> <span class="mf">0.941</span>
 </pre></div>
 </div>
 <p>As you can see, the means of our parameter estimates are pretty close to
 the values we previously learned. Now, however, instead of just point
-estimates, the parameters <code class="docutils literal"><span class="pre">guide_log_sigma_weight</span></code> and
-<code class="docutils literal"><span class="pre">guide_log_sigma_bias</span></code> provide us with uncertainty estimates. (Note
-that the sigmas are in log-space here, so the more negative the value,
+estimates, the parameters <code class="docutils literal"><span class="pre">guide_log_scale_weight</span></code> and
+<code class="docutils literal"><span class="pre">guide_log_scale_bias</span></code> provide us with uncertainty estimates. (Note
+that the scales are in log-space here, so the more negative the value,
 the narrower the width).</p>
 <p>Finally, let’s evaluate our model by checking its predictive accuracy on
 new test data. This is known as <em>point evaluation</em>. We’ll sample 20
-regressors from our posterior and run them on the new test data, then
-average across their predictions and calculate the MSE of the predicted
-values compared to the ground truth.</p>
+neural nets from our posterior, run them on the test data, then average
+across their predictions and calculate the MSE of the predicted values
+compared to the ground truth.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">X</span> <span class="o">+</span> <span class="mi">1</span>
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">X</span><span class="p">)),</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
-<span class="n">loss</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>
-<span class="n">y_preds</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
-    <span class="c1"># guide does not require the data</span>
-    <span class="n">sampled_reg_model</span> <span class="o">=</span> <span class="n">guide</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-    <span class="c1"># run the regression model and add prediction to total</span>
-    <span class="n">y_preds</span> <span class="o">=</span> <span class="n">y_preds</span> <span class="o">+</span> <span class="n">sampled_reg_model</span><span class="p">(</span><span class="n">x_data</span><span class="p">)</span>
-<span class="c1"># take the average of the predictions</span>
-<span class="n">y_preds</span> <span class="o">=</span> <span class="n">y_preds</span> <span class="o">/</span> <span class="mi">20</span>
-<span class="k">print</span> <span class="p">(</span><span class="s2">&quot;Loss: &quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">(</span><span class="n">y_preds</span><span class="p">,</span> <span class="n">y_data</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span></span>X = np.linspace(6, 7, num=20)
+y = 3 * X + 1
+X, y = X.reshape((20, 1)), y.reshape((20, 1))
+x_data, y_data = torch.tensor(X).type(torch.Tensor), torch.tensor(y).type(torch.Tensor)
+loss = nn.MSELoss()
+y_preds = torch.zeros(20, 1)
+for i in range(20):
+    # guide does not require the data
+    sampled_reg_model = guide(None)
+    # run the regression model and add prediction to total
+    y_preds = y_preds + sampled_reg_model(x_data)
+# take the average of the predictions
+y_preds = y_preds / 20
+print (&quot;Loss: &quot;, loss(y_preds, y_data).item())
 </pre></div>
 </div>
 </div>
 <p><strong>Sample Output</strong>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Loss</span><span class="p">:</span>  <span class="mf">0.0310659464449</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Loss</span><span class="p">:</span>  <span class="mf">0.00025596367777325213</span>
 </pre></div>
 </div>
-<p>Bayesian nonlinear regression can be implemented analogously by using
-<code class="docutils literal"><span class="pre">random_module</span></code> to lift neural network modules.</p>
 <p>See the full code on
 <a class="reference external" href="https://github.com/uber/pyro/blob/dev/examples/bayesian_regression.py">Github</a>.</p>
 </div>
@@ -794,7 +819,7 @@ values compared to the ground truth.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Uber AI Labs.
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
@@ -816,8 +841,7 @@ values compared to the ground truth.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'',
-            LANGUAGE:'None',
+            VERSION:'0.2.0-a0+88254ac',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -827,7 +851,7 @@ values compared to the ground truth.</p>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

@@ -1,0 +1,803 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Bayesian Optimization &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
+        <link rel="prev" title="Gaussian Processes" href="gp.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/pyro_logo_wide.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                pytorch-0.3-279-gdafa1ddd
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Introduction:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro 0.2</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributed:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bayesian Optimization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Define-a-problem">Define a problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Set-a-Gaussian-Process-prior">Set a Gaussian Process prior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Define-an-acquisition-function">Define an acquisition function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Find-">Find <span class="math">\(\{ x_n \}\)</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#References">References</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyro Tutorials</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Bayesian Optimization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/bo.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #303F9F;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #D84315;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 8ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #cfcfcf;
+    border-radius: 2px;
+    background: #f7f7f7;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.pngmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="Bayesian-Optimization">
+<h1>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Bayesian_optimization">Bayesian
+optimization</a> is
+a powerful strategy to find extrema of objective functions which are
+costly to evaluate, not easy to have access to their derivatives, and
+possibly containing noise. It is a machenism lying behind <a class="reference external" href="https://en.wikipedia.org/wiki/Automated_machine_learning">automated
+machine
+learning</a>
+toolboxes such as
+<a class="reference external" href="https://automl.github.io/auto-sklearn/stable/">auto-sklearn</a>,
+<a class="reference external" href="http://www.cs.ubc.ca/labs/beta/Projects/autoweka/">auto-weka</a>,
+<a class="reference external" href="https://scikit-optimize.github.io/">scikit-optimize</a> to select best
+hyperparameters for machine learning models. As mentioned in the review
+reference [2], Bayesian optimization is used for a wide range of other
+applications such as interactive user-interfaces, robotics,
+environmental monitoring, information extraction, combinatorial
+optimisation, sensor networks, adaptive Monte Carlo, experimental
+design, reinforcement learning. The innovation <a class="reference external" href="https://en.wikipedia.org/wiki/AlphaGo_Zero">AlphaGo
+Zero</a> also uses Bayesian
+optimization to tune its tree search’s hyperparameters.</p>
+<p>Assume that we have an optimization problem</p>
+<div class="math">
+\[x^* = \text{arg}\min \ f(x),\]</div>
+<p>where <span class="math">\(f\)</span> is an unknown objective function. To solve it, we will
+construct a sequence of points <span class="math">\(\{x_n\}\)</span> which converges to
+<span class="math">\(x^*\)</span>. The Bayesian optimization strategy works as follows: 1.
+Place a prior on the possibilities of the objective function. The model
+will be updated each time we evaluate more data to form a posterior
+distribution over the objective function. 2. Derive from the posterior
+an “acquisition” function <span class="math">\(\alpha(x)\)</span> which is easy to evaluate
+and get derivatives (hence optimizing <span class="math">\(\alpha(x)\)</span> is easy). 3.
+Repeat until convergence: + Use the acquisition function to derive the
+next query point according to</p>
+<div class="math">
+\[x_{n+1} = \text{arg}\min \ \alpha(x).\]</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span>+ Evaluate $f(x_{n+1})$ and update the posterior.
+</pre></div>
+</div>
+<p>The acquisition function should utilize the uncertainty of the posterior
+to encourage exploring more information about <span class="math">\(f\)</span>. After
+evaluating a new data point, the model will be updated and the derived
+acquisition function will exploit it to give the next candidate for the
+minimum point of <span class="math">\(f\)</span>. After a number of steps, it is likely that
+<span class="math">\(\{x_n\}\)</span> will converge to <span class="math">\(x^*\)</span>.</p>
+<p>In this tutorial, we will see how to use the <a class="reference external" href="http://docs.pyro.ai/en/dev/contrib.gp.html">Gaussian Process
+module</a> in Pyro to do
+Bayesian optimization.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import torch
+import torch.autograd as autograd
+import torch.optim as optim
+from torch.distributions import constraints, transform_to
+
+import pyro
+import pyro.contrib.gp as gp
+
+pyro.enable_validation(True)  # can help with debugging
+pyro.set_rng_seed(0)
+</pre></div>
+</div>
+</div>
+<div class="section" id="Define-a-problem">
+<h2>Define a problem<a class="headerlink" href="#Define-a-problem" title="Permalink to this headline">¶</a></h2>
+<p>For the purpose of demonstration, the objective function we are going to
+solve is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008)
+function</a>:</p>
+<div class="math">
+\[f(x) = (6x-2)^2 \sin(12x-4), \quad x\in [0, 1].\]</div>
+<p>This function has both local minimum and global minimum. The global
+minimum is <span class="math">\(0.75725\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>def f(x):
+    return (6 * x - 2)**2 * torch.sin(12 * x - 4)
+</pre></div>
+</div>
+</div>
+<p>Let’s take a plot for <span class="math">\(f\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>x = torch.linspace(0, 1)
+plt.figure(figsize=(8, 4))
+plt.plot(x.numpy(), f(x).numpy())
+plt.show()
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/bo_6_0.png" src="_images/bo_6_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Set-a-Gaussian-Process-prior">
+<h2>Set a Gaussian Process prior<a class="headerlink" href="#Set-a-Gaussian-Process-prior" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_process">Gaussian process</a> is
+a popular choice for a distribution over functions due to its power and
+flexibility (characteristics of a non-parametric model). The core of a
+Gaussian Process is its covariance function <span class="math">\(k\)</span> which governs the
+similarity between input points. Here we will use a Gaussian Process
+regression as a prior over the objective function <span class="math">\(f\)</span>. Given
+inputs <span class="math">\(X\)</span> and their noisy observations <span class="math">\(y\)</span>, the model takes
+the form</p>
+<div class="math">
+\[f\sim\mathrm{MultivariateNormal}(0,k(X,X)),\]</div>
+<div class="math">
+\[y\sim f+\epsilon,\]</div>
+<p>where <span class="math">\(\epsilon\)</span> is noise and <span class="math">\(k(X,X)\)</span> is a covariance
+matrix whose entries are outputs <span class="math">\(k(x,z)\)</span> of <span class="math">\(k\)</span> over input
+pairs <span class="math">\((x,z)\)</span>.</p>
+<p>The
+<a class="reference external" href="https://en.wikipedia.org/wiki/Mat%C3%A9rn_covariance_function">Matern52</a>
+kernel will be chose (as suggested in reference [1]) because the popular
+<a class="reference external" href="https://en.wikipedia.org/wiki/Radial_basis_function_kernel">RBF</a>
+kernel is so smooth that makes it an unrealistic assumption for the
+objective function.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span># init the model with two input points -0.1 and 1.1
+X = torch.tensor([-0.1, 1.1])
+y = f(X)
+gpmodel = gp.models.GPRegression(X, y, gp.kernels.Matern52(input_dim=1),
+                                 noise=torch.tensor(0.01))
+</pre></div>
+</div>
+</div>
+<p>The following helper function <code class="docutils literal"><span class="pre">update_posterior</span></code> will take care of
+updating our <code class="docutils literal"><span class="pre">gpmodel</span></code> when a new <span class="math">\(x\)</span> is found.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>def update_posterior(x_new):
+    y = f(x_new)
+    X = torch.cat([gpmodel.X, x_new])
+    y = torch.cat([gpmodel.y, y])
+    gpmodel.set_data(X, y)
+    gpmodel.optimize()
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Define-an-acquisition-function">
+<h2>Define an acquisition function<a class="headerlink" href="#Define-an-acquisition-function" title="Permalink to this headline">¶</a></h2>
+<p>There are many choices for the acquisition function (see references [1]
+and [2] for a list of popular ones and discussions on them). Here we
+will use a “simple to implement and interpret” one: Lower Confidence
+Bound, which is two standard deviations below posterior mean. Formally,</p>
+<div class="math">
+\[\alpha(x) = \mu(x) - \kappa \sigma(x),\quad \kappa = 2,\]</div>
+<p>where <span class="math">\(\mu(x)\)</span> and <span class="math">\(\sigma(x)\)</span> are mean and variance of the
+posterior, and the coefficient <span class="math">\(\kappa\)</span> plays a trade-off between
+exploitation-exploration. A high <span class="math">\(\kappa\)</span> means that we play more
+weight on exploration (because we seek minimum candidates in a
+higher-uncertainty area). Otherwise, we do exploitation: seek minimum
+candidates around the posterior mean <span class="math">\(\mu(x)\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>def lower_confidence_bound(x, kappa=2):
+    mu, variance = gpmodel(x, full_cov=False, noiseless=False)
+    sigma = variance.sqrt()
+    return mu - kappa * sigma
+</pre></div>
+</div>
+</div>
+<p>The final component is a way to find a minimum point for acquisition
+function. There are several ways for us to choose: gradient-based and
+non-gradient-based. Here, we will follow the gradient-based approach.
+One of the drawback of gradient descent methods is it is easy for the
+minimizer to get stuck at a local minimum. In this tutorial, we will use
+a simple way to solve that problem. First, draw <span class="math">\(3\)</span> samples from
+our Gaussian Process posteriors and find a candidate for each sample.
+Then (after collecting <span class="math">\(3\)</span> candidates), we select the minimum
+point among them. A more detailed discussion regarding to this problem
+in Bayesian Optimization is presented in the reference [2].</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>def find_a_candidate(x_init, lower_bound=0, upper_bound=1):
+    # transform x to an unconstrained domain to set an minimizer for it
+    constraint = constraints.interval(lower_bound, upper_bound)
+    unconstrained_x_init = transform_to(constraint).inv(x_init)
+    unconstrained_x = torch.tensor(unconstrained_x_init, requires_grad=True)
+    minimizer = optim.LBFGS([unconstrained_x])
+
+    def closure():
+        minimizer.zero_grad()
+        x = transform_to(constraint)(unconstrained_x)
+        y = lower_confidence_bound(x)
+        autograd.backward(unconstrained_x, autograd.grad(y, unconstrained_x))
+        return y
+
+    minimizer.step(closure)
+    # after a candidate found in unconstrained domain, convert it back to original domain
+    x = transform_to(constraint)(unconstrained_x)
+    return x.detach()
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>def next_x(lower_bound=0, upper_bound=1, num_candidates=3):
+    candidates = []
+    values = []
+
+    # last data point will be an init point for first minimum candidate,
+    # other minimum candidates will get uniform random initialization
+    x_init = gpmodel.X[-1:]
+    for i in range(num_candidates):
+        x = find_a_candidate(x_init, lower_bound, upper_bound)
+        y = lower_confidence_bound(x)
+        candidates.append(x)
+        values.append(y)
+        x_init = x.new_empty(1).uniform_(lower_bound, upper_bound)
+
+    argmin = torch.min(torch.cat(values), dim=0)[1].item()
+    return candidates[argmin]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Find-">
+<h2>Find <span class="math">\(\{ x_n \}\)</span><a class="headerlink" href="#Find-" title="Permalink to this headline">¶</a></h2>
+<p>To illustrate how Bayesian Optimization works, we make a convenient
+plotting function.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>def plot(gs, xmin, xlabel=None, with_title=True):
+    xlabel = &quot;xmin&quot; if xlabel is None else &quot;x{}&quot;.format(xlabel)
+    Xnew = torch.linspace(-0.1, 1.1)
+    ax1 = plt.subplot(gs[0])
+    ax1.plot(gpmodel.X.numpy(), gpmodel.y.numpy(), &quot;kx&quot;)  # plot all observed data
+    with torch.no_grad():
+        loc, var = gpmodel(Xnew, full_cov=False, noiseless=False)
+        sd = var.sqrt()
+        ax1.plot(Xnew.numpy(), loc.numpy(), &quot;r&quot;, lw=2)  # plot prediction mean
+        ax1.fill_between(Xnew.numpy(), loc.numpy() - 2*sd.numpy(), loc.numpy() + 2*sd.numpy(),
+                         color=&quot;C0&quot;, alpha=0.3)  # plot uncertainty intervals
+    ax1.set_xlim(-0.1, 1.1)
+    ax1.set_title(&quot;Find {}&quot;.format(xlabel))
+    if with_title:
+        ax1.set_ylabel(&quot;Gaussian Process Regression&quot;)
+
+    ax2 = plt.subplot(gs[1])
+    with torch.no_grad():
+        ax2.plot(Xnew.numpy(), lower_confidence_bound(Xnew).numpy())  # plot acquisition
+        ax2.plot(xmin.numpy(), lower_confidence_bound(xmin).numpy(), &quot;^&quot;, markersize=10,
+                 label=&quot;{} = {:.5f}&quot;.format(xlabel, xmin.item()))  # plot minimum point
+    ax2.set_xlim(-0.1, 1.1)
+    if with_title:
+        ax2.set_ylabel(&quot;Lower Confidence Bound&quot;)
+    ax2.legend(loc=1)
+</pre></div>
+</div>
+</div>
+<p>First, we generate a random point <code class="docutils literal"><span class="pre">x0</span></code> in the interval <span class="math">\([0, 1]\)</span>.
+Then use <code class="docutils literal"><span class="pre">update_posterior</span></code> and <code class="docutils literal"><span class="pre">next_x</span></code> functions repeatly to do
+Bayesian optimization for <span class="math">\(f\)</span>. The following plot illustrates how
+Gaussian Process posteriors and their derived acquisition functions
+change when we observe more data for the next <span class="math">\(8\)</span> steps.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<span></span>plt.figure(figsize=(12, 30))
+outer_gs = gridspec.GridSpec(5, 2)
+x0 = X.new_empty(1).uniform_(0, 1)
+xmin = x0
+for i in range(8):
+    update_posterior(xmin)
+    xmin = next_x()
+    gs = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_gs[i])
+    plot(gs, xmin, xlabel=i+1, with_title=(i % 2 == 0))
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/bo_22_0.png" src="_images/bo_22_0.png" />
+</div>
+</div>
+<p>Because we made an assumption that our observations contain noise, it is
+improbable to require an exact result. However, we can see that the
+sequence has converged to near the global minimum <span class="math">\(0.75725\)</span>.
+That’s it! Through this tutorial, we hope that we have conveyed some
+basic ideas of Bayesian optimization. For more reference, the youtube
+video [3] is an excellent course to learn the basic theory. And the
+paper [2] gives a review of current progresses on this subject, together
+with many discussions about technical details.</p>
+</div>
+<div class="section" id="References">
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<p>[1]
+<code class="docutils literal"><span class="pre">Practical</span> <span class="pre">bayesian</span> <span class="pre">optimization</span> <span class="pre">of</span> <span class="pre">machine</span> <span class="pre">learning</span> <span class="pre">algorithms</span></code>,
+Jasper Snoek, Hugo Larochelle, and Ryan P. Adams</p>
+<p>[2]
+<code class="docutils literal"><span class="pre">Taking</span> <span class="pre">the</span> <span class="pre">human</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">loop:</span> <span class="pre">A</span> <span class="pre">review</span> <span class="pre">of</span> <span class="pre">bayesian</span> <span class="pre">optimization</span></code>,
+Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, and Nando De
+Freitas</p>
+<p>[3] <a class="reference external" href="https://www.youtube.com/watch?v=vz3D36VXefI">Machine learning - Bayesian optimization and multi-armed
+bandits</a></p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="gp.html" class="btn btn-neutral" title="Gaussian Processes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0-a0+88254ac',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -8,12 +8,10 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials  documentation</title>
+  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
   
 
   
-  
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
   
   
   
@@ -37,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials  documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
         <link rel="next" title="SVI Part III: ELBO Gradient Estimators" href="svi_part_iii.html"/>
         <link rel="prev" title="SVI Part I: An Introduction to Stochastic Variational Inference in Pyro" href="svi_part_i.html"/> 
 
@@ -70,6 +68,10 @@
           
             
             
+              <div class="version">
+                pytorch-0.3-279-gdafa1ddd
+              </div>
+            
           
 
           
@@ -91,7 +93,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption"><span class="caption-text">Introduction:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
@@ -111,15 +113,26 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#Amortization">Amortization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Tensor-shapes-and-pyro.iarange">Tensor shapes and <code class="docutils literal"><span class="pre">pyro.iarange</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#References">References</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro 0.2</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributed:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 </ul>
 
             
@@ -246,17 +259,16 @@ conditional independencies: <code class="docutils literal"><span class="pre">ira
 the simpler of the two.</p>
 <div class="section" id="irange">
 <h3><code class="docutils literal"><span class="pre">irange</span></code><a class="headerlink" href="#irange" title="Permalink to this headline">¶</a></h3>
-<p>Let’s return to the example we used in the <a class="reference external" href="svi_part_i.html">previous
-tutorial</a>. For convenience let’s replicate the main
+<p>Let’s return to the example we used in the <a class="reference internal" href="svi_part_i.html"><span class="doc">previous
+tutorial</span></a>. For convenience let’s replicate the main
 logic of <code class="docutils literal"><span class="pre">model</span></code> here:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="c1"># sample f from the beta prior</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">alpha0</span><span class="p">,</span> <span class="n">beta0</span><span class="p">)</span>
-    <span class="c1"># loop over the observed data</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="n">alpha0</span><span class="p">,</span> <span class="n">beta0</span><span class="p">))</span>
+    <span class="c1"># loop over the observed data using pyro.sample with the obs keyword argument</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
         <span class="c1"># observe datapoint i using the bernoulli likelihood</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span>
-                     <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>For this model the observations are conditionally independent given the
@@ -265,26 +277,25 @@ Pyro we basically just need to replace the Python builtin <code class="docutils 
 the Pyro construct <code class="docutils literal"><span class="pre">irange</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="c1"># sample f from the beta prior</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">alpha0</span><span class="p">,</span> <span class="n">beta0</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="n">alpha0</span><span class="p">,</span> <span class="n">beta0</span><span class="p">))</span>
     <span class="c1"># loop over the observed data [WE ONLY CHANGE THE NEXT LINE]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">irange</span><span class="p">(</span><span class="s2">&quot;data_loop&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
         <span class="c1"># observe datapoint i using the bernoulli likelihood</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span>
-                     <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>We see that <code class="docutils literal"><span class="pre">pyro.irange</span></code> is very similar to <code class="docutils literal"><span class="pre">range</span></code> with one main
 difference: each invocation of <code class="docutils literal"><span class="pre">irange</span></code> requires the user to provide a
 unique name. The second argument is an integer just like for <code class="docutils literal"><span class="pre">range</span></code>.</p>
-<p>So far so good. Pyro can now leverage the conditional indendency of the
-observations given the latent random variable. But how this does
+<p>So far so good. Pyro can now leverage the conditional independency of
+the observations given the latent random variable. But how does this
 actually work? Basically <code class="docutils literal"><span class="pre">pyro.irange</span></code> is implemented using a context
 manager. At every execution of the body of the <code class="docutils literal"><span class="pre">for</span></code> loop we enter a
 new (conditional) independence context which is then exited at the end
 of the <code class="docutils literal"><span class="pre">for</span></code> loop body. Let’s be very explicit about this:</p>
 <ul class="simple">
-<li>because each <code class="docutils literal"><span class="pre">pyro.observe</span></code> statement occurs within a different
-execution of the body of the <code class="docutils literal"><span class="pre">for</span></code> loop, Pyro marks each
+<li>because each observed <code class="docutils literal"><span class="pre">pyro.sample</span></code> statement occurs within a
+different execution of the body of the <code class="docutils literal"><span class="pre">for</span></code> loop, Pyro marks each
 observation as independent</li>
 <li>this independence is properly a <em>conditional</em> independence <em>given</em>
 <code class="docutils literal"><span class="pre">latent_fairness</span></code> because <code class="docutils literal"><span class="pre">latent_fairness</span></code> is sampled <em>outside</em>
@@ -295,12 +306,12 @@ of the context of <code class="docutils literal"><span class="pre">data_loop</sp
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># WARNING do not do this!</span>
 <span class="n">my_reified_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">irange</span><span class="p">(</span><span class="s2">&quot;data_loop&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">my_reified_list</span><span class="p">:</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>This will <em>not</em> achieve the desired behavior, since <code class="docutils literal"><span class="pre">list()</span></code> will
 enter and exit the <code class="docutils literal"><span class="pre">data_loop</span></code> context completely before a single
-<code class="docutils literal"><span class="pre">pyro.observe</span></code> statement is called. Similarly, the user needs to take
+<code class="docutils literal"><span class="pre">pyro.sample</span></code> statement is called. Similarly, the user needs to take
 care not to leak mutable computations across the boundary of the context
 manager, as this may lead to subtle bugs. For example, <code class="docutils literal"><span class="pre">pyro.irange</span></code>
 is not appropriate for temporal models where each iteration of a loop
@@ -315,13 +326,13 @@ vectorized operation (as <code class="docutils literal"><span class="pre">torch.
 potentially enables large speed-ups compared to the explicit <code class="docutils literal"><span class="pre">for</span></code>
 loop that appears with <code class="docutils literal"><span class="pre">irange</span></code>. Let’s see how this looks for our
 running example. First we need <code class="docutils literal"><span class="pre">data</span></code> to be in the form of a tensor:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="c1"># 6 heads and 4 tails</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="c1"># 6 heads and 4 tails</span>
 </pre></div>
 </div>
 <p>Then we have:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;observe_data&#39;</span><span class="p">):</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Let’s compare this to the analogous <code class="docutils literal"><span class="pre">irange</span></code> construction
@@ -337,8 +348,8 @@ involved in the <code class="docutils literal"><span class="pre">iarange</span><
 <div class="section" id="Subsampling">
 <h2>Subsampling<a class="headerlink" href="#Subsampling" title="Permalink to this headline">¶</a></h2>
 <p>We now know how to mark conditional independence in Pyro. This is useful
-in and of itself (see the <a class="reference external" href="svi_part_iii.html">dependency tracking
-section</a> in SVI Part III), but we’d also like to
+in and of itself (see the <a class="reference internal" href="svi_part_iii.html"><span class="doc">dependency tracking
+section</span></a> in SVI Part III), but we’d also like to
 do subsampling so that we can do SVI on large datasets. Depending on the
 structure of the model and guide, Pyro supports several ways of doing
 subsampling. Let’s go through these one by one.</p>
@@ -347,7 +358,7 @@ subsampling. Let’s go through these one by one.</p>
 <p>Let’s look at the simplest case first, in which we get subsampling for
 free with one or two additional arguments to <code class="docutils literal"><span class="pre">irange</span></code> and <code class="docutils literal"><span class="pre">iarange</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">irange</span><span class="p">(</span><span class="s2">&quot;data_loop&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>That’s all there is to it: we just use the argument <code class="docutils literal"><span class="pre">subsample_size</span></code>.
@@ -357,8 +368,8 @@ likelihood will be automatically scaled by the appropriate factor of
 <span class="math">\(\tfrac{10}{5} = 2\)</span>. What about <code class="docutils literal"><span class="pre">iarange</span></code>? The incantantion is
 entirely analogous:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;observe_data&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span> <span class="k">as</span> <span class="n">ind</span><span class="p">:</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span>
-                 <span class="n">data</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ind</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span>
+                <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ind</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>Importantly, <code class="docutils literal"><span class="pre">iarange</span></code> now returns a tensor of indices <code class="docutils literal"><span class="pre">ind</span></code>, which,
@@ -379,7 +390,7 @@ can lead to some problems: basically for a sufficiently large dataset
 even after a large number of iterations there’s a nonnegligible
 probability that some of the datapoints will have never been selected.
 To avoid this the user can take control of subsampling by making use of
-the <code class="docutils literal"><span class="pre">subsample</span></code> argument to <code class="docutils literal"><span class="pre">irange</span></code> and <code class="docutils literal"><span class="pre">iarange</span></code>. See <a class="reference external" href="http://docs.pyro.ai/primitives.html#pyro.__init__.iarange">the
+the <code class="docutils literal"><span class="pre">subsample</span></code> argument to <code class="docutils literal"><span class="pre">irange</span></code> and <code class="docutils literal"><span class="pre">iarange</span></code>. See <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.iarange">the
 docs</a> for
 details.</p>
 </div>
@@ -389,13 +400,13 @@ details.</p>
 <div class="math">
 \[p({\bf x}, {\bf z}) = \prod_{i=1}^N p({\bf x}_i | {\bf z}_i) p({\bf z}_i)\]</div>
 <p>For a model with this dependency structure the scale factor introduced
-by subsampling scales all the terms in the ELBO by the same amount.
-Consequently there’s no need to invoke any special Pyro constructs. This
+by subsampling scales all the terms in the ELBO by the same amount. This
 is the case, for example, for a vanilla VAE. This explains why for the
 VAE it’s permissible for the user to take complete control over
-subsampling and pass mini-batches directly to the model and guide
-without using <code class="docutils literal"><span class="pre">irange</span></code> or <code class="docutils literal"><span class="pre">iarange</span></code>. To see how this looks in
-detail, see the <a class="reference external" href="vae.html">VAE tutorial</a></p>
+subsampling and pass mini-batches directly to the model and guide;
+<code class="docutils literal"><span class="pre">iarange</span></code> is still used, but <code class="docutils literal"><span class="pre">subsample_size</span></code> and <code class="docutils literal"><span class="pre">subsample</span></code> are
+not. To see how this looks in detail, see the <a class="reference internal" href="vae.html"><span class="doc">VAE
+tutorial</span></a>.</p>
 </div>
 <div class="section" id="Subsampling-when-there-are-both-global-and-local-random-variables">
 <h3>Subsampling when there are both global and local random variables<a class="headerlink" href="#Subsampling-when-there-are-both-global-and-local-random-variables" title="Permalink to this headline">¶</a></h3>
@@ -432,12 +443,11 @@ statements, etc.). First, the model:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="n">beta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># sample the global RV</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">irange</span><span class="p">(</span><span class="s2">&quot;locals&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
-        <span class="n">z_i</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_i&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+        <span class="n">z_i</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="o">...</span><span class="p">)</span>
         <span class="c1"># compute the parameter used to define the observation</span>
         <span class="c1"># likelihood using the local random variable</span>
         <span class="n">theta_i</span> <span class="o">=</span> <span class="n">compute_something</span><span class="p">(</span><span class="n">z_i</span><span class="p">)</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">mydist</span><span class="p">,</span>
-                     <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">theta_i</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">MyDist</span><span class="p">(</span><span class="n">theta_i</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>Note that in contrast to our running coin flip example, here we have
@@ -447,7 +457,7 @@ context. Next the guide:</p>
     <span class="n">beta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="c1"># sample the global RV</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">irange</span><span class="p">(</span><span class="s2">&quot;locals&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
         <span class="c1"># sample the local RVs</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_i&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">lambda_i</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="o">...</span><span class="p">,</span> <span class="n">lambda_i</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Note that crucially the indices will only be subsampled once in the
@@ -482,7 +492,15 @@ can handle large datasets without having to introduce an obscene number
 of variational parameters. This approach has other benefits too: for
 example, during learning <span class="math">\(f(\cdot)\)</span> effectively allows us to share
 statistical power among different datapoints. Note that this is
-precisely the approach used in the <a class="reference external" href="vae.html">VAE</a>.</p>
+precisely the approach used in the <a class="reference internal" href="vae.html"><span class="doc">VAE</span></a>.</p>
+</div>
+<div class="section" id="Tensor-shapes-and-pyro.iarange">
+<h2>Tensor shapes and <code class="docutils literal"><span class="pre">pyro.iarange</span></code><a class="headerlink" href="#Tensor-shapes-and-pyro.iarange" title="Permalink to this headline">¶</a></h2>
+<p>The usage of <code class="docutils literal"><span class="pre">pyro.iarange</span></code> in this tutorial was limited to relatively
+simple cases. For example, none of the <code class="docutils literal"><span class="pre">iarange</span></code>s were nested inside
+of other <code class="docutils literal"><span class="pre">iarange</span></code>s. In order to make full use of <code class="docutils literal"><span class="pre">iarange</span></code>, the
+user must be careful to use Pyro’s tensor shape semantics. For a
+discussion see the <a class="reference internal" href="tensor_shapes.html"><span class="doc">tensor shapes tutorial</span></a>.</p>
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
@@ -515,7 +533,7 @@ Welling</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Uber AI Labs.
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
@@ -537,8 +555,7 @@ Welling</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'',
-            LANGUAGE:'None',
+            VERSION:'0.2.0-a0+88254ac',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -548,7 +565,7 @@ Welling</p>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

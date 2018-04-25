@@ -8,12 +8,10 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>SVI Part III: ELBO Gradient Estimators &mdash; Pyro Tutorials  documentation</title>
+  <title>SVI Part III: ELBO Gradient Estimators &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
   
 
   
-  
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
   
   
   
@@ -37,8 +35,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials  documentation" href="index.html"/>
-        <link rel="next" title="Variational Autoencoders" href="vae.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
+        <link rel="next" title="Tensor shapes in Pyro 0.2" href="tensor_shapes.html"/>
         <link rel="prev" title="SVI Part II: Conditional Independence, Subsampling, and Amortization" href="svi_part_ii.html"/> 
 
   
@@ -70,6 +68,10 @@
           
             
             
+              <div class="version">
+                pytorch-0.3-279-gdafa1ddd
+              </div>
+            
           
 
           
@@ -91,7 +93,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption"><span class="caption-text">Introduction:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">Models in Pyro: From Primitive Distributions to Stochastic Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">Inference in Pyro: From Stochastic Functions to Marginal Distributions</a></li>
@@ -103,6 +105,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Tricky-Case:-Non-reparameterizable-Random-Variables">Tricky Case: Non-reparameterizable Random Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Variance-or-Why-I-Wish-I-Was-Doing-MLE-Deep-Learning">Variance or Why I Wish I Was Doing MLE Deep Learning</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Reducing-Variance-via-Dependency-Structure">Reducing Variance via Dependency Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#An-Example-with-Rao-Blackwellization:">An Example with Rao-Blackwellization:</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Aside:-Dependency-tracking-in-Pyro">Aside: Dependency tracking in Pyro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Reducing-Variance-with-Data-Dependent-Baselines">Reducing Variance with Data-Dependent Baselines</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Baselines-in-Pyro">Baselines in Pyro</a></li>
@@ -115,11 +118,21 @@
 <li class="toctree-l2"><a class="reference internal" href="#References">References</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro 0.2</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributed:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 </ul>
 
             
@@ -343,7 +356,11 @@ div.nboutput div.output_area.stderr {
 .ansi-white-intense-fg { color: #A1A6B2; }
 .ansi-white-intense-bg { background-color: #A1A6B2; }
 
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
 .ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
 
 /* CSS overrides for sphinx_rtd_theme */
 
@@ -462,21 +479,21 @@ q_{\phi}({\bf z})\nabla_{\phi} \log q_{\phi}({\bf z})\]</div>
 <p>This form of the gradient estimator—variously known as the REINFORCE
 estimator or the score function estimator or the likelihood ratio
 estimator—is amenable to simple Monte Carlo estimation.</p>
-<p>Note that one way to package this result (which is covenient for
-implementation) is to introduce a surrogate loss function</p>
+<p>Note that one way to package this result (which is convenient for
+implementation) is to introduce a surrogate objective function</p>
 <div class="math">
-\[{\rm surrogate \;loss} \equiv
+\[{\rm surrogate \;objective} \equiv
 \log q_{\phi}({\bf z}) \overline{f_{\phi}({\bf z})} + f_{\phi}({\bf z})\]</div>
 <p>Here the bar indicates that the term is held constant (i.e.&nbsp;it is not to
 be differentiated w.r.t. <span class="math">\(\phi\)</span>). To get a (single-sample) Monte
 Carlo gradient estimate, we sample the latent random variables, compute
-the surrogate loss, and differentiate. The result is an unbiased
+the surrogate objective, and differentiate. The result is an unbiased
 estimate of
 <span class="math">\(\nabla_{\phi}\mathbb{E}_{q_{\phi}({\bf z})} \left [ f_{\phi}({\bf z}) \right]\)</span>.
 In equations:</p>
 <div class="math">
 \[\nabla_{\phi} {\rm ELBO} = \mathbb{E}_{q_{\phi}({\bf z})} \left [
-\nabla_{\phi} ({\rm surrogate \; loss}) \right]\]</div>
+\nabla_{\phi} ({\rm surrogate \; objective}) \right]\]</div>
 </div>
 <div class="section" id="Variance-or-Why-I-Wish-I-Was-Doing-MLE-Deep-Learning">
 <h2>Variance or Why I Wish I Was Doing MLE Deep Learning<a class="headerlink" href="#Variance-or-Why-I-Wish-I-Was-Doing-MLE-Deep-Learning" title="Permalink to this headline">¶</a></h2>
@@ -516,7 +533,8 @@ The point is that different terms in the cost function have different
 dependencies on the random variables <span class="math">\(\{ {\bf z}_i \}\)</span> and this is
 something we can leverage.</p>
 <p>To make a long story short, for any non-reparameterizable latent random
-variable <span class="math">\({\bf z}_i\)</span> the surrogate loss is going to have a term</p>
+variable <span class="math">\({\bf z}_i\)</span> the surrogate objective is going to have a
+term</p>
 <div class="math">
 \[\log q_{\phi}({\bf z}_i) \overline{f_{\phi}({\bf z})}\]</div>
 <p>It turns out that we can remove some of the terms in
@@ -525,18 +543,52 @@ estimator; furthermore, doing so will generally decrease the variance.
 In particular (see reference [4] for details) we can remove any terms in
 <span class="math">\(\overline{f_{\phi}({\bf z})}\)</span> that are not downstream of the
 latent variable <span class="math">\({\bf z}_i\)</span> (downstream w.r.t. to the dependency
-structure of the guide).</p>
+structure of the guide). Note that this general trick—where certain
+random variables are dealt with analytically to reduce variance—often
+goes under the name of Rao-Blackwellization.</p>
 <p>In Pyro, all of this logic is taken care of automatically by the <code class="docutils literal"><span class="pre">SVI</span></code>
-class. In particular as long as we switch on <code class="docutils literal"><span class="pre">trace_graph=True</span></code>, Pyro
+class. In particular as long as we use a <code class="docutils literal"><span class="pre">TraceGraph_ELBO</span></code> loss, Pyro
 will keep track of the dependency structure within the execution traces
-of the model and guide and construct a surrogate loss that has all the
-unnecessary terms removed:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="s2">&quot;ELBO&quot;</span><span class="p">,</span> <span class="n">trace_graph</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+of the model and guide and construct a surrogate objective that has all
+the unnecessary terms removed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">TraceGraph_ELBO</span><span class="p">())</span>
 </pre></div>
 </div>
 <p>Note that leveraging this dependency information takes extra
-computations, so <code class="docutils literal"><span class="pre">trace_graph=True</span></code> should only be invoked in the case
-where your model has non-reparameterizable random variables.</p>
+computations, so <code class="docutils literal"><span class="pre">TraceGraph_ELBO</span></code> should only be used in the case
+where your model has non-reparameterizable random variables; in most
+applications <code class="docutils literal"><span class="pre">Trace_ELBO</span></code> suffices.</p>
+</div>
+<div class="section" id="An-Example-with-Rao-Blackwellization:">
+<h3>An Example with Rao-Blackwellization:<a class="headerlink" href="#An-Example-with-Rao-Blackwellization:" title="Permalink to this headline">¶</a></h3>
+<p>Suppose we have a gaussian mixture model with <span class="math">\(K\)</span> components. For
+each data point we: (i) first sample the component distribution
+<span class="math">\(k \in [1,...,K]\)</span>; and (ii) observe the data point using the
+<span class="math">\(k^{\rm th}\)</span> component distribution. The simplest way to write
+down a model of this sort is as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">ks</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="p">)</span>
+                          <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="n">ks</span><span class="p">],</span> <span class="n">scale</span><span class="p">)</span>
+                       <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Since the user hasn’t taken care to mark any of the conditional
+independencies in the model, the gradient estimator constructed by
+Pyro’s <code class="docutils literal"><span class="pre">SVI</span></code> class is unable to take advantage of
+Rao-Blackwellization, with the result that the gradient estimator will
+tend to suffer from high variance. To address this problem the user
+needs to explicitly mark the conditional independence. Happily, this is
+not much work:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># mark conditional independence</span>
+<span class="c1"># (assumed to be along the rightmost tensor dimension)</span>
+<span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
+    <span class="n">ks</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="p">))</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="n">ks</span><span class="p">],</span> <span class="n">scale</span><span class="p">),</span>
+                <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>That’s all there is to it.</p>
 </div>
 <div class="section" id="Aside:-Dependency-tracking-in-Pyro">
 <h3>Aside: Dependency tracking in Pyro<a class="headerlink" href="#Aside:-Dependency-tracking-in-Pyro" title="Permalink to this headline">¶</a></h3>
@@ -550,8 +602,8 @@ stochastic function then <span class="math">\({\bf z}_2\)</span> <em>may be</em>
 <span class="math">\({\bf z}_1\)</span> and therefore <em>is</em> assumed to be dependent. To
 mitigate the overly coarse conclusions that can be drawn by this kind of
 dependency tracking, Pyro includes constructs for declaring things as
-independent, namely <code class="docutils literal"><span class="pre">irange</span></code> and <code class="docutils literal"><span class="pre">iarange</span></code> (<a class="reference external" href="svi_part_ii.html">see the previous
-tutorial</a>). For use cases with
+independent, namely <code class="docutils literal"><span class="pre">irange</span></code> and <code class="docutils literal"><span class="pre">iarange</span></code> (<a class="reference internal" href="svi_part_ii.html"><span class="doc">see the previous
+tutorial</span></a>). For use cases with
 non-reparameterizable variables, it is therefore important for the user
 to make use of these constructs (when applicable) to take full advantage
 of the variance reduction provided by <code class="docutils literal"><span class="pre">SVI</span></code>. In some cases it may also
@@ -585,7 +637,7 @@ constant <span class="math">\(b\)</span>, the following identity holds</p>
 <p>What this means is that we can replace any term</p>
 <div class="math">
 \[\log q_{\phi}({\bf z}_i) \overline{f_{\phi}({\bf z})}\]</div>
-<p>in our surrogate loss with</p>
+<p>in our surrogate objective with</p>
 <div class="math">
 \[\log q_{\phi}({\bf z}_i) \left(\overline{f_{\phi}({\bf z})}-b\right)\]</div>
 <p>Doing so doesn’t affect the mean of our gradient estimator but it does
@@ -608,9 +660,9 @@ makes sense to specify baselines for sample statements within the guide
 <p>The simplest baseline is constructed from a running average of recent
 samples of <span class="math">\(\overline{f_{\phi}({\bf z})}\)</span>. In Pyro this kind of
 baseline can be invoked as follows</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span>
-                <span class="n">baseline</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;use_decaying_avg_baseline&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
-                          <span class="s1">&#39;baseline_beta&#39;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">})</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+                <span class="n">infer</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">baseline</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;use_decaying_avg_baseline&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                                     <span class="s1">&#39;baseline_beta&#39;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">}))</span>
 </pre></div>
 </div>
 <p>The optional argument <code class="docutils literal"><span class="pre">baseline_beta</span></code> specifies the decay rate of the
@@ -624,7 +676,7 @@ baseline that depends on upstream randomness is crucial for getting good
 variance reduction. A powerful approach for constructing such a baseline
 is to use a neural network that can be adapted during the course of
 learning. Pyro provides two ways to specify such a baseline (for an
-extended example see the <a class="reference external" href="air.html">AIR tutorial</a>).</p>
+extended example see the <a class="reference internal" href="air.html"><span class="doc">AIR tutorial</span></a>).</p>
 <p>First the user needs to decide what inputs the baseline is going to
 consume (e.g.&nbsp;the current datapoint under consideration or the
 previously sampled random variable). Then the user needs to construct a
@@ -645,11 +697,11 @@ look something like</p>
 <p>Then, assuming the BaselineNN object <code class="docutils literal"><span class="pre">baseline_module</span></code> has been
 initialized somewhere else, in the guide we’ll have something like</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>  <span class="c1"># here x is the current mini-batch of data</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;my_baseline&quot;</span><span class="p">,</span> <span class="n">baseline_module</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="s2">&quot;baseline&quot;</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;my_baseline&quot;</span><span class="p">,</span> <span class="n">baseline_module</span><span class="p">)</span>
     <span class="c1"># ... other computations ...</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span>
-                    <span class="n">baseline</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;nn_baseline&#39;</span><span class="p">:</span> <span class="n">baseline_module</span><span class="p">,</span>
-                              <span class="s1">&#39;nn_baseline_input&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">})</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+                    <span class="n">infer</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">baseline</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;nn_baseline&#39;</span><span class="p">:</span> <span class="n">baseline_module</span><span class="p">,</span>
+                                         <span class="s1">&#39;nn_baseline_input&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">}))</span>
 </pre></div>
 </div>
 <p>Here the argument <code class="docutils literal"><span class="pre">nn_baseline</span></code> tells Pyro which <code class="docutils literal"><span class="pre">nn.Module</span></code> to use
@@ -668,15 +720,11 @@ the decaying average baseline, the idea is that a baseline that can
 track the mean <span class="math">\(\overline{f_{\phi}({\bf z})}\)</span> will help reduce the
 variance. Under the hood <code class="docutils literal"><span class="pre">SVI</span></code> takes one step on the baseline loss in
 conjunction with a step on the ELBO.</p>
-<p>Note that the module <code class="docutils literal"><span class="pre">baseline_module</span></code> has been tagged with the string
-<code class="docutils literal"><span class="pre">&quot;baseline&quot;</span></code> above; this has the effect of tagging all parameters
-inside of <code class="docutils literal"><span class="pre">baseline_module</span></code> with the parameter tag <code class="docutils literal"><span class="pre">&quot;baseline&quot;</span></code>.
-This gives the user a convenient handle for controlling how the baseline
-parameters are optimized. For example, if the user wants the baseline
-parameters to have a larger learning rate (usually a good idea) an
-appropriate optimizer could be constructed as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">per_param_args</span><span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
-    <span class="k">if</span> <span class="s1">&#39;baseline&#39;</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+<p>Note that in practice it can be important to use a different set of
+learning hyperparameters (e.g.&nbsp;a higher learning rate) for baseline
+parameters. In Pyro this can be done as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">per_param_args</span><span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">param_name</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s1">&#39;baseline&#39;</span> <span class="ow">in</span> <span class="n">param_name</span> <span class="ow">or</span> <span class="s1">&#39;baseline&#39;</span> <span class="ow">in</span> <span class="n">module_name</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.010</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">}</span>
@@ -695,8 +743,8 @@ autograd graph before they are fed into the neural network.</p>
 <p>Finally, there is an alternate way for the user to specify a neural
 baseline. Simply use the argument <code class="docutils literal"><span class="pre">baseline_value</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">b</span> <span class="o">=</span> <span class="c1"># do baseline computation</span>
-<span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span>
-                <span class="n">baseline</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;baseline_value&#39;</span><span class="p">:</span> <span class="n">b</span><span class="p">})</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+                <span class="n">infer</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">baseline</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;baseline_value&#39;</span><span class="p">:</span> <span class="n">b</span><span class="p">}))</span>
 </pre></div>
 </div>
 <p>This works as above, except in this case it’s the user’s responsibility
@@ -708,15 +756,17 @@ autograd graph with <code class="docutils literal"><span class="pre">detach()</s
 </div>
 <div class="section" id="A-complete-example-with-baselines">
 <h4>A complete example with baselines<a class="headerlink" href="#A-complete-example-with-baselines" title="Permalink to this headline">¶</a></h4>
-<p>Recall that in the <a class="reference external" href="svi_part_i.html">first SVI tutorial</a> we
+<p>Recall that in the <a class="reference internal" href="svi_part_i.html"><span class="doc">first SVI tutorial</span></a> we
 considered a bernoulli-beta model for coin flips. Because the beta
-random variable is non-reparameterizable, the corresponding ELBO
-gradients are quite noisy. In that context we dealt with this problem by
-dialing up the number of Monte Carlo samples used to form the estimator.
-This isn’t necessarily a bad approach, but it can be an expensive one.
-Here we showcase how a simple decaying average baseline can reduce the
-variance. While we’re at it, we also use <code class="docutils literal"><span class="pre">iarange</span></code> to write our model
-in a fully vectorized manner.</p>
+random variable is non-reparameterizable (or rather not easily
+reparameterizable), the corresponding ELBO gradients can be quite noisy.
+In that context we dealt with this problem by using a Beta distribution
+that provides (approximate) reparameterized gradients. Here we showcase
+how a simple decaying average baseline can reduce the variance in the
+case where the Beta distribution is treated as non-reparameterized (so
+that the ELBO gradient estimator is of the score function type). While
+we’re at it, we also use <code class="docutils literal"><span class="pre">iarange</span></code> to write our model in a fully
+vectorized manner.</p>
 <p>Instead of directly comparing gradient variances, we’re going to see how
 many steps it takes for SVI to converge. Recall that for this particular
 model (because of conjugacy) we can compute the exact posterior. So to
@@ -737,118 +787,114 @@ code line by line.</em>)</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="kn">import</span> <span class="n">Variable</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.optim</span> <span class="kn">as</span> <span class="nn">optim</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span></span>from __future__ import print_function
+import os
+import torch
+import torch.distributions.constraints as constraints
+import pyro
+import pyro.distributions as dist
+# Pyro also has a reparameterized Beta distribution so we import
+# the non-reparameterized version to make our point
+from pyro.distributions.testing.fakes import NonreparameterizedBeta
+import pyro.optim as optim
+from pyro.infer import SVI, TraceGraph_ELBO
+import sys
+
+# enable validation (e.g. validate parameters of distributions)
+pyro.enable_validation(True)
+
+# this is for running the notebook in our testing framework
+smoke_test = (&#39;CI&#39; in os.environ)
+max_steps = 2 if smoke_test else 10000
 
 
-<span class="k">def</span> <span class="nf">param_abs_error</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">target</span> <span class="o">-</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+def param_abs_error(name, target):
+    return torch.sum(torch.abs(target - pyro.param(name))).item()
 
 
-<span class="k">class</span> <span class="nc">BernoulliBetaExample</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># the two hyperparameters for the beta prior</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">alpha0</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">10.0</span><span class="p">]))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta0</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="mf">10.0</span><span class="p">]))</span>
-        <span class="c1"># the dataset consists of six 1s and four 0s</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="c1"># compute the alpha parameter of the exact beta posterior</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="c1"># compute the beta parameter of the exact beta posterior</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta_n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">+</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">n_data</span><span class="p">]))</span>
-        <span class="c1"># for convenience compute the logs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_alpha_n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha_n</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_beta_n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta_n</span><span class="p">)</span>
+class BernoulliBetaExample(object):
+    def __init__(self, max_steps):
+        # the maximum number of inference steps we do
+        self.max_steps = max_steps
+        # the two hyperparameters for the beta prior
+        self.alpha0 = 10.0
+        self.beta0 = 10.0
+        # the dataset consists of six 1s and four 0s
+        self.data = torch.zeros(10)
+        self.data[0:6].data = torch.ones(6)
+        self.n_data = self.data.size(0)
+        # compute the alpha parameter of the exact beta posterior
+        self.alpha_n = self.data.sum() + self.alpha0
+        # compute the beta parameter of the exact beta posterior
+        self.beta_n = - self.data.sum() + torch.tensor(self.beta0 + self.n_data)
+        # initial values of the two variational parameters
+        self.alpha_q_0 = 15.0
+        self.beta_q_0 = 15.0
 
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># initialize values of the two variational parameters</span>
-        <span class="c1"># set to be quite close to the true values</span>
-        <span class="c1"># so that the experiment doesn&#39;t take too long</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_alpha_q_0</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">15.0</span><span class="p">)]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_beta_q_0</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">15.0</span><span class="p">)]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    def model(self, use_decaying_avg_baseline):
+        # sample `latent_fairness` from the beta prior
+        f = pyro.sample(&quot;latent_fairness&quot;, dist.Beta(self.alpha0, self.beta0))
+        # use iarange to indicate that the observations are
+        # conditionally independent given f and get vectorization
+        with pyro.iarange(&quot;data_iarange&quot;):
+            # observe all ten datapoints using the bernoulli likelihood
+            pyro.sample(&quot;obs&quot;, dist.Bernoulli(f), obs=self.data)
 
-    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_decaying_avg_baseline</span><span class="p">):</span>
-        <span class="c1"># sample `latent_fairness` from the beta prior</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta0</span><span class="p">)</span>
-        <span class="c1"># use iarange to indicate that the observations are</span>
-        <span class="c1"># conditionally independent given f and get vectorization</span>
-        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;data_iarange&quot;</span><span class="p">):</span>
-            <span class="c1"># observe all ten datapoints using the bernoulli likelihood</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    def guide(self, use_decaying_avg_baseline):
+        # register the two variational parameters with pyro
+        alpha_q = pyro.param(&quot;alpha_q&quot;, torch.tensor(self.alpha_q_0),
+                             constraint=constraints.positive)
+        beta_q = pyro.param(&quot;beta_q&quot;, torch.tensor(self.beta_q_0),
+                            constraint=constraints.positive)
+        # sample f from the beta variational distribution
+        baseline_dict = {&#39;use_decaying_avg_baseline&#39;: use_decaying_avg_baseline,
+                         &#39;baseline_beta&#39;: 0.90}
+        # note that the baseline_dict specifies whether we&#39;re using
+        # decaying average baselines or not
+        pyro.sample(&quot;latent_fairness&quot;, NonreparameterizedBeta(alpha_q, beta_q),
+                    infer=dict(baseline=baseline_dict))
 
-    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_decaying_avg_baseline</span><span class="p">):</span>
-        <span class="c1"># register the two variational parameters with pyro</span>
-        <span class="n">log_alpha_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;log_alpha_q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_alpha_q_0</span><span class="p">)</span>
-        <span class="n">log_beta_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;log_beta_q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_beta_q_0</span><span class="p">)</span>
-        <span class="n">alpha_q</span><span class="p">,</span> <span class="n">beta_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_alpha_q</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_beta_q</span><span class="p">)</span>
-        <span class="c1"># sample f from the beta variational distribution</span>
-        <span class="n">baseline_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;use_decaying_avg_baseline&#39;</span><span class="p">:</span> <span class="n">use_decaying_avg_baseline</span><span class="p">,</span>
-                         <span class="s1">&#39;baseline_beta&#39;</span><span class="p">:</span> <span class="mf">0.90</span><span class="p">}</span>
-        <span class="c1"># note that the baseline_dict specifies whether we&#39;re using</span>
-        <span class="c1"># decaying average baselines or not</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">alpha_q</span><span class="p">,</span> <span class="n">beta_q</span><span class="p">,</span>
-                    <span class="n">baseline</span><span class="o">=</span><span class="n">baseline_dict</span><span class="p">)</span>
+    def do_inference(self, use_decaying_avg_baseline, tolerance=0.80):
+        # clear the param store in case we&#39;re in a REPL
+        pyro.clear_param_store()
+        # setup the optimizer and the inference algorithm
+        optimizer = optim.Adam({&quot;lr&quot;: .0005, &quot;betas&quot;: (0.93, 0.999)})
+        svi = SVI(self.model, self.guide, optimizer, loss=TraceGraph_ELBO())
+        print(&quot;Doing inference with use_decaying_avg_baseline=%s&quot; % use_decaying_avg_baseline)
 
-    <span class="k">def</span> <span class="nf">do_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_decaying_avg_baseline</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
-        <span class="c1"># clear the param store in case we&#39;re in a REPL</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-        <span class="c1"># initialize the variational parameters for this run</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
-        <span class="c1"># setup the optimizer and the inference algorithm</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="o">.</span><span class="mo">000</span><span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.93</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)})</span>
-        <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;ELBO&quot;</span><span class="p">,</span> <span class="n">trace_graph</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Doing inference with use_decaying_avg_baseline=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">use_decaying_avg_baseline</span><span class="p">)</span>
+        # do up to this many steps of inference
+        for k in range(self.max_steps):
+            svi.step(use_decaying_avg_baseline)
+            if k % 100 == 0:
+                print(&#39;.&#39;, end=&#39;&#39;)
+                sys.stdout.flush()
 
-        <span class="c1"># do up to 10000 steps of inference</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>
-            <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">use_decaying_avg_baseline</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">k</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-                <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            # compute the distance to the parameters of the true posterior
+            alpha_error = param_abs_error(&quot;alpha_q&quot;, self.alpha_n)
+            beta_error = param_abs_error(&quot;beta_q&quot;, self.beta_n)
 
-            <span class="c1"># compute the distance to the parameters of the true posterior</span>
-            <span class="n">alpha_error</span> <span class="o">=</span> <span class="n">param_abs_error</span><span class="p">(</span><span class="s2">&quot;log_alpha_q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_alpha_n</span><span class="p">)</span>
-            <span class="n">beta_error</span> <span class="o">=</span> <span class="n">param_abs_error</span><span class="p">(</span><span class="s2">&quot;log_beta_q&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_beta_n</span><span class="p">)</span>
+            # stop inference early if we&#39;re close to the true posterior
+            if alpha_error &lt; tolerance and beta_error &lt; tolerance:
+                break
 
-            <span class="c1"># stop inference early if we&#39;re close to the true posterior</span>
-            <span class="k">if</span> <span class="n">alpha_error</span> <span class="o">&lt;</span> <span class="n">tolerance</span> <span class="ow">and</span> <span class="n">beta_error</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
-                <span class="k">break</span>
+        print(&quot;\nDid %d steps of inference.&quot; % k)
+        print((&quot;Final absolute errors for the two variational parameters &quot; +
+               &quot;were %.4f &amp; %.4f&quot;) % (alpha_error, beta_error))
 
-        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Did </span><span class="si">%d</span><span class="s2"> steps of inference.&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
-        <span class="k">print</span><span class="p">((</span><span class="s2">&quot;Final absolute errors for the two variational parameters &quot;</span> <span class="o">+</span>
-               <span class="s2">&quot;(in log space) were </span><span class="si">%.4f</span><span class="s2"> &amp; </span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">alpha_error</span><span class="p">,</span> <span class="n">beta_error</span><span class="p">))</span>
-
-<span class="c1"># do the experiment</span>
-<span class="n">bbe</span> <span class="o">=</span> <span class="n">BernoulliBetaExample</span><span class="p">()</span>
-<span class="n">bbe</span><span class="o">.</span><span class="n">do_inference</span><span class="p">(</span><span class="n">use_decaying_avg_baseline</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="n">bbe</span><span class="o">.</span><span class="n">do_inference</span><span class="p">(</span><span class="n">use_decaying_avg_baseline</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+# do the experiment
+bbe = BernoulliBetaExample(max_steps=max_steps)
+bbe.do_inference(use_decaying_avg_baseline=True)
+bbe.do_inference(use_decaying_avg_baseline=False)
 </pre></div>
 </div>
 </div>
-<p><strong>Sample output:</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Doing</span> <span class="n">inference</span> <span class="k">with</span> <span class="n">use_decaying_avg_baseline</span><span class="o">=</span><span class="kc">True</span>
-<span class="o">...........</span>
-<span class="n">Did</span> <span class="mi">2070</span> <span class="n">steps</span> <span class="n">of</span> <span class="n">inference</span><span class="o">.</span>
-<span class="n">Final</span> <span class="n">absolute</span> <span class="n">errors</span> <span class="k">for</span> <span class="n">the</span> <span class="n">two</span> <span class="n">variational</span> <span class="n">parameters</span> <span class="p">(</span><span class="ow">in</span> <span class="n">log</span> <span class="n">space</span><span class="p">)</span> <span class="n">were</span> <span class="mf">0.0500</span> <span class="o">&amp;</span> <span class="mf">0.0443</span>
-<span class="n">Doing</span> <span class="n">inference</span> <span class="k">with</span> <span class="n">use_decaying_avg_baseline</span><span class="o">=</span><span class="kc">False</span>
-<span class="o">.....................</span>
-<span class="n">Did</span> <span class="mi">4159</span> <span class="n">steps</span> <span class="n">of</span> <span class="n">inference</span><span class="o">.</span>
-<span class="n">Final</span> <span class="n">absolute</span> <span class="n">errors</span> <span class="k">for</span> <span class="n">the</span> <span class="n">two</span> <span class="n">variational</span> <span class="n">parameters</span> <span class="p">(</span><span class="ow">in</span> <span class="n">log</span> <span class="n">space</span><span class="p">)</span> <span class="n">were</span> <span class="mf">0.0500</span> <span class="o">&amp;</span> <span class="mf">0.0306</span>
-</pre></div>
-</div>
+<p><strong>Sample output:</strong>
+<code class="docutils literal"><span class="pre">Doing</span> <span class="pre">inference</span> <span class="pre">with</span> <span class="pre">use_decaying_avg_baseline=True</span> <span class="pre">....................</span> <span class="pre">Did</span> <span class="pre">1932</span> <span class="pre">steps</span> <span class="pre">of</span> <span class="pre">inference.</span> <span class="pre">Final</span> <span class="pre">absolute</span> <span class="pre">errors</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">two</span> <span class="pre">variational</span> <span class="pre">parameters</span> <span class="pre">were</span> <span class="pre">0.7997</span> <span class="pre">&amp;</span> <span class="pre">0.0800</span> <span class="pre">Doing</span> <span class="pre">inference</span> <span class="pre">with</span> <span class="pre">use_decaying_avg_baseline=False</span> <span class="pre">..................................................</span> <span class="pre">Did</span> <span class="pre">4908</span> <span class="pre">steps</span> <span class="pre">of</span> <span class="pre">inference.</span> <span class="pre">Final</span> <span class="pre">absolute</span> <span class="pre">errors</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">two</span> <span class="pre">variational</span> <span class="pre">parameters</span> <span class="pre">were</span> <span class="pre">0.7991</span> <span class="pre">&amp;</span> <span class="pre">0.2532</span></code></p>
 <p>For this particular run we can see that baselines roughly halved the
 number of steps of SVI we needed to do. The results are stochastic and
-will vary from run to run, but this is an encouraging result. For
-certain model and guide pairs, baselines can provide an even bigger win.</p>
+will vary from run to run, but this is an encouraging result. This is a
+pretty contrived example, but for certain model and guide pairs,
+baselines can provide a substantial win.</p>
 </div>
 </div>
 </div>
@@ -879,7 +925,7 @@ Ritchie, Paul Horsfall, Noah D. Goodman</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="vae.html" class="btn btn-neutral float-right" title="Variational Autoencoders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tensor_shapes.html" class="btn btn-neutral float-right" title="Tensor shapes in Pyro 0.2" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="svi_part_ii.html" class="btn btn-neutral" title="SVI Part II: Conditional Independence, Subsampling, and Amortization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -891,7 +937,7 @@ Ritchie, Paul Horsfall, Noah D. Goodman</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Uber AI Labs.
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
@@ -913,8 +959,7 @@ Ritchie, Paul Horsfall, Noah D. Goodman</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'',
-            LANGUAGE:'None',
+            VERSION:'0.2.0-a0+88254ac',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -924,7 +969,7 @@ Ritchie, Paul Horsfall, Noah D. Goodman</p>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
