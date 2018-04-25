@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Deep Markov Model &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
+  <title>Deep Markov Model &mdash; Pyro Tutorials 0.2.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0 documentation" href="index.html"/>
         <link rel="next" title="Attend Infer Repeat" href="air.html"/>
         <link rel="prev" title="Bayesian Regression" href="bayesian_regression.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                pytorch-0.3-279-gdafa1ddd
+                0.2.0
               </div>
             
           
@@ -270,7 +270,7 @@ the latent dynamics to be parameterized by (non-linear) neural networks.</p>
 <p>The specific model we’re going to implement is based on the following
 reference:</p>
 <p>[1]
-<code class="docutils literal"><span class="pre">Structured</span> <span class="pre">Inference</span> <span class="pre">Networks</span> <span class="pre">for</span> <span class="pre">Nonlinear</span> <span class="pre">State</span> <span class="pre">Space</span> <span class="pre">Models</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Structured</span> <span class="pre">Inference</span> <span class="pre">Networks</span> <span class="pre">for</span> <span class="pre">Nonlinear</span> <span class="pre">State</span> <span class="pre">Space</span> <span class="pre">Models</span></code>,
 Rahul G. Krishnan, Uri Shalit, David Sontag</p>
 <p>Please note that while we do not assume that the reader of this tutorial
 has read the reference, it’s definitely a good place to look for a more
@@ -293,27 +293,27 @@ will see, assembling them will be straightforward. Let’s get to work.</p>
 with a graphical model.</p>
 <center><figure><img src="_static/img/model.png" style="width: 500px;"><figcaption> <font size="+1"><b>Figure 1</b>: The model rolled out for T=3 time steps.</font></figcaption></figure></center><p>Here, we’ve rolled out the model assuming that the sequence of
 observations is of length three:
-<span class="math">\(\{{\bf x}_1, {\bf x}_2, {\bf x}_3\}\)</span>. Mirroring the sequence of
+<span class="math notranslate">\(\{{\bf x}_1, {\bf x}_2, {\bf x}_3\}\)</span>. Mirroring the sequence of
 observations we also have a sequence of latent random variables:
-<span class="math">\(\{{\bf z}_1, {\bf z}_2, {\bf z}_3\}\)</span>. The figure encodes the
+<span class="math notranslate">\(\{{\bf z}_1, {\bf z}_2, {\bf z}_3\}\)</span>. The figure encodes the
 structure of the model. The corresponding joint distribution is</p>
-<div class="math">
+<div class="math notranslate">
 \[p({\bf x}_{123} , {\bf z}_{123})=p({\bf x}_1|{\bf z}_1)p({\bf x}_2|{\bf z}_2)p({\bf x}_3|{\bf z}_3)p({\bf z}_1)p({\bf z}_2|{\bf z}_1)p({\bf z}_3|{\bf z}_2)\]</div>
-<p>Conditioned on <span class="math">\({\bf z}_t\)</span>, each observation <span class="math">\({\bf x}_t\)</span> is
+<p>Conditioned on <span class="math notranslate">\({\bf z}_t\)</span>, each observation <span class="math notranslate">\({\bf x}_t\)</span> is
 independent of the other observations. This can be read off from the
-fact that each <span class="math">\({\bf x}_t\)</span> only depends on the corresponding
-latent <span class="math">\({\bf z}_t\)</span>, as indicated by the downward pointing arrows.
+fact that each <span class="math notranslate">\({\bf x}_t\)</span> only depends on the corresponding
+latent <span class="math notranslate">\({\bf z}_t\)</span>, as indicated by the downward pointing arrows.
 We can also read off the markov property of the model: each latent
-<span class="math">\({\bf z}_t\)</span>, when conditioned on the previous latent
-<span class="math">\({\bf z}_{t-1}\)</span>, is independent of all previous latents
-<span class="math">\(\{ {\bf z}_{t-2}, {\bf z}_{t-3}, ...\}\)</span>. This effectively says
+<span class="math notranslate">\({\bf z}_t\)</span>, when conditioned on the previous latent
+<span class="math notranslate">\({\bf z}_{t-1}\)</span>, is independent of all previous latents
+<span class="math notranslate">\(\{ {\bf z}_{t-2}, {\bf z}_{t-3}, ...\}\)</span>. This effectively says
 that everything one needs to know about the state of the system at time
-<span class="math">\(t\)</span> is encapsulated by the latent <span class="math">\({\bf z}_{t}\)</span>.</p>
+<span class="math notranslate">\(t\)</span> is encapsulated by the latent <span class="math notranslate">\({\bf z}_{t}\)</span>.</p>
 <p>We will assume that the observation likelihoods, i.e.&nbsp;the probability
-distributions <span class="math">\(p({{\bf x}_t}|{{\bf z}_t})\)</span> that control the
+distributions <span class="math notranslate">\(p({{\bf x}_t}|{{\bf z}_t})\)</span> that control the
 observations, are given by the bernoulli distribution. This is an
 appropriate choice since our observations are all 0 or 1. For the
-probability distributions <span class="math">\(p({\bf z}_t|{\bf z}_{t-1})\)</span> that
+probability distributions <span class="math notranslate">\(p({\bf z}_t|{\bf z}_{t-1})\)</span> that
 control the latent dynamics, we choose (conditional) gaussian
 distributions with diagonal covariances. This is reasonable since we
 assume that the latent space is continuous.</p>
@@ -323,24 +323,24 @@ that the black squares appear in two different places: in between pairs
 of latents and in between latents and observations. The non-linear
 function that connects the latent variables (‘Trans’ in Fig. 1) controls
 the dynamics of the latent variables. Since we allow the conditional
-probability distribution of <span class="math">\({\bf z}_{t}\)</span> to depend on
-<span class="math">\({\bf z}_{t-1}\)</span> in a complex way, we will be able to capture
+probability distribution of <span class="math notranslate">\({\bf z}_{t}\)</span> to depend on
+<span class="math notranslate">\({\bf z}_{t-1}\)</span> in a complex way, we will be able to capture
 complex dynamics in our model. Similarly, the non-linear function that
 connects the latent variables to the observations (‘Emit’ in Fig. 1)
 controls how the observations depend on the latent dynamics.</p>
 <p>Some additional notes: - we can freely choose the dimension of the
 latent space to suit the problem at hand: small latent spaces for simple
 problems and larger latent spaces for problems with complex dynamics -
-note the parameter <span class="math">\({\bf z}_0\)</span> in Fig. 1. as will become more
+note the parameter <span class="math notranslate">\({\bf z}_0\)</span> in Fig. 1. as will become more
 apparent from the code, this is just a convenient way for us to
-parameterize the probability distribution <span class="math">\(p({\bf z}_1)\)</span> for the
+parameterize the probability distribution <span class="math notranslate">\(p({\bf z}_1)\)</span> for the
 first time step, where there are no previous latents to condition on.</p>
 <div class="section" id="The-Gated-Transition-and-the-Emitter">
 <h3>The Gated Transition and the Emitter<a class="headerlink" href="#The-Gated-Transition-and-the-Emitter" title="Permalink to this headline">¶</a></h3>
 <p>Without further ado, let’s start writing some code. We first define the
 two PyTorch Modules that correspond to the black squares in Fig. 1.
 First the emission function:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Emitter</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Emitter</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameterizes the bernoulli observation likelihood p(x_t | z_t)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -366,19 +366,19 @@ First the emission function:</p>
 </pre></div>
 </div>
 <p>In the constructor we define the linear transformations that will be
-used in our emission function. Note that <code class="docutils literal"><span class="pre">emission_dim</span></code> is the number
+used in our emission function. Note that <code class="docutils literal notranslate"><span class="pre">emission_dim</span></code> is the number
 of hidden units in the neural network. We also define the
 non-linearities that we will be using. The forward call defines the
 computational flow of the function. We take in the latent
-<span class="math">\({\bf z}_{t}\)</span> as input and do a sequence of transformations until
+<span class="math notranslate">\({\bf z}_{t}\)</span> as input and do a sequence of transformations until
 we obtain a vector of length 88 that defines the emission probabilities
 of our bernoulli likelihood. Because of the sigmoid, each element of
-<code class="docutils literal"><span class="pre">ps</span></code> will be between 0 and 1 and will define a valid probability.
-Taken together the elements of <code class="docutils literal"><span class="pre">ps</span></code> encode which notes we expect to
-observe at time <span class="math">\(t\)</span> given the state of the system (as encoded in
-<span class="math">\({\bf z}_{t}\)</span>).</p>
+<code class="docutils literal notranslate"><span class="pre">ps</span></code> will be between 0 and 1 and will define a valid probability.
+Taken together the elements of <code class="docutils literal notranslate"><span class="pre">ps</span></code> encode which notes we expect to
+observe at time <span class="math notranslate">\(t\)</span> given the state of the system (as encoded in
+<span class="math notranslate">\({\bf z}_{t}\)</span>).</p>
 <p>Now we define the gated transition function:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GatedTransition</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GatedTransition</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameterizes the gaussian latent transition probability p(z_t | z_{t-1})</span>
 <span class="sd">    See section 5 in the reference for comparison.</span>
@@ -424,15 +424,15 @@ observe at time <span class="math">\(t\)</span> given the state of the system (a
         <span class="k">return</span> <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span>
 </pre></div>
 </div>
-<p>This mirrors the structure of <code class="docutils literal"><span class="pre">Emitter</span></code> above, with the difference
+<p>This mirrors the structure of <code class="docutils literal notranslate"><span class="pre">Emitter</span></code> above, with the difference
 that the computational flow is a bit more complicated. This is for two
-reasons. First, the output of <code class="docutils literal"><span class="pre">GatedTransition</span></code> needs to define a
+reasons. First, the output of <code class="docutils literal notranslate"><span class="pre">GatedTransition</span></code> needs to define a
 valid (diagonal) gaussian distribution. So we need to output two
-parameters: the mean <code class="docutils literal"><span class="pre">loc</span></code>, and the (square root) covariance
-<code class="docutils literal"><span class="pre">scale</span></code>. These both need to have the same dimension as the latent
+parameters: the mean <code class="docutils literal notranslate"><span class="pre">loc</span></code>, and the (square root) covariance
+<code class="docutils literal notranslate"><span class="pre">scale</span></code>. These both need to have the same dimension as the latent
 space. Second, we don’t want to <em>force</em> the dynamics to be non-linear.
-Thus our mean <code class="docutils literal"><span class="pre">loc</span></code> is a sum of two terms, only one of which depends
-non-linearily on the input <code class="docutils literal"><span class="pre">z_t_1</span></code>. This way we can support both
+Thus our mean <code class="docutils literal notranslate"><span class="pre">loc</span></code> is a sum of two terms, only one of which depends
+non-linearily on the input <code class="docutils literal notranslate"><span class="pre">z_t_1</span></code>. This way we can support both
 linear and non-linear dynamics (or indeed have the dynamics of part of
 the latent space be linear, while the remainder of the dynamics is
 non-linear).</p>
@@ -442,14 +442,14 @@ non-linear).</p>
 <p>So far everything we’ve done is pure PyTorch. To finish translating our
 model into code we need to bring Pyro into the picture. Basically we
 need to implement the stochastic nodes (i.e.&nbsp;the circles) in Fig. 1. To
-do this we introduce a callable <code class="docutils literal"><span class="pre">model()</span></code> that contains the Pyro
-primitive <code class="docutils literal"><span class="pre">pyro.sample</span></code>. The <code class="docutils literal"><span class="pre">sample</span></code> statements will be used to
-specify the joint distribution over the latents <span class="math">\({\bf z}_{1:T}\)</span>.
-Additionally, the <code class="docutils literal"><span class="pre">obs</span></code> argument can be used with the <code class="docutils literal"><span class="pre">sample</span></code>
-statements to specify how the observations <span class="math">\({\bf x}_{1:T}\)</span> depend
-on the latents. Before we look at the complete code for <code class="docutils literal"><span class="pre">model()</span></code>,
+do this we introduce a callable <code class="docutils literal notranslate"><span class="pre">model()</span></code> that contains the Pyro
+primitive <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>. The <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements will be used to
+specify the joint distribution over the latents <span class="math notranslate">\({\bf z}_{1:T}\)</span>.
+Additionally, the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument can be used with the <code class="docutils literal notranslate"><span class="pre">sample</span></code>
+statements to specify how the observations <span class="math notranslate">\({\bf x}_{1:T}\)</span> depend
+on the latents. Before we look at the complete code for <code class="docutils literal notranslate"><span class="pre">model()</span></code>,
 let’s look at a stripped down version that contains the main logic:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
     <span class="n">z_prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_0</span>
 
     <span class="c1"># sample the latents z and observed x&#39;s one time step at a time</span>
@@ -473,30 +473,30 @@ let’s look at a stripped down version that contains the main logic:</p>
         <span class="n">z_prev</span> <span class="o">=</span> <span class="n">z_t</span>
 </pre></div>
 </div>
-<p>The first thing we need to do is sample <span class="math">\({\bf z}_1\)</span>. Once we’ve
-sampled <span class="math">\({\bf z}_1\)</span>, we can sample
-<span class="math">\({\bf z}_2 \sim p({\bf z}_2|{\bf z}_1)\)</span> and so on. This is the
-logic implemented in the <code class="docutils literal"><span class="pre">for</span></code> loop. The parameters <code class="docutils literal"><span class="pre">z_loc</span></code> and
-<code class="docutils literal"><span class="pre">z_scale</span></code> that define the probability distributions
-<span class="math">\(p({\bf z}_t|{\bf z}_{t-1})\)</span> are computed using <code class="docutils literal"><span class="pre">self.trans</span></code>,
-which is just an instance of the <code class="docutils literal"><span class="pre">GatedTransition</span></code> module defined
-above. For the first time step at <span class="math">\(t=1\)</span> we condition on
-<code class="docutils literal"><span class="pre">self.z_0</span></code>, which is a (trainable) <code class="docutils literal"><span class="pre">Parameter</span></code>, while for subsequent
+<p>The first thing we need to do is sample <span class="math notranslate">\({\bf z}_1\)</span>. Once we’ve
+sampled <span class="math notranslate">\({\bf z}_1\)</span>, we can sample
+<span class="math notranslate">\({\bf z}_2 \sim p({\bf z}_2|{\bf z}_1)\)</span> and so on. This is the
+logic implemented in the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop. The parameters <code class="docutils literal notranslate"><span class="pre">z_loc</span></code> and
+<code class="docutils literal notranslate"><span class="pre">z_scale</span></code> that define the probability distributions
+<span class="math notranslate">\(p({\bf z}_t|{\bf z}_{t-1})\)</span> are computed using <code class="docutils literal notranslate"><span class="pre">self.trans</span></code>,
+which is just an instance of the <code class="docutils literal notranslate"><span class="pre">GatedTransition</span></code> module defined
+above. For the first time step at <span class="math notranslate">\(t=1\)</span> we condition on
+<code class="docutils literal notranslate"><span class="pre">self.z_0</span></code>, which is a (trainable) <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>, while for subsequent
 time steps we condition on the previously drawn latent. Note that each
-random variable <code class="docutils literal"><span class="pre">z_t</span></code> is assigned a unique name by the user.</p>
-<p>Once we’ve sampled <span class="math">\({\bf z}_t\)</span> at a given time step, we need to
-observe the datapoint <span class="math">\({\bf x}_t\)</span>. So we pass <code class="docutils literal"><span class="pre">z_t</span></code> through
-<code class="docutils literal"><span class="pre">self.emitter</span></code>, an instance of the <code class="docutils literal"><span class="pre">Emitter</span></code> module defined above to
-obtain <code class="docutils literal"><span class="pre">emission_probs_t</span></code>. Together with the argument
-<code class="docutils literal"><span class="pre">dist.Bernoulli()</span></code> in the <code class="docutils literal"><span class="pre">sample</span></code> statement, these probabilities
+random variable <code class="docutils literal notranslate"><span class="pre">z_t</span></code> is assigned a unique name by the user.</p>
+<p>Once we’ve sampled <span class="math notranslate">\({\bf z}_t\)</span> at a given time step, we need to
+observe the datapoint <span class="math notranslate">\({\bf x}_t\)</span>. So we pass <code class="docutils literal notranslate"><span class="pre">z_t</span></code> through
+<code class="docutils literal notranslate"><span class="pre">self.emitter</span></code>, an instance of the <code class="docutils literal notranslate"><span class="pre">Emitter</span></code> module defined above to
+obtain <code class="docutils literal notranslate"><span class="pre">emission_probs_t</span></code>. Together with the argument
+<code class="docutils literal notranslate"><span class="pre">dist.Bernoulli()</span></code> in the <code class="docutils literal notranslate"><span class="pre">sample</span></code> statement, these probabilities
 fully specify the observation likelihood. Finally, we also specify the
-slice of observed data <span class="math">\({\bf x}_t\)</span>: <code class="docutils literal"><span class="pre">mini_batch[:,</span> <span class="pre">t</span> <span class="pre">-</span> <span class="pre">1,</span> <span class="pre">:]</span></code>
-using the <code class="docutils literal"><span class="pre">obs</span></code> argument to <code class="docutils literal"><span class="pre">sample</span></code>.</p>
+slice of observed data <span class="math notranslate">\({\bf x}_t\)</span>: <code class="docutils literal notranslate"><span class="pre">mini_batch[:,</span> <span class="pre">t</span> <span class="pre">-</span> <span class="pre">1,</span> <span class="pre">:]</span></code>
+using the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument to <code class="docutils literal notranslate"><span class="pre">sample</span></code>.</p>
 <p>This fully specifies our model and encapsulates it in a callable that
 can be passed to Pyro. Before we move on let’s look at the full version
-of <code class="docutils literal"><span class="pre">model()</span></code> and go through some of the details we glossed over in our
+of <code class="docutils literal notranslate"><span class="pre">model()</span></code> and go through some of the details we glossed over in our
 first pass.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mini_batch</span><span class="p">,</span> <span class="n">mini_batch_reversed</span><span class="p">,</span> <span class="n">mini_batch_mask</span><span class="p">,</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mini_batch</span><span class="p">,</span> <span class="n">mini_batch_reversed</span><span class="p">,</span> <span class="n">mini_batch_mask</span><span class="p">,</span>
           <span class="n">mini_batch_seq_lengths</span><span class="p">,</span> <span class="n">annealing_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 
     <span class="c1"># this is the number of time steps we need to process in the mini-batch</span>
@@ -548,13 +548,13 @@ first pass.</p>
             <span class="n">z_prev</span> <span class="o">=</span> <span class="n">z_t</span>
 </pre></div>
 </div>
-<p>The first thing to note is that <code class="docutils literal"><span class="pre">model()</span></code> takes a number of arguments.
-For now let’s just take a look at <code class="docutils literal"><span class="pre">mini_batch</span></code> and
-<code class="docutils literal"><span class="pre">mini_batch_mask</span></code>. <code class="docutils literal"><span class="pre">mini_batch</span></code> is a three dimensional tensor, with
+<p>The first thing to note is that <code class="docutils literal notranslate"><span class="pre">model()</span></code> takes a number of arguments.
+For now let’s just take a look at <code class="docutils literal notranslate"><span class="pre">mini_batch</span></code> and
+<code class="docutils literal notranslate"><span class="pre">mini_batch_mask</span></code>. <code class="docutils literal notranslate"><span class="pre">mini_batch</span></code> is a three dimensional tensor, with
 the first dimension being the batch dimension, the second dimension
 being the temporal dimension, and the final dimension being the features
 (88-dimensional in our case). To speed up the code, whenever we run
-<code class="docutils literal"><span class="pre">model</span></code> we’re going to process an entire mini-batch of sequences
+<code class="docutils literal notranslate"><span class="pre">model</span></code> we’re going to process an entire mini-batch of sequences
 (i.e.&nbsp;we’re going to take advantage of vectorization).</p>
 <p>This is sensible because our model is implicitly defined over a single
 observed sequence. The probability of a set of sequences is just given
@@ -562,24 +562,24 @@ by the products of the individual sequence probabilities. In other
 words, given the parameters of the model the sequences are conditionally
 independent.</p>
 <p>This vectorization introduces some complications because sequences can
-be of different lengths. This is where <code class="docutils literal"><span class="pre">mini_batch_mask</span></code> comes in.
-<code class="docutils literal"><span class="pre">mini_batch_mask</span></code> is a two dimensional 0/1 mask of dimensions
-<code class="docutils literal"><span class="pre">mini_batch_size</span></code> x <code class="docutils literal"><span class="pre">T_max</span></code>, where <code class="docutils literal"><span class="pre">T_max</span></code> is the maximum length
+be of different lengths. This is where <code class="docutils literal notranslate"><span class="pre">mini_batch_mask</span></code> comes in.
+<code class="docutils literal notranslate"><span class="pre">mini_batch_mask</span></code> is a two dimensional 0/1 mask of dimensions
+<code class="docutils literal notranslate"><span class="pre">mini_batch_size</span></code> x <code class="docutils literal notranslate"><span class="pre">T_max</span></code>, where <code class="docutils literal notranslate"><span class="pre">T_max</span></code> is the maximum length
 of any sequence in the mini-batch. This encodes which parts of
-<code class="docutils literal"><span class="pre">mini_batch</span></code> are valid observations.</p>
-<p>So the first thing we do is grab <code class="docutils literal"><span class="pre">T_max</span></code>: we have to unroll our model
+<code class="docutils literal notranslate"><span class="pre">mini_batch</span></code> are valid observations.</p>
+<p>So the first thing we do is grab <code class="docutils literal notranslate"><span class="pre">T_max</span></code>: we have to unroll our model
 for at least this many time steps. Note that this will result in a lot
 of ‘wasted’ computation, since some of the sequences will be shorter
-than <code class="docutils literal"><span class="pre">T_max</span></code>, but this is a small price to pay for the big speed-ups
+than <code class="docutils literal notranslate"><span class="pre">T_max</span></code>, but this is a small price to pay for the big speed-ups
 that come with vectorization. We just need to make sure that none of the
 ‘wasted’ computations ‘pollute’ our model computation. We accomplish
-this by passing the mask appropriate to time step <span class="math">\(t\)</span> to the
-<code class="docutils literal"><span class="pre">mask</span></code> method (which acts on the distribution that needs masking).</p>
-<p>Finally, the line <code class="docutils literal"><span class="pre">pyro.module(&quot;dmm&quot;,</span> <span class="pre">self)</span></code> is equivalent to a bunch
-of <code class="docutils literal"><span class="pre">pyro.param</span></code> statements for each parameter in the model. This lets
+this by passing the mask appropriate to time step <span class="math notranslate">\(t\)</span> to the
+<code class="docutils literal notranslate"><span class="pre">mask</span></code> method (which acts on the distribution that needs masking).</p>
+<p>Finally, the line <code class="docutils literal notranslate"><span class="pre">pyro.module(&quot;dmm&quot;,</span> <span class="pre">self)</span></code> is equivalent to a bunch
+of <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> statements for each parameter in the model. This lets
 Pyro know which parameters are part of the model. Just like for the
-<code class="docutils literal"><span class="pre">sample</span></code> statement, we give the module a unique name. This name will
-be incorporated into the name of the <code class="docutils literal"><span class="pre">Parameters</span></code> in the model. We
+<code class="docutils literal notranslate"><span class="pre">sample</span></code> statement, we give the module a unique name. This name will
+be incorporated into the name of the <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> in the model. We
 leave a discussion of the KL annealing factor for later.</p>
 </div>
 </div>
@@ -591,7 +591,7 @@ inference strategy is going to be variational inference (see <a class="reference
 I</span></a> for an introduction). So our next task is to
 build a family of variational distributions appropriate to doing
 inference in a deep markov model. However, at this point it’s worth
-emphasizing that nothing about the way we’ve implemented <code class="docutils literal"><span class="pre">model()</span></code>
+emphasizing that nothing about the way we’ve implemented <code class="docutils literal notranslate"><span class="pre">model()</span></code>
 ties us to variational inference. In principle we could use <em>any</em>
 inference strategy available in Pyro. For example, in this particular
 context one could imagine using some variant of Sequential Monte Carlo
@@ -600,62 +600,62 @@ context one could imagine using some variant of Sequential Monte Carlo
 <h3>Guide<a class="headerlink" href="#Guide" title="Permalink to this headline">¶</a></h3>
 <p>The purpose of the guide (i.e.&nbsp;the variational distribution) is to
 provide a (parameterized) approximation to the exact posterior
-<span class="math">\(p({\bf z}_{1:T}|{\bf x}_{1:T})\)</span>. Actually, there’s an implicit
+<span class="math notranslate">\(p({\bf z}_{1:T}|{\bf x}_{1:T})\)</span>. Actually, there’s an implicit
 assumption here which we should make explicit, so let’s take a step
-back. Suppose our dataset <span class="math">\(\mathcal{D}\)</span> consists of <span class="math">\(N\)</span>
+back. Suppose our dataset <span class="math notranslate">\(\mathcal{D}\)</span> consists of <span class="math notranslate">\(N\)</span>
 sequences
-<span class="math">\(\{ {\bf x}_{1:T_1}^1, {\bf x}_{1:T_2}^2, ..., {\bf x}_{1:T_N}^N \}\)</span>.
+<span class="math notranslate">\(\{ {\bf x}_{1:T_1}^1, {\bf x}_{1:T_2}^2, ..., {\bf x}_{1:T_N}^N \}\)</span>.
 Then the posterior we’re actually interested in is given by
-<span class="math">\(p({\bf z}_{1:T_1}^1, {\bf z}_{1:T_2}^2, ..., {\bf z}_{1:T_N}^N | \mathcal{D})\)</span>,
-i.e.&nbsp;we want to infer the latents for <em>all</em> <span class="math">\(N\)</span> sequences. Even
-for small <span class="math">\(N\)</span> this is a very high-dimensional distribution that
+<span class="math notranslate">\(p({\bf z}_{1:T_1}^1, {\bf z}_{1:T_2}^2, ..., {\bf z}_{1:T_N}^N | \mathcal{D})\)</span>,
+i.e.&nbsp;we want to infer the latents for <em>all</em> <span class="math notranslate">\(N\)</span> sequences. Even
+for small <span class="math notranslate">\(N\)</span> this is a very high-dimensional distribution that
 will require a very large number of parameters to specify. In particular
 if we were to directly parameterize the posterior in this form, the
 number of parameters required would grow (at least) linearly with
-<span class="math">\(N\)</span>. One way to avoid this nasty growth with the size of the
+<span class="math notranslate">\(N\)</span>. One way to avoid this nasty growth with the size of the
 dataset is <em>amortization</em> (see the analogous discussion in <a class="reference internal" href="svi_part_ii.html"><span class="doc">SVI Part
 II</span></a>).</p>
 <div class="section" id="Aside:-Amortization">
 <h4>Aside: Amortization<a class="headerlink" href="#Aside:-Amortization" title="Permalink to this headline">¶</a></h4>
 <p>This works as follows. Instead of introducing variational parameters for
 each sequence in our dataset, we’re going to learn a single parametric
-function <span class="math">\(f({\bf x}_{1:T})\)</span> and work with a variational
+function <span class="math notranslate">\(f({\bf x}_{1:T})\)</span> and work with a variational
 distribution that has the form
-<span class="math">\(\prod_{n=1}^N q({\bf z}_{1:T_n}^n | f({\bf x}_{1:T_n}^n))\)</span>. The
-function <span class="math">\(f(\cdot)\)</span>—which basically maps a given observed sequence
+<span class="math notranslate">\(\prod_{n=1}^N q({\bf z}_{1:T_n}^n | f({\bf x}_{1:T_n}^n))\)</span>. The
+function <span class="math notranslate">\(f(\cdot)\)</span>—which basically maps a given observed sequence
 to a set of variational parameters tailored to that sequence—will need
 to be sufficiently rich to capture the posterior accurately, but now we
 can handle large datasets without having to introduce an obscene number
 of variational parameters.</p>
-<p>So our task is to construct the function <span class="math">\(f(\cdot)\)</span>. Since in our
+<p>So our task is to construct the function <span class="math notranslate">\(f(\cdot)\)</span>. Since in our
 case we need to support variable-length sequences, it’s only natural
-that <span class="math">\(f(\cdot)\)</span> have a RNN in the loop. Before we look at the
-various component parts that make up our <span class="math">\(f(\cdot)\)</span> in detail,
+that <span class="math notranslate">\(f(\cdot)\)</span> have a RNN in the loop. Before we look at the
+various component parts that make up our <span class="math notranslate">\(f(\cdot)\)</span> in detail,
 let’s look at a computational graph that encodes the basic structure:</p>
 <p><center><figure><img src="_static/img/guide.png" style="width: 400px;"><figcaption> <font size="+1"><b>Figure 2</b>: The guide rolled out for T=3 time steps. </font></figcaption></figure></center><p>At the bottom of the figure we have our sequence of three observations.
 These observations will be consumed by a RNN that reads the observations
 from right to left and outputs three hidden states
-<span class="math">\(\{ {\bf h}_1, {\bf h}_2,{\bf h}_3\}\)</span>. Note that this computation
+<span class="math notranslate">\(\{ {\bf h}_1, {\bf h}_2,{\bf h}_3\}\)</span>. Note that this computation
 is done <em>before</em> we sample any latent variables. Next, each of the
-hidden states will be fed into a <code class="docutils literal"><span class="pre">Combiner</span></code> module whose job is to
+hidden states will be fed into a <code class="docutils literal notranslate"><span class="pre">Combiner</span></code> module whose job is to
 output the mean and covariance of the the conditional distribution
-<span class="math">\(q({\bf z}_t | {\bf z}_{t-1}, {\bf x}_{t:T})\)</span>, which we take to be
+<span class="math notranslate">\(q({\bf z}_t | {\bf z}_{t-1}, {\bf x}_{t:T})\)</span>, which we take to be
 given by a diagonal gaussian distribution. (Just like in the model, the
-conditional structure of <span class="math">\({\bf z}_{1:T}\)</span> in the guide is such that
-we sample <span class="math">\({\bf z}_t\)</span> forward in time.) In addition to the RNN
-hidden state, the <code class="docutils literal"><span class="pre">Combiner</span></code> also takes the latent random variable
-from the previous time step as input, except for <span class="math">\(t=1\)</span>, where it
+conditional structure of <span class="math notranslate">\({\bf z}_{1:T}\)</span> in the guide is such that
+we sample <span class="math notranslate">\({\bf z}_t\)</span> forward in time.) In addition to the RNN
+hidden state, the <code class="docutils literal notranslate"><span class="pre">Combiner</span></code> also takes the latent random variable
+from the previous time step as input, except for <span class="math notranslate">\(t=1\)</span>, where it
 instead takes the trainable (variational) parameter
-<span class="math">\({\bf z}_0^{\rm{q}}\)</span>.</p>
+<span class="math notranslate">\({\bf z}_0^{\rm{q}}\)</span>.</p>
 </div>
 <div class="section" id="Aside:-Guide-Structure">
 <h4>Aside: Guide Structure<a class="headerlink" href="#Aside:-Guide-Structure" title="Permalink to this headline">¶</a></h4>
 <p>Why do we setup the RNN to consume the observations from right to left?
 Why not left to right? With this choice our conditional distribution
-<span class="math">\(q({\bf z}_t |...)\)</span> depends on two things:</p>
+<span class="math notranslate">\(q({\bf z}_t |...)\)</span> depends on two things:</p>
 <ul class="simple">
-<li>the latent <span class="math">\({\bf z}_{t-1}\)</span> from the previous time step; and</li>
-<li>the observations <span class="math">\({\bf x}_{t:T}\)</span>, i.e.&nbsp;the current observation
+<li>the latent <span class="math notranslate">\({\bf z}_{t-1}\)</span> from the previous time step; and</li>
+<li>the observations <span class="math notranslate">\({\bf x}_{t:T}\)</span>, i.e.&nbsp;the current observation
 together with all future observations</li>
 </ul>
 <p>We are free to make other choices; all that is required is that that the
@@ -665,13 +665,13 @@ structure of the true posterior: see reference [1] for a detailed
 discussion. In brief, while we could, for example, condition on the
 entire sequence of observations, because of the markov structure of the
 model everything that we need to know about the previous observations
-<span class="math">\({\bf x}_{1:t-1}\)</span> is encapsulated by <span class="math">\({\bf z}_{t-1}\)</span>. We
+<span class="math notranslate">\({\bf x}_{1:t-1}\)</span> is encapsulated by <span class="math notranslate">\({\bf z}_{t-1}\)</span>. We
 could condition on more things, but there’s no need; and doing so will
 probably tend to dilute the learning signal. So running the RNN from
 right to left is the most natural choice for this particular model.</p>
 <p>So much for the high-level structure of the guide. Let’s look at the
-component parts in detail. First, the <code class="docutils literal"><span class="pre">Combiner</span></code> module:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Combiner</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+component parts in detail. First, the <code class="docutils literal notranslate"><span class="pre">Combiner</span></code> module:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Combiner</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameterizes q(z_t | z_{t-1}, x_{t:T}), which is the basic building block</span>
 <span class="sd">    of the guide (i.e. the variational distribution). The dependence on x_{t:T} is</span>
@@ -703,17 +703,17 @@ component parts in detail. First, the <code class="docutils literal"><span class
         <span class="k">return</span> <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span>
 </pre></div>
 </div>
-<p>This module has the same general structure as <code class="docutils literal"><span class="pre">Emitter</span></code> and
-<code class="docutils literal"><span class="pre">GatedTransition</span></code> in the model. The only thing of note is that because
-the <code class="docutils literal"><span class="pre">Combiner</span></code> needs to consume two inputs at each time step, it
-transforms the inputs into a single combined hidden state <code class="docutils literal"><span class="pre">h_combined</span></code>
+<p>This module has the same general structure as <code class="docutils literal notranslate"><span class="pre">Emitter</span></code> and
+<code class="docutils literal notranslate"><span class="pre">GatedTransition</span></code> in the model. The only thing of note is that because
+the <code class="docutils literal notranslate"><span class="pre">Combiner</span></code> needs to consume two inputs at each time step, it
+transforms the inputs into a single combined hidden state <code class="docutils literal notranslate"><span class="pre">h_combined</span></code>
 before it computes the outputs.</p>
 <p>Apart from the RNN, we now have all the ingredients we need to construct
 our guide distribution. Happily, PyTorch has great built-in RNN modules,
 so we don’t have much work to do here. We’ll see where we instantiate
 the RNN later. Let’s instead jump right into the definition of the
-stochastic function <code class="docutils literal"><span class="pre">guide()</span></code>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mini_batch</span><span class="p">,</span> <span class="n">mini_batch_reversed</span><span class="p">,</span> <span class="n">mini_batch_mask</span><span class="p">,</span>
+stochastic function <code class="docutils literal notranslate"><span class="pre">guide()</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mini_batch</span><span class="p">,</span> <span class="n">mini_batch_reversed</span><span class="p">,</span> <span class="n">mini_batch_mask</span><span class="p">,</span>
           <span class="n">mini_batch_seq_lengths</span><span class="p">,</span> <span class="n">annealing_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 
     <span class="c1"># this is the number of time steps we need to process in the mini-batch</span>
@@ -752,31 +752,31 @@ stochastic function <code class="docutils literal"><span class="pre">guide()</sp
             <span class="n">z_prev</span> <span class="o">=</span> <span class="n">z_t</span>
 </pre></div>
 </div>
-<p>The high-level structure of <code class="docutils literal"><span class="pre">guide()</span></code> is very similar to <code class="docutils literal"><span class="pre">model()</span></code>.
+<p>The high-level structure of <code class="docutils literal notranslate"><span class="pre">guide()</span></code> is very similar to <code class="docutils literal notranslate"><span class="pre">model()</span></code>.
 First note that the model and guide take the same arguments: this is a
 general requirement for model/guide pairs in Pyro. As in the model,
-there’s a call to <code class="docutils literal"><span class="pre">pyro.module</span></code> that registers all the parameters with
-Pyro. Also, the <code class="docutils literal"><span class="pre">for</span></code> loop has the same structure as the one in
-<code class="docutils literal"><span class="pre">model()</span></code>, with the difference that the guide only needs to sample
-latents (there are no <code class="docutils literal"><span class="pre">sample</span></code> statements with the <code class="docutils literal"><span class="pre">obs</span></code> keyword).
+there’s a call to <code class="docutils literal notranslate"><span class="pre">pyro.module</span></code> that registers all the parameters with
+Pyro. Also, the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop has the same structure as the one in
+<code class="docutils literal notranslate"><span class="pre">model()</span></code>, with the difference that the guide only needs to sample
+latents (there are no <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements with the <code class="docutils literal notranslate"><span class="pre">obs</span></code> keyword).
 Finally, note that the names of the latent variables in the guide
 exactly match those in the model. This is how Pyro knows to correctly
 align random variables.</p>
 <p>The RNN logic should be familar to PyTorch users, but let’s go through
-it quickly. First we prepare the initial state of the RNN, <code class="docutils literal"><span class="pre">h_0</span></code>. Then
+it quickly. First we prepare the initial state of the RNN, <code class="docutils literal notranslate"><span class="pre">h_0</span></code>. Then
 we invoke the RNN via its forward call; the resulting tensor
-<code class="docutils literal"><span class="pre">rnn_output</span></code> contains the hidden states for the entire mini-batch.
+<code class="docutils literal notranslate"><span class="pre">rnn_output</span></code> contains the hidden states for the entire mini-batch.
 Note that because we want the RNN to consume the observations from right
-to left, the input to the RNN is <code class="docutils literal"><span class="pre">mini_batch_reversed</span></code>, which is a
-copy of <code class="docutils literal"><span class="pre">mini_batch</span></code> with all the sequences running in <em>reverse</em>
-temporal order. Furthermore, <code class="docutils literal"><span class="pre">mini_batch_reversed</span></code> has been wrapped in
-a PyTorch <code class="docutils literal"><span class="pre">rnn.pack_padded_sequence</span></code> so that the RNN can deal with
+to left, the input to the RNN is <code class="docutils literal notranslate"><span class="pre">mini_batch_reversed</span></code>, which is a
+copy of <code class="docutils literal notranslate"><span class="pre">mini_batch</span></code> with all the sequences running in <em>reverse</em>
+temporal order. Furthermore, <code class="docutils literal notranslate"><span class="pre">mini_batch_reversed</span></code> has been wrapped in
+a PyTorch <code class="docutils literal notranslate"><span class="pre">rnn.pack_padded_sequence</span></code> so that the RNN can deal with
 variable-length sequences. Since we do our sampling in latent space in
-normal temporal order, we use the helper function <code class="docutils literal"><span class="pre">pad_and_reverse</span></code> to
-reverse the hidden state sequences in <code class="docutils literal"><span class="pre">rnn_output</span></code>, so that we can
-feed the <code class="docutils literal"><span class="pre">Combiner</span></code> RNN hidden states that are correctly aligned and
-ordered. This helper function also unpacks the <code class="docutils literal"><span class="pre">rnn_output</span></code> so that it
-is no longer in the form of a PyTorch <code class="docutils literal"><span class="pre">rnn.pack_padded_sequence</span></code>.</p>
+normal temporal order, we use the helper function <code class="docutils literal notranslate"><span class="pre">pad_and_reverse</span></code> to
+reverse the hidden state sequences in <code class="docutils literal notranslate"><span class="pre">rnn_output</span></code>, so that we can
+feed the <code class="docutils literal notranslate"><span class="pre">Combiner</span></code> RNN hidden states that are correctly aligned and
+ordered. This helper function also unpacks the <code class="docutils literal notranslate"><span class="pre">rnn_output</span></code> so that it
+is no longer in the form of a PyTorch <code class="docutils literal notranslate"><span class="pre">rnn.pack_padded_sequence</span></code>.</p>
 </div>
 </div>
 </div>
@@ -786,7 +786,7 @@ is no longer in the form of a PyTorch <code class="docutils literal"><span class
 so let’s quickly go over how we packaged the model and guide as a single
 PyTorch Module. This is generally good practice, especially for larger
 models.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DMM</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DMM</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This PyTorch Module encapsulates the model as well as the</span>
 <span class="sd">    variational distribution (the guide) for the Deep Markov Model</span>
@@ -827,23 +827,23 @@ models.</p>
         <span class="c1"># ... as above ...</span>
 </pre></div>
 </div>
-<p>Since we’ve already gone over <code class="docutils literal"><span class="pre">model</span></code> and <code class="docutils literal"><span class="pre">guide</span></code>, our focus here is
+<p>Since we’ve already gone over <code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">guide</span></code>, our focus here is
 on the constructor. First we instantiate the four PyTorch modules that
-we use in our model and guide. On the model-side: <code class="docutils literal"><span class="pre">Emitter</span></code> and
-<code class="docutils literal"><span class="pre">GatedTransition</span></code>. On the guide-side: <code class="docutils literal"><span class="pre">Combiner</span></code> and the RNN.</p>
-<p>Next we define PyTorch <code class="docutils literal"><span class="pre">Parameter</span></code>s for the initial state of the RNN
-as well as <code class="docutils literal"><span class="pre">z_0</span></code> and <code class="docutils literal"><span class="pre">z_q_0</span></code>, which are fed into <code class="docutils literal"><span class="pre">self.trans</span></code> and
-<code class="docutils literal"><span class="pre">self.combiner</span></code>, respectively, in lieu of the non-existent random
-variable <span class="math">\(\bf z_0\)</span>.</p>
-<p>The important point to make here is that all of these <code class="docutils literal"><span class="pre">Module</span></code>s and
-<code class="docutils literal"><span class="pre">Parameter</span></code>s are attributes of <code class="docutils literal"><span class="pre">DMM</span></code> (which itself inherits from
-<code class="docutils literal"><span class="pre">nn.Module</span></code>). This has the consequence they are all automatically
+we use in our model and guide. On the model-side: <code class="docutils literal notranslate"><span class="pre">Emitter</span></code> and
+<code class="docutils literal notranslate"><span class="pre">GatedTransition</span></code>. On the guide-side: <code class="docutils literal notranslate"><span class="pre">Combiner</span></code> and the RNN.</p>
+<p>Next we define PyTorch <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>s for the initial state of the RNN
+as well as <code class="docutils literal notranslate"><span class="pre">z_0</span></code> and <code class="docutils literal notranslate"><span class="pre">z_q_0</span></code>, which are fed into <code class="docutils literal notranslate"><span class="pre">self.trans</span></code> and
+<code class="docutils literal notranslate"><span class="pre">self.combiner</span></code>, respectively, in lieu of the non-existent random
+variable <span class="math notranslate">\(\bf z_0\)</span>.</p>
+<p>The important point to make here is that all of these <code class="docutils literal notranslate"><span class="pre">Module</span></code>s and
+<code class="docutils literal notranslate"><span class="pre">Parameter</span></code>s are attributes of <code class="docutils literal notranslate"><span class="pre">DMM</span></code> (which itself inherits from
+<code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>). This has the consequence they are all automatically
 registered as belonging to the module. So, for example, when we call
-<code class="docutils literal"><span class="pre">parameters()</span></code> on an instance of <code class="docutils literal"><span class="pre">DMM</span></code>, PyTorch will know to return
+<code class="docutils literal notranslate"><span class="pre">parameters()</span></code> on an instance of <code class="docutils literal notranslate"><span class="pre">DMM</span></code>, PyTorch will know to return
 all the relevant parameters. It also means that when we invoke
-<code class="docutils literal"><span class="pre">pyro.module(&quot;dmm&quot;,</span> <span class="pre">self)</span></code> in <code class="docutils literal"><span class="pre">model()</span></code> and <code class="docutils literal"><span class="pre">guide()</span></code>, all the
+<code class="docutils literal notranslate"><span class="pre">pyro.module(&quot;dmm&quot;,</span> <span class="pre">self)</span></code> in <code class="docutils literal notranslate"><span class="pre">model()</span></code> and <code class="docutils literal notranslate"><span class="pre">guide()</span></code>, all the
 parameters of both the model and guide will be registered with Pyro.
-Finally, it means that if we’re running on a GPU, the call to <code class="docutils literal"><span class="pre">cuda()</span></code>
+Finally, it means that if we’re running on a GPU, the call to <code class="docutils literal notranslate"><span class="pre">cuda()</span></code>
 will move all the parameters into GPU memory.</p>
 </div>
 <div class="section" id="Stochastic-Variational-Inference">
@@ -851,8 +851,8 @@ will move all the parameters into GPU memory.</p>
 <p>With our model and guide at hand, we’re finally ready to do inference.
 Before we look at the full logic that is involved in a complete
 experimental script, let’s first see how to take a single gradient step.
-First we instantiate an instance of <code class="docutils literal"><span class="pre">DMM</span></code> and setup an optimizer.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># instantiate the dmm</span>
+First we instantiate an instance of <code class="docutils literal notranslate"><span class="pre">DMM</span></code> and setup an optimizer.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># instantiate the dmm</span>
 <span class="n">dmm</span> <span class="o">=</span> <span class="n">DMM</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">z_dim</span><span class="p">,</span> <span class="n">emission_dim</span><span class="p">,</span> <span class="n">transition_dim</span><span class="p">,</span> <span class="n">rnn_dim</span><span class="p">,</span>
           <span class="n">args</span><span class="o">.</span><span class="n">rnn_dropout_rate</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_iafs</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">iaf_dim</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">)</span>
 
@@ -867,24 +867,24 @@ First we instantiate an instance of <code class="docutils literal"><span class="
 gradient clipping. This mitigates some of the problems that can occur
 when training recurrent neural networks (e.g.&nbsp;vanishing/exploding
 gradients). Next we setup the inference algorithm.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># setup inference algorithm</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup inference algorithm</span>
 <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">dmm</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">dmm</span><span class="o">.</span><span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
 </pre></div>
 </div>
-<p>The inference algorithm <code class="docutils literal"><span class="pre">SVI</span></code> uses a stochastic gradient estimator to
+<p>The inference algorithm <code class="docutils literal notranslate"><span class="pre">SVI</span></code> uses a stochastic gradient estimator to
 take gradient steps on an objective function, which in this case is
 given by the ELBO (the evidence lower bound). As the name indicates, the
-ELBO is a lower bound to the log evidence: <span class="math">\(\log p(\mathcal{D})\)</span>.
+ELBO is a lower bound to the log evidence: <span class="math notranslate">\(\log p(\mathcal{D})\)</span>.
 As we take gradient steps that maximize the ELBO, we move our guide
-<span class="math">\(q(\cdot)\)</span> closer to the exact posterior.</p>
-<p>The argument <code class="docutils literal"><span class="pre">Trace_ELBO()</span></code> constructs a version of the gradient
+<span class="math notranslate">\(q(\cdot)\)</span> closer to the exact posterior.</p>
+<p>The argument <code class="docutils literal notranslate"><span class="pre">Trace_ELBO()</span></code> constructs a version of the gradient
 estimator that doesn’t need access to the dependency structure of the
 model and guide. Since all the latent variables in our model are
 reparameterizable, this is the appropriate gradient estimator for our
 use case. (It’s also the default option.)</p>
-<p>Assuming we’ve prepared the various arguments of <code class="docutils literal"><span class="pre">dmm.model</span></code> and
-<code class="docutils literal"><span class="pre">dmm.guide</span></code>, taking a gradient step is accomplished by calling</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">mini_batch</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<p>Assuming we’ve prepared the various arguments of <code class="docutils literal notranslate"><span class="pre">dmm.model</span></code> and
+<code class="docutils literal notranslate"><span class="pre">dmm.guide</span></code>, taking a gradient step is accomplished by calling</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">mini_batch</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>That’s all there is to it!</p>
@@ -922,15 +922,15 @@ that we’re making use of in greater detail: KL annealing. In our case
 the ELBO is the sum of two terms: an expected log likelihood term (which
 measures model fit) and a sum of KL divergence terms (which serve to
 regularize the approximate posterior):</p>
-<p><span class="math">\(\rm{ELBO} = \mathbb{E}_{q({\bf z}_{1:T})}[\log p({\bf x}_{1:T}|{\bf z}_{1:T})] - \mathbb{E}_{q({\bf z}_{1:T})}[ \log q({\bf z}_{1:T}) - \log p({\bf z}_{1:T})]\)</span></p>
+<p><span class="math notranslate">\(\rm{ELBO} = \mathbb{E}_{q({\bf z}_{1:T})}[\log p({\bf x}_{1:T}|{\bf z}_{1:T})] - \mathbb{E}_{q({\bf z}_{1:T})}[ \log q({\bf z}_{1:T}) - \log p({\bf z}_{1:T})]\)</span></p>
 <p>This latter term can be a quite strong regularizer, and in early stages
 of training it has a tendency to favor regions of the loss surface that
 contain lots of bad local optima. One strategy to avoid these bad local
 optima, which was also adopted in reference [1], is to anneal the KL
-divergence terms by multiplying them by a scalar <code class="docutils literal"><span class="pre">annealing_factor</span></code>
+divergence terms by multiplying them by a scalar <code class="docutils literal notranslate"><span class="pre">annealing_factor</span></code>
 that ranges between zero and one:</p>
-<p><span class="math">\(\mathbb{E}_{q({\bf z}_{1:T})}[\log p({\bf x}_{1:T}|{\bf z}_{1:T})] - \rm{annealing\_factor} \times \mathbb{E}_{q({\bf z}_{1:T})}[ \log q({\bf z}_{1:T}) - \log p({\bf z}_{1:T})]\)</span></p>
-<p>The idea is that during the course of training the <code class="docutils literal"><span class="pre">annealing_factor</span></code>
+<p><span class="math notranslate">\(\mathbb{E}_{q({\bf z}_{1:T})}[\log p({\bf x}_{1:T}|{\bf z}_{1:T})] - \rm{annealing\_factor} \times \mathbb{E}_{q({\bf z}_{1:T})}[ \log q({\bf z}_{1:T}) - \log p({\bf z}_{1:T})]\)</span></p>
+<p>The idea is that during the course of training the <code class="docutils literal notranslate"><span class="pre">annealing_factor</span></code>
 rises slowly from its initial value at/near zero to its final value at
 1.0. The annealing schedule is arbitrary; below we will use a simple
 linear schedule. In terms of code, to scale the log likelihoods by the
@@ -950,7 +950,7 @@ divergences in Pyro is something we plan to add in the future.</p>
 <h2>Data Loading, Training, and Evaluation<a class="headerlink" href="#Data-Loading,-Training,-and-Evaluation" title="Permalink to this headline">¶</a></h2>
 <p>First we load the data. There are 229 sequences in the training dataset,
 each with an average length of ~60 time steps.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">jsb_file_loc</span> <span class="o">=</span> <span class="s2">&quot;./data/jsb_processed.pkl&quot;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">jsb_file_loc</span> <span class="o">=</span> <span class="s2">&quot;./data/jsb_processed.pkl&quot;</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">jsb_file_loc</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
 <span class="n">training_seq_lengths</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">][</span><span class="s1">&#39;sequence_lengths&#39;</span><span class="p">]</span>
 <span class="n">training_data_sequences</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">][</span><span class="s1">&#39;sequences&#39;</span><span class="p">]</span>
@@ -964,11 +964,11 @@ each with an average length of ~60 time steps.</p>
                      <span class="nb">int</span><span class="p">(</span><span class="n">N_train_data</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">mini_batch_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>For this dataset we will typically use a <code class="docutils literal"><span class="pre">mini_batch_size</span></code> of 20, so
+<p>For this dataset we will typically use a <code class="docutils literal notranslate"><span class="pre">mini_batch_size</span></code> of 20, so
 that there will be 12 mini-batches per epoch. Next we define the
-function <code class="docutils literal"><span class="pre">process_minibatch</span></code> which prepares a mini-batch for training
+function <code class="docutils literal notranslate"><span class="pre">process_minibatch</span></code> which prepares a mini-batch for training
 and takes a gradient step:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">process_minibatch</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">which_mini_batch</span><span class="p">,</span> <span class="n">shuffled_indices</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">process_minibatch</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">which_mini_batch</span><span class="p">,</span> <span class="n">shuffled_indices</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">annealing_epochs</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">epoch</span> <span class="o">&lt;</span> <span class="n">args</span><span class="o">.</span><span class="n">annealing_epochs</span><span class="p">:</span>
         <span class="c1"># compute the KL annealing factor appropriate</span>
         <span class="c1"># for the current mini-batch in the current epoch</span>
@@ -999,21 +999,21 @@ and takes a gradient step:</p>
 <p>We first compute the KL annealing factor appropriate to the mini-batch
 (according to a linear schedule as described earlier). We then compute
 the mini-batch indices, which we pass to the helper function
-<code class="docutils literal"><span class="pre">get_mini_batch</span></code>. This helper function takes care of a number of
+<code class="docutils literal notranslate"><span class="pre">get_mini_batch</span></code>. This helper function takes care of a number of
 different things: - it sorts each mini-batch by sequence length - it
 calls another helper function to get a copy of the mini-batch in
 reversed temporal order - it packs each reversed mini-batch in a
-<code class="docutils literal"><span class="pre">rnn.pack_padded_sequence</span></code>, which is then ready to be ingested by the
+<code class="docutils literal notranslate"><span class="pre">rnn.pack_padded_sequence</span></code>, which is then ready to be ingested by the
 RNN - it cuda-izes all tensors if we’re on a GPU - it calls another
 helper function to get an appropriate 0/1 mask for the mini-batch</p>
-<p>We then pipe all the return values of <code class="docutils literal"><span class="pre">get_mini_batch()</span></code> into
-<code class="docutils literal"><span class="pre">elbo.step(...)</span></code>. Recall that these arguments will be further piped to
-<code class="docutils literal"><span class="pre">model(...)</span></code> and <code class="docutils literal"><span class="pre">guide(...)</span></code> during construction of the gradient
-estimator in <code class="docutils literal"><span class="pre">elbo</span></code>. Finally, we return a float which is a noisy
+<p>We then pipe all the return values of <code class="docutils literal notranslate"><span class="pre">get_mini_batch()</span></code> into
+<code class="docutils literal notranslate"><span class="pre">elbo.step(...)</span></code>. Recall that these arguments will be further piped to
+<code class="docutils literal notranslate"><span class="pre">model(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">guide(...)</span></code> during construction of the gradient
+estimator in <code class="docutils literal notranslate"><span class="pre">elbo</span></code>. Finally, we return a float which is a noisy
 estimate of the loss for that mini-batch.</p>
 <p>We now have all the ingredients required for the main bit of our
 training loop:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">times</span> <span class="o">=</span> <span class="p">[</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()]</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">times</span> <span class="o">=</span> <span class="p">[</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()]</span>
 <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
     <span class="c1"># accumulator for our estimate of the negative log likelihood</span>
     <span class="c1"># (or rather -elbo) for this epoch</span>
@@ -1054,15 +1054,15 @@ optimization: in particular it can help us avoid local optima.</em>] And, in
 fact, in order to get a lessy noisy estimate of the ELBO, we’re going to
 compute a multi-sample estimate. The simplest way to do this would be as
 follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">val_loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">evaluate_loss</span><span class="p">(</span><span class="n">val_batch</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">val_loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">evaluate_loss</span><span class="p">(</span><span class="n">val_batch</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This, however, would involve an explicit <code class="docutils literal"><span class="pre">for</span></code> loop with five
+<p>This, however, would involve an explicit <code class="docutils literal notranslate"><span class="pre">for</span></code> loop with five
 iterations. For our particular model, we can do better and vectorize the
 whole computation. The only way to do this currently in Pyro is to
-explicitly replicate the data <code class="docutils literal"><span class="pre">n_eval_samples</span></code> many times. This is the
+explicitly replicate the data <code class="docutils literal notranslate"><span class="pre">n_eval_samples</span></code> many times. This is the
 strategy we follow:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># package repeated copies of val/test data for faster evaluation</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># package repeated copies of val/test data for faster evaluation</span>
 <span class="c1"># (i.e. set us up for vectorization)</span>
 <span class="k">def</span> <span class="nf">rep</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_eval_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1081,7 +1081,7 @@ strategy we follow:</p>
 </div>
 <p>With the test and validation data now fully prepped, we define the
 helper function that does the evaluation:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">do_evaluation</span><span class="p">():</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">do_evaluation</span><span class="p">():</span>
     <span class="c1"># put the RNN into evaluation mode (i.e. turn off drop-out if applicable)</span>
     <span class="n">dmm</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
@@ -1096,11 +1096,11 @@ helper function that does the evaluation:</p>
     <span class="k">return</span> <span class="n">val_nll</span><span class="p">,</span> <span class="n">test_nll</span>
 </pre></div>
 </div>
-<p>We simply call the <code class="docutils literal"><span class="pre">evaluate_loss</span></code> method of <code class="docutils literal"><span class="pre">elbo</span></code>, which takes the
-same arguments as <code class="docutils literal"><span class="pre">step()</span></code>, namely the arguments that are passed to
+<p>We simply call the <code class="docutils literal notranslate"><span class="pre">evaluate_loss</span></code> method of <code class="docutils literal notranslate"><span class="pre">elbo</span></code>, which takes the
+same arguments as <code class="docutils literal notranslate"><span class="pre">step()</span></code>, namely the arguments that are passed to
 the model and guide. Note that we have to put the RNN into and out of
 evaluation mode to account for dropout. We can now stick
-<code class="docutils literal"><span class="pre">do_evaluation()</span></code> into the training loop; see <a class="reference external" href="https://github.com/uber/pyro/blob/dev/examples/dmm/dmm.py">the source
+<code class="docutils literal notranslate"><span class="pre">do_evaluation()</span></code> into the training loop; see <a class="reference external" href="https://github.com/uber/pyro/blob/dev/examples/dmm/dmm.py">the source
 code</a> for
 details.</p>
 </div>
@@ -1110,9 +1110,9 @@ details.</p>
 use the numbers reported in reference [1] as a sanity check. For the
 same dataset and a similar model/guide setup (dimension of the latent
 space, number of hidden units in the RNN, etc.) they report a normalized
-negative log likelihood (NLL) of <code class="docutils literal"><span class="pre">6.93</span></code> on the testset (lower is
-better<span class="math">\()^{\S}\)</span>. This is to be compared to our result of
-<code class="docutils literal"><span class="pre">6.87</span></code>. These numbers are very much in the same ball park, which is
+negative log likelihood (NLL) of <code class="docutils literal notranslate"><span class="pre">6.93</span></code> on the testset (lower is
+better<span class="math notranslate">\()^{\S}\)</span>. This is to be compared to our result of
+<code class="docutils literal notranslate"><span class="pre">6.87</span></code>. These numbers are very much in the same ball park, which is
 reassuring. It seems that, at least for this dataset, not using analytic
 expressions for the KL divergences doesn’t degrade the quality of the
 learned model (although, as discussed above, the training probably takes
@@ -1128,25 +1128,25 @@ marginal gains if we let training go on for longer. On a GeForce GTX
 <col width="42%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">num_iafs</span></code></th>
+<tr class="row-odd"><th class="head"><code class="docutils literal notranslate"><span class="pre">num_iafs</span></code></th>
 <th class="head">test NLL</th>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">0</span></code></td>
-<td><code class="docutils literal"><span class="pre">6.87</span></code></td>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">0</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">6.87</span></code></td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">1</span></code></td>
-<td><code class="docutils literal"><span class="pre">6.82</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">1</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">6.82</span></code></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">2</span></code></td>
-<td><code class="docutils literal"><span class="pre">6.80</span></code></td>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">2</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">6.80</span></code></td>
 </tr>
 </tbody>
 </table>
 <p>Finally, we also report results for guides with normalizing flows in the
 mix (details to be found in the next section).</p>
-<p><span class="math">\({ \S\;}\)</span> Actually, they seem to report two numbers—6.93 and
+<p><span class="math notranslate">\({ \S\;}\)</span> Actually, they seem to report two numbers—6.93 and
 7.03—for the same model/guide and it’s not entirely clear how the two
 reported numbers are different.</p>
 </div>
@@ -1159,24 +1159,24 @@ that it encourages modularity. Let’s showcase an example in the context
 of the DMM. We’re going to make our variational distribution richer by
 adding normalizing flows to the mix (see reference [2] for a
 discussion). <strong>This will only cost us four additional lines of code!</strong></p>
-<p>First, in the <code class="docutils literal"><span class="pre">DMM</span></code> constructor we add</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">iafs</span> <span class="o">=</span> <span class="p">[</span><span class="n">InverseAutoregressiveFlow</span><span class="p">(</span><span class="n">z_dim</span><span class="p">,</span> <span class="n">iaf_dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iafs</span><span class="p">)]</span>
+<p>First, in the <code class="docutils literal notranslate"><span class="pre">DMM</span></code> constructor we add</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">iafs</span> <span class="o">=</span> <span class="p">[</span><span class="n">InverseAutoregressiveFlow</span><span class="p">(</span><span class="n">z_dim</span><span class="p">,</span> <span class="n">iaf_dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iafs</span><span class="p">)]</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">iafs</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">iafs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This instantiates <code class="docutils literal"><span class="pre">num_iafs</span></code> many normalizing flows of the
-<code class="docutils literal"><span class="pre">InverseAutoregressiveFlow</span></code> type (see references [3,4]); each
-normalizing flow will have <code class="docutils literal"><span class="pre">iaf_dim</span></code> many hidden units. We then bundle
-the normalizing flows in a <code class="docutils literal"><span class="pre">nn.ModuleList</span></code>; this is just the PyTorchy
-way to package a list of <code class="docutils literal"><span class="pre">nn.Module</span></code>s. Next, in the guide we add the
+<p>This instantiates <code class="docutils literal notranslate"><span class="pre">num_iafs</span></code> many normalizing flows of the
+<code class="docutils literal notranslate"><span class="pre">InverseAutoregressiveFlow</span></code> type (see references [3,4]); each
+normalizing flow will have <code class="docutils literal notranslate"><span class="pre">iaf_dim</span></code> many hidden units. We then bundle
+the normalizing flows in a <code class="docutils literal notranslate"><span class="pre">nn.ModuleList</span></code>; this is just the PyTorchy
+way to package a list of <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>s. Next, in the guide we add the
 lines</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iafs</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iafs</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
     <span class="n">z_dist</span> <span class="o">=</span> <span class="n">TransformedDistribution</span><span class="p">(</span><span class="n">z_dist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iafs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Here we’re taking the base distribution <code class="docutils literal"><span class="pre">z_dist</span></code>, which in our case is
+<p>Here we’re taking the base distribution <code class="docutils literal notranslate"><span class="pre">z_dist</span></code>, which in our case is
 a conditional gaussian distribution, and using the
-<code class="docutils literal"><span class="pre">TransformedDistribution</span></code> construct we transform it into a
+<code class="docutils literal notranslate"><span class="pre">TransformedDistribution</span></code> construct we transform it into a
 non-gaussian distribution that is, by construction, richer than the base
 distribution. Voila!</p>
 </div>
@@ -1187,27 +1187,27 @@ there are two kinds of state we need to keep track of. The first is the
 various parameters of the model and guide. The second is the state of
 the optimizers (e.g.&nbsp;in Adam this will include the running average of
 recent gradient estimates for each parameter).</p>
-<p>In Pyro, the parameters can all be found in the <code class="docutils literal"><span class="pre">ParamStore</span></code>. However,
-PyTorch also keeps track of them for us via the <code class="docutils literal"><span class="pre">parameters()</span></code> method
-of <code class="docutils literal"><span class="pre">nn.Module</span></code>. So one simple way we can save the parameters of the
-model and guide is to make use of the <code class="docutils literal"><span class="pre">state_dict()</span></code> method of <code class="docutils literal"><span class="pre">dmm</span></code>
-in conjunction with <code class="docutils literal"><span class="pre">torch.save()</span></code>; see below. In the case that we
-have <code class="docutils literal"><span class="pre">InverseAutoregressiveFlow</span></code>‘s in the loop, this is in fact the
+<p>In Pyro, the parameters can all be found in the <code class="docutils literal notranslate"><span class="pre">ParamStore</span></code>. However,
+PyTorch also keeps track of them for us via the <code class="docutils literal notranslate"><span class="pre">parameters()</span></code> method
+of <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>. So one simple way we can save the parameters of the
+model and guide is to make use of the <code class="docutils literal notranslate"><span class="pre">state_dict()</span></code> method of <code class="docutils literal notranslate"><span class="pre">dmm</span></code>
+in conjunction with <code class="docutils literal notranslate"><span class="pre">torch.save()</span></code>; see below. In the case that we
+have <code class="docutils literal notranslate"><span class="pre">InverseAutoregressiveFlow</span></code>‘s in the loop, this is in fact the
 only option at our disposal. This is because the
-<code class="docutils literal"><span class="pre">InverseAutoregressiveFlow</span></code> module contains what are called
+<code class="docutils literal notranslate"><span class="pre">InverseAutoregressiveFlow</span></code> module contains what are called
 ’persistent buffers’ in PyTorch parlance. These are things that carry
-state but are not <code class="docutils literal"><span class="pre">Parameter</span></code>s. The <code class="docutils literal"><span class="pre">state_dict()</span></code> and
-<code class="docutils literal"><span class="pre">load_state_dict()</span></code> methods of <code class="docutils literal"><span class="pre">nn.Module</span></code> know how to deal with
+state but are not <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>s. The <code class="docutils literal notranslate"><span class="pre">state_dict()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">load_state_dict()</span></code> methods of <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> know how to deal with
 buffers correctly.</p>
 <p>To save the state of the optimizers, we have to use functionality inside
-of <code class="docutils literal"><span class="pre">pyro.optim.PyroOptim</span></code>. Recall that the typical user never
-interacts directly with PyTorch <code class="docutils literal"><span class="pre">Optimizers</span></code> when using Pyro; since
+of <code class="docutils literal notranslate"><span class="pre">pyro.optim.PyroOptim</span></code>. Recall that the typical user never
+interacts directly with PyTorch <code class="docutils literal notranslate"><span class="pre">Optimizers</span></code> when using Pyro; since
 parameters can be created dynamically in an arbitrary probabilistic
-program, Pyro needs to manage <code class="docutils literal"><span class="pre">Optimizers</span></code> for us. In our case saving
-the optimizer state will be as easy as calling <code class="docutils literal"><span class="pre">optimizer.save()</span></code>. The
+program, Pyro needs to manage <code class="docutils literal notranslate"><span class="pre">Optimizers</span></code> for us. In our case saving
+the optimizer state will be as easy as calling <code class="docutils literal notranslate"><span class="pre">optimizer.save()</span></code>. The
 loading logic is entirely analagous. So our entire logic for saving and
 loading checkpoints only takes a few lines:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># saves the model and optimizer states to disk</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># saves the model and optimizer states to disk</span>
 <span class="k">def</span> <span class="nf">save_checkpoint</span><span class="p">():</span>
     <span class="n">log</span><span class="p">(</span><span class="s2">&quot;saving model to </span><span class="si">%s</span><span class="s2">...&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">save_model</span><span class="p">)</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dmm</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">args</span><span class="o">.</span><span class="n">save_model</span><span class="p">)</span>
@@ -1248,18 +1248,18 @@ huge variety of different models.</p>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1]
-<code class="docutils literal"><span class="pre">Structured</span> <span class="pre">Inference</span> <span class="pre">Networks</span> <span class="pre">for</span> <span class="pre">Nonlinear</span> <span class="pre">State</span> <span class="pre">Space</span> <span class="pre">Models</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Structured</span> <span class="pre">Inference</span> <span class="pre">Networks</span> <span class="pre">for</span> <span class="pre">Nonlinear</span> <span class="pre">State</span> <span class="pre">Space</span> <span class="pre">Models</span></code>,
 Rahul G. Krishnan, Uri Shalit, David Sontag</p>
-<p>[2] <code class="docutils literal"><span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">with</span> <span class="pre">Normalizing</span> <span class="pre">Flows</span></code>, &nbsp;&nbsp;&nbsp;&nbsp; Danilo
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">with</span> <span class="pre">Normalizing</span> <span class="pre">Flows</span></code>, &nbsp;&nbsp;&nbsp;&nbsp; Danilo
 Jimenez Rezende, Shakir Mohamed</p>
 <p>[3]
-<code class="docutils literal"><span class="pre">Improving</span> <span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">with</span> <span class="pre">Inverse</span> <span class="pre">Autoregressive</span> <span class="pre">Flow</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Improving</span> <span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">with</span> <span class="pre">Inverse</span> <span class="pre">Autoregressive</span> <span class="pre">Flow</span></code>,
 &nbsp;&nbsp;&nbsp;&nbsp; Diederik P. Kingma, Tim Salimans, Rafal Jozefowicz, Xi Chen, Ilya
 Sutskever, Max Welling</p>
-<p>[4] <code class="docutils literal"><span class="pre">MADE:</span> <span class="pre">Masked</span> <span class="pre">Autoencoder</span> <span class="pre">for</span> <span class="pre">Distribution</span> <span class="pre">Estimation</span> <span class="pre">Mathieu</span></code>,
+<p>[4] <code class="docutils literal notranslate"><span class="pre">MADE:</span> <span class="pre">Masked</span> <span class="pre">Autoencoder</span> <span class="pre">for</span> <span class="pre">Distribution</span> <span class="pre">Estimation</span> <span class="pre">Mathieu</span></code>,
 &nbsp;&nbsp;&nbsp;&nbsp; Germain, Karol Gregor, Iain Murray, Hugo Larochelle</p>
-<p>[5] <code class="docutils literal"><span class="pre">Modeling</span> <span class="pre">Temporal</span> <span class="pre">Dependencies</span> <span class="pre">in</span> <span class="pre">High-Dimensional</span> <span class="pre">Sequences:</span></code>
-&nbsp;&nbsp;&nbsp;&nbsp; <code class="docutils literal"><span class="pre">Application</span> <span class="pre">to</span> <span class="pre">Polyphonic</span> <span class="pre">Music</span> <span class="pre">Generation</span> <span class="pre">and</span> <span class="pre">Transcription</span></code>,
+<p>[5] <code class="docutils literal notranslate"><span class="pre">Modeling</span> <span class="pre">Temporal</span> <span class="pre">Dependencies</span> <span class="pre">in</span> <span class="pre">High-Dimensional</span> <span class="pre">Sequences:</span></code>
+&nbsp;&nbsp;&nbsp;&nbsp; <code class="docutils literal notranslate"><span class="pre">Application</span> <span class="pre">to</span> <span class="pre">Polyphonic</span> <span class="pre">Music</span> <span class="pre">Generation</span> <span class="pre">and</span> <span class="pre">Transcription</span></code>,
 &nbsp;&nbsp;&nbsp;&nbsp; Boulanger-Lewandowski, N., Bengio, Y. and Vincent, P.</p>
 </div>
 </div>
@@ -1308,7 +1308,7 @@ Sutskever, Max Welling</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.0-a0+88254ac',
+            VERSION:'0.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

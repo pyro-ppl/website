@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Gaussian Mixture Model &mdash; Pyro Tutorials 0.2.0-a0+88254ac documentation</title>
+  <title>Gaussian Mixture Model &mdash; Pyro Tutorials 0.2.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.2.0-a0+88254ac documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.2.0 documentation" href="index.html"/>
         <link rel="next" title="Gaussian Processes" href="gp.html"/>
         <link rel="prev" title="The Semi-Supervised VAE" href="ss-vae.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                pytorch-0.3-279-gdafa1ddd
+                0.2.0
               </div>
             
           
@@ -383,32 +383,32 @@ div.nboutput div.output_area.stderr {
 <div class="section" id="Gaussian-Mixture-Model">
 <h1>Gaussian Mixture Model<a class="headerlink" href="#Gaussian-Mixture-Model" title="Permalink to this headline">¶</a></h1>
 <p>This is a brief tutorial on training mixture models in Pyro. We’ll focus
-on the mechanics of <code class="docutils literal"><span class="pre">config_enumerate()</span></code> and setting up mixture
+on the mechanics of <code class="docutils literal notranslate"><span class="pre">config_enumerate()</span></code> and setting up mixture
 weights. To simplify matters, we’ll train a trivial 1-D Gaussian model
 on a tiny 5-point dataset.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>from __future__ import print_function
-import os
-from collections import defaultdict
-import numpy as np
-import scipy.stats
-import torch
-from torch.distributions import constraints
-from matplotlib import pyplot
-%matplotlib inline
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
 
-import pyro
-import pyro.distributions as dist
-from pyro.optim import Adam
-from pyro.infer import SVI, TraceEnum_ELBO, config_enumerate
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
 
-smoke_test = (&#39;CI&#39; in os.environ)
-pyro.enable_validation(True)
+<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -416,101 +416,101 @@ pyro.enable_validation(True)
 <h2>Dataset<a class="headerlink" href="#Dataset" title="Permalink to this headline">¶</a></h2>
 <p>Here is our tiny dataset. It has five points.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>data = torch.tensor([0., 1., 10., 11., 12.])
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">,</span> <span class="mf">11.</span><span class="p">,</span> <span class="mf">12.</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="section" id="Maximum-likelihood-approach">
 <h2>Maximum likelihood approach<a class="headerlink" href="#Maximum-likelihood-approach" title="Permalink to this headline">¶</a></h2>
-<p>Let’s start by optimizing model parameters <code class="docutils literal"><span class="pre">weights</span></code>, <code class="docutils literal"><span class="pre">locs</span></code>, and
-<code class="docutils literal"><span class="pre">scale</span></code>, rather than treating them as random variables with priors.
+<p>Let’s start by optimizing model parameters <code class="docutils literal notranslate"><span class="pre">weights</span></code>, <code class="docutils literal notranslate"><span class="pre">locs</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">scale</span></code>, rather than treating them as random variables with priors.
 Our model will learn global mixture weights, the location of each
 mixture component, and a shared scale that is common to both components.
 Our guide will learn soft assignment weights of each point.</p>
 <p>Note that none of our parameters have priors. In this Maximum Likelihood
 approach we can embed our parameters directly in the model rather than
 the guide. This is equivalent to adding them in the guide as
-<code class="docutils literal"><span class="pre">pyro.sample(...,</span> <span class="pre">dist.Delta(...))</span></code> sites and using a uniform prior in
+<code class="docutils literal notranslate"><span class="pre">pyro.sample(...,</span> <span class="pre">dist.Delta(...))</span></code> sites and using a uniform prior in
 the model.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>K = 2  # Fixed number of components.
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">K</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Fixed number of components.</span>
 
-def model(data):
-    # Global parameters.
-    weights = pyro.param(&#39;weights&#39;, torch.ones(K) / K, constraint=constraints.simplex)
-    locs = pyro.param(&#39;locs&#39;, 10 * torch.randn(K))
-    scale = pyro.param(&#39;scale&#39;, torch.tensor(0.5), constraint=constraints.positive)
+<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="c1"># Global parameters.</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">K</span><span class="p">)</span> <span class="o">/</span> <span class="n">K</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">simplex</span><span class="p">)</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;locs&#39;</span><span class="p">,</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">K</span><span class="p">))</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
 
-    with pyro.iarange(&#39;data&#39;):
-        # Local variables.
-        assignment = pyro.sample(&#39;assignment&#39;,
-                                 dist.Categorical(weights).expand_by([len(data)]))
-        pyro.sample(&#39;obs&#39;, dist.Normal(locs[assignment], scale), obs=data)
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">):</span>
+        <span class="c1"># Local variables.</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;assignment&#39;</span><span class="p">,</span>
+                                 <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)]))</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="n">assignment</span><span class="p">],</span> <span class="n">scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 
-def guide(data):
-    with pyro.iarange(&#39;data&#39;):
-        # Local parameters.
-        assignment_probs = pyro.param(&#39;assignment_probs&#39;, torch.ones(len(data), K) / K,
-                                      constraint=constraints.unit_interval)
-        pyro.sample(&#39;assignment&#39;, dist.Categorical(assignment_probs))
+<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">):</span>
+        <span class="c1"># Local parameters.</span>
+        <span class="n">assignment_probs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;assignment_probs&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">K</span><span class="p">)</span> <span class="o">/</span> <span class="n">K</span><span class="p">,</span>
+                                      <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;assignment&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">assignment_probs</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
-<p>To run inference with this <code class="docutils literal"><span class="pre">(model,guide)</span></code> pair, we use Pyro’s
-<code class="docutils literal"><span class="pre">config_enumerate()</span></code> function to enumerate over all assignments in
+<p>To run inference with this <code class="docutils literal notranslate"><span class="pre">(model,guide)</span></code> pair, we use Pyro’s
+<code class="docutils literal notranslate"><span class="pre">config_enumerate()</span></code> function to enumerate over all assignments in
 each iteration. Since we’ve wrapped the batched Categorical assignments
-in a <code class="docutils literal"><span class="pre">pyro.iarange</span></code> indepencence context, this enumeration can happen
+in a <code class="docutils literal notranslate"><span class="pre">pyro.iarange</span></code> indepencence context, this enumeration can happen
 in parallel: we enumerate only 2 possibilites, rather than
-<code class="docutils literal"><span class="pre">2**len(data)</span> <span class="pre">=</span> <span class="pre">32</span></code>. Finally, to use the parallel version of
-enumeration, we inform pyro that we’re only using a single <code class="docutils literal"><span class="pre">iarange</span></code>
-via <code class="docutils literal"><span class="pre">max_iarange_nesting=1</span></code>; this lets Pyro know that we’re using the
-rightmost dimension <code class="docutils literal"><span class="pre">iarange</span></code> and letting use any other dimension for
+<code class="docutils literal notranslate"><span class="pre">2**len(data)</span> <span class="pre">=</span> <span class="pre">32</span></code>. Finally, to use the parallel version of
+enumeration, we inform pyro that we’re only using a single <code class="docutils literal notranslate"><span class="pre">iarange</span></code>
+via <code class="docutils literal notranslate"><span class="pre">max_iarange_nesting=1</span></code>; this lets Pyro know that we’re using the
+rightmost dimension <code class="docutils literal notranslate"><span class="pre">iarange</span></code> and letting use any other dimension for
 parallelization.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>optim = pyro.optim.Adam({&#39;lr&#39;: 0.2, &#39;betas&#39;: [0.9, 0.99]})
-inference = SVI(model, config_enumerate(guide, &#39;parallel&#39;), optim,
-                loss=TraceEnum_ELBO(max_iarange_nesting=1))
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">optim</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s1">&#39;betas&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">]})</span>
+<span class="n">inference</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="s1">&#39;parallel&#39;</span><span class="p">),</span> <span class="n">optim</span><span class="p">,</span>
+                <span class="n">loss</span><span class="o">=</span><span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_iarange_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 <p>During training, we’ll collect both losses and gradient norms to monitor
-convergence. We can do this using PyTorch’s <code class="docutils literal"><span class="pre">.register_hook()</span></code> method.</p>
+convergence. We can do this using PyTorch’s <code class="docutils literal notranslate"><span class="pre">.register_hook()</span></code> method.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>pyro.set_rng_seed(1)      # Set seed to make results reproducible.
-pyro.clear_param_store()  # Clear stale param values.
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>      <span class="c1"># Set seed to make results reproducible.</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>  <span class="c1"># Clear stale param values.</span>
 
-# Register hooks to monitor gradient norms.
-gradient_norms = defaultdict(list)
-inference.loss(model, guide, data)  # Initializes param store.
-for name, value in pyro.get_param_store().named_parameters():
-    value.register_hook(lambda g, name=name: gradient_norms[name].append(g.norm().item()))
+<span class="c1"># Register hooks to monitor gradient norms.</span>
+<span class="n">gradient_norms</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="n">inference</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>  <span class="c1"># Initializes param store.</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+    <span class="n">value</span><span class="o">.</span><span class="n">register_hook</span><span class="p">(</span><span class="k">lambda</span> <span class="n">g</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">:</span> <span class="n">gradient_norms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 
-losses = []
-for i in range(500 if not smoke_test else 2):
-    loss = inference.step(data)
-    losses.append(loss)
-    print(&#39;.&#39; if i % 100 else &#39;\n&#39;, end=&#39;&#39;)
+<span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span><span class="p">):</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -528,17 +528,17 @@ for i in range(500 if not smoke_test else 2):
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>pyplot.figure(figsize=(10,3), dpi=100).set_facecolor(&#39;white&#39;)
-pyplot.plot(losses)
-pyplot.xlabel(&#39;iters&#39;)
-pyplot.ylabel(&#39;loss&#39;)
-pyplot.yscale(&#39;log&#39;)
-pyplot.title(&#39;Convergence of SVI&#39;);
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;iters&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;loss&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Convergence of SVI&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -550,19 +550,19 @@ pyplot.title(&#39;Convergence of SVI&#39;);
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>pyplot.figure(figsize=(10,4), dpi=100).set_facecolor(&#39;white&#39;)
-for name, grad_norms in gradient_norms.items():
-    pyplot.plot(grad_norms, label=name)
-pyplot.xlabel(&#39;iters&#39;)
-pyplot.ylabel(&#39;gradient norm&#39;)
-pyplot.yscale(&#39;log&#39;)
-pyplot.legend(loc=&#39;best&#39;)
-pyplot.title(&#39;Gradient norms during SVI&#39;);
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">grad_norms</span> <span class="ow">in</span> <span class="n">gradient_norms</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">grad_norms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;iters&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;gradient norm&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Gradient norms during SVI&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -575,17 +575,17 @@ pyplot.title(&#39;Gradient norms during SVI&#39;);
 </div>
 <p>Here are the learned parameters:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>weights = pyro.param(&#39;weights&#39;)
-locs = pyro.param(&#39;locs&#39;)
-scale = pyro.param(&#39;scale&#39;)
-print(&#39;weights = {}&#39;.format(weights.data.numpy()))
-print(&#39;locs = {}&#39;.format(locs.data.numpy()))
-print(&#39;scale = {}&#39;.format(scale.data.numpy()))
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">weights</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span>
+<span class="n">locs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;locs&#39;</span><span class="p">)</span>
+<span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;weights = {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;locs = {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;scale = {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scale</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
 </pre></div>
 </div>
 </div>
@@ -599,25 +599,25 @@ locs = [10.999848    0.50015897]
 scale = 0.708275258541
 </pre></div></div>
 </div>
-<p>The model’s <code class="docutils literal"><span class="pre">weights</span></code> are as expected, with 3/5 of the data in the
+<p>The model’s <code class="docutils literal notranslate"><span class="pre">weights</span></code> are as expected, with 3/5 of the data in the
 first component and 2/3 in the second component. We can also examine the
-guide’s local <code class="docutils literal"><span class="pre">assignment_probs</span></code> variable.</p>
+guide’s local <code class="docutils literal notranslate"><span class="pre">assignment_probs</span></code> variable.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>assignment_probs = pyro.param(&#39;assignment_probs&#39;)
-pyplot.figure(figsize=(8, 4), dpi=100).set_facecolor(&#39;white&#39;)
-pyplot.plot(data.data.numpy(), assignment_probs.data.numpy()[:, 0], &#39;ro&#39;,
-            label=&#39;component with mean {:0.2g}&#39;.format(locs[0]))
-pyplot.plot(data.data.numpy(), assignment_probs.data.numpy()[:, 1], &#39;bo&#39;,
-            label=&#39;component with mean {:0.2g}&#39;.format(locs[1]))
-pyplot.title(&#39;Mixture assignment probabilities&#39;)
-pyplot.xlabel(&#39;data value&#39;)
-pyplot.ylabel(&#39;assignment probability&#39;)
-pyplot.legend(loc=&#39;center&#39;);
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">assignment_probs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;assignment_probs&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment_probs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;component with mean {:0.2g}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment_probs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;bo&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;component with mean {:0.2g}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Mixture assignment probabilities&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;data value&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;assignment probability&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -630,22 +630,22 @@ pyplot.legend(loc=&#39;center&#39;);
 </div>
 <p>Next let’s visualize the mixture model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>X = np.arange(-3,15,0.1)
-Y1 = weights[0].item() * scipy.stats.norm.pdf((X - locs[0].item()) / scale.item())
-Y2 = weights[1].item() * scipy.stats.norm.pdf((X - locs[1].item()) / scale.item())
+<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">Y1</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">locs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="o">/</span> <span class="n">scale</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<span class="n">Y2</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">locs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="o">/</span> <span class="n">scale</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
-pyplot.figure(figsize=(10, 4), dpi=100).set_facecolor(&#39;white&#39;)
-pyplot.plot(X, Y1, &#39;r-&#39;)
-pyplot.plot(X, Y2, &#39;b-&#39;)
-pyplot.plot(X, Y1 + Y2, &#39;k--&#39;)
-pyplot.plot(data.data.numpy(), np.zeros(len(data)), &#39;k*&#39;)
-pyplot.title(&#39;Densitiy of two-component mixture model&#39;)
-pyplot.ylabel(&#39;probability density&#39;);
+<span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y1</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y2</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y1</span> <span class="o">+</span> <span class="n">Y2</span><span class="p">,</span> <span class="s1">&#39;k--&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span> <span class="s1">&#39;k*&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Densitiy of two-component mixture model&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;probability density&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -659,7 +659,7 @@ pyplot.ylabel(&#39;probability density&#39;);
 <p>Finally note that optimization with mixture models is non-convex and can
 often get stuck in local optima. For example in this tutorial, we
 observed that the mixture model gets stuck in an
-everthing-in-one-cluster hypothesis if <code class="docutils literal"><span class="pre">scale</span></code> is initialized to be
+everthing-in-one-cluster hypothesis if <code class="docutils literal notranslate"><span class="pre">scale</span></code> is initialized to be
 too large.</p>
 </div>
 </div>
@@ -708,7 +708,7 @@ too large.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2.0-a0+88254ac',
+            VERSION:'0.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
