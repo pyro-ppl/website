@@ -900,17 +900,21 @@ think a bit about the optimization problem we’ve setup. We’ve traded
 Bayesian inference in a non-linear model with a high-dimensional latent
 space—a hard problem—for a particular optimization problem. Let’s not
 kid ourselves, this optimization problem is pretty hard too. Why? Let’s
-go through some of the reasons: - the space of parameters we’re
-optimizing over is very high-dimensional (it includes all the weights in
-all the neural networks we’ve defined). - our objective function (the
-ELBO) cannot be computed analytically. so our parameter updates will be
-following noisy Monte Carlo gradient estimates - data-subsampling serves
-as an additional source of stochasticity: even if we wanted to, we
-couldn’t in general take gradient steps on the ELBO defined over the
-whole dataset (actually in our particular case the dataset isn’t so
-large, but let’s ignore that). - given all the neural networks and
-non-linearities we have in the loop, our (stochastic) loss surface is
-highly non-trivial</p>
+go through some of the reasons:</p>
+<ul class="simple">
+<li>the space of parameters we’re optimizing over is very
+high-dimensional (it includes all the weights in all the neural
+networks we’ve defined).</li>
+<li>our objective function (the ELBO) cannot be computed analytically. so
+our parameter updates will be following noisy Monte Carlo gradient
+estimates</li>
+<li>data-subsampling serves as an additional source of stochasticity:
+even if we wanted to, we couldn’t in general take gradient steps on
+the ELBO defined over the whole dataset (actually in our particular
+case the dataset isn’t so large, but let’s ignore that).</li>
+<li>given all the neural networks and non-linearities we have in the
+loop, our (stochastic) loss surface is highly non-trivial</li>
+</ul>
 <p>The upshot is that if we’re going to find reasonable (local) optima of
 the ELBO, we better take some care in deciding how to do optimization.
 This isn’t the time or place to discuss all the different strategies
@@ -1000,12 +1004,17 @@ and takes a gradient step:</p>
 (according to a linear schedule as described earlier). We then compute
 the mini-batch indices, which we pass to the helper function
 <code class="docutils literal notranslate"><span class="pre">get_mini_batch</span></code>. This helper function takes care of a number of
-different things: - it sorts each mini-batch by sequence length - it
-calls another helper function to get a copy of the mini-batch in
-reversed temporal order - it packs each reversed mini-batch in a
-<code class="docutils literal notranslate"><span class="pre">rnn.pack_padded_sequence</span></code>, which is then ready to be ingested by the
-RNN - it cuda-izes all tensors if we’re on a GPU - it calls another
-helper function to get an appropriate 0/1 mask for the mini-batch</p>
+different things:</p>
+<ul class="simple">
+<li>it sorts each mini-batch by sequence length</li>
+<li>it calls another helper function to get a copy of the mini-batch in
+reversed temporal order</li>
+<li>it packs each reversed mini-batch in a <code class="docutils literal notranslate"><span class="pre">rnn.pack_padded_sequence</span></code>,
+which is then ready to be ingested by the RNN</li>
+<li>it cuda-izes all tensors if we’re on a GPU</li>
+<li>it calls another helper function to get an appropriate 0/1 mask for
+the mini-batch</li>
+</ul>
 <p>We then pipe all the return values of <code class="docutils literal notranslate"><span class="pre">get_mini_batch()</span></code> into
 <code class="docutils literal notranslate"><span class="pre">elbo.step(...)</span></code>. Recall that these arguments will be further piped to
 <code class="docutils literal notranslate"><span class="pre">model(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">guide(...)</span></code> during construction of the gradient
