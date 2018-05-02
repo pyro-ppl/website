@@ -114,10 +114,12 @@
 <li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Bayesian Optimization</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Define-a-problem">Define a problem</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Set-a-Gaussian-Process-prior">Set a Gaussian Process prior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Problem-Setup">Problem Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Define-an-objective-function">Define an objective function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Setting-a-Gaussian-Process-prior">Setting a Gaussian Process prior</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Define-an-acquisition-function">Define an acquisition function</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Find-">Find <span class="math notranslate">\(\{ x_n \}\)</span></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#The-inner-loop-of-Bayesian-Optimization">The inner loop of Bayesian Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Running-the-algorithm">Running the algorithm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#References">References</a></li>
 </ul>
 </li>
@@ -386,37 +388,50 @@ div.nboutput div.output_area.stderr {
 <h1>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Bayesian_optimization">Bayesian
 optimization</a> is
-a powerful strategy to find extrema of objective functions which are
-costly to evaluate, not easy to have access to their derivatives, and
-possibly containing noise. It is a machenism lying behind <a class="reference external" href="https://en.wikipedia.org/wiki/Automated_machine_learning">automated
+a powerful strategy for minimizing (or maximizing) objective functions
+that are costly to evaluate. It is an important component of <a class="reference external" href="https://en.wikipedia.org/wiki/Automated_machine_learning">automated
 machine
 learning</a>
 toolboxes such as
 <a class="reference external" href="https://automl.github.io/auto-sklearn/stable/">auto-sklearn</a>,
-<a class="reference external" href="http://www.cs.ubc.ca/labs/beta/Projects/autoweka/">auto-weka</a>,
-<a class="reference external" href="https://scikit-optimize.github.io/">scikit-optimize</a> to select best
-hyperparameters for machine learning models. As mentioned in the review
-reference [2], Bayesian optimization is used for a wide range of other
-applications such as interactive user-interfaces, robotics,
-environmental monitoring, information extraction, combinatorial
-optimisation, sensor networks, adaptive Monte Carlo, experimental
-design, reinforcement learning. The innovation <a class="reference external" href="https://en.wikipedia.org/wiki/AlphaGo_Zero">AlphaGo
-Zero</a> also uses Bayesian
-optimization to tune its tree search’s hyperparameters.</p>
-<p>Assume that we have an optimization problem</p>
+<a class="reference external" href="http://www.cs.ubc.ca/labs/beta/Projects/autoweka/">auto-weka</a>, and
+<a class="reference external" href="https://scikit-optimize.github.io/">scikit-optimize</a>, where Bayesian
+optimization is used to select model hyperparameters. Bayesian
+optimization is used for a wide range of other applications as well; as
+cataloged in the review [2], these include interactive user-interfaces,
+robotics, environmental monitoring, information extraction,
+combinatorial optimization, sensor networks, adaptive Monte Carlo,
+experimental design, and reinforcement learning.</p>
+<div class="section" id="Problem-Setup">
+<h2>Problem Setup<a class="headerlink" href="#Problem-Setup" title="Permalink to this headline">¶</a></h2>
+<p>We are given a minimization problem</p>
 <div class="math notranslate">
 \[x^* = \text{arg}\min \ f(x),\]</div>
-<p>where <span class="math notranslate">\(f\)</span> is an unknown objective function. To solve it, we will
-construct a sequence of points <span class="math notranslate">\(\{x_n\}\)</span> which converges to
-<span class="math notranslate">\(x^*\)</span>. The Bayesian optimization strategy works as follows:</p>
+<p>where <span class="math notranslate">\(f\)</span> is a fixed objective function that we can evaluate
+pointwise. Here we assume that we do <em>not</em> have access to the gradient
+of <span class="math notranslate">\(f\)</span>. We also allow for the possibility that evaluations of
+<span class="math notranslate">\(f\)</span> are noisy.</p>
+<p>To solve the minimization problem, we will construct a sequence of
+points <span class="math notranslate">\(\{x_n\}\)</span> that converge to <span class="math notranslate">\(x^*\)</span>. Since we implicitly
+assume that we have a fixed budget (say 100 evaluations), we do not
+expect to find the exact minumum <span class="math notranslate">\(x^*\)</span>: the goal is to get the
+best approximate solution we can given the allocated budget.</p>
+<p>The Bayesian optimization strategy works as follows:</p>
 <ol class="arabic">
-<li><p class="first">Place a prior on the possibilities of the objective function. The
-model will be updated each time we evaluate more data to form a
-posterior distribution over the objective function.</p>
+<li><p class="first">Place a prior on the objective function <span class="math notranslate">\(f\)</span>. Each time we
+evaluate <span class="math notranslate">\(f\)</span> at a new point <span class="math notranslate">\(x_n\)</span>, we update our model
+for <span class="math notranslate">\(f(x)\)</span>. This model serves as a surrogate objective function
+and reflects our beliefs about <span class="math notranslate">\(f\)</span> (in particular it reflects
+our beliefs about where we expect <span class="math notranslate">\(f(x)\)</span> to be close to
+<span class="math notranslate">\(f(x^*)\)</span>). Since we are being Bayesian, our beliefs are encoded
+in a posterior that allows us to systematically reason about the
+uncertainty of our model predictions.</p>
 </li>
-<li><p class="first">Derive from the posterior an “acquisition” function <span class="math notranslate">\(\alpha(x)\)</span>
-which is easy to evaluate and get derivatives (hence optimizing
-<span class="math notranslate">\(\alpha(x)\)</span> is easy).</p>
+<li><p class="first">Use the posterior to derive an “acquisition” function
+<span class="math notranslate">\(\alpha(x)\)</span> that is easy to evaluate and differentiate (so that
+optimizing <span class="math notranslate">\(\alpha(x)\)</span> is easy). In contrast to <span class="math notranslate">\(f(x)\)</span>,
+we will generally evaluate <span class="math notranslate">\(\alpha(x)\)</span> at many points
+<span class="math notranslate">\(x\)</span>, since doing so will be cheap.</p>
 </li>
 <li><p class="first">Repeat until convergence:</p>
 <ul>
@@ -430,15 +445,18 @@ according to</p>
 </ul>
 </li>
 </ol>
-<p>The acquisition function should utilize the uncertainty of the posterior
-to encourage exploring more information about <span class="math notranslate">\(f\)</span>. After
-evaluating a new data point, the model will be updated and the derived
-acquisition function will exploit it to give the next candidate for the
-minimum point of <span class="math notranslate">\(f\)</span>. After a number of steps, it is likely that
-<span class="math notranslate">\(\{x_n\}\)</span> will converge to <span class="math notranslate">\(x^*\)</span>.</p>
-<p>In this tutorial, we will see how to use the <a class="reference external" href="http://docs.pyro.ai/en/dev/contrib.gp.html">Gaussian Process
-module</a> in Pyro to do
-Bayesian optimization.</p>
+<p>A good acquisition function should make use of the uncertainty encoded
+in the posterior to encourage a balance between exploration—querying
+points where we know little about <span class="math notranslate">\(f\)</span>—and exploitation—querying
+points in regions we have good reason to think <span class="math notranslate">\(x^*\)</span> may lie. As
+the iterative procedure progresses our model for <span class="math notranslate">\(f\)</span> evolves and
+so does the acquisition function. If our model is good and we’ve chosen
+a reasonable acquisition function, we expect that the acquisition
+function will guide the query points <span class="math notranslate">\(x_n\)</span> towards <span class="math notranslate">\(x^*\)</span>.</p>
+<p>In this tutorial, our model for <span class="math notranslate">\(f\)</span> will be a Gaussian process. In
+particular we will see how to use the <a class="reference external" href="http://docs.pyro.ai/en/0.2.0-release/contrib.gp.html">Gaussian Process
+module</a> in Pyro
+to implement a simple Bayesian optimization procedure.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [1]:
@@ -456,19 +474,20 @@ Bayesian optimization.</p>
 <span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="kn">as</span> <span class="nn">gp</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>  <span class="c1"># can help with debugging</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="Define-a-problem">
-<h2>Define a problem<a class="headerlink" href="#Define-a-problem" title="Permalink to this headline">¶</a></h2>
-<p>For the purpose of demonstration, the objective function we are going to
-solve is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008)
+</div>
+<div class="section" id="Define-an-objective-function">
+<h2>Define an objective function<a class="headerlink" href="#Define-an-objective-function" title="Permalink to this headline">¶</a></h2>
+<p>For the purposes of demonstration, the objective function we are going
+to consider is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008)
 function</a>:</p>
 <div class="math notranslate">
 \[f(x) = (6x-2)^2 \sin(12x-4), \quad x\in [0, 1].\]</div>
-<p>This function has both local minimum and global minimum. The global
-minimum is <span class="math notranslate">\(0.75725\)</span>.</p>
+<p>This function has both a local minimum and a global minimum. The global
+minimum is at <span class="math notranslate">\(x^* = 0.75725\)</span>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [2]:
@@ -480,7 +499,7 @@ minimum is <span class="math notranslate">\(0.75725\)</span>.</p>
 </pre></div>
 </div>
 </div>
-<p>Let’s take a plot for <span class="math notranslate">\(f\)</span>.</p>
+<p>Let’s begin by plotting <span class="math notranslate">\(f\)</span>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [3]:
@@ -498,49 +517,51 @@ minimum is <span class="math notranslate">\(0.75725\)</span>.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bo_6_0.png" src="_images/bo_6_0.png" />
+<img alt="_images/bo_5_0.png" src="_images/bo_5_0.png" />
 </div>
 </div>
 </div>
-<div class="section" id="Set-a-Gaussian-Process-prior">
-<h2>Set a Gaussian Process prior<a class="headerlink" href="#Set-a-Gaussian-Process-prior" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_process">Gaussian process</a> is
-a popular choice for a distribution over functions due to its power and
-flexibility (characteristics of a non-parametric model). The core of a
-Gaussian Process is its covariance function <span class="math notranslate">\(k\)</span> which governs the
-similarity between input points. Here we will use a Gaussian Process
-regression as a prior over the objective function <span class="math notranslate">\(f\)</span>. Given
-inputs <span class="math notranslate">\(X\)</span> and their noisy observations <span class="math notranslate">\(y\)</span>, the model takes
-the form</p>
+<div class="section" id="Setting-a-Gaussian-Process-prior">
+<h2>Setting a Gaussian Process prior<a class="headerlink" href="#Setting-a-Gaussian-Process-prior" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_process">Gaussian processes</a>
+are a popular choice for a function priors due to their power and
+flexibility. The core of a Gaussian Process is its covariance function
+<span class="math notranslate">\(k\)</span>, which governs the similarity of <span class="math notranslate">\(f(x)\)</span> for pairs of
+input points. Here we will use a Gaussian Process as our prior for the
+objective function <span class="math notranslate">\(f\)</span>. Given inputs <span class="math notranslate">\(X\)</span> and the
+corresponding noisy observations <span class="math notranslate">\(y\)</span>, the model takes the form</p>
 <div class="math notranslate">
 \[f\sim\mathrm{MultivariateNormal}(0,k(X,X)),\]</div>
 <div class="math notranslate">
 \[y\sim f+\epsilon,\]</div>
-<p>where <span class="math notranslate">\(\epsilon\)</span> is noise and <span class="math notranslate">\(k(X,X)\)</span> is a covariance
-matrix whose entries are outputs <span class="math notranslate">\(k(x,z)\)</span> of <span class="math notranslate">\(k\)</span> over input
-pairs <span class="math notranslate">\((x,z)\)</span>.</p>
-<p>The
-<a class="reference external" href="https://en.wikipedia.org/wiki/Mat%C3%A9rn_covariance_function">Matern52</a>
-kernel will be chose (as suggested in reference [1]) because the popular
+<p>where <span class="math notranslate">\(\epsilon\)</span> is i.i.d. Gaussian noise and <span class="math notranslate">\(k(X,X)\)</span> is a
+covariance matrix whose entries are given by <span class="math notranslate">\(k(x,x^\prime)\)</span> for
+each pair of inputs <span class="math notranslate">\((x,x^\prime)\)</span>.</p>
+<p>We choose the
+<a class="reference external" href="https://en.wikipedia.org/wiki/Mat%C3%A9rn_covariance_function">Matern</a>
+kernel with <span class="math notranslate">\(\nu = \frac{5}{2}\)</span> (as suggested in reference [1]).
+Note that the popular
 <a class="reference external" href="https://en.wikipedia.org/wiki/Radial_basis_function_kernel">RBF</a>
-kernel is so smooth that makes it an unrealistic assumption for the
-objective function.</p>
+kernel, which is used in many regression tasks, results in a function
+prior whose samples are infinitely differentiable; this is probably an
+unrealistic assumption for most ‘black-box’ objective functions.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># init the model with two input points -0.1 and 1.1</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">])</span>
+<span></span><span class="c1"># initialize the model with four input points: 0.0, 0.33, 0.66, 1.0</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.33</span><span class="p">,</span> <span class="mf">0.66</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
 <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 <span class="n">gpmodel</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPRegression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                                 <span class="n">noise</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.01</span><span class="p">))</span>
+                                 <span class="n">noise</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">jitter</span><span class="o">=</span><span class="mf">1.0e-4</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>The following helper function <code class="docutils literal notranslate"><span class="pre">update_posterior</span></code> will take care of
-updating our <code class="docutils literal notranslate"><span class="pre">gpmodel</span></code> when a new <span class="math notranslate">\(x\)</span> is found.</p>
+updating our <code class="docutils literal notranslate"><span class="pre">gpmodel</span></code> each time we evaluate <span class="math notranslate">\(f\)</span> at a new value
+<span class="math notranslate">\(x\)</span>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [5]:
@@ -548,29 +569,35 @@ updating our <code class="docutils literal notranslate"><span class="pre">gpmode
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">update_posterior</span><span class="p">(</span><span class="n">x_new</span><span class="p">):</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x_new</span><span class="p">)</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">x_new</span><span class="p">])</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x_new</span><span class="p">)</span> <span class="c1"># evaluate f at new point.</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">x_new</span><span class="p">])</span> <span class="c1"># incorporate new evaluation</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
     <span class="n">gpmodel</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-    <span class="n">gpmodel</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+    <span class="n">gpmodel</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>  <span class="c1"># optimize the GP hyperparameters using default settings</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="section" id="Define-an-acquisition-function">
 <h2>Define an acquisition function<a class="headerlink" href="#Define-an-acquisition-function" title="Permalink to this headline">¶</a></h2>
-<p>There are many choices for the acquisition function (see references [1]
-and [2] for a list of popular ones and discussions on them). Here we
-will use a “simple to implement and interpret” one: Lower Confidence
-Bound, which is two standard deviations below posterior mean. Formally,</p>
+<p>There are many reasonable options for the acquisition function (see
+references [1] and [2] for a list of popular choices and a discussion of
+their properties). Here we will use one that is ‘simple to implement and
+interpret,’ namely the ‘Lower Confidence Bound’ acquisition function. It
+is given by</p>
 <div class="math notranslate">
-\[\alpha(x) = \mu(x) - \kappa \sigma(x),\quad \kappa = 2,\]</div>
-<p>where <span class="math notranslate">\(\mu(x)\)</span> and <span class="math notranslate">\(\sigma(x)\)</span> are mean and variance of the
-posterior, and the coefficient <span class="math notranslate">\(\kappa\)</span> plays a trade-off between
-exploitation-exploration. A high <span class="math notranslate">\(\kappa\)</span> means that we play more
-weight on exploration (because we seek minimum candidates in a
-higher-uncertainty area). Otherwise, we do exploitation: seek minimum
-candidates around the posterior mean <span class="math notranslate">\(\mu(x)\)</span>.</p>
+\[\alpha(x) = \mu(x) - \kappa \sigma(x)\]</div>
+<p>where <span class="math notranslate">\(\mu(x)\)</span> and <span class="math notranslate">\(\sigma(x)\)</span> are the mean and square root
+variance of the posterior at the point <span class="math notranslate">\(x\)</span>, and the arbitrary
+constant <span class="math notranslate">\(\kappa&gt;0\)</span> controls the trade-off between exploitation
+and exploration. This acquisition function will be minimized for choices
+of <span class="math notranslate">\(x\)</span> where either: i) <span class="math notranslate">\(\mu(x)\)</span> is small (exploitation); or
+ii) where <span class="math notranslate">\(\sigma(x)\)</span> is large (exploration). A large value of
+<span class="math notranslate">\(\kappa\)</span> means that we place more weight on exploration because we
+prefer candidates <span class="math notranslate">\(x\)</span> in areas of high uncertainty. A small value
+of <span class="math notranslate">\(\kappa\)</span> encourages exploitation because we prefer candidates
+<span class="math notranslate">\(x\)</span> that minimize <span class="math notranslate">\(\mu(x)\)</span>, which is the mean of our
+surrogate objective function. We will use <span class="math notranslate">\(\kappa=2\)</span>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [6]:
@@ -584,16 +611,26 @@ candidates around the posterior mean <span class="math notranslate">\(\mu(x)\)</
 </pre></div>
 </div>
 </div>
-<p>The final component is a way to find a minimum point for acquisition
-function. There are several ways for us to choose: gradient-based and
-non-gradient-based. Here, we will follow the gradient-based approach.
-One of the drawback of gradient descent methods is it is easy for the
-minimizer to get stuck at a local minimum. In this tutorial, we will use
-a simple way to solve that problem. First, draw <span class="math notranslate">\(3\)</span> samples from
-our Gaussian Process posteriors and find a candidate for each sample.
-Then (after collecting <span class="math notranslate">\(3\)</span> candidates), we select the minimum
-point among them. A more detailed discussion regarding to this problem
-in Bayesian Optimization is presented in the reference [2].</p>
+<p>The final component we need is a way to find (approximate) minimizing
+points <span class="math notranslate">\(x_{\rm min}\)</span> of the acquisition function. There are
+several ways to proceed, including gradient-based and non-gradient-based
+techniques. Here we will follow the gradient-based approach. One of the
+possible drawbacks of gradient descent methods is that the minimization
+algorithm can get stuck at a local minimum. In this tutorial, we adopt a
+(very) simple approach to address this issue:</p>
+<ul class="simple">
+<li>First, we seed our minimization algorithm with 5 different values: i)
+one is chosen to be <span class="math notranslate">\(x_{n-1}\)</span>, i.e.&nbsp;the candidate <span class="math notranslate">\(x\)</span>
+used in the previous step; and ii) four are chosen uniformly at
+random from the domain of the objective function.</li>
+<li>We then run the minimization algorithm to approximate convergence for
+each seed value.</li>
+<li>Finally, from the five candidate <span class="math notranslate">\(x\)</span>s identified by the
+minimization algorithm, we select the one that minimizes the
+acquisition function.</li>
+</ul>
+<p>Please refer to reference [2] for a more detailed discussion of this
+problem in Bayesian Optimization.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [7]:
@@ -601,7 +638,7 @@ in Bayesian Optimization is presented in the reference [2].</p>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">find_a_candidate</span><span class="p">(</span><span class="n">x_init</span><span class="p">,</span> <span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-    <span class="c1"># transform x to an unconstrained domain to set an minimizer for it</span>
+    <span class="c1"># transform x to an unconstrained domain</span>
     <span class="n">constraint</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">)</span>
     <span class="n">unconstrained_x_init</span> <span class="o">=</span> <span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">x_init</span><span class="p">)</span>
     <span class="n">unconstrained_x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">unconstrained_x_init</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -615,24 +652,29 @@ in Bayesian Optimization is presented in the reference [2].</p>
         <span class="k">return</span> <span class="n">y</span>
 
     <span class="n">minimizer</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">closure</span><span class="p">)</span>
-    <span class="c1"># after a candidate found in unconstrained domain, convert it back to original domain</span>
+    <span class="c1"># after finding a candidate in the unconstrained domain,</span>
+    <span class="c1"># convert it back to original domain.</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)(</span><span class="n">unconstrained_x</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="The-inner-loop-of-Bayesian-Optimization">
+<h2>The inner loop of Bayesian Optimization<a class="headerlink" href="#The-inner-loop-of-Bayesian-Optimization" title="Permalink to this headline">¶</a></h2>
+<p>With the various helper functions defined above, we can now encapsulate
+the main logic of a single step of Bayesian Optimization in the function
+<code class="docutils literal notranslate"><span class="pre">next_x</span></code>:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">def</span> <span class="nf">next_x</span><span class="p">(</span><span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_candidates</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+<span></span><span class="k">def</span> <span class="nf">next_x</span><span class="p">(</span><span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_candidates</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
     <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="c1"># last data point will be an init point for first minimum candidate,</span>
-    <span class="c1"># other minimum candidates will get uniform random initialization</span>
     <span class="n">x_init</span> <span class="o">=</span> <span class="n">gpmodel</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_candidates</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">find_a_candidate</span><span class="p">(</span><span class="n">x_init</span><span class="p">,</span> <span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">)</span>
@@ -647,10 +689,10 @@ in Bayesian Optimization is presented in the reference [2].</p>
 </div>
 </div>
 </div>
-<div class="section" id="Find-">
-<h2>Find <span class="math notranslate">\(\{ x_n \}\)</span><a class="headerlink" href="#Find-" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Running-the-algorithm">
+<h2>Running the algorithm<a class="headerlink" href="#Running-the-algorithm" title="Permalink to this headline">¶</a></h2>
 <p>To illustrate how Bayesian Optimization works, we make a convenient
-plotting function.</p>
+plotting function that will help us visualize our algorithm’s progress.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [9]:
@@ -665,7 +707,7 @@ plotting function.</p>
     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
         <span class="n">loc</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">gpmodel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">noiseless</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
         <span class="n">sd</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
-        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">loc</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># plot prediction mean</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">loc</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># plot predictive mean</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">loc</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">sd</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">loc</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">sd</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
                          <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>  <span class="c1"># plot uncertainty intervals</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
@@ -675,21 +717,25 @@ plotting function.</p>
 
     <span class="n">ax2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-        <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">lower_confidence_bound</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>  <span class="c1"># plot acquisition</span>
+        <span class="c1"># plot the acquisition function</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">lower_confidence_bound</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+        <span class="c1"># plot the new candidate point</span>
         <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xmin</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">lower_confidence_bound</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s2">&quot;^&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-                 <span class="n">label</span><span class="o">=</span><span class="s2">&quot;{} = {:.5f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xlabel</span><span class="p">,</span> <span class="n">xmin</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>  <span class="c1"># plot minimum point</span>
+                 <span class="n">label</span><span class="o">=</span><span class="s2">&quot;{} = {:.5f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xlabel</span><span class="p">,</span> <span class="n">xmin</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
     <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">with_title</span><span class="p">:</span>
-        <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Lower Confidence Bound&quot;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Acquisition Function&quot;</span><span class="p">)</span>
     <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>First, we generate a random point <code class="docutils literal notranslate"><span class="pre">x0</span></code> in the interval <span class="math notranslate">\([0, 1]\)</span>.
-Then use <code class="docutils literal notranslate"><span class="pre">update_posterior</span></code> and <code class="docutils literal notranslate"><span class="pre">next_x</span></code> functions repeatly to do
-Bayesian optimization for <span class="math notranslate">\(f\)</span>. The following plot illustrates how
-Gaussian Process posteriors and their derived acquisition functions
-change when we observe more data for the next <span class="math notranslate">\(8\)</span> steps.</p>
+<p>Our surrogate model <code class="docutils literal notranslate"><span class="pre">gpmodel</span></code> already has 4 function evaluations at
+its disposal; however, we have yet to optimize the GP hyperparameters.
+So we do that first. Then in a loop we call the <code class="docutils literal notranslate"><span class="pre">next_x</span></code> and
+<code class="docutils literal notranslate"><span class="pre">update_posterior</span></code> functions repeatedly. The following plot
+illustrates how Gaussian Process posteriors and the corresponding
+acquisition functions change at each step in the algorith. Note how
+query points are chosen both for exploration and exploitation.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [10]:
@@ -698,13 +744,13 @@ change when we observe more data for the next <span class="math notranslate">\(8
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
 <span class="n">outer_gs</span> <span class="o">=</span> <span class="n">gridspec</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">x0</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">new_empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">xmin</span> <span class="o">=</span> <span class="n">x0</span>
+<span class="n">gpmodel</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
-    <span class="n">update_posterior</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span>
     <span class="n">xmin</span> <span class="o">=</span> <span class="n">next_x</span><span class="p">()</span>
     <span class="n">gs</span> <span class="o">=</span> <span class="n">gridspec</span><span class="o">.</span><span class="n">GridSpecFromSubplotSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_spec</span><span class="o">=</span><span class="n">outer_gs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
     <span class="n">plot</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">with_title</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">update_posterior</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -715,14 +761,18 @@ change when we observe more data for the next <span class="math notranslate">\(8
 <img alt="_images/bo_22_0.png" src="_images/bo_22_0.png" />
 </div>
 </div>
-<p>Because we made an assumption that our observations contain noise, it is
-improbable to require an exact result. However, we can see that the
-sequence has converged to near the global minimum <span class="math notranslate">\(0.75725\)</span>.
-That’s it! Through this tutorial, we hope that we have conveyed some
-basic ideas of Bayesian optimization. For more reference, the youtube
-video [3] is an excellent course to learn the basic theory. And the
-paper [2] gives a review of current progresses on this subject, together
-with many discussions about technical details.</p>
+<p>Because we have assumed that our observations contain noise, it is
+improbable that we will find the exact minimizer of the function
+<span class="math notranslate">\(f\)</span>. Still, with a relatively small budget of evaluations (12) we
+see that the algorithm has converged to very close to the global minimum
+at <span class="math notranslate">\(x^* = 0.75725\)</span>.</p>
+<p>While this tutorial is only intended to be a brief introduction to
+Bayesian Optimization, we hope that we have been able to convey the
+basic underlying ideas. Consider watching the lecture by Nando de
+Freitas [3] for an excellent exposition of the basic theory. Finally,
+the reference paper [2] gives a review of recent research on Bayesian
+Optimization, together with many discussions about important technical
+details.</p>
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
