@@ -599,7 +599,7 @@ range <span class="math notranslate">\([0.0, 1.0]\)</span>.</p>
 </div>
 <p>Given a latent code <span class="math notranslate">\(z\)</span>, the forward call of <code class="docutils literal notranslate"><span class="pre">Decoder</span></code> returns
 the parameters for a Bernoulli distribution in image space. Since each
-image is of size <span class="math notranslate">\(28\times28=784\)</span>, <code class="docutils literal notranslate"><span class="pre">mu_img</span></code> is of size
+image is of size <span class="math notranslate">\(28\times28=784\)</span>, <code class="docutils literal notranslate"><span class="pre">log_img</span></code> is of size
 <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> x 784.</p>
 <p>Next we define a PyTorch module that encapsulates our encoder network:</p>
 <div class="nbinput nblast docutils container">
@@ -684,9 +684,9 @@ case we’re on GPU, we use <code class="docutils literal notranslate"><span cla
 newly created tensors are on the same GPU device.</p>
 <p>Next we sample the latent <code class="docutils literal notranslate"><span class="pre">z</span></code> from the prior, making sure to give the
 random variable a unique Pyro name <code class="docutils literal notranslate"><span class="pre">'latent'</span></code>. Then we pass <code class="docutils literal notranslate"><span class="pre">z</span></code>
-through the decoder network, which returns <code class="docutils literal notranslate"><span class="pre">mu_img</span></code>. We then score the
+through the decoder network, which returns <code class="docutils literal notranslate"><span class="pre">loc_img</span></code>. We then score the
 observed images in the mini-batch <code class="docutils literal notranslate"><span class="pre">x</span></code> against the Bernoulli likelihood
-parametrized by <code class="docutils literal notranslate"><span class="pre">mu_img</span></code>. Note that we flatten <code class="docutils literal notranslate"><span class="pre">x</span></code> so that all the
+parametrized by <code class="docutils literal notranslate"><span class="pre">loc_img</span></code>. Note that we flatten <code class="docutils literal notranslate"><span class="pre">x</span></code> so that all the
 pixels are in the rightmost dimension.</p>
 <p>That’s all there is to it! Note how closely the flow of Pyro primitives
 in <code class="docutils literal notranslate"><span class="pre">model</span></code> follows the generative story of our model, e.g.&nbsp;as
@@ -896,7 +896,7 @@ reconstruction experiment we described in the introduction translated
 into code. We take an image and pass it through the encoder. Then we
 sample in latent space using the gaussian distribution provided by the
 encoder. Finally we decode the latent code into an image: we return the
-mean vector mu_img instead of sampling with it. Note that since the
+mean vector loc_img instead of sampling with it. Note that since the
 <code class="docutils literal notranslate"><span class="pre">sample()</span></code> statement is stochastic, we’ll get different draws of z
 every time we run the reconstruct_img function. If we’ve learned a good
 model and guide—in particular if we’ve learned a good latent
