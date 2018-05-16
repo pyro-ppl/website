@@ -425,16 +425,21 @@ independent.</li>
 <div class="section" id="Table-of-Contents">
 <h2>Table of Contents<a class="headerlink" href="#Table-of-Contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference external" href="#dist-shapes">Distribution shapes</a><ul>
-<li><a class="reference external" href="#dist-examples">Examples</a></li>
-<li><a class="reference external" href="#dist-reshape">Reshaping distributions</a></li>
-<li><a class="reference external" href="#assume-dependence">It is always safe to assume dependence</a></li>
+<li><a class="reference external" href="#Distributions-shapes:-batch_shape-and-event_shape">Distribution
+shapes</a><ul>
+<li><a class="reference external" href="#Examples">Examples</a></li>
+<li><a class="reference external" href="#Reshaping-distributions">Reshaping distributions</a></li>
+<li><a class="reference external" href="#It-is-always-safe-to-assume-dependence">It is always safe to assume
+dependence</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#iarange">Declaring independence with iarange</a></li>
-<li><a class="reference external" href="#subsampling">Subsampling inside iarange</a></li>
-<li><a class="reference external" href="#subsampling">Broadcasting to allow Parallel Enumeration</a><ul>
-<li><a class="reference external" href="#parallelizable">Writing parallelizable code</a></li>
+<li><a class="reference external" href="#Declaring-independent-dims-with-iarange">Declaring independence with
+iarange</a></li>
+<li><a class="reference external" href="#Subsampling-tensors-inside-an-iarange">Subsampling inside
+iarange</a></li>
+<li><a class="reference external" href="#Broadcasting-to-allow-parallel-enumeration">Broadcasting to allow Parallel
+Enumeration</a><ul>
+<li><a class="reference external" href="#Writing-parallelizable-code">Writing parallelizable code</a></li>
 </ul>
 </li>
 </ul>
@@ -443,7 +448,7 @@ independent.</li>
 <span></span>In [1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>import os
 import torch
 import pyro
@@ -506,7 +511,7 @@ over matrices like <code class="docutils literal"><span class="pre">InverseWisha
 <span></span>In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>d = Bernoulli(0.5)
 assert d.batch_shape == ()
 assert d.event_shape == ()
@@ -522,7 +527,7 @@ assert d.log_prob(x).shape == ()
 <span></span>In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>d = Bernoulli(0.5 * torch.ones(3,4))
 assert d.batch_shape == (3, 4)
 assert d.event_shape == ()
@@ -540,7 +545,7 @@ dimensions.</p>
 <span></span>In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>d = Bernoulli(torch.tensor([0.1, 0.2, 0.3, 0.4])).expand_by([3])
 assert d.batch_shape == (3, 4)
 assert d.event_shape == ()
@@ -557,7 +562,7 @@ distributions, the shapes of <code class="docutils literal"><span class="pre">.s
 <span></span>In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>d = MultivariateNormal(torch.zeros(3), torch.eye(3, 3))
 assert d.batch_shape == ()
 assert d.event_shape == (3,)
@@ -577,7 +582,7 @@ calling the <code class="docutils literal"><span class="pre">.independent(_)</sp
 <span></span>In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>d = Bernoulli(0.5 * torch.ones(3,4)).independent(1)
 assert d.batch_shape == (3,)
 assert d.event_shape == (4,)
@@ -675,7 +680,7 @@ argument (again counting from the right):</p>
 <span></span>In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>def model1():
     a = pyro.sample(&quot;a&quot;, Normal(0, 1))
     b = pyro.sample(&quot;b&quot;, Normal(torch.zeros(2), 1).independent(1))
@@ -751,7 +756,7 @@ data and yield the set of indices.</p>
 <span></span>In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>data = torch.arange(100)
 
 def model2():
@@ -821,7 +826,7 @@ Let’s see how this works in practice.</p>
 <span></span>In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>@config_enumerate(default=&quot;parallel&quot;)
 def model3():
     p = pyro.param(&quot;p&quot;, torch.arange(6) / 6)
@@ -890,7 +895,7 @@ aim is to write a model that works both with and without enumeration.</p>
 <span></span>In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span>width = 8
 height = 10
 sparse_pixels = torch.LongTensor([[3, 2], [3, 5], [3, 9], [7, 1]])
