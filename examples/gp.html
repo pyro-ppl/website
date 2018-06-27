@@ -128,6 +128,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 </ul>
 
             
@@ -326,8 +327,8 @@ div.nboutput div.output_area.stderr {
 .ansi-red-bg { background-color: #E75C58; }
 .ansi-red-intense-fg { color: #B22B31; }
 .ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00.2.1; }
-.ansi-green-bg { background-color: #00.2.1; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
 .ansi-green-intense-fg { color: #007427; }
 .ansi-green-intense-bg { background-color: #007427; }
 .ansi-yellow-fg { color: #DDB62B; }
@@ -402,54 +403,54 @@ priors over functions. And finally, since Gaussian Processes are
 formulated in a Bayesian setting, they come equipped with a powerful
 notion of uncertainty.</p>
 <p>Happily, Pyro offers some support for Gaussian Processes in the
-<code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> module. The goal of this tutorial is to give a brief
+<code class="docutils literal"><span class="pre">pyro.contrib.gp</span></code> module. The goal of this tutorial is to give a brief
 introduction to Gaussian Processes (GPs) in the context of this module.
 We will mostly be focusing on how to use the GP interface in Pyro and
 refer the reader to the references for more details about GPs in
 general.</p>
 <p>The model we’re interested in is defined by</p>
-<div class="math notranslate">
+<div class="math">
 \[f \sim \mathcal{GP}\left(0, \mathbf{K}_f(x, x')\right)\]</div>
 <p>and</p>
-<div class="math notranslate">
+<div class="math">
 \[y = f(x) + \epsilon,\quad \epsilon \sim \mathcal{N}\left(0, \beta^{-1}\mathbf{I}\right).\]</div>
-<p>Here <span class="math notranslate">\(x, x' \in\mathbf{X}\)</span> are points in the input space and
-<span class="math notranslate">\(y\in\mathbf{Y}\)</span> is a point in the output space. <span class="math notranslate">\(f\)</span> is a
-draw from the GP prior specified by the kernel <span class="math notranslate">\(\mathbf{K}_f\)</span> and
-represents a function from <span class="math notranslate">\(\mathbf{X}\)</span> to <span class="math notranslate">\(\mathbf{Y}\)</span>.
-Finally, <span class="math notranslate">\(\epsilon\)</span> represents Gaussian observation noise.</p>
+<p>Here <span class="math">\(x, x' \in\mathbf{X}\)</span> are points in the input space and
+<span class="math">\(y\in\mathbf{Y}\)</span> is a point in the output space. <span class="math">\(f\)</span> is a
+draw from the GP prior specified by the kernel <span class="math">\(\mathbf{K}_f\)</span> and
+represents a function from <span class="math">\(\mathbf{X}\)</span> to <span class="math">\(\mathbf{Y}\)</span>.
+Finally, <span class="math">\(\epsilon\)</span> represents Gaussian observation noise.</p>
 <p>We will use the <a class="reference external" href="https://en.wikipedia.org/wiki/Radial_basis_function_kernel">radial basis function
 kernel</a>
 (RBF kernel) as the kernel of our GP:</p>
-<div class="math notranslate">
+<div class="math">
 \[k(x,x') = \sigma^2 \exp\left(-\frac{\|x-x'\|^2}{2l^2}\right).\]</div>
-<p>Here <span class="math notranslate">\(\sigma^2\)</span> and <span class="math notranslate">\(l\)</span> are parameters that specify the
-kernel; specifically, <span class="math notranslate">\(\sigma^2\)</span> is a variance or amplitude
-squared and <span class="math notranslate">\(l\)</span> is a lengthscale. We’ll get some intuition for
+<p>Here <span class="math">\(\sigma^2\)</span> and <span class="math">\(l\)</span> are parameters that specify the
+kernel; specifically, <span class="math">\(\sigma^2\)</span> is a variance or amplitude
+squared and <span class="math">\(l\)</span> is a lengthscale. We’ll get some intuition for
 these parameters below.</p>
 </div>
 <div class="section" id="Imports">
 <h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this headline">¶</a></h2>
 <p>First, we import necessary modules.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="kn">as</span> <span class="nn">gp</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="k">as</span> <span class="nn">gp</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="k">import</span> <span class="n">Adam</span>
 
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>  <span class="c1"># ignore; used for checking code integrity in the Pyro repo</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>       <span class="c1"># can help with debugging</span>
+<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>  <span class="c1"># ignore; used to check code integrity in the Pyro repo</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>       <span class="c1"># can help with debugging</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -457,18 +458,18 @@ these parameters below.</p>
 <p>Throughout the tutorial we’ll want to visualize GPs. So we define a
 helper function for plotting:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># note that this helper function does three different things:</span>
 <span class="c1"># (i) plots the observed data;</span>
 <span class="c1"># (ii) plots the predictions from the learned GP after conditioning on data;</span>
 <span class="c1"># (iii) plots samples from the GP prior (with no conditioning on observed data)</span>
 
-<span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">plot_observed_data</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">n_prior_samples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-         <span class="n">model</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">n_test</span><span class="o">=</span><span class="mi">500</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">plot_observed_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_prior_samples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+         <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_test</span><span class="o">=</span><span class="mi">500</span><span class="p">):</span>
 
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">plot_observed_data</span><span class="p">:</span>
@@ -478,9 +479,9 @@ helper function for plotting:</p>
         <span class="c1"># compute predictive mean and variance</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">==</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">VariationalSparseGP</span><span class="p">:</span>
-                <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">noiseless</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">noiseless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">sd</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">diag</span><span class="p">()</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>  <span class="c1"># standard deviation at each input point x</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtest</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">mean</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># plot the mean</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xtest</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>  <span class="c1"># plot the two-sigma uncertainty about the mean</span>
@@ -503,20 +504,21 @@ helper function for plotting:</p>
 </div>
 <div class="section" id="Data">
 <h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
-<p>The data consist of <span class="math notranslate">\(20\)</span> points sampled from</p>
-<div class="math notranslate">
-\[ \begin{align}\begin{aligned}y = 0.5\sin(3x) + \epsilon, \quad \epsilon \sim \mathcal{N}(0, 0.2).\\with :math:`x` sampled uniformly from the interval [0, 5].\end{aligned}\end{align} \]</div>
+<p>The data consist of <span class="math">\(20\)</span> points sampled from</p>
+<div class="math">
+\[y = 0.5\sin(3x) + \epsilon, \quad \epsilon \sim \mathcal{N}(0, 0.2).\]</div>
+<p>with <span class="math">\(x\)</span> sampled uniformly from the interval <span class="math">\([0, 5]\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,))</span>
 <span class="n">y</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,))</span>
 
-<span class="n">plot</span><span class="p">(</span><span class="n">plot_observed_data</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>  <span class="c1"># let&#39;s plot the observed data</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">plot_observed_data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># let&#39;s plot the observed data</span>
 </pre></div>
 </div>
 </div>
@@ -531,16 +533,17 @@ helper function for plotting:</p>
 <div class="section" id="Define-model">
 <h2>Define model<a class="headerlink" href="#Define-model" title="Permalink to this headline">¶</a></h2>
 <p>First we define a RBF kernel, specifying the values of the two
-hyperparameters <code class="docutils literal notranslate"><span class="pre">variance</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscale</span></code>. Then we construct a
-<code class="docutils literal notranslate"><span class="pre">GPRegression</span></code> object. Here we feed in another hyperparameter,
-<code class="docutils literal notranslate"><span class="pre">noise</span></code>, that corresponds to <span class="math notranslate">\(\epsilon\)</span> above.</p>
+hyperparameters <code class="docutils literal"><span class="pre">variance</span></code> and <code class="docutils literal"><span class="pre">lengthscale</span></code>. Then we construct a
+<code class="docutils literal"><span class="pre">GPRegression</span></code> object. Here we feed in another hyperparameter,
+<code class="docutils literal"><span class="pre">noise</span></code>, that corresponds to <span class="math">\(\epsilon\)</span> above.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">kernel</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">variance</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">5.</span><span class="p">),</span> <span class="n">lengthscale</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">10.</span><span class="p">))</span>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">kernel</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">variance</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">5.</span><span class="p">),</span>
+                        <span class="n">lengthscale</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">10.</span><span class="p">))</span>
 <span class="n">gpr</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPRegression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -550,11 +553,11 @@ this is <em>before</em> we’ve conditioned on the data. The shape these
 functions take—their smoothness, their vertical scale, etc.—is
 controlled by the GP kernel.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">gpr</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span> <span class="n">n_prior_samples</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -566,14 +569,14 @@ controlled by the GP kernel.</p>
 <img alt="_images/gp_12_0.png" src="_images/gp_12_0.png" />
 </div>
 </div>
-<p>For example, if we make <code class="docutils literal notranslate"><span class="pre">variance</span></code> and <code class="docutils literal notranslate"><span class="pre">noise</span></code> smaller we will see
+<p>For example, if we make <code class="docutils literal"><span class="pre">variance</span></code> and <code class="docutils literal"><span class="pre">noise</span></code> smaller we will see
 function samples with smaller vertical amplitude:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">kernel2</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">variance</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
                          <span class="n">lengthscale</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">10.</span><span class="p">))</span>
 <span class="n">gpr2</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPRegression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kernel2</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">))</span>
@@ -594,15 +597,15 @@ function samples with smaller vertical amplitude:</p>
 <p>In the above we set the kernel hyperparameters by hand. If we want to
 learn the hyperparameters from the data, we need to do inference. In the
 simplest (conjugate) case we do gradient ascent on the log marginal
-likelihood. In <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> we just use the Pyro <code class="docutils literal notranslate"><span class="pre">SVI</span></code>
+likelihood. In <code class="docutils literal"><span class="pre">pyro.contrib.gp</span></code> we just use the Pyro <code class="docutils literal"><span class="pre">SVI</span></code>
 inferface (even though we’re not sampling any latent random variables in
 this case).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">})</span>
 <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">gpr</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">gpr</span><span class="o">.</span><span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
 <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
@@ -613,11 +616,11 @@ this case).</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># let&#39;s plot the loss curve after 2500 steps of training</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">losses</span><span class="p">);</span>
 </pre></div>
@@ -632,12 +635,12 @@ this case).</p>
 </div>
 <p>Let’s see if we’re learned anything reasonable:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">gpr</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">gpr</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -654,85 +657,85 @@ reasonable kernel hyperparameters, as both the mean and uncertainty give
 a reasonable fit to the data. (Note that learning could have easily gone
 wrong if we e.g.&nbsp;chose too large of a learning rate or chose bad
 initital hyperparameters.)</p>
-<p>Note that the kernel is only well-defined if <code class="docutils literal notranslate"><span class="pre">variance</span></code> and
-<code class="docutils literal notranslate"><span class="pre">lengthscale</span></code> are positive. Under the hood Pyro is using PyTorch
+<p>Note that the kernel is only well-defined if <code class="docutils literal"><span class="pre">variance</span></code> and
+<code class="docutils literal"><span class="pre">lengthscale</span></code> are positive. Under the hood Pyro is using PyTorch
 constraints (see
 <a class="reference external" href="http://pytorch.org/docs/master/distributions.html#module-torch.distributions.constraints">docs</a>)
 to ensure that hyperparameters are constrained to the appropriate
 domains. To see the constrained values of the hyperparameters, we will
-use the <code class="docutils literal notranslate"><span class="pre">get_param(...)</span></code> method.</p>
+use the <code class="docutils literal"><span class="pre">get_param(...)</span></code> method.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">gpr</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">&quot;variance&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>Out[10]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
+<div class="output_area highlight-none"><div class="highlight"><pre>
 <span></span>0.20291300117969513
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">gpr</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">&quot;lengthscale&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>Out[11]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
+<div class="output_area highlight-none"><div class="highlight"><pre>
 <span></span>0.5022150278091431
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">gpr</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">&quot;noise&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>Out[12]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
+<div class="output_area highlight-none"><div class="highlight"><pre>
 <span></span>0.04273035749793053
 </pre></div>
 </div>
 </div>
 <p>The period of the sinusoid that generated the data is
-<span class="math notranslate">\(T = 2\pi/3 \approx 2.09\)</span> so learning a lengthscale that’s
+<span class="math">\(T = 2\pi/3 \approx 2.09\)</span> so learning a lengthscale that’s
 approximiately equal to a quarter period makes sense.</p>
 <div class="section" id="Fit-the-model-using-MAP">
 <h3>Fit the model using MAP<a class="headerlink" href="#Fit-the-model-using-MAP" title="Permalink to this headline">¶</a></h3>
 <p>We need to define priors for the hyperparameters.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># note that our priors have support on the positive reals</span>
 <span class="n">gpr</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">set_prior</span><span class="p">(</span><span class="s2">&quot;lengthscale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
 <span class="n">gpr</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">set_prior</span><span class="p">(</span><span class="s2">&quot;variance&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
@@ -756,12 +759,12 @@ approximiately equal to a quarter period makes sense.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">gpr</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">gpr</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -774,13 +777,13 @@ approximiately equal to a quarter period makes sense.</p>
 </div>
 <p>Let’s inspect the hyperparameters we’ve learned:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_param_names</span><span class="p">():</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;{} = {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_name</span><span class="p">,</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="n">param_name</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param_name</span><span class="p">,</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="n">param_name</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
 </pre></div>
 </div>
 </div>
@@ -798,8 +801,8 @@ RBF$$$lengthscale_MAP = 0.5217667818069458
 prior. We can also see that the names of parameters have been changed.
 This is because by putting priors on the hyperparameters of our kernel,
 we have transformed them into into random variables (they are no longer
-<code class="docutils literal notranslate"><span class="pre">torch.nn.Parameter</span></code>s). Under the hood, the GP module appends a
-trailing <code class="docutils literal notranslate"><span class="pre">_MAP</span></code> to each hyperparameter name to reflect this
+<code class="docutils literal"><span class="pre">torch.nn.Parameter</span></code>s). Under the hood, the GP module appends a
+trailing <code class="docutils literal"><span class="pre">_MAP</span></code> to each hyperparameter name to reflect this
 difference.</p>
 </div>
 </div>
@@ -810,19 +813,19 @@ to the expensive matrix operations involved (e.g.&nbsp;see Section 2.2 of
 [1]). A variety of so-called ‘sparse’ variational methods have been
 developed to make GPs viable for larger datasets. This is a big area of
 research and we won’t be going into all the details. Instead we quickly
-show how we can use <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> to
+show how we can use <code class="docutils literal"><span class="pre">SparseGPRegression</span></code> in <code class="docutils literal"><span class="pre">pyro.contrib.gp</span></code> to
 make use of these methods.</p>
 <p>First, we generate more data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,))</span>
 <span class="n">y</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">X</span><span class="p">)</span> <span class="o">+</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,))</span>
-<span class="n">plot</span><span class="p">(</span><span class="n">plot_observed_data</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">plot_observed_data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -834,13 +837,13 @@ make use of these methods.</p>
 </div>
 </div>
 <p>Using the sparse GP is very similar to using the basic GP used above. We
-just need to add an extra parameter <span class="math notranslate">\(X_u\)</span> (the inducing points).</p>
+just need to add an extra parameter <span class="math">\(X_u\)</span> (the inducing points).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># initialize the inducing inputs</span>
 <span class="n">Xu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.0</span>
 
@@ -869,15 +872,15 @@ just need to add an extra parameter <span class="math notranslate">\(X_u\)</span
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># let&#39;s look at the inducing points we&#39;ve learned</span>
-<span class="k">print</span><span class="p">(</span><span class="s2">&quot;inducing points:</span><span class="se">\n</span><span class="s2">{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;SGPR$$$Xu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;inducing points:</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;SGPR$$$Xu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
 <span class="c1"># and plot the predictions from the sparse GP</span>
-<span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">sgpr</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">sgpr</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -905,29 +908,29 @@ three different sparse approximations that are currently implemented in
 Pyro:</p>
 <ul class="simple">
 <li>“DTC” (Deterministic Training Conditional)</li>
-<li>“FITC” (Partially Independent Training Conditional)</li>
+<li>“FITC” (Fully Independent Training Conditional)</li>
 <li>“VFE” (Variational Free Energy)</li>
 </ul>
-<p>By default, <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> will use “VFE” as the inference
-method. We can use other methods by passing a different <code class="docutils literal notranslate"><span class="pre">approx</span></code> flag
-to <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code>.</p>
+<p>By default, <code class="docutils literal"><span class="pre">SparseGPRegression</span></code> will use “VFE” as the inference
+method. We can use other methods by passing a different <code class="docutils literal"><span class="pre">approx</span></code> flag
+to <code class="docutils literal"><span class="pre">SparseGPRegression</span></code>.</p>
 </div>
 <div class="section" id="More-Sparse-GPs">
 <h2>More Sparse GPs<a class="headerlink" href="#More-Sparse-GPs" title="Permalink to this headline">¶</a></h2>
-<p>Both <code class="docutils literal notranslate"><span class="pre">GPRegression</span></code> and <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> above are limited to
+<p>Both <code class="docutils literal"><span class="pre">GPRegression</span></code> and <code class="docutils literal"><span class="pre">SparseGPRegression</span></code> above are limited to
 Gaussian likelihoods. We can use other likelihoods with GPs—for example,
 we can use the Bernoulli likelihood for classification problems—but the
 inference problem becomes more difficult. In this section, we show how
-to use the <code class="docutils literal notranslate"><span class="pre">VariationalSparseGP</span></code> module, which can handle non-Gaussian
+to use the <code class="docutils literal"><span class="pre">VariationalSparseGP</span></code> module, which can handle non-Gaussian
 likelihoods. So we can compare to what we’ve done above, we’re still
 going to use a Gaussian likelihood. The point is that the inference
 that’s being done under the hood can support other likelihoods.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># initialize the inducing inputs</span>
 <span class="n">Xu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
 
@@ -935,7 +938,7 @@ that’s being done under the hood can support other likelihoods.</p>
 <span class="n">kernel</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">likelihood</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">()</span>
 <span class="c1"># turn on &quot;whiten&quot; flag for more stable optimization</span>
-<span class="n">vsgp</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">VariationalSparseGP</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">Xu</span><span class="o">=</span><span class="n">Xu</span><span class="p">,</span> <span class="n">likelihood</span><span class="o">=</span><span class="n">likelihood</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">vsgp</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">VariationalSparseGP</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">Xu</span><span class="o">=</span><span class="n">Xu</span><span class="p">,</span> <span class="n">likelihood</span><span class="o">=</span><span class="n">likelihood</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
 <span class="c1"># instead of defining our own training loop, we will</span>
@@ -954,12 +957,12 @@ that’s being done under the hood can support other likelihoods.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">vsgp</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">plot</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">vsgp</span><span class="p">,</span> <span class="n">plot_observed_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_predictions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -970,7 +973,7 @@ that’s being done under the hood can support other likelihoods.</p>
 <img alt="_images/gp_41_0.png" src="_images/gp_41_0.png" />
 </div>
 </div>
-<p>That’s all there is to it. For more details on the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code>
+<p>That’s all there is to it. For more details on the <code class="docutils literal"><span class="pre">pyro.contrib.gp</span></code>
 module see the <a class="reference external" href="http://docs.pyro.ai/en/dev/contrib/gp.html">docs</a>.
 And for example code that uses a GP for classification see
 <a class="reference external" href="https://github.com/uber/pyro/blob/dev/examples/contrib/gp/sv-dkl.py">here</a>.</p>
@@ -978,17 +981,17 @@ And for example code that uses a GP for classification see
 <div class="section" id="Reference">
 <h2>Reference<a class="headerlink" href="#Reference" title="Permalink to this headline">¶</a></h2>
 <p>[1]
-<code class="docutils literal notranslate"><span class="pre">Deep</span> <span class="pre">Gaussian</span> <span class="pre">processes</span> <span class="pre">and</span> <span class="pre">variational</span> <span class="pre">propagation</span> <span class="pre">of</span> <span class="pre">uncertainty</span></code>,
+<code class="docutils literal"><span class="pre">Deep</span> <span class="pre">Gaussian</span> <span class="pre">processes</span> <span class="pre">and</span> <span class="pre">variational</span> <span class="pre">propagation</span> <span class="pre">of</span> <span class="pre">uncertainty</span></code>,
 Andreas Damianou</p>
 <p>[2]
-<code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">unifying</span> <span class="pre">framework</span> <span class="pre">for</span> <span class="pre">sparse</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">approximation</span> <span class="pre">using</span> <span class="pre">power</span> <span class="pre">expectation</span> <span class="pre">propagation</span></code>,
+<code class="docutils literal"><span class="pre">A</span> <span class="pre">unifying</span> <span class="pre">framework</span> <span class="pre">for</span> <span class="pre">sparse</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">approximation</span> <span class="pre">using</span> <span class="pre">power</span> <span class="pre">expectation</span> <span class="pre">propagation</span></code>,
 Thang D. Bui, Josiah Yan, and Richard E. Turner</p>
-<p>[3] <code class="docutils literal notranslate"><span class="pre">Scalable</span> <span class="pre">variational</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">classification</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; James
+<p>[3] <code class="docutils literal"><span class="pre">Scalable</span> <span class="pre">variational</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">classification</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; James
 Hensman, Alexander G. de G. Matthews, and Zoubin Ghahramani</p>
-<p>[4] <code class="docutils literal notranslate"><span class="pre">Gaussian</span> <span class="pre">Processes</span> <span class="pre">for</span> <span class="pre">Machine</span> <span class="pre">Learning</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Carl E. Rasmussen,
+<p>[4] <code class="docutils literal"><span class="pre">Gaussian</span> <span class="pre">Processes</span> <span class="pre">for</span> <span class="pre">Machine</span> <span class="pre">Learning</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Carl E. Rasmussen,
 and Christopher K. I. Williams</p>
 <p>[5]
-<code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">Unifying</span> <span class="pre">View</span> <span class="pre">of</span> <span class="pre">Sparse</span> <span class="pre">Approximate</span> <span class="pre">Gaussian</span> <span class="pre">Process</span> <span class="pre">Regression</span></code>,
+<code class="docutils literal"><span class="pre">A</span> <span class="pre">Unifying</span> <span class="pre">View</span> <span class="pre">of</span> <span class="pre">Sparse</span> <span class="pre">Approximate</span> <span class="pre">Gaussian</span> <span class="pre">Process</span> <span class="pre">Regression</span></code>,
 Joaquin Quinonero-Candela, and Carl E. Rasmussen</p>
 </div>
 </div>

@@ -119,6 +119,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 </ul>
 
             
@@ -317,8 +318,8 @@ div.nboutput div.output_area.stderr {
 .ansi-red-bg { background-color: #E75C58; }
 .ansi-red-intense-fg { color: #B22B31; }
 .ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00.2.1; }
-.ansi-green-bg { background-color: #00.2.1; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
 .ansi-green-intense-fg { color: #007427; }
 .ansi-green-intense-bg { background-color: #007427; }
 .ansi-yellow-fg { color: #DDB62B; }
@@ -383,32 +384,32 @@ div.nboutput div.output_area.stderr {
 <div class="section" id="Gaussian-Mixture-Model">
 <h1>Gaussian Mixture Model<a class="headerlink" href="#Gaussian-Mixture-Model" title="Permalink to this headline">¶</a></h1>
 <p>This is a brief tutorial on training mixture models in Pyro. We’ll focus
-on the mechanics of <code class="docutils literal notranslate"><span class="pre">config_enumerate()</span></code> and setting up mixture
+on the mechanics of <code class="docutils literal"><span class="pre">config_enumerate()</span></code> and setting up mixture
 weights. To simplify matters, we’ll train a trivial 1-D Gaussian model
 on a tiny 5-point dataset.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.stats</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
+<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="k">import</span> <span class="n">constraints</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span>
 <span class="o">%</span><span class="k">matplotlib</span> inline
 
 <span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="k">import</span> <span class="n">Adam</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -416,11 +417,11 @@ on a tiny 5-point dataset.</p>
 <h2>Dataset<a class="headerlink" href="#Dataset" title="Permalink to this headline">¶</a></h2>
 <p>Here is our tiny dataset. It has five points.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">,</span> <span class="mf">11.</span><span class="p">,</span> <span class="mf">12.</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -428,22 +429,22 @@ on a tiny 5-point dataset.</p>
 </div>
 <div class="section" id="Maximum-likelihood-approach">
 <h2>Maximum likelihood approach<a class="headerlink" href="#Maximum-likelihood-approach" title="Permalink to this headline">¶</a></h2>
-<p>Let’s start by optimizing model parameters <code class="docutils literal notranslate"><span class="pre">weights</span></code>, <code class="docutils literal notranslate"><span class="pre">locs</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">scale</span></code>, rather than treating them as random variables with priors.
+<p>Let’s start by optimizing model parameters <code class="docutils literal"><span class="pre">weights</span></code>, <code class="docutils literal"><span class="pre">locs</span></code>, and
+<code class="docutils literal"><span class="pre">scale</span></code>, rather than treating them as random variables with priors.
 Our model will learn global mixture weights, the location of each
 mixture component, and a shared scale that is common to both components.
 Our guide will learn soft assignment weights of each point.</p>
 <p>Note that none of our parameters have priors. In this Maximum Likelihood
 approach we can embed our parameters directly in the model rather than
 the guide. This is equivalent to adding them in the guide as
-<code class="docutils literal notranslate"><span class="pre">pyro.sample(...,</span> <span class="pre">dist.Delta(...))</span></code> sites and using a uniform prior in
+<code class="docutils literal"><span class="pre">pyro.sample(...,</span> <span class="pre">dist.Delta(...))</span></code> sites and using a uniform prior in
 the model.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">K</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Fixed number of components.</span>
 
 <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
@@ -467,22 +468,22 @@ the model.</p>
 </pre></div>
 </div>
 </div>
-<p>To run inference with this <code class="docutils literal notranslate"><span class="pre">(model,guide)</span></code> pair, we use Pyro’s
-<code class="docutils literal notranslate"><span class="pre">config_enumerate()</span></code> function to enumerate over all assignments in
+<p>To run inference with this <code class="docutils literal"><span class="pre">(model,guide)</span></code> pair, we use Pyro’s
+<code class="docutils literal"><span class="pre">config_enumerate()</span></code> function to enumerate over all assignments in
 each iteration. Since we’ve wrapped the batched Categorical assignments
-in a <code class="docutils literal notranslate"><span class="pre">pyro.iarange</span></code> indepencence context, this enumeration can happen
+in a <code class="docutils literal"><span class="pre">pyro.iarange</span></code> indepencence context, this enumeration can happen
 in parallel: we enumerate only 2 possibilites, rather than
-<code class="docutils literal notranslate"><span class="pre">2**len(data)</span> <span class="pre">=</span> <span class="pre">32</span></code>. Finally, to use the parallel version of
-enumeration, we inform pyro that we’re only using a single <code class="docutils literal notranslate"><span class="pre">iarange</span></code>
-via <code class="docutils literal notranslate"><span class="pre">max_iarange_nesting=1</span></code>; this lets Pyro know that we’re using the
-rightmost dimension <code class="docutils literal notranslate"><span class="pre">iarange</span></code> and letting use any other dimension for
+<code class="docutils literal"><span class="pre">2**len(data)</span> <span class="pre">=</span> <span class="pre">32</span></code>. Finally, to use the parallel version of
+enumeration, we inform pyro that we’re only using a single <code class="docutils literal"><span class="pre">iarange</span></code>
+via <code class="docutils literal"><span class="pre">max_iarange_nesting=1</span></code>; this lets Pyro know that we’re using the
+rightmost dimension <code class="docutils literal"><span class="pre">iarange</span></code> and letting use any other dimension for
 parallelization.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">optim</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s1">&#39;betas&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">]})</span>
 <span class="n">inference</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="s1">&#39;parallel&#39;</span><span class="p">),</span> <span class="n">optim</span><span class="p">,</span>
                 <span class="n">loss</span><span class="o">=</span><span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_iarange_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -490,13 +491,13 @@ parallelization.</p>
 </div>
 </div>
 <p>During training, we’ll collect both losses and gradient norms to monitor
-convergence. We can do this using PyTorch’s <code class="docutils literal notranslate"><span class="pre">.register_hook()</span></code> method.</p>
+convergence. We can do this using PyTorch’s <code class="docutils literal"><span class="pre">.register_hook()</span></code> method.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>      <span class="c1"># Set seed to make results reproducible.</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>  <span class="c1"># Clear stale param values.</span>
 
@@ -510,7 +511,7 @@ convergence. We can do this using PyTorch’s <code class="docutils literal notr
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span><span class="p">):</span>
     <span class="n">loss</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -528,11 +529,11 @@ convergence. We can do this using PyTorch’s <code class="docutils literal notr
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;iters&#39;</span><span class="p">)</span>
@@ -550,11 +551,11 @@ convergence. We can do this using PyTorch’s <code class="docutils literal notr
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">grad_norms</span> <span class="ow">in</span> <span class="n">gradient_norms</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">grad_norms</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
@@ -575,17 +576,17 @@ convergence. We can do this using PyTorch’s <code class="docutils literal notr
 </div>
 <p>Here are the learned parameters:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">weights</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span>
 <span class="n">locs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;locs&#39;</span><span class="p">)</span>
 <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;scale&#39;</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;weights = {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;locs = {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;scale = {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scale</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;weights = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;locs = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;scale = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scale</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
 </pre></div>
 </div>
 </div>
@@ -599,21 +600,21 @@ locs = [10.999848    0.50015897]
 scale = 0.708275258541
 </pre></div></div>
 </div>
-<p>The model’s <code class="docutils literal notranslate"><span class="pre">weights</span></code> are as expected, with 3/5 of the data in the
+<p>The model’s <code class="docutils literal"><span class="pre">weights</span></code> are as expected, with 3/5 of the data in the
 first component and 2/3 in the second component. We can also examine the
-guide’s local <code class="docutils literal notranslate"><span class="pre">assignment_probs</span></code> variable.</p>
+guide’s local <code class="docutils literal"><span class="pre">assignment_probs</span></code> variable.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">assignment_probs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;assignment_probs&#39;</span><span class="p">)</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment_probs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">,</span>
-            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;component with mean {:0.2g}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;component with mean </span><span class="si">{:0.2g}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment_probs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;bo&#39;</span><span class="p">,</span>
-            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;component with mean {:0.2g}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;component with mean </span><span class="si">{:0.2g}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Mixture assignment probabilities&#39;</span><span class="p">)</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;data value&#39;</span><span class="p">)</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;assignment probability&#39;</span><span class="p">)</span>
@@ -630,11 +631,11 @@ guide’s local <code class="docutils literal notranslate"><span class="pre">ass
 </div>
 <p>Next let’s visualize the mixture model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mf">0.1</span><span class="p">)</span>
 <span class="n">Y1</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">locs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="o">/</span> <span class="n">scale</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 <span class="n">Y2</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">locs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="o">/</span> <span class="n">scale</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
@@ -659,7 +660,7 @@ guide’s local <code class="docutils literal notranslate"><span class="pre">ass
 <p>Finally note that optimization with mixture models is non-convex and can
 often get stuck in local optima. For example in this tutorial, we
 observed that the mixture model gets stuck in an
-everthing-in-one-cluster hypothesis if <code class="docutils literal notranslate"><span class="pre">scale</span></code> is initialized to be
+everthing-in-one-cluster hypothesis if <code class="docutils literal"><span class="pre">scale</span></code> is initialized to be
 too large.</p>
 </div>
 </div>

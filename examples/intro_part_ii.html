@@ -123,6 +123,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 </ul>
 
             
@@ -321,8 +322,8 @@ div.nboutput div.output_area.stderr {
 .ansi-red-bg { background-color: #E75C58; }
 .ansi-red-intense-fg { color: #B22B31; }
 .ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00.2.1; }
-.ansi-green-bg { background-color: #00.2.1; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
 .ansi-green-intense-fg { color: #007427; }
 .ansi-green-intense-bg { background-color: #007427; }
 .ansi-yellow-fg { color: #DDB62B; }
@@ -385,21 +386,21 @@ div.nboutput div.output_area.stderr {
 }
 </style>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># import some dependencies</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.infer</span>
 <span class="kn">import</span> <span class="nn">pyro.optim</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
 
 <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">101</span><span class="p">);</span>
 </pre></div>
@@ -408,13 +409,13 @@ div.nboutput div.output_area.stderr {
 <div class="section" id="Inference-in-Pyro:-From-Stochastic-Functions-to-Marginal-Distributions">
 <h1>Inference in Pyro: From Stochastic Functions to Marginal Distributions<a class="headerlink" href="#Inference-in-Pyro:-From-Stochastic-Functions-to-Marginal-Distributions" title="Permalink to this headline">¶</a></h1>
 <p>Stochastic functions induce a joint probability distribution
-<span class="math notranslate">\(p(y, z \; \vert \; x)\)</span> over their latent variables <span class="math notranslate">\(z\)</span> and
-return values <span class="math notranslate">\(y\)</span>, and this joint distribution induces a marginal
+<span class="math">\(p(y, z \; \vert \; x)\)</span> over their latent variables <span class="math">\(z\)</span> and
+return values <span class="math">\(y\)</span>, and this joint distribution induces a marginal
 distribution over return values of the function. However, for
 non-primitive stochastic functions, we can no longer explicitly compute
-the marginal probability of an output <span class="math notranslate">\(p(y \; \vert \; x)\)</span> or draw
+the marginal probability of an output <span class="math">\(p(y \; \vert \; x)\)</span> or draw
 samples from the marginal distribution over return values
-<span class="math notranslate">\(y \sim p (y \; \vert \; x)\)</span>.</p>
+<span class="math">\(y \sim p (y \; \vert \; x)\)</span>.</p>
 <p>In its most general formulation, <em>inference</em> in a universal
 probabilistic programming language like Pyro is the problem of
 constructing this marginal distribution given an arbitrary boolean
@@ -424,8 +425,8 @@ randomness, or both.</p>
 <p><em>Bayesian inference</em> or <em>posterior inference</em> is an important special
 case of this more general formulation that admits tractable
 approximations. In Bayesian inference, the return value is always the
-values of some subset internal <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements, and the constraint
-is an equality constraint on the other internal <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements.
+values of some subset internal <code class="docutils literal"><span class="pre">sample</span></code> statements, and the constraint
+is an equality constraint on the other internal <code class="docutils literal"><span class="pre">sample</span></code> statements.
 Much of modern machine learning can be cast as approximate Bayesian
 inference and expressed succinctly in a language like Pyro.</p>
 <p>To motivate the rest of this tutorial, let’s first build a generative
@@ -440,11 +441,11 @@ variability by integrating the noisy measurement information with a
 guess based on some prior knowledge about the object, like its density
 or material properties. The following model encodes this process:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">scale</span><span class="p">(</span><span class="n">guess</span><span class="p">):</span>
     <span class="c1"># The prior over weight encodes our uncertainty about our guess</span>
     <span class="n">weight</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guess</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
@@ -461,7 +462,7 @@ or material properties. The following model encodes this process:</p>
 let’s try analyzing our model’s behavior. In particular, we can use
 importance sampling to simulate the marginal distribution of measurement
 values we’d expect to see a priori for a given guess.</p>
-<p>Marginalization in Pyro with <code class="docutils literal notranslate"><span class="pre">pyro.infer.EmpiricalMarginal</span></code> is split
+<p>Marginalization in Pyro with <code class="docutils literal"><span class="pre">pyro.infer.EmpiricalMarginal</span></code> is split
 into two steps. First, we collect a number of weighted execution traces
 of the model. Then, we can collapse those traces into a histogram over
 possible return values given a particular set of arguments.</p>
@@ -470,30 +471,30 @@ models with only discrete latent variables, exact enumeration. To create
 a basic importance sampler over execution traces (using the prior as the
 proposal distribution), we can write:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">posterior</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Importance</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">posterior</span></code> is not a particularly useful object on its own. Instead,
-the output of <code class="docutils literal notranslate"><span class="pre">posterior</span></code> (computed with <code class="docutils literal notranslate"><span class="pre">posterior.run</span></code>, which runs
+<p><code class="docutils literal"><span class="pre">posterior</span></code> is not a particularly useful object on its own. Instead,
+the output of <code class="docutils literal"><span class="pre">posterior</span></code> (computed with <code class="docutils literal"><span class="pre">posterior.run</span></code>, which runs
 inference for a single input value) is meant to be consumed by
-<code class="docutils literal notranslate"><span class="pre">pyro.infer.EmpiricalMarginal</span></code>, which creates a primitive stochastic
-function with the same output types as <code class="docutils literal notranslate"><span class="pre">scale</span></code>.</p>
+<code class="docutils literal"><span class="pre">pyro.infer.EmpiricalMarginal</span></code>, which creates a primitive stochastic
+function with the same output types as <code class="docutils literal"><span class="pre">scale</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">guess</span> <span class="o">=</span> <span class="mf">8.5</span>
 
 <span class="n">marginal</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">posterior</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">guess</span><span class="p">))</span>
-<span class="k">print</span><span class="p">(</span><span class="n">marginal</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">marginal</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -505,18 +506,18 @@ function with the same output types as <code class="docutils literal notranslate
 tensor(8.0281)
 </pre></div></div>
 </div>
-<p>When called with an input <code class="docutils literal notranslate"><span class="pre">guess</span></code>, <code class="docutils literal notranslate"><span class="pre">marginal</span></code> first uses
-<code class="docutils literal notranslate"><span class="pre">posterior</span></code> to generate a sequence of weighted execution traces given
-<code class="docutils literal notranslate"><span class="pre">guess</span></code>, then builds a histogram over return values from the traces,
+<p>When called with an input <code class="docutils literal"><span class="pre">guess</span></code>, <code class="docutils literal"><span class="pre">marginal</span></code> first uses
+<code class="docutils literal"><span class="pre">posterior</span></code> to generate a sequence of weighted execution traces given
+<code class="docutils literal"><span class="pre">guess</span></code>, then builds a histogram over return values from the traces,
 and finally returns a sample drawn from the histogram. Calling
-<code class="docutils literal notranslate"><span class="pre">marginal</span></code> with the same arguments more than once will sample from the
+<code class="docutils literal"><span class="pre">marginal</span></code> with the same arguments more than once will sample from the
 same histogram.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">([</span><span class="n">marginal</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">)],</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">12.0</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;P(measurement | guess)&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
@@ -531,9 +532,9 @@ same histogram.</p>
 <img alt="_images/intro_part_ii_9_0.png" src="_images/intro_part_ii_9_0.png" />
 </div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">pyro.infer.EmpiricalMarginal</span></code> also accepts the optional keyword
-argument <code class="docutils literal notranslate"><span class="pre">sites=name</span></code> that provides a name of a latent variable. When
-<code class="docutils literal notranslate"><span class="pre">sites</span></code> is specified, <code class="docutils literal notranslate"><span class="pre">marginal</span></code> will compute the marginal
+<p><code class="docutils literal"><span class="pre">pyro.infer.EmpiricalMarginal</span></code> also accepts the optional keyword
+argument <code class="docutils literal"><span class="pre">sites=name</span></code> that provides a name of a latent variable. When
+<code class="docutils literal"><span class="pre">sites</span></code> is specified, <code class="docutils literal"><span class="pre">marginal</span></code> will compute the marginal
 distribution of that site, rather than of the return value. This is
 useful because we may wish to compute many different marginals from the
 same posterior object.</p>
@@ -545,50 +546,50 @@ condition generative models on observed data and infer the latent
 factors that might have produced that data. In Pyro, we separate the
 expression of conditioning from its evaluation via inference, making it
 possible to write a model once and condition it on many different
-observations. Pyro supports constraining a model’s internal <code class="docutils literal notranslate"><span class="pre">sample</span></code>
+observations. Pyro supports constraining a model’s internal <code class="docutils literal"><span class="pre">sample</span></code>
 statements to be equal to a given set of observations.</p>
-<p>Consider <code class="docutils literal notranslate"><span class="pre">scale</span></code> once again. Suppose we want to sample from the
-marginal distribution of <code class="docutils literal notranslate"><span class="pre">weight</span></code> given input <code class="docutils literal notranslate"><span class="pre">guess</span> <span class="pre">=</span> <span class="pre">8.5</span></code>, but now
-we have observed that <code class="docutils literal notranslate"><span class="pre">measurement</span> <span class="pre">==</span> <span class="pre">9.5</span></code>. Pyro provides the function
-<code class="docutils literal notranslate"><span class="pre">pyro.condition</span></code> to allow us to constrain the values of sample
-statements. <code class="docutils literal notranslate"><span class="pre">pyro.condition</span></code> is a higher-order function that takes a
+<p>Consider <code class="docutils literal"><span class="pre">scale</span></code> once again. Suppose we want to sample from the
+marginal distribution of <code class="docutils literal"><span class="pre">weight</span></code> given input <code class="docutils literal"><span class="pre">guess</span> <span class="pre">=</span> <span class="pre">8.5</span></code>, but now
+we have observed that <code class="docutils literal"><span class="pre">measurement</span> <span class="pre">==</span> <span class="pre">9.5</span></code>. Pyro provides the function
+<code class="docutils literal"><span class="pre">pyro.condition</span></code> to allow us to constrain the values of sample
+statements. <code class="docutils literal"><span class="pre">pyro.condition</span></code> is a higher-order function that takes a
 model and a dictionary of data and returns a new model that has the same
 input and output signatures but always uses the given values at observed
-<code class="docutils literal notranslate"><span class="pre">sample</span></code> statements:</p>
+<code class="docutils literal"><span class="pre">sample</span></code> statements:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">conditioned_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span>
     <span class="n">scale</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;measurement&quot;</span><span class="p">:</span> <span class="mf">9.5</span><span class="p">})</span>
 </pre></div>
 </div>
 </div>
 <p>Because it behaves just like an ordinary Python function, conditioning
-can be deferred or parametrized with Python’s <code class="docutils literal notranslate"><span class="pre">lambda</span></code> or <code class="docutils literal notranslate"><span class="pre">def</span></code>:</p>
+can be deferred or parametrized with Python’s <code class="docutils literal"><span class="pre">lambda</span></code> or <code class="docutils literal"><span class="pre">def</span></code>:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">deferred_conditioned_scale</span><span class="p">(</span><span class="n">measurement</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;measurement&quot;</span><span class="p">:</span> <span class="n">measurement</span><span class="p">})(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>In some cases it might be more convenient to pass observations directly
-to individual <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements instead of using
-<code class="docutils literal notranslate"><span class="pre">pyro.condition</span></code>. The optional <code class="docutils literal notranslate"><span class="pre">obs</span></code> keyword argument is reserved by
-<code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> for that purpose:</p>
+to individual <code class="docutils literal"><span class="pre">pyro.sample</span></code> statements instead of using
+<code class="docutils literal"><span class="pre">pyro.condition</span></code>. The optional <code class="docutils literal"><span class="pre">obs</span></code> keyword argument is reserved by
+<code class="docutils literal"><span class="pre">pyro.sample</span></code> for that purpose:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="c1"># equivalent to pyro.condition(scale, data={&quot;measurement&quot;: torch.tensor([9.5])})</span>
 <span class="k">def</span> <span class="nf">scale_obs</span><span class="p">(</span><span class="n">guess</span><span class="p">):</span>
     <span class="n">weight</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guess</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
@@ -599,16 +600,16 @@ to individual <code class="docutils literal notranslate"><span class="pre">pyro.
 </div>
 </div>
 <p>However, hardcoding is not usually recommended due to its invasive
-non-compositional nature. By contrast, using <code class="docutils literal notranslate"><span class="pre">pyro.condition</span></code>,
+non-compositional nature. By contrast, using <code class="docutils literal"><span class="pre">pyro.condition</span></code>,
 conditioning may be composed freely to form multiple complex queries on
 probabilistic models without modifying the underlying model. The only
 restriction is that a single site may only be constrained once.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">scale2</span><span class="p">(</span><span class="n">guess</span><span class="p">):</span>
     <span class="n">weight</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guess</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
     <span class="n">tolerance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;tolerance&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)))</span>
@@ -629,26 +630,26 @@ restriction is that a single site may only be constrained once.</p>
 </pre></div>
 </div>
 </div>
-<p>In addition to <code class="docutils literal notranslate"><span class="pre">pyro.condition</span></code> for incorporating observations, Pyro
-also contains <code class="docutils literal notranslate"><span class="pre">pyro.do</span></code>, an implementation of Pearl’s <code class="docutils literal notranslate"><span class="pre">do</span></code>-operator
+<p>In addition to <code class="docutils literal"><span class="pre">pyro.condition</span></code> for incorporating observations, Pyro
+also contains <code class="docutils literal"><span class="pre">pyro.do</span></code>, an implementation of Pearl’s <code class="docutils literal"><span class="pre">do</span></code>-operator
 used for causal inference with an identical interface to
-<code class="docutils literal notranslate"><span class="pre">pyro.condition</span></code>. <code class="docutils literal notranslate"><span class="pre">condition</span></code> and <code class="docutils literal notranslate"><span class="pre">do</span></code> can be mixed and composed
+<code class="docutils literal"><span class="pre">pyro.condition</span></code>. <code class="docutils literal"><span class="pre">condition</span></code> and <code class="docutils literal"><span class="pre">do</span></code> can be mixed and composed
 freely, making Pyro a powerful tool for model-based causal inference.</p>
 </div>
 <div class="section" id="Flexible-Approximate-Inference-With-Guide-Functions">
 <h2>Flexible Approximate Inference With Guide Functions<a class="headerlink" href="#Flexible-Approximate-Inference-With-Guide-Functions" title="Permalink to this headline">¶</a></h2>
-<p>Let’s return to <code class="docutils literal notranslate"><span class="pre">deferred_conditioned_scale</span></code>. Now that we have
-constrained <code class="docutils literal notranslate"><span class="pre">measurement</span></code> against some data, we can use Pyro’s
+<p>Let’s return to <code class="docutils literal"><span class="pre">deferred_conditioned_scale</span></code>. Now that we have
+constrained <code class="docutils literal"><span class="pre">measurement</span></code> against some data, we can use Pyro’s
 approximate inference algorithms to estimate the distribution over
-<code class="docutils literal notranslate"><span class="pre">weight</span></code> given <code class="docutils literal notranslate"><span class="pre">guess</span></code> and <code class="docutils literal notranslate"><span class="pre">measurement</span> <span class="pre">==</span> <span class="pre">data</span></code>. We saw earlier
-how to use importance sampling to do this for <code class="docutils literal notranslate"><span class="pre">scale</span></code>; we can use
+<code class="docutils literal"><span class="pre">weight</span></code> given <code class="docutils literal"><span class="pre">guess</span></code> and <code class="docutils literal"><span class="pre">measurement</span> <span class="pre">==</span> <span class="pre">data</span></code>. We saw earlier
+how to use importance sampling to do this for <code class="docutils literal"><span class="pre">scale</span></code>; we can use
 exactly the same constructs with a conditioned model:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">guess</span> <span class="o">=</span> <span class="mf">8.5</span>
 <span class="n">measurement</span> <span class="o">=</span> <span class="mf">9.5</span>
 
@@ -658,7 +659,7 @@ exactly the same constructs with a conditioned model:</p>
     <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Importance</span><span class="p">(</span><span class="n">conditioned_scale</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">guess</span><span class="p">),</span> <span class="n">sites</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
 
 <span class="c1"># The marginal distribution concentrates around the data</span>
-<span class="k">print</span><span class="p">(</span><span class="n">marginal</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">marginal</span><span class="p">())</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">([</span><span class="n">marginal</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">)],</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">12.0</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;P(weight | measurement, guess)&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
@@ -682,11 +683,11 @@ tensor(8.1581)
 </div>
 </div>
 <p>However, this approach is extremely computationally inefficient because
-the prior distribution over <code class="docutils literal notranslate"><span class="pre">weight</span></code> may be very far from the true
-distribution over weights, especially if our initial <code class="docutils literal notranslate"><span class="pre">guess</span></code> is not
+the prior distribution over <code class="docutils literal"><span class="pre">weight</span></code> may be very far from the true
+distribution over weights, especially if our initial <code class="docutils literal"><span class="pre">guess</span></code> is not
 very good.</p>
 <p>Therefore, some inference algorithms in Pyro, like
-<code class="docutils literal notranslate"><span class="pre">pyro.infer.Importance</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.infer.SVI</span></code>, allow us to use
+<code class="docutils literal"><span class="pre">pyro.infer.Importance</span></code> and <code class="docutils literal"><span class="pre">pyro.infer.SVI</span></code>, allow us to use
 arbitrary stochastic functions, which we will call <em>guide functions</em> or
 <em>guides</em>, as approximate posterior distributions. Guide functions must
 satisfy these two criteria to be valid approximations for a particular
@@ -703,15 +704,15 @@ add other algorithms in the future.</p>
 <p>Although the precise meaning of the guide is different across different
 inference algorithms, the guide function should generally be chosen so
 that it closely approximates the distribution over all unobserved
-<code class="docutils literal notranslate"><span class="pre">sample</span></code> statements in the model. The simplest guide for
-<code class="docutils literal notranslate"><span class="pre">deferred_conditioned_scale</span></code> matches the prior distribution over
-<code class="docutils literal notranslate"><span class="pre">weight</span></code>:</p>
+<code class="docutils literal"><span class="pre">sample</span></code> statements in the model. The simplest guide for
+<code class="docutils literal"><span class="pre">deferred_conditioned_scale</span></code> matches the prior distribution over
+<code class="docutils literal"><span class="pre">weight</span></code>:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">scale_prior_guide</span><span class="p">(</span><span class="n">guess</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guess</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
 
@@ -723,15 +724,15 @@ that it closely approximates the distribution over all unobserved
 </pre></div>
 </div>
 </div>
-<p>Can we do better than the prior? In the case of <code class="docutils literal notranslate"><span class="pre">scale</span></code>, it turns out
-that the true posterior distribution over <code class="docutils literal notranslate"><span class="pre">weight</span></code> given <code class="docutils literal notranslate"><span class="pre">guess</span></code> and
-<code class="docutils literal notranslate"><span class="pre">measurement</span></code> can be written directly as:</p>
+<p>Can we do better than the prior? In the case of <code class="docutils literal"><span class="pre">scale</span></code>, it turns out
+that the true posterior distribution over <code class="docutils literal"><span class="pre">weight</span></code> given <code class="docutils literal"><span class="pre">guess</span></code> and
+<code class="docutils literal"><span class="pre">measurement</span></code> can be written directly as:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">scale_posterior_guide</span><span class="p">(</span><span class="n">measurement</span><span class="p">,</span> <span class="n">guess</span><span class="p">):</span>
     <span class="c1"># note that torch.size(measurement, 0) is the total number of measurements</span>
     <span class="c1"># that we&#39;re conditioning on</span>
@@ -762,34 +763,34 @@ that the true posterior distribution over <code class="docutils literal notransl
 <div class="section" id="Parametrized-Stochastic-Functions-and-Variational-Inference">
 <h2>Parametrized Stochastic Functions and Variational Inference<a class="headerlink" href="#Parametrized-Stochastic-Functions-and-Variational-Inference" title="Permalink to this headline">¶</a></h2>
 <p>Although we could write out the exact posterior distribution for
-<code class="docutils literal notranslate"><span class="pre">scale</span></code>, in general it is intractable to specify a guide that is a
+<code class="docutils literal"><span class="pre">scale</span></code>, in general it is intractable to specify a guide that is a
 good approximation to the posterior distribution of an arbitrary
 conditioned stochastic function. What we can do instead is use the
-top-level function <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> to specify a <em>family</em> of guides
+top-level function <code class="docutils literal"><span class="pre">pyro.param</span></code> to specify a <em>family</em> of guides
 indexed by named parameters, and search for the member of that family
 that is the best approximation. This approach to approximate posterior
 inference is called <em>variational inference</em>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> is a frontend for Pyro’s key-value <em>parameter store</em>,
+<p><code class="docutils literal"><span class="pre">pyro.param</span></code> is a frontend for Pyro’s key-value <em>parameter store</em>,
 which is described in more detail in the documentation. Like
-<code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>, <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> is always called with a name as its
-first argument. The first time <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> is called with a
+<code class="docutils literal"><span class="pre">pyro.sample</span></code>, <code class="docutils literal"><span class="pre">pyro.param</span></code> is always called with a name as its
+first argument. The first time <code class="docutils literal"><span class="pre">pyro.param</span></code> is called with a
 particular name, it stores its argument in the parameter store and then
 returns that value. After that, when it is called with that name, it
 returns the value from the parameter store regardless of any other
-arguments. It is similar to <code class="docutils literal notranslate"><span class="pre">simple_param_store.setdefault</span></code> here, but
+arguments. It is similar to <code class="docutils literal"><span class="pre">simple_param_store.setdefault</span></code> here, but
 with some additional tracking and management functionality.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simple_param_store</span> <span class="o">=</span> <span class="p">{}</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">simple_param_store</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="n">a</span> <span class="o">=</span> <span class="n">simple_param_store</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>For example, we can parametrize <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> in
-<code class="docutils literal notranslate"><span class="pre">scale_posterior_guide</span></code> instead of specifying them by hand:</p>
+<p>For example, we can parametrize <code class="docutils literal"><span class="pre">a</span></code> and <code class="docutils literal"><span class="pre">b</span></code> in
+<code class="docutils literal"><span class="pre">scale_posterior_guide</span></code> instead of specifying them by hand:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">scale_parametrized_guide</span><span class="p">(</span><span class="n">guess</span><span class="p">):</span>
     <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">guess</span><span class="p">))</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
@@ -813,13 +814,13 @@ inference to very high-dimensional parameter spaces and massive
 datasets.</p>
 <p>Pyro’s SVI functionality is described in detail in the <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI
 tutorial</span></a>. Here is a very simple example applying
-it to <code class="docutils literal notranslate"><span class="pre">scale</span></code>:</p>
+it to <code class="docutils literal"><span class="pre">scale</span></code>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
 <span class="n">svi</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">conditioned_scale</span><span class="p">,</span>
                      <span class="n">guide</span><span class="o">=</span><span class="n">scale_parametrized_guide</span><span class="p">,</span>
@@ -849,14 +850,14 @@ produce a posterior distribution object itself. Once we find good
 parameter values, we can just use the guide as a representation of the
 model’s approximate posterior for downstream tasks.</p>
 <p>For example, we can use the optimized guide as an importance
-distribution for estimating the marginal distribution over <code class="docutils literal notranslate"><span class="pre">weight</span></code>
+distribution for estimating the marginal distribution over <code class="docutils literal"><span class="pre">weight</span></code>
 with many fewer samples than the prior:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">posterior</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Importance</span><span class="p">(</span><span class="n">conditioned_scale</span><span class="p">,</span> <span class="n">scale_parametrized_guide</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">marginal</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">posterior</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">guess</span><span class="p">),</span> <span class="n">sites</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
 
@@ -876,11 +877,11 @@ with many fewer samples than the prior:</p>
 </div>
 <p>We can also sample from the guide directly as an approximate posterior:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<div class="prompt highlight-none"><div class="highlight"><pre>
 <span></span>In [16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
 <span></span><span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">([</span><span class="n">scale_parametrized_guide</span><span class="p">(</span><span class="n">guess</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">)],</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">12.0</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;P(weight | measurement, guess)&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
@@ -899,7 +900,7 @@ with many fewer samples than the prior:</p>
 <div class="section" id="Next-Steps">
 <h2>Next Steps<a class="headerlink" href="#Next-Steps" title="Permalink to this headline">¶</a></h2>
 <p>In the <a class="reference internal" href="vae.html"><span class="doc">Variational Autoencoder tutorial</span></a>, we’ll see how
-models like <code class="docutils literal notranslate"><span class="pre">scale</span></code> can be augmented with deep neural networks and use
+models like <code class="docutils literal"><span class="pre">scale</span></code> can be augmented with deep neural networks and use
 stochastic variational inference to build a generative model of images.</p>
 </div>
 </div>

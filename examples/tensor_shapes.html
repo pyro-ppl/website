@@ -113,6 +113,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#Subsampling-tensors-inside-an-iarange">Subsampling tensors inside an <code class="docutils literal"><span class="pre">iarange</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Broadcasting-to-allow-parallel-enumeration">Broadcasting to allow parallel enumeration</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Writing-parallelizable-code">Writing parallelizable code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Automatic-broadcasting-via-broadcast-poutine">Automatic broadcasting via broadcast poutine</a></li>
 </ul>
 </li>
 </ul>
@@ -133,6 +134,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 </ul>
 
             
@@ -331,8 +333,8 @@ div.nboutput div.output_area.stderr {
 .ansi-red-bg { background-color: #E75C58; }
 .ansi-red-intense-fg { color: #B22B31; }
 .ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00.2.1; }
-.ansi-green-bg { background-color: #00.2.1; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
 .ansi-green-intense-fg { color: #007427; }
 .ansi-green-intense-bg { background-color: #007427; }
 .ansi-yellow-fg { color: #DDB62B; }
@@ -442,28 +444,31 @@ Enumeration</a><ul>
 <li><a class="reference external" href="#Writing-parallelizable-code">Writing parallelizable code</a></li>
 </ul>
 </li>
+<li><a class="reference external" href="#Automatic-broadcasting-via-broadcast-poutine">Automatic broadcasting via broadcast
+poutine</a></li>
 </ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [1]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>import os
-import torch
-import pyro
-from torch.distributions import constraints
-from pyro.distributions import Bernoulli, Categorical, MultivariateNormal, Normal
-from pyro.infer import Trace_ELBO, TraceEnum_ELBO, config_enumerate
-from pyro.optim import Adam
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="k">import</span> <span class="n">constraints</span>
+<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="k">import</span> <span class="n">Bernoulli</span><span class="p">,</span> <span class="n">Categorical</span><span class="p">,</span> <span class="n">MultivariateNormal</span><span class="p">,</span> <span class="n">Normal</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">Trace_ELBO</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
+<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="k">import</span> <span class="n">Adam</span>
 
-smoke_test = (&#39;CI&#39; in os.environ)
-pyro.enable_validation(True)    # &lt;---- This is always a good idea!
+<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>    <span class="c1"># &lt;---- This is always a good idea!</span>
 
-# We&#39;ll ue this helper to check our models are correct.
-def test_model(model, guide, loss):
-    pyro.clear_param_store()
-    loss.loss(model, guide)
+<span class="c1"># We&#39;ll ue this helper to check our models are correct.</span>
+<span class="k">def</span> <span class="nf">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -508,32 +513,32 @@ over matrices like <code class="docutils literal"><span class="pre">InverseWisha
 <p>The simplest distribution shape is a single univariate distribution.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [2]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>d = Bernoulli(0.5)
-assert d.batch_shape == ()
-assert d.event_shape == ()
-x = d.sample()
-assert x.shape == ()
-assert d.log_prob(x).shape == ()
+<span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <p>Distributions can be batched by passing in batched parameters.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [3]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>d = Bernoulli(0.5 * torch.ones(3,4))
-assert d.batch_shape == (3, 4)
-assert d.event_shape == ()
-x = d.sample()
-assert x.shape == (3, 4)
-assert d.log_prob(x).shape == (3, 4)
+<span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -542,16 +547,16 @@ This only works if parameters are identical along the leftmost
 dimensions.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [4]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>d = Bernoulli(torch.tensor([0.1, 0.2, 0.3, 0.4])).expand_by([3])
-assert d.batch_shape == (3, 4)
-assert d.event_shape == ()
-x = d.sample()
-assert x.shape == (3, 4)
-assert d.log_prob(x).shape == (3, 4)
+<span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]))</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">3</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -559,16 +564,16 @@ assert d.log_prob(x).shape == (3, 4)
 distributions, the shapes of <code class="docutils literal"><span class="pre">.sample()</span></code> and <code class="docutils literal"><span class="pre">.log_prob(x)</span></code> differ:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [5]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>d = MultivariateNormal(torch.zeros(3), torch.eye(3, 3))
-assert d.batch_shape == ()
-assert d.event_shape == (3,)
-x = d.sample()
-assert x.shape == (3,)            # == batch_shape + event_shape
-assert d.log_prob(x).shape == ()  # == batch_shape
+<span></span><span class="n">d</span> <span class="o">=</span> <span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>            <span class="c1"># == batch_shape + event_shape</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>  <span class="c1"># == batch_shape</span>
 </pre></div>
 </div>
 </div>
@@ -579,16 +584,16 @@ assert d.log_prob(x).shape == ()  # == batch_shape
 calling the <code class="docutils literal"><span class="pre">.independent(_)</span></code> property.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [6]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>d = Bernoulli(0.5 * torch.ones(3,4)).independent(1)
-assert d.batch_shape == (3,)
-assert d.event_shape == (4,)
-x = d.sample()
-assert x.shape == (3, 4)
-assert d.log_prob(x).shape == (3,)
+<span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>
 </pre></div>
 </div>
 </div>
@@ -677,37 +682,37 @@ argument (again counting from the right):</p>
 <p>Let’s take a closer look at batch sizes within <code class="docutils literal"><span class="pre">iarange</span></code>s.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [7]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>def model1():
-    a = pyro.sample(&quot;a&quot;, Normal(0, 1))
-    b = pyro.sample(&quot;b&quot;, Normal(torch.zeros(2), 1).independent(1))
-    with pyro.iarange(&quot;c_iarange&quot;, 2):
-        c = pyro.sample(&quot;c&quot;, Normal(torch.zeros(2), 1))
-    with pyro.iarange(&quot;d_iarange&quot;, 3):
-        d = pyro.sample(&quot;d&quot;, Normal(torch.zeros(3,4,5), 1).independent(2))
-    assert a.shape == ()       # batch_shape == ()     event_shape == ()
-    assert b.shape == (2,)     # batch_shape == ()     event_shape == (2,)
-    assert c.shape == (2,)     # batch_shape == (2,)   event_sahpe == ()
-    assert d.shape == (3,4,5)  # batch_shape == (3,)   event_shape == (4,5)
+<span></span><span class="k">def</span> <span class="nf">model1</span><span class="p">():</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;c_iarange&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;d_iarange&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>       <span class="c1"># batch_shape == ()     event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)</span>     <span class="c1"># batch_shape == ()     event_shape == (2,)</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)</span>     <span class="c1"># batch_shape == (2,)   event_sahpe == ()</span>
+    <span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># batch_shape == (3,)   event_shape == (4,5)</span>
 
-    x_axis = pyro.iarange(&quot;x_axis&quot;, 3, dim=-2)
-    y_axis = pyro.iarange(&quot;y_axis&quot;, 2, dim=-3)
-    with x_axis:
-        x = pyro.sample(&quot;x&quot;, Normal(0, 1).expand_by([3, 1]))
-    with y_axis:
-        y = pyro.sample(&quot;y&quot;, Normal(0, 1).expand_by([2, 1, 1]))
-    with x_axis, y_axis:
-        xy = pyro.sample(&quot;xy&quot;, Normal(0, 1).expand_by([2, 3, 1]))
-        z = pyro.sample(&quot;z&quot;, Normal(0, 1).expand_by([2, 3, 1, 5]).independent(1))
-    assert x.shape == (3, 1)        # batch_shape == (3,1)     event_shape == ()
-    assert y.shape == (2, 1, 1)     # batch_shape == (2,1,1)   event_shape == ()
-    assert xy.shape == (2, 3, 1)    # batch_shape == (2,3,1)   event_shape == ()
-    assert z.shape == (2, 3, 1, 5)  # batch_shape == (2,3,1)   event_shape == (5,)
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;x_axis&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;y_axis&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">xy</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;xy&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>        <span class="c1"># batch_shape == (3,1)     event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>     <span class="c1"># batch_shape == (2,1,1)   event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">xy</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>    <span class="c1"># batch_shape == (2,3,1)   event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">z</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># batch_shape == (2,3,1)   event_shape == (5,)</span>
 
-test_model(model1, model1, Trace_ELBO())
+<span class="n">test_model</span><span class="p">(</span><span class="n">model1</span><span class="p">,</span> <span class="n">model1</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -753,23 +758,23 @@ size and the subsample size; Pyro will then choose a random subset of
 data and yield the set of indices.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [8]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>data = torch.arange(100)
+<span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
 
-def model2():
-    mean = pyro.param(&quot;mean&quot;, torch.zeros(len(data)))
-    with pyro.iarange(&quot;data&quot;, len(data), subsample_size=10) as ind:
-        assert len(ind) == 10    # ind is a LongTensor that indexes the subsample.
-        batch = data[ind]        # Select a minibatch of data.
-        mean_batch = mean[ind]   # Take care to select the relevant per-datum parameters.
-        # Do stuff with batch:
-        x = pyro.sample(&quot;x&quot;, Normal(mean_batch, 1), obs=batch)
-        assert len(x) == 10
+<span class="k">def</span> <span class="nf">model2</span><span class="p">():</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="k">as</span> <span class="n">ind</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span>    <span class="c1"># ind is a LongTensor that indexes the subsample.</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>        <span class="c1"># Select a minibatch of data.</span>
+        <span class="n">mean_batch</span> <span class="o">=</span> <span class="n">mean</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>   <span class="c1"># Take care to select the relevant per-datum parameters.</span>
+        <span class="c1"># Do stuff with batch:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mean_batch</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span>
 
-test_model(model2, guide=lambda: None, loss=Trace_ELBO())
+<span class="n">test_model</span><span class="p">(</span><span class="n">model2</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -823,37 +828,37 @@ cannot underprovision <code class="docutils literal"><span class="pre">max_iaran
 Let’s see how this works in practice.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [9]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>@config_enumerate(default=&quot;parallel&quot;)
-def model3():
-    p = pyro.param(&quot;p&quot;, torch.arange(6) / 6)
-    locs = pyro.param(&quot;locs&quot;, torch.tensor([-1., 1.]))
+<span></span><span class="nd">@config_enumerate</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;parallel&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">model3</span><span class="p">():</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;locs&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]))</span>
 
-    a = pyro.sample(&quot;a&quot;, Categorical(torch.ones(6) / 6))
-    b = pyro.sample(&quot;b&quot;, Bernoulli(p[a]))  # Note this depends on a.
-    with pyro.iarange(&quot;c_iarange&quot;, 4):
-        c = pyro.sample(&quot;c&quot;, Bernoulli(0.3).expand_by([4]))
-        with pyro.iarange(&quot;d_iarange&quot;, 5):
-            d = pyro.sample(&quot;d&quot;, Bernoulli(0.4).expand_by([5,4]))
-            e_loc = locs[d.long()].unsqueeze(-1)
-            e_scale = torch.arange(1, 8)
-            e = pyro.sample(&quot;e&quot;, Normal(e_loc, e_scale)
-                            .independent(1))  # Note this depends on d.
+    <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">a</span><span class="p">]))</span>  <span class="c1"># Note this depends on a.</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;c_iarange&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;d_iarange&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">]))</span>
+            <span class="n">e_loc</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">long</span><span class="p">()]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">e_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">e_loc</span><span class="p">,</span> <span class="n">e_scale</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># Note this depends on d.</span>
 
-    #                   enumerated|batch|event dims
-    assert a.shape == (         6, 1, 1   )  # Six enumerated values of the Categorical.
-    assert b.shape == (      2, 6, 1, 1   )  # 2 enumerated Bernoullis x 6 Categoricals.
-    assert c.shape == (   2, 1, 1, 1, 4   )  # Only 2 Bernoullis; does not depend on a or b.
-    assert d.shape == (2, 1, 1, 1, 5, 4   )  # Only two Bernoullis.
-    assert e.shape == (2, 1, 1, 1, 5, 4, 7)  # This is sampled and depends on d.
+    <span class="c1">#                   enumerated|batch|event dims</span>
+    <span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>         <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>   <span class="p">)</span>  <span class="c1"># Six enumerated values of the Categorical.</span>
+    <span class="k">assert</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>      <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>   <span class="p">)</span>  <span class="c1"># 2 enumerated Bernoullis x 6 Categoricals.</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>   <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span>   <span class="p">)</span>  <span class="c1"># Only 2 Bernoullis; does not depend on a or b.</span>
+    <span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span>   <span class="p">)</span>  <span class="c1"># Only two Bernoullis.</span>
+    <span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>  <span class="c1"># This is sampled and depends on d.</span>
 
-    assert e_loc.shape   == (2, 1, 1, 1, 5, 4, 1,)
-    assert e_scale.shape == (                  7,)
+    <span class="k">assert</span> <span class="n">e_loc</span><span class="o">.</span><span class="n">shape</span>   <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,)</span>
+    <span class="k">assert</span> <span class="n">e_scale</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>                  <span class="mi">7</span><span class="p">,)</span>
 
-test_model(model3, model3, TraceEnum_ELBO(max_iarange_nesting=2))
+<span class="n">test_model</span><span class="p">(</span><span class="n">model3</span><span class="p">,</span> <span class="n">model3</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_iarange_nesting</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -892,71 +897,207 @@ Let’s look at a contrived model to see how these work in practice. Our
 aim is to write a model that works both with and without enumeration.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none"><div class="highlight"><pre>
-<span></span>In [10]:
+<span></span>In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3"><div class="highlight"><pre>
-<span></span>width = 8
-height = 10
-sparse_pixels = torch.LongTensor([[3, 2], [3, 5], [3, 9], [7, 1]])
-enumerated = None  # set to either True or False below
+<span></span><span class="n">width</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">sparse_pixels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="n">enumerated</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># set to either True or False below</span>
 
-def fun(observe):
-    p_x = pyro.param(&quot;p_x&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)
-    p_y = pyro.param(&quot;p_y&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)
-    x_axis = pyro.iarange(&#39;x_axis&#39;, width, dim=-2)
-    y_axis = pyro.iarange(&#39;y_axis&#39;, height, dim=-1)
+<span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="n">observe</span><span class="p">):</span>
+    <span class="n">p_x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_x&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">p_y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_y&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;x_axis&#39;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;y_axis&#39;</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
-    # Note that the shapes of these sites depend on whether Pyro is enumerating.
-    with x_axis:
-        x_active = pyro.sample(&quot;x_active&quot;, Bernoulli(p_x).expand_by([width, 1]))
-    with y_axis:
-        y_active = pyro.sample(&quot;y_active&quot;, Bernoulli(p_y).expand_by([height]))
-    if enumerated:
-        assert x_active.shape  == (2, width, 1)
-        assert y_active.shape  == (2, 1, 1, height)
-    else:
-        assert x_active.shape  == (width, 1)
-        assert y_active.shape  == (height,)
+    <span class="c1"># Note that the shapes of these sites depend on whether Pyro is enumerating.</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="n">height</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">enumerated</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">x_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">y_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">x_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">y_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="n">height</span><span class="p">,)</span>
 
-    # The first trick is to broadcast. This works with or without enumeration.
-    p = 0.1 + 0.5 * x_active * y_active
-    if enumerated:
-        assert p.shape == (2, 2, width, height)
-    else:
-        assert p.shape == (width, height)
+    <span class="c1"># The first trick is to broadcast. This works with or without enumeration.</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x_active</span> <span class="o">*</span> <span class="n">y_active</span>
+    <span class="k">if</span> <span class="n">enumerated</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
 
-    # The second trick is to index using ellipsis slicing.
-    # This allows Pyro to add arbitrary dimensions on the left.
-    dense_pixels = torch.zeros_like(p)
-    for x, y in sparse_pixels:
-        dense_pixels[..., x, y] = 1
-    if enumerated:
-        assert dense_pixels.shape == (2, 2, width, height)
-    else:
-        assert dense_pixels.shape == (width, height)
+    <span class="c1"># The second trick is to index using ellipsis slicing.</span>
+    <span class="c1"># This allows Pyro to add arbitrary dimensions on the left.</span>
+    <span class="n">dense_pixels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">sparse_pixels</span><span class="p">:</span>
+        <span class="n">dense_pixels</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">enumerated</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">dense_pixels</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">dense_pixels</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
 
-    with x_axis, y_axis:
-        if observe:
-            pyro.sample(&quot;pixels&quot;, Bernoulli(p), obs=dense_pixels)
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">observe</span><span class="p">:</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;pixels&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">dense_pixels</span><span class="p">)</span>
 
-def model4():
-    fun(observe=True)
+<span class="k">def</span> <span class="nf">model4</span><span class="p">():</span>
+    <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-@config_enumerate(default=&quot;parallel&quot;)
-def guide4():
-    fun(observe=False)
+<span class="nd">@config_enumerate</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;parallel&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">guide4</span><span class="p">():</span>
+    <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-# Test without enumeration.
-enumerated = False
-test_model(model4, guide4, Trace_ELBO())
+<span class="c1"># Test without enumeration.</span>
+<span class="n">enumerated</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">test_model</span><span class="p">(</span><span class="n">model4</span><span class="p">,</span> <span class="n">guide4</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
 
-# Test with enumeration.
-enumerated = True
-test_model(model4, guide4, TraceEnum_ELBO(max_iarange_nesting=2))
+<span class="c1"># Test with enumeration.</span>
+<span class="n">enumerated</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">test_model</span><span class="p">(</span><span class="n">model4</span><span class="p">,</span> <span class="n">guide4</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_iarange_nesting</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="Automatic-broadcasting-via-broadcast-poutine">
+<h4>Automatic broadcasting via broadcast poutine<a class="headerlink" href="#Automatic-broadcasting-via-broadcast-poutine" title="Permalink to this headline">¶</a></h4>
+<p>Note that in all our model/guide specifications, we had to expand sample
+shapes by hand to satisfy the constraints on batch shape enforced by
+<code class="docutils literal"><span class="pre">pyro.iarange</span></code> statements. This code can be simplified by using
+<a class="reference external" href="http://docs.pyro.ai/en/latest/poutine.html#pyro.poutine.broadcast">poutine.broadcast</a>,
+which automatically broadcasts the batch shape of <code class="docutils literal"><span class="pre">pyro.sample</span></code>
+statements when inside a single or nested iarange context.</p>
+<p>We will demonstrate this using <code class="docutils literal"><span class="pre">model4</span></code> from the <a class="reference external" href="#Writing-parallelizable-code">previous
+section</a>. Note the following changes to
+the code from earlier:</p>
+<ul class="simple">
+<li>For the purpose of this example, we will only consider “parallel”
+enumeration, but broadcasting should work as expected without
+enumeration or with “sequential” enumeration.</li>
+<li>We have separated out the sampling function which returns the tensors
+corresponding to the active pixels. Modularizing the model code into
+components is a common practice, and helps with maintainability of
+large models. The first sampling function is identical to what we had
+in <code class="docutils literal"><span class="pre">model4</span></code>, and the remaining sampling functions use
+<code class="docutils literal"><span class="pre">poutine.broadcast</span></code> to implicitly expand sample sites to confirm to
+the shape requirements imposed by the <code class="docutils literal"><span class="pre">iarange</span></code> contexts in which
+they are embedded.</li>
+<li>We would also like to use the <code class="docutils literal"><span class="pre">pyro.iarange</span></code> construct to
+parallelize the ELBO estimator over
+<a class="reference external" href="http://docs.pyro.ai/en/latest/inference_algos.html#pyro.infer.elbo.ELBO">num_particles</a>.
+This is done by wrapping the contents of model/guide inside an
+outermost <code class="docutils literal"><span class="pre">pyro.iarange</span></code> context.</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none"><div class="highlight"><pre>
+<span></span>In [ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">num_particles</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># Number of samples for the ELBO estimator</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">sparse_pixels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+
+<span class="k">def</span> <span class="nf">sample_pixel_locations_no_broadcasting</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="n">num_particles</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="n">num_particles</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span>
+
+<span class="k">def</span> <span class="nf">sample_pixel_locations_automatic_broadcasting</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span>
+
+<span class="k">def</span> <span class="nf">sample_pixel_locations_partial_broadcasting</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">)</span><span class="o">.</span><span class="n">expand_by</span><span class="p">([</span><span class="n">height</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span>
+
+<span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="n">observe</span><span class="p">,</span> <span class="n">sample_fn</span><span class="p">):</span>
+    <span class="n">p_x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_x&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">p_y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_y&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;x_axis&#39;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s1">&#39;y_axis&#39;</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;num_particles&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span> <span class="o">=</span> <span class="n">sample_fn</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">)</span>
+        <span class="c1"># Indices corresponding to &quot;parallel&quot; enumeration are appended</span>
+        <span class="c1"># to the left of the &quot;num_particles&quot; iarange dim.</span>
+        <span class="k">assert</span> <span class="n">x_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_particles</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">y_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_particles</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x_active</span> <span class="o">*</span> <span class="n">y_active</span>
+        <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">num_particles</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+
+        <span class="n">dense_pixels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">sparse_pixels</span><span class="p">:</span>
+            <span class="n">dense_pixels</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">dense_pixels</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">num_particles</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">observe</span><span class="p">:</span>
+                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;pixels&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">dense_pixels</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_fn</span><span class="p">,</span> <span class="n">broadcast</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
+        <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_fn</span><span class="o">=</span><span class="n">sample_fn</span><span class="p">)</span>
+
+    <span class="nd">@config_enumerate</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;parallel&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
+        <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sample_fn</span><span class="o">=</span><span class="n">sample_fn</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">broadcast</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">guide</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+    <span class="n">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_iarange_nesting</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="n">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_pixel_locations_no_broadcasting</span><span class="p">)</span>
+<span class="n">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_pixel_locations_automatic_broadcasting</span><span class="p">,</span> <span class="n">broadcast</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_pixel_locations_partial_broadcasting</span><span class="p">,</span> <span class="n">broadcast</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In the first sampling function, we had to do some manual book-keeping
+and expand the <code class="docutils literal"><span class="pre">Bernoulli</span></code> distribution’s batch shape to account for
+the independent dimensions added by the <code class="docutils literal"><span class="pre">pyro.iarange</span></code> contexts. In
+particular, note how <code class="docutils literal"><span class="pre">sample_pixel_locations</span></code> needs knowledge of
+<code class="docutils literal"><span class="pre">num_particles</span></code>, <code class="docutils literal"><span class="pre">width</span></code> and <code class="docutils literal"><span class="pre">height</span></code> and is accessing these
+variables from the global scope, which is not ideal.</p>
+<p>The next two sampling functions are annotated with
+<a class="reference external" href="http://docs.pyro.ai/en/latest/poutine.html#pyro.poutine.broadcast">poutine.broadcast</a>,
+so that this can be automatically achieved via an effect handler. Note
+the following in the next two modified sampling functions:</p>
+<ul class="simple">
+<li>The second argument to <code class="docutils literal"><span class="pre">pyro.iarange</span></code>, i.e.&nbsp;the optional <code class="docutils literal"><span class="pre">size</span></code>
+argument needs to be provided for implicit broadasting, so that
+<code class="docutils literal"><span class="pre">poutine.broadcast</span></code> can infer the batch shape requirement for each
+of the sample sites.</li>
+<li>The existing <code class="docutils literal"><span class="pre">batch_shape</span></code> of the sample site must be broadcastable
+with the size of the <code class="docutils literal"><span class="pre">pyro.iarange</span></code> contexts. In our particular
+example, <code class="docutils literal"><span class="pre">Bernoulli(p_x)</span></code> has an empty batch shape which is
+universally broadcastable.</li>
+<li><code class="docutils literal"><span class="pre">poutine.broadcast</span></code> is idempotent, and is also safe to use when the
+sample sites have been partially broadcasted to the size of some of
+the <code class="docutils literal"><span class="pre">iarange</span></code>s but not all. In the third sampling function, the
+user has partially expanded <code class="docutils literal"><span class="pre">x_active</span></code> and <code class="docutils literal"><span class="pre">y_active</span></code>, and the
+broadcast effect handler expands the other batch dimensions to the
+size of remaining <code class="docutils literal"><span class="pre">iarange</span></code>s.</li>
+</ul>
+<p>Note how simple it is to achieve parallelization via tensorized
+operations using <code class="docutils literal"><span class="pre">pyro.iarange</span></code> and <code class="docutils literal"><span class="pre">poutine.broadcast</span></code>!
+<code class="docutils literal"><span class="pre">poutine.broadcast</span></code> also helps in code modularization because model
+components can be written agnostic of the <code class="docutils literal"><span class="pre">iarange</span></code> contexts in which
+they may subsequently get embedded in.</p>
 </div>
 </div>
 </div>

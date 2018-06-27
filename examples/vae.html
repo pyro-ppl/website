@@ -122,6 +122,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 </ul>
 
             
@@ -320,8 +321,8 @@ div.nboutput div.output_area.stderr {
 .ansi-red-bg { background-color: #E75C58; }
 .ansi-red-intense-fg { color: #B22B31; }
 .ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00.2.1; }
-.ansi-green-bg { background-color: #00.2.1; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
 .ansi-green-intense-fg { color: #007427; }
 .ansi-green-intense-bg { background-color: #007427; }
 .ansi-yellow-fg { color: #DDB62B; }
@@ -512,19 +513,19 @@ the amount of boilerplate code we need to write:</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>import os
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
 
-import numpy as np
-import torch
-import torchvision.datasets as dset
-import torch.nn as nn
-import torchvision.transforms as transforms
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torchvision.datasets</span> <span class="k">as</span> <span class="nn">dset</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torchvision.transforms</span> <span class="k">as</span> <span class="nn">transforms</span>
 
-import pyro
-import pyro.distributions as dist
-from pyro.infer import SVI, Trace_ELBO
-from pyro.optim import Adam
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="k">import</span> <span class="n">Adam</span>
 </pre></div>
 </div>
 </div>
@@ -533,12 +534,12 @@ from pyro.optim import Adam
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>pyro.enable_validation(True)
-pyro.distributions.enable_validation(False)
-pyro.set_rng_seed(0)
-# Enable smoke test - run the notebook cells on CI.
-smoke_test = &#39;CI&#39; in os.environ
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># Enable smoke test - run the notebook cells on CI.</span>
+<span class="n">smoke_test</span> <span class="o">=</span> <span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
 </pre></div>
 </div>
 </div>
@@ -547,22 +548,22 @@ smoke_test = &#39;CI&#39; in os.environ
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span># for loading and batching MNIST dataset
-def setup_data_loaders(batch_size=128, use_cuda=False):
-    root = &#39;./data&#39;
-    download = True
-    trans = transforms.ToTensor()
-    train_set = dset.MNIST(root=root, train=True, transform=trans,
-                           download=download)
-    test_set = dset.MNIST(root=root, train=False, transform=trans)
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="c1"># for loading and batching MNIST dataset</span>
+<span class="k">def</span> <span class="nf">setup_data_loaders</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="s1">&#39;./data&#39;</span>
+    <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">trans</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">()</span>
+    <span class="n">train_set</span> <span class="o">=</span> <span class="n">dset</span><span class="o">.</span><span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">trans</span><span class="p">,</span>
+                           <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">)</span>
+    <span class="n">test_set</span> <span class="o">=</span> <span class="n">dset</span><span class="o">.</span><span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">trans</span><span class="p">)</span>
 
-    kwargs = {&#39;num_workers&#39;: 1, &#39;pin_memory&#39;: use_cuda}
-    train_loader = torch.utils.data.DataLoader(dataset=train_set,
-        batch_size=batch_size, shuffle=True, **kwargs)
-    test_loader = torch.utils.data.DataLoader(dataset=test_set,
-        batch_size=batch_size, shuffle=False, **kwargs)
-    return train_loader, test_loader
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_workers&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;pin_memory&#39;</span><span class="p">:</span> <span class="n">use_cuda</span><span class="p">}</span>
+    <span class="n">train_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">test_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">test_set</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">test_loader</span>
 </pre></div>
 </div>
 </div>
@@ -575,25 +576,25 @@ range <span class="math">\([0.0, 1.0]\)</span>.</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>class Decoder(nn.Module):
-    def __init__(self, z_dim, hidden_dim):
-        super(Decoder, self).__init__()
-        # setup the two linear transformations used
-        self.fc1 = nn.Linear(z_dim, hidden_dim)
-        self.fc21 = nn.Linear(hidden_dim, 784)
-        # setup the non-linearities
-        self.softplus = nn.Softplus()
-        self.sigmoid = nn.Sigmoid()
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="k">class</span> <span class="nc">Decoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Decoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># setup the two linear transformations used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">z_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc21</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">784</span><span class="p">)</span>
+        <span class="c1"># setup the non-linearities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">softplus</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigmoid</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
 
-    def forward(self, z):
-        # define the forward computation on the latent z
-        # first compute the hidden units
-        hidden = self.softplus(self.fc1(z))
-        # return the parameter for the output Bernoulli
-        # each is of size batch_size x 784
-        loc_img = self.sigmoid(self.fc21(hidden))
-        return loc_img
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="c1"># define the forward computation on the latent z</span>
+        <span class="c1"># first compute the hidden units</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+        <span class="c1"># return the parameter for the output Bernoulli</span>
+        <span class="c1"># each is of size batch_size x 784</span>
+        <span class="n">loc_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc21</span><span class="p">(</span><span class="n">hidden</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">loc_img</span>
 </pre></div>
 </div>
 </div>
@@ -607,28 +608,28 @@ image is of size <span class="math">\(28\times28=784\)</span>, <code class="docu
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>class Encoder(nn.Module):
-    def __init__(self, z_dim, hidden_dim):
-        super(Encoder, self).__init__()
-        # setup the three linear transformations used
-        self.fc1 = nn.Linear(784, hidden_dim)
-        self.fc21 = nn.Linear(hidden_dim, z_dim)
-        self.fc22 = nn.Linear(hidden_dim, z_dim)
-        # setup the non-linearities
-        self.softplus = nn.Softplus()
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="k">class</span> <span class="nc">Encoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Encoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># setup the three linear transformations used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">784</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc21</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">z_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc22</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">z_dim</span><span class="p">)</span>
+        <span class="c1"># setup the non-linearities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">softplus</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">()</span>
 
-    def forward(self, x):
-        # define the forward computation on the image x
-        # first shape the mini-batch to have pixels in the rightmost dimension
-        x = x.reshape(-1, 784)
-        # then compute the hidden units
-        hidden = self.softplus(self.fc1(x))
-        # then return a mean vector and a (positive) square root covariance
-        # each of size batch_size x z_dim
-        z_loc = self.fc21(hidden)
-        z_scale = torch.exp(self.fc22(hidden))
-        return z_loc, z_scale
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># define the forward computation on the image x</span>
+        <span class="c1"># first shape the mini-batch to have pixels in the rightmost dimension</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">784</span><span class="p">)</span>
+        <span class="c1"># then compute the hidden units</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="c1"># then return a mean vector and a (positive) square root covariance</span>
+        <span class="c1"># each of size batch_size x z_dim</span>
+        <span class="n">z_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc21</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
+        <span class="n">z_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc22</span><span class="p">(</span><span class="n">hidden</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span>
 </pre></div>
 </div>
 </div>
@@ -643,21 +644,21 @@ model:</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span># define the model p(x|z)p(z)
-def model(self, x):
-    # register PyTorch module `decoder` with Pyro
-    pyro.module(&quot;decoder&quot;, self.decoder)
-    with pyro.iarange(&quot;data&quot;, x.size(0)):
-        # setup hyperparameters for prior p(z)
-        z_loc = x.new_zeros(torch.Size((x.size(0), self.z_dim)))
-        z_scale = x.new_ones(torch.Size((x.size(0), self.z_dim)))
-        # sample from prior (value will be sampled by guide when computing the ELBO)
-        z = pyro.sample(&quot;latent&quot;, dist.Normal(z_loc, z_scale).independent(1))
-        # decode the latent code z
-        loc_img = self.decoder.forward(z)
-        # score against actual images
-        pyro.sample(&quot;obs&quot;, dist.Bernoulli(loc_img).independent(1), obs=x.reshape(-1, 784))
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="c1"># define the model p(x|z)p(z)</span>
+<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="c1"># register PyTorch module `decoder` with Pyro</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;decoder&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+        <span class="c1"># setup hyperparameters for prior p(z)</span>
+        <span class="n">z_loc</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_dim</span><span class="p">)))</span>
+        <span class="n">z_scale</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_dim</span><span class="p">)))</span>
+        <span class="c1"># sample from prior (value will be sampled by guide when computing the ELBO)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># decode the latent code z</span>
+        <span class="n">loc_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="c1"># score against actual images</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">loc_img</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">784</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -696,16 +697,16 @@ encapsulated by Figure 1. Now we move on to the guide:</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span># define the guide (i.e. variational distribution) q(z|x)
-def guide(self, x):
-    # register PyTorch module `encoder` with Pyro
-    pyro.module(&quot;encoder&quot;, self.encoder)
-    with pyro.iarange(&quot;data&quot;, x.size(0)):
-        # use the encoder to get the parameters used to define q(z|x)
-        z_loc, z_scale = self.encoder.forward(x)
-        # sample the latent code z
-        pyro.sample(&quot;latent&quot;, dist.Normal(z_loc, z_scale).independent(1))
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="c1"># define the guide (i.e. variational distribution) q(z|x)</span>
+<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="c1"># register PyTorch module `encoder` with Pyro</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+        <span class="c1"># use the encoder to get the parameters used to define q(z|x)</span>
+        <span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># sample the latent code z</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -726,57 +727,57 @@ guide in a PyTorch module:</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>class VAE(nn.Module):
-    # by default our latent space is 50-dimensional
-    # and we use 400 hidden units
-    def __init__(self, z_dim=50, hidden_dim=400, use_cuda=False):
-        super(VAE, self).__init__()
-        # create the encoder and decoder networks
-        self.encoder = Encoder(z_dim, hidden_dim)
-        self.decoder = Decoder(z_dim, hidden_dim)
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="k">class</span> <span class="nc">VAE</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># by default our latent space is 50-dimensional</span>
+    <span class="c1"># and we use 400 hidden units</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_dim</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">VAE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># create the encoder and decoder networks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">z_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">Decoder</span><span class="p">(</span><span class="n">z_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span>
 
-        if use_cuda:
-            # calling cuda() here will put all the parameters of
-            # the encoder and decoder networks into gpu memory
-            self.cuda()
-        self.use_cuda = use_cuda
-        self.z_dim = z_dim
+        <span class="k">if</span> <span class="n">use_cuda</span><span class="p">:</span>
+            <span class="c1"># calling cuda() here will put all the parameters of</span>
+            <span class="c1"># the encoder and decoder networks into gpu memory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span> <span class="o">=</span> <span class="n">use_cuda</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">z_dim</span> <span class="o">=</span> <span class="n">z_dim</span>
 
-    # define the model p(x|z)p(z)
-    def model(self, x):
-        # register PyTorch module `decoder` with Pyro
-        pyro.module(&quot;decoder&quot;, self.decoder)
-        with pyro.iarange(&quot;data&quot;, x.size(0)):
-            # setup hyperparameters for prior p(z)
-            z_loc = x.new_zeros(torch.Size((x.size(0), self.z_dim)))
-            z_scale = x.new_ones(torch.Size((x.size(0), self.z_dim)))
-            # sample from prior (value will be sampled by guide when computing the ELBO)
-            z = pyro.sample(&quot;latent&quot;, dist.Normal(z_loc, z_scale).independent(1))
-            # decode the latent code z
-            loc_img = self.decoder.forward(z)
-            # score against actual images
-            pyro.sample(&quot;obs&quot;, dist.Bernoulli(loc_img).independent(1), obs=x.reshape(-1, 784))
+    <span class="c1"># define the model p(x|z)p(z)</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># register PyTorch module `decoder` with Pyro</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;decoder&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+            <span class="c1"># setup hyperparameters for prior p(z)</span>
+            <span class="n">z_loc</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_dim</span><span class="p">)))</span>
+            <span class="n">z_scale</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_dim</span><span class="p">)))</span>
+            <span class="c1"># sample from prior (value will be sampled by guide when computing the ELBO)</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="c1"># decode the latent code z</span>
+            <span class="n">loc_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="c1"># score against actual images</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">loc_img</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">784</span><span class="p">))</span>
 
-    # define the guide (i.e. variational distribution) q(z|x)
-    def guide(self, x):
-        # register PyTorch module `encoder` with Pyro
-        pyro.module(&quot;encoder&quot;, self.encoder)
-        with pyro.iarange(&quot;data&quot;, x.size(0)):
-            # use the encoder to get the parameters used to define q(z|x)
-            z_loc, z_scale = self.encoder.forward(x)
-            # sample the latent code z
-            pyro.sample(&quot;latent&quot;, dist.Normal(z_loc, z_scale).independent(1))
+    <span class="c1"># define the guide (i.e. variational distribution) q(z|x)</span>
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># register PyTorch module `encoder` with Pyro</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+            <span class="c1"># use the encoder to get the parameters used to define q(z|x)</span>
+            <span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="c1"># sample the latent code z</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">)</span><span class="o">.</span><span class="n">independent</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
-    # define a helper function for reconstructing images
-    def reconstruct_img(self, x):
-        # encode image x
-        z_loc, z_scale = self.encoder(x)
-        # sample in latent space
-        z = dist.Normal(z_loc, z_scale).sample()
-        # decode the image (note we don&#39;t sample in image space)
-        loc_img = self.decoder(z)
-        return loc_img
+    <span class="c1"># define a helper function for reconstructing images</span>
+    <span class="k">def</span> <span class="nf">reconstruct_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># encode image x</span>
+        <span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># sample in latent space</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_loc</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+        <span class="c1"># decode the image (note we don&#39;t sample in image space)</span>
+        <span class="n">loc_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loc_img</span>
 </pre></div>
 </div>
 </div>
@@ -799,8 +800,8 @@ section.</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>vae = VAE()
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">vae</span> <span class="o">=</span> <span class="n">VAE</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -810,8 +811,8 @@ section.</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>optimizer = Adam({&quot;lr&quot;: 1.0e-3})
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">1.0e-3</span><span class="p">})</span>
 </pre></div>
 </div>
 </div>
@@ -822,8 +823,8 @@ parameters for the model and guide by maximizing the ELBO:</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>svi = SVI(vae.model, vae.guide, optimizer, loss=Trace_ELBO())
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">vae</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">vae</span><span class="o">.</span><span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -833,23 +834,23 @@ parameters for the model and guide by maximizing the ELBO:</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>def train(svi, train_loader, use_cuda=False):
-    # initialize loss accumulator
-    epoch_loss = 0.
-    # do a training epoch over each mini-batch x returned
-    # by the data loader
-    for _, (x, _) in enumerate(train_loader):
-        # if on GPU put mini-batch into CUDA memory
-        if use_cuda:
-            x = x.cuda()
-        # do ELBO gradient and accumulate loss
-        epoch_loss += svi.step(x)
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">svi</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="c1"># initialize loss accumulator</span>
+    <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="c1"># do a training epoch over each mini-batch x returned</span>
+    <span class="c1"># by the data loader</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_loader</span><span class="p">):</span>
+        <span class="c1"># if on GPU put mini-batch into CUDA memory</span>
+        <span class="k">if</span> <span class="n">use_cuda</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+        <span class="c1"># do ELBO gradient and accumulate loss</span>
+        <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-    # return epoch loss
-    normalizer_train = len(train_loader.dataset)
-    total_epoch_loss_train = epoch_loss / normalizer_train
-    return total_epoch_loss_train
+    <span class="c1"># return epoch loss</span>
+    <span class="n">normalizer_train</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="n">total_epoch_loss_train</span> <span class="o">=</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="n">normalizer_train</span>
+    <span class="k">return</span> <span class="n">total_epoch_loss_train</span>
 </pre></div>
 </div>
 </div>
@@ -870,20 +871,20 @@ the size of the mini-batch</li>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>def evaluate(svi, test_loader, use_cuda=False):
-    # initialize loss accumulator
-    test_loss = 0.
-    # compute the loss over the entire test set
-    for i, (x, _) in enumerate(test_loader):
-        # if on GPU put mini-batch into CUDA memory
-        if use_cuda:
-            x = x.cuda()
-        # compute ELBO estimate and accumulate loss
-        test_loss += svi.evaluate_loss(x)
-    normalizer_test = len(test_loader.dataset)
-    total_epoch_loss_test = test_loss / normalizer_test
-    return total_epoch_loss_test
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">svi</span><span class="p">,</span> <span class="n">test_loader</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="c1"># initialize loss accumulator</span>
+    <span class="n">test_loss</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="c1"># compute the loss over the entire test set</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">test_loader</span><span class="p">):</span>
+        <span class="c1"># if on GPU put mini-batch into CUDA memory</span>
+        <span class="k">if</span> <span class="n">use_cuda</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+        <span class="c1"># compute ELBO estimate and accumulate loss</span>
+        <span class="n">test_loss</span> <span class="o">+=</span> <span class="n">svi</span><span class="o">.</span><span class="n">evaluate_loss</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">normalizer_test</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="n">total_epoch_loss_test</span> <span class="o">=</span> <span class="n">test_loss</span> <span class="o">/</span> <span class="n">normalizer_test</span>
+    <span class="k">return</span> <span class="n">total_epoch_loss_test</span>
 </pre></div>
 </div>
 </div>
@@ -914,14 +915,14 @@ for the test dataset, see Figure 3.</p>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span># Run options
-LEARNING_RATE = 1.0e-3
-USE_CUDA = False
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="c1"># Run options</span>
+<span class="n">LEARNING_RATE</span> <span class="o">=</span> <span class="mf">1.0e-3</span>
+<span class="n">USE_CUDA</span> <span class="o">=</span> <span class="kc">False</span>
 
-# Run only for a single iteration for testing
-NUM_EPOCHS = 1 if smoke_test else 100
-TEST_FREQUENCY = 5
+<span class="c1"># Run only for a single iteration for testing</span>
+<span class="n">NUM_EPOCHS</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">100</span>
+<span class="n">TEST_FREQUENCY</span> <span class="o">=</span> <span class="mi">5</span>
 </pre></div>
 </div>
 </div>
@@ -930,32 +931,32 @@ TEST_FREQUENCY = 5
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2"><div class="highlight"><pre>
-<span></span>train_loader, test_loader = setup_data_loaders(batch_size=256, use_cuda=USE_CUDA)
+<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<span></span><span class="n">train_loader</span><span class="p">,</span> <span class="n">test_loader</span> <span class="o">=</span> <span class="n">setup_data_loaders</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="n">USE_CUDA</span><span class="p">)</span>
 
-# setup the VAE
-vae = VAE(use_cuda=USE_CUDA)
+<span class="c1"># setup the VAE</span>
+<span class="n">vae</span> <span class="o">=</span> <span class="n">VAE</span><span class="p">(</span><span class="n">use_cuda</span><span class="o">=</span><span class="n">USE_CUDA</span><span class="p">)</span>
 
-# setup the optimizer
-adam_args = {&quot;lr&quot;: LEARNING_RATE}
-optimizer = Adam(adam_args)
+<span class="c1"># setup the optimizer</span>
+<span class="n">adam_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">LEARNING_RATE</span><span class="p">}</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_args</span><span class="p">)</span>
 
-# setup the inference algorithm
-svi = SVI(vae.model, vae.guide, optimizer, loss=Trace_ELBO())
+<span class="c1"># setup the inference algorithm</span>
+<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">vae</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">vae</span><span class="o">.</span><span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
 
-train_elbo = []
-test_elbo = []
-# training loop
-for epoch in range(NUM_EPOCHS):
-    total_epoch_loss_train = train(svi, train_loader, use_cuda=USE_CUDA)
-    train_elbo.append(-total_epoch_loss_train)
-    print(&quot;[epoch %03d]  average training loss: %.4f&quot; % (epoch, total_epoch_loss_train))
+<span class="n">train_elbo</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">test_elbo</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1"># training loop</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NUM_EPOCHS</span><span class="p">):</span>
+    <span class="n">total_epoch_loss_train</span> <span class="o">=</span> <span class="n">train</span><span class="p">(</span><span class="n">svi</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="n">USE_CUDA</span><span class="p">)</span>
+    <span class="n">train_elbo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">total_epoch_loss_train</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[epoch </span><span class="si">%03d</span><span class="s2">]  average training loss: </span><span class="si">%.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">total_epoch_loss_train</span><span class="p">))</span>
 
-    if epoch % TEST_FREQUENCY == 0:
-        # report test diagnostics
-        total_epoch_loss_test = evaluate(svi, test_loader, use_cuda=USE_CUDA)
-        test_elbo.append(-total_epoch_loss_test)
-        print(&quot;[epoch %03d] average test loss: %.4f&quot; % (epoch, total_epoch_loss_test))
+    <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="n">TEST_FREQUENCY</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># report test diagnostics</span>
+        <span class="n">total_epoch_loss_test</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">svi</span><span class="p">,</span> <span class="n">test_loader</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="n">USE_CUDA</span><span class="p">)</span>
+        <span class="n">test_elbo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">total_epoch_loss_test</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[epoch </span><span class="si">%03d</span><span class="s2">] average test loss: </span><span class="si">%.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">total_epoch_loss_test</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
