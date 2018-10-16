@@ -102,7 +102,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#Model-Learning">Model Learning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Guide">Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ELBO">ELBO</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#SVI-Class"><code class="docutils literal"><span class="pre">SVI</span></code> Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#SVI-Class"><code class="docutils literal notranslate"><span class="pre">SVI</span></code> Class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Optimizers">Optimizers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#A-simple-example">A simple example</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Sample-output:">Sample output:</a></li>
@@ -128,6 +128,8 @@
 <li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
 </ul>
 
             
@@ -400,84 +402,84 @@ Pyro.</p>
 <p>We’re going to assume we’ve already defined our model in Pyro (for more
 details on how this is done see <a class="reference internal" href="intro_part_i.html"><span class="doc">Intro Part I</span></a>).
 As a quick reminder, the model is given as a stochastic function
-<code class="docutils literal"><span class="pre">model(*args,</span> <span class="pre">**kwargs)</span></code>, which, in the general case takes arguments.
-The different pieces of <code class="docutils literal"><span class="pre">model()</span></code> are encoded via the mapping:</p>
+<code class="docutils literal notranslate"><span class="pre">model(*args,</span> <span class="pre">**kwargs)</span></code>, which, in the general case takes arguments.
+The different pieces of <code class="docutils literal notranslate"><span class="pre">model()</span></code> are encoded via the mapping:</p>
 <ol class="arabic simple">
-<li>observations <span class="math">\(\Longleftrightarrow\)</span> <code class="docutils literal"><span class="pre">pyro.sample</span></code> with the
-<code class="docutils literal"><span class="pre">obs</span></code> argument</li>
-<li>latent random variables <span class="math">\(\Longleftrightarrow\)</span> <code class="docutils literal"><span class="pre">pyro.sample</span></code></li>
-<li>parameters <span class="math">\(\Longleftrightarrow\)</span> <code class="docutils literal"><span class="pre">pyro.param</span></code></li>
+<li>observations <span class="math notranslate nohighlight">\(\Longleftrightarrow\)</span> <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> with the
+<code class="docutils literal notranslate"><span class="pre">obs</span></code> argument</li>
+<li>latent random variables <span class="math notranslate nohighlight">\(\Longleftrightarrow\)</span> <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code></li>
+<li>parameters <span class="math notranslate nohighlight">\(\Longleftrightarrow\)</span> <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code></li>
 </ol>
 <p>Now let’s establish some notation. The model has observations
-<span class="math">\({\bf x}\)</span> and latent random variables <span class="math">\({\bf z}\)</span> as well as
-parameters <span class="math">\(\theta\)</span>. It has a joint probability density of the
+<span class="math notranslate nohighlight">\({\bf x}\)</span> and latent random variables <span class="math notranslate nohighlight">\({\bf z}\)</span> as well as
+parameters <span class="math notranslate nohighlight">\(\theta\)</span>. It has a joint probability density of the
 form</p>
-<div class="math">
+<div class="math notranslate nohighlight">
 \[p_{\theta}({\bf x}, {\bf z}) = p_{\theta}({\bf x}|{\bf z}) p_{\theta}({\bf z})\]</div>
-<p>We assume that the various probability distributions <span class="math">\(p_i\)</span> that
-make up <span class="math">\(p_{\theta}({\bf x}, {\bf z})\)</span> have the following
+<p>We assume that the various probability distributions <span class="math notranslate nohighlight">\(p_i\)</span> that
+make up <span class="math notranslate nohighlight">\(p_{\theta}({\bf x}, {\bf z})\)</span> have the following
 properties:</p>
 <ol class="arabic simple">
-<li>we can sample from each <span class="math">\(p_i\)</span></li>
-<li>we can compute the pointwise log pdf <span class="math">\(p_i\)</span></li>
-<li><span class="math">\(p_i\)</span> is differentiable w.r.t. the parameters <span class="math">\(\theta\)</span></li>
+<li>we can sample from each <span class="math notranslate nohighlight">\(p_i\)</span></li>
+<li>we can compute the pointwise log pdf <span class="math notranslate nohighlight">\(p_i\)</span></li>
+<li><span class="math notranslate nohighlight">\(p_i\)</span> is differentiable w.r.t. the parameters <span class="math notranslate nohighlight">\(\theta\)</span></li>
 </ol>
 </div>
 <div class="section" id="Model-Learning">
 <h2>Model Learning<a class="headerlink" href="#Model-Learning" title="Permalink to this headline">¶</a></h2>
 <p>In this context our criterion for learning a good model will be
 maximizing the log evidence, i.e.&nbsp;we want to find the value of
-<span class="math">\(\theta\)</span> given by</p>
-<div class="math">
+<span class="math notranslate nohighlight">\(\theta\)</span> given by</p>
+<div class="math notranslate nohighlight">
 \[\theta_{\rm{max}} = \underset{\theta}{\operatorname{argmax}} \log p_{\theta}({\bf x})\]</div>
-<p>where the log evidence <span class="math">\(\log p_{\theta}({\bf x})\)</span> is given by</p>
-<div class="math">
+<p>where the log evidence <span class="math notranslate nohighlight">\(\log p_{\theta}({\bf x})\)</span> is given by</p>
+<div class="math notranslate nohighlight">
 \[\log p_{\theta}(x) = \log \int\! d{\bf z}\; p_{\theta}({\bf x}, {\bf z})\]</div>
 <p>In the general case this is a doubly difficult problem. This is because
-(even for a fixed <span class="math">\(\theta\)</span>) the integral over the latent random
-variables <span class="math">\(\bf z\)</span> is often intractable. Conversely, even if we
-know how to calculate the log evidence for all values of <span class="math">\(\theta\)</span>,
-maximizing the log evidence as a function of <span class="math">\(\theta\)</span> will in
+(even for a fixed <span class="math notranslate nohighlight">\(\theta\)</span>) the integral over the latent random
+variables <span class="math notranslate nohighlight">\(\bf z\)</span> is often intractable. Conversely, even if we
+know how to calculate the log evidence for all values of <span class="math notranslate nohighlight">\(\theta\)</span>,
+maximizing the log evidence as a function of <span class="math notranslate nohighlight">\(\theta\)</span> will in
 general be a difficult non-convex optimization problem.</p>
-<p>In addition to finding <span class="math">\(\theta_{\rm{max}}\)</span>, we would like to
-calculate the posterior over the latent variables <span class="math">\(\bf z\)</span>:</p>
-<div class="math">
+<p>In addition to finding <span class="math notranslate nohighlight">\(\theta_{\rm{max}}\)</span>, we would like to
+calculate the posterior over the latent variables <span class="math notranslate nohighlight">\(\bf z\)</span>:</p>
+<div class="math notranslate nohighlight">
 \[ p_{\theta_{\rm{max}}}({\bf z} | {\bf x}) = \frac{p_{\theta_{\rm{max}}}({\bf x} , {\bf z})}{
 \int \! d{\bf z}\; p_{\theta_{\rm{max}}}({\bf x} , {\bf z}) }\]</div>
 <p>Note that the denominator of this expression is the (usually
 intractable) evidence. Variational inference offers a scheme for finding
-<span class="math">\(\theta_{\rm{max}}\)</span> and computing an approximation to the
-posterior <span class="math">\(p_{\theta_{\rm{max}}}({\bf z} | {\bf x})\)</span>. Let’s see
+<span class="math notranslate nohighlight">\(\theta_{\rm{max}}\)</span> and computing an approximation to the
+posterior <span class="math notranslate nohighlight">\(p_{\theta_{\rm{max}}}({\bf z} | {\bf x})\)</span>. Let’s see
 how that works.</p>
 </div>
 <div class="section" id="Guide">
 <h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this headline">¶</a></h2>
 <p>The basic idea is that we introduce a parameterized distribution
-<span class="math">\(q_{\phi}({\bf z})\)</span>, where <span class="math">\(\phi\)</span> are known as the
+<span class="math notranslate nohighlight">\(q_{\phi}({\bf z})\)</span>, where <span class="math notranslate nohighlight">\(\phi\)</span> are known as the
 variational parameters. This distribution is called the variational
 distribution in much of the literature, and in the context of Pyro it’s
 called the <strong>guide</strong> (one syllable instead of nine!). The guide will
 serve as an approximation to the posterior.</p>
 <p>Just like the model, the guide is encoded as a stochastic function
-<code class="docutils literal"><span class="pre">guide()</span></code> that contains <code class="docutils literal"><span class="pre">pyro.sample</span></code> and <code class="docutils literal"><span class="pre">pyro.param</span></code> statements.
+<code class="docutils literal notranslate"><span class="pre">guide()</span></code> that contains <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> statements.
 It does <em>not</em> contain observed data, since the guide needs to be a
 properly normalized distribution. Note that Pyro enforces that
-<code class="docutils literal"><span class="pre">model()</span></code> and <code class="docutils literal"><span class="pre">guide()</span></code> have the same call signature, i.e.&nbsp;both
+<code class="docutils literal notranslate"><span class="pre">model()</span></code> and <code class="docutils literal notranslate"><span class="pre">guide()</span></code> have the same call signature, i.e.&nbsp;both
 callables should take the same arguments.</p>
 <p>Since the guide is an approximation to the posterior
-<span class="math">\(p_{\theta_{\rm{max}}}({\bf z} | {\bf x})\)</span>, the guide needs to
+<span class="math notranslate nohighlight">\(p_{\theta_{\rm{max}}}({\bf z} | {\bf x})\)</span>, the guide needs to
 provide a valid joint probability density over all the latent random
 variables in the model. Recall that when random variables are specified
-in Pyro with the primitive statement <code class="docutils literal"><span class="pre">pyro.sample()</span></code> the first
+in Pyro with the primitive statement <code class="docutils literal notranslate"><span class="pre">pyro.sample()</span></code> the first
 argument denotes the name of the random variable. These names will be
 used to align the random variables in the model and guide. To be very
-explicit, if the model contains a random variable <code class="docutils literal"><span class="pre">z_1</span></code></p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
+explicit, if the model contains a random variable <code class="docutils literal notranslate"><span class="pre">z_1</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_1&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>then the guide needs to have a matching <code class="docutils literal"><span class="pre">sample</span></code> statement</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
+<p>then the guide needs to have a matching <code class="docutils literal notranslate"><span class="pre">sample</span></code> statement</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_1&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -486,7 +488,7 @@ must line-up 1-to-1.</p>
 <p>Once we’ve specified a guide (we give some explicit examples below),
 we’re ready to proceed to inference. Learning will be setup as an
 optimization problem where each iteration of training takes a step in
-<span class="math">\(\theta-\phi\)</span> space that moves the guide closer to the exact
+<span class="math notranslate nohighlight">\(\theta-\phi\)</span> space that moves the guide closer to the exact
 posterior. To do this we need to define an appropriate objective
 function.</p>
 </div>
@@ -494,9 +496,9 @@ function.</p>
 <h2>ELBO<a class="headerlink" href="#ELBO" title="Permalink to this headline">¶</a></h2>
 <p>A simple derivation (for example see reference [1]) yields what we’re
 after: the evidence lower bound (ELBO). The ELBO, which is a function of
-both <span class="math">\(\theta\)</span> and <span class="math">\(\phi\)</span>, is defined as an expectation
+both <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span>, is defined as an expectation
 w.r.t. to samples from the guide:</p>
-<div class="math">
+<div class="math notranslate nohighlight">
 \[{\rm ELBO} \equiv \mathbb{E}_{q_{\phi}({\bf z})} \left [
 \log p_{\theta}({\bf x}, {\bf z}) - \log q_{\phi}({\bf z})
 \right]\]</div>
@@ -504,24 +506,24 @@ w.r.t. to samples from the guide:</p>
 expectation. And since the guide is assumed to be a parametric
 distribution we can sample from, we can compute Monte Carlo estimates of
 this quantity. Crucially, the ELBO is a lower bound to the log evidence,
-i.e.&nbsp;for all choices of <span class="math">\(\theta\)</span> and <span class="math">\(\phi\)</span> we have that</p>
-<div class="math">
+i.e.&nbsp;for all choices of <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> we have that</p>
+<div class="math notranslate nohighlight">
 \[\log p_{\theta}({\bf x}) \ge {\rm ELBO}\]</div>
 <p>So if we take (stochastic) gradient steps to maximize the ELBO, we will
 also be pushing the log evidence higher (in expectation). Furthermore,
 it can be shown that the gap between the ELBO and the log evidence is
 given by the KL divergence between the guide and the posterior:</p>
-<div class="math">
+<div class="math notranslate nohighlight">
 \[ \log p_{\theta}({\bf x}) - {\rm ELBO} =
 \rm{KL}\!\left( q_{\phi}({\bf z}) \lVert p_{\theta}({\bf z} | {\bf x}) \right)\]</div>
 <p>This KL divergence is a particular (non-negative) measure of ‘closeness’
-between two distributions. So, for a fixed <span class="math">\(\theta\)</span>, as we take
-steps in <span class="math">\(\phi\)</span> space that increase the ELBO, we decrease the KL
+between two distributions. So, for a fixed <span class="math notranslate nohighlight">\(\theta\)</span>, as we take
+steps in <span class="math notranslate nohighlight">\(\phi\)</span> space that increase the ELBO, we decrease the KL
 divergence between the guide and the posterior, i.e.&nbsp;we move the guide
 towards the posterior. In the general case we take gradient steps in
-both <span class="math">\(\theta\)</span> and <span class="math">\(\phi\)</span> space simultaneously so that the
+both <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> space simultaneously so that the
 guide and model play chase, with the guide tracking a moving posterior
-<span class="math">\(\log p_{\theta}({\bf z} | {\bf x})\)</span>. Perhaps somewhat
+<span class="math notranslate nohighlight">\(\log p_{\theta}({\bf z} | {\bf x})\)</span>. Perhaps somewhat
 surprisingly, despite the moving target, this optimization problem can
 be solved (to a suitable level of approximation) for many different
 problems.</p>
@@ -534,73 +536,73 @@ solved problem and look at the support that Pyro provides for doing
 variational inference.</p>
 </div>
 <div class="section" id="SVI-Class">
-<h2><code class="docutils literal"><span class="pre">SVI</span></code> Class<a class="headerlink" href="#SVI-Class" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">SVI</span></code> Class<a class="headerlink" href="#SVI-Class" title="Permalink to this headline">¶</a></h2>
 <p>In Pyro the machinery for doing variational inference is encapsulated in
-the <code class="docutils literal"><span class="pre">SVI</span></code> class. (At present <code class="docutils literal"><span class="pre">SVI</span></code> only provides support for the
+the <code class="docutils literal notranslate"><span class="pre">SVI</span></code> class. (At present <code class="docutils literal notranslate"><span class="pre">SVI</span></code> only provides support for the
 ELBO objective, but in the future Pyro will provide support for
 alternative variational objectives.)</p>
 <p>The user needs to provide three things: the model, the guide, and an
 optimizer. We’ve discussed the model and guide above and we’ll discuss
 the optimizer in some detail below, so let’s assume we have all three
-ingredients at hand. To construct an instance of <code class="docutils literal"><span class="pre">SVI</span></code> that will do
+ingredients at hand. To construct an instance of <code class="docutils literal notranslate"><span class="pre">SVI</span></code> that will do
 optimization via the ELBO objective, the user writes</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
 <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal"><span class="pre">SVI</span></code> object provides two methods, <code class="docutils literal"><span class="pre">step()</span></code> and
-<code class="docutils literal"><span class="pre">evaluate_loss()</span></code>, that encapsulate the logic for variational learning
+<p>The <code class="docutils literal notranslate"><span class="pre">SVI</span></code> object provides two methods, <code class="docutils literal notranslate"><span class="pre">step()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">evaluate_loss()</span></code>, that encapsulate the logic for variational learning
 and evaluation:</p>
 <ol class="arabic simple">
-<li>The method <code class="docutils literal"><span class="pre">step()</span></code> takes a single gradient step and returns an
+<li>The method <code class="docutils literal notranslate"><span class="pre">step()</span></code> takes a single gradient step and returns an
 estimate of the loss (i.e.&nbsp;minus the ELBO). If provided, the
-arguments to <code class="docutils literal"><span class="pre">step()</span></code> are piped to <code class="docutils literal"><span class="pre">model()</span></code> and <code class="docutils literal"><span class="pre">guide()</span></code>.</li>
-<li>The method <code class="docutils literal"><span class="pre">evaluate_loss()</span></code> returns an estimate of the loss
-<em>without</em> taking a gradient step. Just like for <code class="docutils literal"><span class="pre">step()</span></code>, if
-provided, arguments to <code class="docutils literal"><span class="pre">evaluate_loss()</span></code> are piped to <code class="docutils literal"><span class="pre">model()</span></code>
-and <code class="docutils literal"><span class="pre">guide()</span></code>.</li>
+arguments to <code class="docutils literal notranslate"><span class="pre">step()</span></code> are piped to <code class="docutils literal notranslate"><span class="pre">model()</span></code> and <code class="docutils literal notranslate"><span class="pre">guide()</span></code>.</li>
+<li>The method <code class="docutils literal notranslate"><span class="pre">evaluate_loss()</span></code> returns an estimate of the loss
+<em>without</em> taking a gradient step. Just like for <code class="docutils literal notranslate"><span class="pre">step()</span></code>, if
+provided, arguments to <code class="docutils literal notranslate"><span class="pre">evaluate_loss()</span></code> are piped to <code class="docutils literal notranslate"><span class="pre">model()</span></code>
+and <code class="docutils literal notranslate"><span class="pre">guide()</span></code>.</li>
 </ol>
 <p>For the case where the loss is the ELBO, both methods also accept an
-optional argument <code class="docutils literal"><span class="pre">num_particles</span></code>, which denotes the number of samples
-used to compute the loss (in the case of <code class="docutils literal"><span class="pre">evaluate_loss</span></code>) and the loss
-and gradient (in the case of <code class="docutils literal"><span class="pre">step</span></code>).</p>
+optional argument <code class="docutils literal notranslate"><span class="pre">num_particles</span></code>, which denotes the number of samples
+used to compute the loss (in the case of <code class="docutils literal notranslate"><span class="pre">evaluate_loss</span></code>) and the loss
+and gradient (in the case of <code class="docutils literal notranslate"><span class="pre">step</span></code>).</p>
 </div>
 <div class="section" id="Optimizers">
 <h2>Optimizers<a class="headerlink" href="#Optimizers" title="Permalink to this headline">¶</a></h2>
 <p>In Pyro, the model and guide are allowed to be arbitrary stochastic
 functions provided that</p>
 <ol class="arabic simple">
-<li><code class="docutils literal"><span class="pre">guide</span></code> doesn’t contain <code class="docutils literal"><span class="pre">pyro.sample</span></code> statements with the <code class="docutils literal"><span class="pre">obs</span></code>
+<li><code class="docutils literal notranslate"><span class="pre">guide</span></code> doesn’t contain <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements with the <code class="docutils literal notranslate"><span class="pre">obs</span></code>
 argument</li>
-<li><code class="docutils literal"><span class="pre">model</span></code> and <code class="docutils literal"><span class="pre">guide</span></code> have the same call signature</li>
+<li><code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">guide</span></code> have the same call signature</li>
 </ol>
 <p>This presents some challenges because it means that different executions
-of <code class="docutils literal"><span class="pre">model()</span></code> and <code class="docutils literal"><span class="pre">guide()</span></code> may have quite different behavior, with
+of <code class="docutils literal notranslate"><span class="pre">model()</span></code> and <code class="docutils literal notranslate"><span class="pre">guide()</span></code> may have quite different behavior, with
 e.g.&nbsp;certain latent random variables and parameters only appearing some
 of the time. Indeed parameters may be created dynamically during the
 course of inference. In other words the space we’re doing optimization
-over, which is parameterized by <span class="math">\(\theta\)</span> and <span class="math">\(\phi\)</span>, can
+over, which is parameterized by <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span>, can
 grow and change dynamically.</p>
 <p>In order to support this behavior, Pyro needs to dynamically generate an
 optimizer for each parameter the first time it appears during learning.
 Luckily, PyTorch has a lightweight optimization library (see
 <a class="reference external" href="http://pytorch.org/docs/master/optim.html">torch.optim</a>) that can
 easily be repurposed for the dynamic case.</p>
-<p>All of this is controlled by the <code class="docutils literal"><span class="pre">optim.PyroOptim</span></code> class, which is
-basically a thin wrapper around PyTorch optimizers. <code class="docutils literal"><span class="pre">PyroOptim</span></code> takes
+<p>All of this is controlled by the <code class="docutils literal notranslate"><span class="pre">optim.PyroOptim</span></code> class, which is
+basically a thin wrapper around PyTorch optimizers. <code class="docutils literal notranslate"><span class="pre">PyroOptim</span></code> takes
 two arguments: a constructor for PyTorch optimizers
-<code class="docutils literal"><span class="pre">optim_constructor</span></code> and a specification of the optimizer arguments
-<code class="docutils literal"><span class="pre">optim_args</span></code>. At high level, in the course of optimization, whenever a
-new parameter is seen <code class="docutils literal"><span class="pre">optim_constructor</span></code> is used to instantiate a new
-optimizer of the given type with arguments given by <code class="docutils literal"><span class="pre">optim_args</span></code>.</p>
-<p>Most users will probably not interact with <code class="docutils literal"><span class="pre">PyroOptim</span></code> directly and
-will instead interact with the aliases defined in <code class="docutils literal"><span class="pre">optim/__init__.py</span></code>.
+<code class="docutils literal notranslate"><span class="pre">optim_constructor</span></code> and a specification of the optimizer arguments
+<code class="docutils literal notranslate"><span class="pre">optim_args</span></code>. At high level, in the course of optimization, whenever a
+new parameter is seen <code class="docutils literal notranslate"><span class="pre">optim_constructor</span></code> is used to instantiate a new
+optimizer of the given type with arguments given by <code class="docutils literal notranslate"><span class="pre">optim_args</span></code>.</p>
+<p>Most users will probably not interact with <code class="docutils literal notranslate"><span class="pre">PyroOptim</span></code> directly and
+will instead interact with the aliases defined in <code class="docutils literal notranslate"><span class="pre">optim/__init__.py</span></code>.
 Let’s see how that goes. There are two ways to specify the optimizer
-arguments. In the simpler case, <code class="docutils literal"><span class="pre">optim_args</span></code> is a <em>fixed</em> dictionary
+arguments. In the simpler case, <code class="docutils literal notranslate"><span class="pre">optim_args</span></code> is a <em>fixed</em> dictionary
 that specifies the arguments used to instantiate PyTorch optimizers for
 <em>all</em> the parameters:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
 <span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)}</span>
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
@@ -611,16 +613,16 @@ control. Here the user must specify a callable that will be invoked by
 Pyro upon creation of an optimizer for a newly seen parameter. This
 callable must have the following signature:</p>
 <ol class="arabic simple">
-<li><code class="docutils literal"><span class="pre">module_name</span></code>: the Pyro name of the module containing the
+<li><code class="docutils literal notranslate"><span class="pre">module_name</span></code>: the Pyro name of the module containing the
 parameter, if any</li>
-<li><code class="docutils literal"><span class="pre">param_name</span></code>: the Pyro name of the parameter</li>
+<li><code class="docutils literal notranslate"><span class="pre">param_name</span></code>: the Pyro name of the parameter</li>
 </ol>
 <p>This gives the user the ability to, for example, customize learning
 rates for different parameters. For an example where this sort of level
 of control is useful, see the <a class="reference internal" href="svi_part_iii.html"><span class="doc">discussion of
 baselines</span></a>. Here’s a simple example to illustrate
 the API:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
 <span class="k">def</span> <span class="nf">per_param_callable</span><span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">param_name</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">param_name</span> <span class="o">==</span> <span class="s1">&#39;my_special_parameter&#39;</span><span class="p">:</span>
@@ -631,8 +633,8 @@ the API:</p>
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">per_param_callable</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This simply tells Pyro to use a learning rate of <code class="docutils literal"><span class="pre">0.010</span></code> for the Pyro
-parameter <code class="docutils literal"><span class="pre">my_special_parameter</span></code> and a learning rate of <code class="docutils literal"><span class="pre">0.001</span></code> for
+<p>This simply tells Pyro to use a learning rate of <code class="docutils literal notranslate"><span class="pre">0.010</span></code> for the Pyro
+parameter <code class="docutils literal notranslate"><span class="pre">my_special_parameter</span></code> and a learning rate of <code class="docutils literal notranslate"><span class="pre">0.001</span></code> for
 all other parameters.</p>
 </div>
 <div class="section" id="A-simple-example">
@@ -652,20 +654,20 @@ the coin preferred heads over tails at a ratio of 11:10. By contrast you
 would be very surprised if it turned out that the coin preferred heads
 over tails at a ratio of 5:1—it’s not <em>that</em> banged up.</p>
 <p>To turn this into a probabilistic model we encode heads and tails as
-<code class="docutils literal"><span class="pre">1</span></code>s and <code class="docutils literal"><span class="pre">0</span></code>s. We encode the fairness of the coin as a real
-number <span class="math">\(f\)</span>, where <span class="math">\(f\)</span> satisfies <span class="math">\(f \in [0.0, 1.0]\)</span> and
-<span class="math">\(f=0.50\)</span> corresponds to a perfectly fair coin. Our prior belief
-about <span class="math">\(f\)</span> will be encoded by a beta distribution, specifically
-<span class="math">\(\rm{Beta}(10,10)\)</span>, which is a symmetric probability distribution
-on the interval <span class="math">\([0.0, 1.0]\)</span> that is peaked at <span class="math">\(f=0.5\)</span>.</p>
+<code class="docutils literal notranslate"><span class="pre">1</span></code>s and <code class="docutils literal notranslate"><span class="pre">0</span></code>s. We encode the fairness of the coin as a real
+number <span class="math notranslate nohighlight">\(f\)</span>, where <span class="math notranslate nohighlight">\(f\)</span> satisfies <span class="math notranslate nohighlight">\(f \in [0.0, 1.0]\)</span> and
+<span class="math notranslate nohighlight">\(f=0.50\)</span> corresponds to a perfectly fair coin. Our prior belief
+about <span class="math notranslate nohighlight">\(f\)</span> will be encoded by a beta distribution, specifically
+<span class="math notranslate nohighlight">\(\rm{Beta}(10,10)\)</span>, which is a symmetric probability distribution
+on the interval <span class="math notranslate nohighlight">\([0.0, 1.0]\)</span> that is peaked at <span class="math notranslate nohighlight">\(f=0.5\)</span>.</p>
 <center><figure><img src="_static/img/beta.png" style="width: 300px;"><figcaption> <font size="-1"><b>Figure 1</b>: The distribution Beta that encodes our prior belief about the fairness of the coin. </font></figcaption></figure></center><p>To learn something about the fairness of the coin that is more precise
 than our somewhat vague prior, we need to do an experiment and collect
 some data. Let’s say we flip the coin 10 times and record the result of
 each flip. In practice we’d probably want to do more than 10 trials, but
 hey this is a tutorial.</p>
-<p>Assuming we’ve collected the data in a list <code class="docutils literal"><span class="pre">data</span></code>, the corresponding
+<p>Assuming we’ve collected the data in a list <code class="docutils literal notranslate"><span class="pre">data</span></code>, the corresponding
 model is given by</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
 
 <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="c1"># define the hyperparameters that control the beta prior</span>
@@ -680,21 +682,21 @@ model is given by</p>
         <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>Here we have a single latent random variable (<code class="docutils literal"><span class="pre">'latent_fairness'</span></code>),
-which is distributed according to <span class="math">\(\rm{Beta}(10, 10)\)</span>. Conditioned
+<p>Here we have a single latent random variable (<code class="docutils literal notranslate"><span class="pre">'latent_fairness'</span></code>),
+which is distributed according to <span class="math notranslate nohighlight">\(\rm{Beta}(10, 10)\)</span>. Conditioned
 on that random variable, we observe each of the datapoints using a
 bernoulli likelihood. Note that each observation is assigned a unique
 name in Pyro.</p>
 <p>Our next task is to define a corresponding guide, i.e.&nbsp;an appropriate
-variational distribution for the latent random variable <span class="math">\(f\)</span>. The
-only real requirement here is that <span class="math">\(q(f)\)</span> should be a probability
-distribution over the range <span class="math">\([0.0, 1.0]\)</span>, since <span class="math">\(f\)</span> doesn’t
+variational distribution for the latent random variable <span class="math notranslate nohighlight">\(f\)</span>. The
+only real requirement here is that <span class="math notranslate nohighlight">\(q(f)\)</span> should be a probability
+distribution over the range <span class="math notranslate nohighlight">\([0.0, 1.0]\)</span>, since <span class="math notranslate nohighlight">\(f\)</span> doesn’t
 make sense outside of that range. A simple choice is to use another beta
-distribution parameterized by two trainable parameters <span class="math">\(\alpha_q\)</span>
-and <span class="math">\(\beta_q\)</span>. Actually, in this particular case this is the
+distribution parameterized by two trainable parameters <span class="math notranslate nohighlight">\(\alpha_q\)</span>
+and <span class="math notranslate nohighlight">\(\beta_q\)</span>. Actually, in this particular case this is the
 ‘right’ choice, since conjugacy of the bernoulli and beta distributions
 means that the exact posterior is a beta distribution. In Pyro we write:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="c1"># register the two variational parameters with Pyro.</span>
     <span class="n">alpha_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;alpha_q&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">15.0</span><span class="p">),</span>
                          <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
@@ -708,15 +710,15 @@ means that the exact posterior is a beta distribution. In Pyro we write:</p>
 <ul class="simple">
 <li>We’ve taken care that the names of the random variables line up
 exactly between the model and guide.</li>
-<li><code class="docutils literal"><span class="pre">model(data)</span></code> and <code class="docutils literal"><span class="pre">guide(data)</span></code> take the same arguments.</li>
-<li>The variational parameters are <code class="docutils literal"><span class="pre">torch.tensor</span></code>s. The
-<code class="docutils literal"><span class="pre">requires_grad</span></code> flag is automatically set to <code class="docutils literal"><span class="pre">True</span></code> by
-<code class="docutils literal"><span class="pre">pyro.param</span></code>.</li>
-<li>We use <code class="docutils literal"><span class="pre">constraint=constraints.positive</span></code> to ensure that <code class="docutils literal"><span class="pre">alpha_q</span></code>
-and <code class="docutils literal"><span class="pre">beta_q</span></code> remain non-negative during optimization.</li>
+<li><code class="docutils literal notranslate"><span class="pre">model(data)</span></code> and <code class="docutils literal notranslate"><span class="pre">guide(data)</span></code> take the same arguments.</li>
+<li>The variational parameters are <code class="docutils literal notranslate"><span class="pre">torch.tensor</span></code>s. The
+<code class="docutils literal notranslate"><span class="pre">requires_grad</span></code> flag is automatically set to <code class="docutils literal notranslate"><span class="pre">True</span></code> by
+<code class="docutils literal notranslate"><span class="pre">pyro.param</span></code>.</li>
+<li>We use <code class="docutils literal notranslate"><span class="pre">constraint=constraints.positive</span></code> to ensure that <code class="docutils literal notranslate"><span class="pre">alpha_q</span></code>
+and <code class="docutils literal notranslate"><span class="pre">beta_q</span></code> remain non-negative during optimization.</li>
 </ul>
 <p>Now we can proceed to do stochastic variational inference.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># set up the optimizer</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># set up the optimizer</span>
 <span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.0005</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)}</span>
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
 
@@ -729,17 +731,17 @@ and <code class="docutils literal"><span class="pre">beta_q</span></code> remain
     <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Note that in the <code class="docutils literal"><span class="pre">step()</span></code> method we pass in the data, which then get
+<p>Note that in the <code class="docutils literal notranslate"><span class="pre">step()</span></code> method we pass in the data, which then get
 passed to the model and guide.</p>
 <p>The only thing we’re missing at this point is some data. So let’s create
 some data and assemble all the code snippets above into a complete
 script:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -822,23 +824,23 @@ script:</p>
 </div>
 <div class="section" id="Sample-output:">
 <h3>Sample output:<a class="headerlink" href="#Sample-output:" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">our</span> <span class="n">prior</span> <span class="n">belief</span><span class="p">,</span> <span class="n">the</span> <span class="n">fairness</span> <span class="n">of</span> <span class="n">the</span> <span class="n">coin</span> <span class="ow">is</span> <span class="mf">0.532</span> <span class="o">+-</span> <span class="mf">0.090</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">our</span> <span class="n">prior</span> <span class="n">belief</span><span class="p">,</span> <span class="n">the</span> <span class="n">fairness</span> <span class="n">of</span> <span class="n">the</span> <span class="n">coin</span> <span class="ow">is</span> <span class="mf">0.532</span> <span class="o">+-</span> <span class="mf">0.090</span>
 </pre></div>
 </div>
 <p>This estimate is to be compared to the exact posterior mean, which in
-this case is given by <span class="math">\(16/30 = 0.5\bar{3}\)</span>. Note that the final
+this case is given by <span class="math notranslate nohighlight">\(16/30 = 0.5\bar{3}\)</span>. Note that the final
 estimate of the fairness of the coin is in between the the fairness
-preferred by the prior (namely <span class="math">\(0.50\)</span>) and the fairness suggested
-by the raw empirical frequencies (<span class="math">\(6/10 = 0.60\)</span>).</p>
+preferred by the prior (namely <span class="math notranslate nohighlight">\(0.50\)</span>) and the fairness suggested
+by the raw empirical frequencies (<span class="math notranslate nohighlight">\(6/10 = 0.60\)</span>).</p>
 </div>
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
-<p>[1] <code class="docutils literal"><span class="pre">Automated</span> <span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Probabilistic</span> <span class="pre">Programming</span></code>,
+<p>[1] <code class="docutils literal notranslate"><span class="pre">Automated</span> <span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Probabilistic</span> <span class="pre">Programming</span></code>,
 &nbsp;&nbsp;&nbsp;&nbsp; David Wingate, Theo Weber</p>
-<p>[2] <code class="docutils literal"><span class="pre">Black</span> <span class="pre">Box</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Rajesh Ranganath, Sean
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Black</span> <span class="pre">Box</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Rajesh Ranganath, Sean
 Gerrish, David M. Blei</p>
-<p>[3] <code class="docutils literal"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Diederik P Kingma, Max
+<p>[3] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Diederik P Kingma, Max
 Welling</p>
 </div>
 </div>

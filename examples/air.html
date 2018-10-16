@@ -139,6 +139,8 @@
 <li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
 </ul>
 
             
@@ -409,11 +411,11 @@ Generative Models” (AIR) [1] and apply it to the multi-mnist dataset.</p>
 implementation</a>
 is also available.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="o">%</span><span class="k">pylab</span> inline
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
@@ -448,11 +450,11 @@ tutorial we will use it to model images from a dataset that is similar
 to the multi-mnist dataset in [1]. Here are some data points from this
 data set:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">inpath</span> <span class="o">=</span> <span class="s1">&#39;../../examples/air/data&#39;</span>
 <span class="p">(</span><span class="n">X_np</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">_</span> <span class="o">=</span> <span class="n">multi_mnist</span><span class="p">(</span><span class="n">inpath</span><span class="p">,</span> <span class="n">max_digits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 <span class="n">X_np</span> <span class="o">=</span> <span class="n">X_np</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -480,16 +482,16 @@ the model and the approach we’ll take to inference. We’ll follow the
 naming conventions used in [1] as closely as possible.</p>
 <p>AIR decomposes the process of generating an image into discrete steps,
 each of which generates only part of the image. More specifically, at
-each step the model will generate a small image (<code class="docutils literal"><span class="pre">y_att</span></code>) by passing a
-latent “code” variable (<code class="docutils literal"><span class="pre">z_what</span></code>) through a neural network. We’ll
+each step the model will generate a small image (<code class="docutils literal notranslate"><span class="pre">y_att</span></code>) by passing a
+latent “code” variable (<code class="docutils literal notranslate"><span class="pre">z_what</span></code>) through a neural network. We’ll
 refer to these small images as “objects”. In the case of AIR applied to
 the multi-mnist dataset we expect each of these objects to represent a
 single digit. The model also includes uncertainty about the location and
 size of each object. We’ll describe an object’s location and size as its
-“pose” (<code class="docutils literal"><span class="pre">z_where</span></code>). To produce the final image, each object will first
-be located within a larger image (<code class="docutils literal"><span class="pre">y</span></code>) using the pose infomation
-<code class="docutils literal"><span class="pre">z_where</span></code>. Finally, the <code class="docutils literal"><span class="pre">y</span></code>s from all time steps will be combined
-additively to produce the final image <code class="docutils literal"><span class="pre">x</span></code>.</p>
+“pose” (<code class="docutils literal notranslate"><span class="pre">z_where</span></code>). To produce the final image, each object will first
+be located within a larger image (<code class="docutils literal notranslate"><span class="pre">y</span></code>) using the pose infomation
+<code class="docutils literal notranslate"><span class="pre">z_where</span></code>. Finally, the <code class="docutils literal notranslate"><span class="pre">y</span></code>s from all time steps will be combined
+additively to produce the final image <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
 <p>Here’s a picture (reproduced from [1]) that shows two steps of this
 process:</p>
 <center>
@@ -523,11 +525,11 @@ object, as well as its pose.</li>
 </ul>
 <p>This can be expressed in Pyro like so:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="c1"># Create the neural network. This takes a latent code, z_what, to pixel intensities.</span>
 <span class="k">class</span> <span class="nc">Decoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -569,16 +571,16 @@ object, as well as its pose.</li>
 </pre></div>
 </div>
 </div>
-<p>Hopefully the use of <code class="docutils literal"><span class="pre">pyro.sample</span></code> and PyTorch networks within a model
+<p>Hopefully the use of <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> and PyTorch networks within a model
 seem familiar at this point. If not you might want to review the <a class="reference internal" href="vae.html"><span class="doc">VAE
 tutorial</span></a>. One thing to note is that we include the
-current step <code class="docutils literal"><span class="pre">t</span></code> in the name passed to <code class="docutils literal"><span class="pre">pyro.sample</span></code> to ensure that
+current step <code class="docutils literal notranslate"><span class="pre">t</span></code> in the name passed to <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> to ensure that
 names are unique across steps.</p>
-<p>The <code class="docutils literal"><span class="pre">object_to_image</span></code> function is specific to this model and warrants
-further attention. Recall that the neural network (<code class="docutils literal"><span class="pre">decode</span></code> here) will
+<p>The <code class="docutils literal notranslate"><span class="pre">object_to_image</span></code> function is specific to this model and warrants
+further attention. Recall that the neural network (<code class="docutils literal notranslate"><span class="pre">decode</span></code> here) will
 output a small image, and that we would like to add this to the output
 image after performing any translation and scaling required to achieve
-the pose (location and size) described by <code class="docutils literal"><span class="pre">z_where</span></code>. It’s not clear
+the pose (location and size) described by <code class="docutils literal notranslate"><span class="pre">z_where</span></code>. It’s not clear
 how to do this, and in particular it’s not obvious that this can be
 implemented in a way that preserves the differentiability of our model,
 which we require in order to perform <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI</span></a>.
@@ -587,15 +589,15 @@ network (STN) [2].</p>
 <p>Happily for us, PyTorch makes it easy to implement a STN using its
 <a class="reference external" href="http://pytorch.org/docs/master/nn.html#grid-sample">grid_sample</a> and
 <a class="reference external" href="http://pytorch.org/docs/master/nn.html#affine-grid">affine_grid</a>
-functions. <code class="docutils literal"><span class="pre">object_to_image</span></code> is a simple function that calls these,
-doing a little extra work to massage <code class="docutils literal"><span class="pre">z_where</span></code> into the expected
+functions. <code class="docutils literal notranslate"><span class="pre">object_to_image</span></code> is a simple function that calls these,
+doing a little extra work to massage <code class="docutils literal notranslate"><span class="pre">z_where</span></code> into the expected
 format.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">expand_z_where</span><span class="p">(</span><span class="n">z_where</span><span class="p">):</span>
     <span class="c1"># Takes 3-dimensional vectors, and massages them into 2x3 matrices with elements like so:</span>
     <span class="c1"># [s,x,y] -&gt; [[s,0,x],</span>
@@ -616,16 +618,16 @@ format.</p>
 </div>
 <p>A discussion of the details of the STN is beyond the scope of this
 tutorial. For our purposes however, it suffices to keep in mind that
-<code class="docutils literal"><span class="pre">object_to_image</span></code> takes the small image generated by the neural
+<code class="docutils literal notranslate"><span class="pre">object_to_image</span></code> takes the small image generated by the neural
 network and places it within a larger image with the desired pose.</p>
-<p>Let’s visualize the results of calling <code class="docutils literal"><span class="pre">prior_step_sketch</span></code> a few times
+<p>Let’s visualize the results of calling <code class="docutils literal notranslate"><span class="pre">prior_step_sketch</span></code> a few times
 to clarify this:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">prior_step_sketch</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
 <span class="n">show_images</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
@@ -649,11 +651,11 @@ each data point. One choice we could make for the prior over the number
 of steps is the geometric distribution, which can be expressed as
 follows:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="n">num_trials</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">])</span>
@@ -685,21 +687,21 @@ sampled 0
 distribution as the number of failures before a success in a series of
 Bernoulli trials. Here we express this as a recursive function that
 passes around a counter representing the number of trials made,
-<code class="docutils literal"><span class="pre">num_trials</span></code>. This function samples from the Bernoulli and returns
-<code class="docutils literal"><span class="pre">num_trials</span></code> if <code class="docutils literal"><span class="pre">x</span> <span class="pre">==</span> <span class="pre">1</span></code> (which represents success), otherwise it
+<code class="docutils literal notranslate"><span class="pre">num_trials</span></code>. This function samples from the Bernoulli and returns
+<code class="docutils literal notranslate"><span class="pre">num_trials</span></code> if <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">==</span> <span class="pre">1</span></code> (which represents success), otherwise it
 makes a recursive call, incrementing the counter.</p>
 <p>The use of a geometric prior is appealing because it does not bound the
 number of steps the model can use a priori. It’s also convenient,
-because by extending <code class="docutils literal"><span class="pre">geometric</span></code> to generate an object before each
+because by extending <code class="docutils literal notranslate"><span class="pre">geometric</span></code> to generate an object before each
 recursive call, we turn this from a geometric distribution over counts
 to a distribution over images with a geometrically distributed number of
 steps.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">geom_prior</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">])</span>
     <span class="n">i</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;i</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
@@ -713,11 +715,11 @@ steps.</p>
 </div>
 <p>Let’s visualize some samples from this distribution:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="n">x_empty</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">geom_prior</span><span class="p">(</span><span class="n">x_empty</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
@@ -736,10 +738,10 @@ steps.</p>
 <h4>Aside: Vectorized mini-batches<a class="headerlink" href="#Aside:-Vectorized-mini-batches" title="Permalink to this headline">¶</a></h4>
 <p>In our final implementation we would like to generate a mini batch of
 samples in parallel for efficiency. While Pyro supports vectorized mini
-batches with <code class="docutils literal"><span class="pre">iarange</span></code>, it currently requires that each <code class="docutils literal"><span class="pre">sample</span></code>
-statement within <code class="docutils literal"><span class="pre">iarange</span></code> makes a choice for all samples in the mini
+batches with <code class="docutils literal notranslate"><span class="pre">iarange</span></code>, it currently requires that each <code class="docutils literal notranslate"><span class="pre">sample</span></code>
+statement within <code class="docutils literal notranslate"><span class="pre">iarange</span></code> makes a choice for all samples in the mini
 batch. Another way to say this is that each sample in the mini batch
-will encounter the same set of <code class="docutils literal"><span class="pre">sample</span></code> statements. This is
+will encounter the same set of <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements. This is
 problematic for us, because as we’ve just seen, samples can make
 differing numbers of choices under our model.</p>
 <p>One way around this is to have all samples take the same number of
@@ -762,7 +764,7 @@ geometric prior.)</p>
 zero. (Since the <a class="reference internal" href="svi_part_iii.html"><span class="doc">SVI loss</span></a> is a weighted sum
 of log probabilities, setting a choice’s log probability to zero
 effectively removes its contribution to the loss.) This is achieved
-using the <code class="docutils literal"><span class="pre">mask()</span></code> method of distributions.</li>
+using the <code class="docutils literal notranslate"><span class="pre">mask()</span></code> method of distributions.</li>
 </ol>
 <p>(Looking ahead, we’ll need to take similar measures when we implement
 the guide and add baselines later in this tutorial.)</p>
@@ -771,21 +773,21 @@ unncessary sampling. Nevertheless, even though this approach performs
 redundant computation, the gains from using mini batches are so large
 that this is still a win overall.</p>
 <p>Here’s an updated model step function that implements these ideas. In
-summary, the changes from <code class="docutils literal"><span class="pre">prior_step_sketch</span></code> are:</p>
+summary, the changes from <code class="docutils literal notranslate"><span class="pre">prior_step_sketch</span></code> are:</p>
 <ol class="arabic simple">
-<li>We’ve added a new parameter <code class="docutils literal"><span class="pre">n</span></code> that specifies the size of the mini
+<li>We’ve added a new parameter <code class="docutils literal notranslate"><span class="pre">n</span></code> that specifies the size of the mini
 batch.</li>
 <li>We now conditionally add the object to the output image based on a
 value sampled from a Bernoulli distribution.</li>
-<li>We use <code class="docutils literal"><span class="pre">mask()</span></code> to zero out the log probability of random choices
+<li>We use <code class="docutils literal notranslate"><span class="pre">mask()</span></code> to zero out the log probability of random choices
 made by complete samples.</li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">prior_step</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">prev_x</span><span class="p">,</span> <span class="n">prev_z_pres</span><span class="p">):</span>
 
     <span class="c1"># Sample variable indicating whether to add this object to the output.</span>
@@ -826,11 +828,11 @@ contains zero, one or two digits we will allow the model to use up to
 avoid using one or more steps in order to correctly count the number of
 objects in the input.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">prior</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
     <span class="n">z_pres</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -843,11 +845,11 @@ objects in the input.</p>
 <p>We have now fully specified the prior for our model. Let’s visualize
 some samples to get a feel for this distribution:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
 <span class="n">show_images</span><span class="p">(</span><span class="n">prior</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
 </pre></div>
@@ -866,18 +868,18 @@ some samples to get a feel for this distribution:</p>
 <p>The last thing we need in order to complete the specification of the
 model is a likelihood function. Following [1] we will use a Gaussian
 likelihood with a fixed standard deviation of 0.3. This is straight
-forward to implement with <code class="docutils literal"><span class="pre">pyro.sample</span></code> using the <code class="docutils literal"><span class="pre">obs</span></code> argument.</p>
+forward to implement with <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> using the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument.</p>
 <p>When we later come to perform inference we will find it convenient to
 package the prior and likelihood into a single function. This is also a
-convenient place to introduce <code class="docutils literal"><span class="pre">iarange</span></code>, which we use to implement
+convenient place to introduce <code class="docutils literal notranslate"><span class="pre">iarange</span></code>, which we use to implement
 data subsampling, and to register the networks we would like to optimize
-with <code class="docutils literal"><span class="pre">pyro.module</span></code>.</p>
+with <code class="docutils literal notranslate"><span class="pre">pyro.module</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="c1"># Register network for optimization.</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;decode&quot;</span><span class="p">,</span> <span class="n">decode</span><span class="p">)</span>
@@ -911,11 +913,11 @@ used when computing the parameters for the next step. The guide for the
 <p>As in the model, the core of the guide is the logic for a single step.
 Here’s a sketch of an implementation of this:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">guide_step_basic</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
 
     <span class="c1"># The RNN takes the images and choices from the previous step as input.</span>
@@ -952,11 +954,11 @@ the “encoder” below.</p>
 <p>Here’s how we can implement this improved guide, and a fleshed out
 implementation of the networks involved:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTMCell</span><span class="p">(</span><span class="mi">2554</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
 
 <span class="c1"># Takes pixel intensities of the attention window to parameters (mean,</span>
@@ -1021,17 +1023,17 @@ implementation of the networks involved:</p>
 </div>
 </div>
 <p>Since we would like to maintain differentiability of the guide we again
-use a STN to perform the required “cropping”. The <code class="docutils literal"><span class="pre">image_to_object</span></code>
+use a STN to perform the required “cropping”. The <code class="docutils literal notranslate"><span class="pre">image_to_object</span></code>
 function performs the opposite transform to the object_to_image function
 used in the guide. That is, the former takes a small image and places it
 on a larger image, and the latter crops a small image from a larger
 image.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">z_where_inv</span><span class="p">(</span><span class="n">z_where</span><span class="p">):</span>
     <span class="c1"># Take a batch of z_where vectors, and compute their &quot;inverse&quot;.</span>
     <span class="c1"># That is, for each row compute:</span>
@@ -1098,7 +1100,7 @@ you are not already familiar with this idea, you might want to read <a class="re
 introduction</span></a> before
 continuing. As model authors we only have to implement the neural
 network, pass it our data as input, and feed its output to
-<code class="docutils literal"><span class="pre">pyro.sample</span></code>. Pyro’s inference back-end will ensure that the baseline
+<code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>. Pyro’s inference back-end will ensure that the baseline
 is included in the gradient estimator used for inference, and that the
 network parameters are updated appropriately.</p>
 <p>Let’s see how we can add data dependent baselines to our AIR
@@ -1110,11 +1112,11 @@ and indeed we will again use a recurrent network.</p>
 <p>To implement this we will first write a short helper function that
 implements a single step of the RNN we’ve just described:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bl_rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTMCell</span><span class="p">(</span><span class="mi">2554</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
 <span class="n">bl_predict</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
@@ -1132,7 +1134,7 @@ implements a single step of the RNN we’ve just described:</p>
 </div>
 </div>
 <p>There are two important details to highlight here:</p>
-<p>First, we <code class="docutils literal"><span class="pre">detach</span></code> values sampled by the guide before passing them to
+<p>First, we <code class="docutils literal notranslate"><span class="pre">detach</span></code> values sampled by the guide before passing them to
 the baseline network. This is important as the baseline network and the
 guide network are entirely separate networks optimized with different
 objectives. Without this, gradients would flow from the baseline network
@@ -1140,7 +1142,7 @@ into the guide network. When using data dependent baselines we must do
 this whenever we feed values sampled by the guide into the baselines
 network. (If we don’t we’ll trigger a PyTorch run-time error.)</p>
 <p>Second, we multiply the output of the baseline network by the value of
-<code class="docutils literal"><span class="pre">z_pres</span></code> from the previous step. This relieves the baseline network
+<code class="docutils literal notranslate"><span class="pre">z_pres</span></code> from the previous step. This relieves the baseline network
 from the burdon of having to output accurate predictions for completed
 samples. (The outputs for completed samples will be multiplied by zero,
 so the derivative of the <a class="reference internal" href="svi_part_iii.html#Neural-Baselines"><span class="std std-ref">baseline
@@ -1149,24 +1151,24 @@ zero.) It’s OK to do this because in effect we’ve already removed random
 choices for completed samples from the inference objective, so there’s
 no need to apply any variance reduction to them.</p>
 <p>We now have everything we need to complete the implementation of the
-guide. Our final <code class="docutils literal"><span class="pre">guide_step</span></code> function will be very similar to
-<code class="docutils literal"><span class="pre">guide_step_improved</span></code> introduced above. The only changes are:</p>
+guide. Our final <code class="docutils literal notranslate"><span class="pre">guide_step</span></code> function will be very similar to
+<code class="docutils literal notranslate"><span class="pre">guide_step_improved</span></code> introduced above. The only changes are:</p>
 <ol class="arabic simple">
-<li>We now call the <code class="docutils literal"><span class="pre">baseline_step</span></code> helper and pass the baseline value
-it returns to <code class="docutils literal"><span class="pre">pyro.sample</span></code>.</li>
-<li>We now mask out the <code class="docutils literal"><span class="pre">z_where</span></code> and <code class="docutils literal"><span class="pre">z_what</span></code> choices for complete
+<li>We now call the <code class="docutils literal notranslate"><span class="pre">baseline_step</span></code> helper and pass the baseline value
+it returns to <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>.</li>
+<li>We now mask out the <code class="docutils literal notranslate"><span class="pre">z_where</span></code> and <code class="docutils literal notranslate"><span class="pre">z_what</span></code> choices for complete
 sample. This serves exactly the same purpose as the masks added to
 the model. (See the earlier discussion for the motivation behind this
 change.)</li>
 </ol>
-<p>We’ll also write a <code class="docutils literal"><span class="pre">guide</span></code> function that will iterate <code class="docutils literal"><span class="pre">guide_step</span></code>
+<p>We’ll also write a <code class="docutils literal notranslate"><span class="pre">guide</span></code> function that will iterate <code class="docutils literal notranslate"><span class="pre">guide_step</span></code>
 in order to provide a guide for the whole model.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">GuideState</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;GuideState&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;bl_h&#39;</span><span class="p">,</span> <span class="s1">&#39;bl_c&#39;</span><span class="p">,</span> <span class="s1">&#39;z_pres&#39;</span><span class="p">,</span> <span class="s1">&#39;z_where&#39;</span><span class="p">,</span> <span class="s1">&#39;z_what&#39;</span><span class="p">])</span>
 <span class="k">def</span> <span class="nf">initial_guide_state</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">GuideState</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
@@ -1232,11 +1234,11 @@ in order to provide a guide for the whole model.</p>
 we have seen in earlier tutorials, we need write only a few more lines
 of code to begin performing inference:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none"><div class="highlight"><pre>
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">data</span> <span class="o">=</span> <span class="n">mnist</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
 
 <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
@@ -1262,8 +1264,8 @@ i=3, elbo=3872.77
 i=4, elbo=2818.27
 </pre></div></div>
 </div>
-<p>One key detail here is that we use a <code class="docutils literal"><span class="pre">TraceGraph_ELBO</span></code> loss rather
-than a simpler <code class="docutils literal"><span class="pre">Trace_ELBO</span></code>. This indicates that we wish to use the
+<p>One key detail here is that we use a <code class="docutils literal notranslate"><span class="pre">TraceGraph_ELBO</span></code> loss rather
+than a simpler <code class="docutils literal notranslate"><span class="pre">Trace_ELBO</span></code>. This indicates that we wish to use the
 gradient estimator that supports data dependent baselines. This
 estimator also <a class="reference internal" href="svi_part_iii.html#Reducing-Variance-via-Dependency-Structure"><span class="std std-ref">reduces the
 variance</span></a>
@@ -1293,8 +1295,8 @@ differs a little from that reported in [1], which may be due to small
 differences in the priors used.</p>
 <p>In the next figure the top row shows ten data points from the test set.
 The bottom row is a visualization of a single sample from the guide for
-each of these inputs, that shows the values sampled for <code class="docutils literal"><span class="pre">z_pres</span></code> and
-<code class="docutils literal"><span class="pre">z_where</span></code>. Following [1], the first, second and third steps are
+each of these inputs, that shows the values sampled for <code class="docutils literal notranslate"><span class="pre">z_pres</span></code> and
+<code class="docutils literal notranslate"><span class="pre">z_where</span></code>. Following [1], the first, second and third steps are
 displayed using red, green and blue borders respectively. (No blue
 borders are shown as the guide did not use three steps for any of these
 samples.) It also shows reconstructions of the input obtained by passing
@@ -1306,10 +1308,10 @@ generate an output image.</p>
 <figcaption style='font-size: 90%; padding: 0.5em 0 0'><b>Figure 4:</b> <i>Top row:</i> Data points from the multi-mnist test set. <i>Bottom row:</i> Visualization of samples from the guide and the model's reconstruction of the inputs.</figcaption>
 </figure>
 </center><p>These results were collected using the following parameters:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">n</span> <span class="mi">200000</span> <span class="o">-</span><span class="n">blr</span> <span class="mf">0.1</span> <span class="o">--</span><span class="n">z</span><span class="o">-</span><span class="n">pres</span><span class="o">-</span><span class="n">prior</span> <span class="mf">0.01</span> <span class="o">--</span><span class="n">scale</span><span class="o">-</span><span class="n">prior</span><span class="o">-</span><span class="n">sd</span> <span class="mf">0.2</span> <span class="o">--</span><span class="n">predict</span><span class="o">-</span><span class="n">net</span> <span class="mi">200</span> <span class="o">--</span><span class="n">bl</span><span class="o">-</span><span class="n">predict</span><span class="o">-</span><span class="n">net</span> <span class="mi">200</span> <span class="o">--</span><span class="n">decoder</span><span class="o">-</span><span class="n">output</span><span class="o">-</span><span class="n">use</span><span class="o">-</span><span class="n">sigmoid</span> <span class="o">--</span><span class="n">decoder</span><span class="o">-</span><span class="n">output</span><span class="o">-</span><span class="n">bias</span> <span class="o">-</span><span class="mi">2</span> <span class="o">--</span><span class="n">seed</span> <span class="mi">287710</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">n</span> <span class="mi">200000</span> <span class="o">-</span><span class="n">blr</span> <span class="mf">0.1</span> <span class="o">--</span><span class="n">z</span><span class="o">-</span><span class="n">pres</span><span class="o">-</span><span class="n">prior</span> <span class="mf">0.01</span> <span class="o">--</span><span class="n">scale</span><span class="o">-</span><span class="n">prior</span><span class="o">-</span><span class="n">sd</span> <span class="mf">0.2</span> <span class="o">--</span><span class="n">predict</span><span class="o">-</span><span class="n">net</span> <span class="mi">200</span> <span class="o">--</span><span class="n">bl</span><span class="o">-</span><span class="n">predict</span><span class="o">-</span><span class="n">net</span> <span class="mi">200</span> <span class="o">--</span><span class="n">decoder</span><span class="o">-</span><span class="n">output</span><span class="o">-</span><span class="n">use</span><span class="o">-</span><span class="n">sigmoid</span> <span class="o">--</span><span class="n">decoder</span><span class="o">-</span><span class="n">output</span><span class="o">-</span><span class="n">bias</span> <span class="o">-</span><span class="mi">2</span> <span class="o">--</span><span class="n">seed</span> <span class="mi">287710</span>
 </pre></div>
 </div>
-<p>We used Pyro commit <code class="docutils literal"><span class="pre">c0b38ad</span></code> with PyTorch <code class="docutils literal"><span class="pre">0.2.0.post4</span></code>. Inference
+<p>We used Pyro commit <code class="docutils literal notranslate"><span class="pre">c0b38ad</span></code> with PyTorch <code class="docutils literal notranslate"><span class="pre">0.2.0.post4</span></code>. Inference
 ran for approximately 4 hours on an NVIDIA K80 GPU. (Note that even
 though we set the random seed, this isn’t sufficient to make inference
 deterministic when using CUDA.)</p>
@@ -1320,14 +1322,14 @@ deterministic when using CUDA.)</p>
 to achieve good results with AIR.</p>
 <ul class="simple">
 <li>Inference is unlikely to recover correct object counts unless a small
-prior success probability for <code class="docutils literal"><span class="pre">z_pres</span></code> is used. In [1] this
+prior success probability for <code class="docutils literal notranslate"><span class="pre">z_pres</span></code> is used. In [1] this
 <a class="reference external" href="http://akosiorek.github.io/ml/2017/09/03/implementing-air.html">probability was
 annealed</a>
-from a value close to one to <code class="docutils literal"><span class="pre">1e-5</span></code> (or less) during optimization,
-though we found that a fixed value of around <code class="docutils literal"><span class="pre">0.01</span></code> worked well
+from a value close to one to <code class="docutils literal notranslate"><span class="pre">1e-5</span></code> (or less) during optimization,
+though we found that a fixed value of around <code class="docutils literal notranslate"><span class="pre">0.01</span></code> worked well
 with our implementation.</li>
 <li>We initialize the decoder network to generate mostly empty objects
-initially. (Using the <code class="docutils literal"><span class="pre">--decoder-output-bias</span></code> argument.) This
+initially. (Using the <code class="docutils literal notranslate"><span class="pre">--decoder-output-bias</span></code> argument.) This
 encourages the guide to explore the use of objects to explain the
 input early in optimization. Without this each object is a mid-gray
 square which is heavily penalized by the likelihood, prompting the
@@ -1337,8 +1339,8 @@ rate for the baseline network. This is straight forward to implement
 in Pyro by tagging modules associated with the baseline network and
 passing multiple learning rates to the optimizer. (See the section on
 <a class="reference internal" href="svi_part_i.html#Optimizers"><span class="std std-ref">optimizers</span></a> in part I of the SVI
-tutorial for more detail.) In [1] a learning rate of <code class="docutils literal"><span class="pre">1e-4</span></code> was
-used for the guide network, and a learning rate of <code class="docutils literal"><span class="pre">1e-3</span></code> was used
+tutorial for more detail.) In [1] a learning rate of <code class="docutils literal notranslate"><span class="pre">1e-4</span></code> was
+used for the guide network, and a learning rate of <code class="docutils literal notranslate"><span class="pre">1e-3</span></code> was used
 for the baseline network. We found it necessary to use a larger
 learning rate for the baseline network in order to make progress on
 count accuracy at a similar rate to [1]. This difference is likely
@@ -1349,10 +1351,10 @@ loss</a>.</li>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1]
-<code class="docutils literal"><span class="pre">Attend,</span> <span class="pre">Infer,</span> <span class="pre">Repeat:</span> <span class="pre">Fast</span> <span class="pre">Scene</span> <span class="pre">Understanding</span> <span class="pre">with</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>
+<code class="docutils literal notranslate"><span class="pre">Attend,</span> <span class="pre">Infer,</span> <span class="pre">Repeat:</span> <span class="pre">Fast</span> <span class="pre">Scene</span> <span class="pre">Understanding</span> <span class="pre">with</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>
 &nbsp;&nbsp;&nbsp;&nbsp; S. M. Ali Eslami and Nicolas Heess and Theophane Weber and Yuval
 Tassa and Koray Kavukcuoglu and Geoffrey E. Hinton</p>
-<p>[2] <code class="docutils literal"><span class="pre">Spatial</span> <span class="pre">Transformer</span> <span class="pre">Networks</span></code> &nbsp;&nbsp;&nbsp;&nbsp; Max Jaderberg and Karen
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Spatial</span> <span class="pre">Transformer</span> <span class="pre">Networks</span></code> &nbsp;&nbsp;&nbsp;&nbsp; Max Jaderberg and Karen
 Simonyan and Andrew Zisserman</p>
 </div>
 </div>
