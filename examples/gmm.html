@@ -122,9 +122,16 @@
 <p class="caption"><span class="caption-text">Contributed:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Gaussian Mixture Model</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Dataset">Dataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#MAP-estimation">MAP estimation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Enumerating-in-the-Guide:-predicting-membership">Enumerating in the Guide: predicting membership</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Table-of-contents">Table of contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Training-a-MAP-estimator">Training a MAP estimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Serving-the-model:-predicting-membership">Serving the model: predicting membership</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Predicting-membership-using-discrete-inference">Predicting membership using discrete inference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Predicting-membership-by-enumerating-in-the-guide">Predicting membership by enumerating in the guide</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
@@ -408,21 +415,23 @@ div.nboutput div.output_area.stderr {
 variables in Pyro through the motivating example of a mixture model.
 We’ll focus on the mechanics of parallel enumeration, keeping the model
 simple by training a trivial 1-D Gaussian model on a tiny 5-point
-dataset.</p>
-<p>Pyro’s
-<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a>
-can automatically marginalize out variables in both the guide and the
-model. When enumerating guide variables, Pyro can either enumerate
-sequentially (which is useful if the variables determine downstream
-control flow), or enumerate in parallel by allocating a new tensor
-dimension and using nonstandard evaluation to create a tensor of
-possible values at the variable’s sample site. These nonstandard values
-are then replayed in the model. When enumerating variables in the model,
-the variables must be enumerated in parallel and must not appear in the
-guide. Mathematically, guide-side enumeration simply reduces variance in
-a stochastic ELBO by enumerating all values, whereas model-side
-enumeration avoids an application of Jensen’s inequality by exactly
-marginalizing out a variable.</p>
+dataset. See also the <a class="reference external" href="http://pyro.ai/examples/enumeration.html">enumeration
+tutorial</a> for a broader
+introduction to parallel enumeration.</p>
+<div class="section" id="Table-of-contents">
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="#Overview">Overview</a></li>
+<li><a class="reference external" href="#Training-a-MAP-estimator">Training a MAP estimator</a></li>
+<li><a class="reference external" href="#Serving-the-model:-predicting-membership">Serving the model: predicting
+membership</a><ul>
+<li><a class="reference external" href="#Predicting-membership-using-discrete-inference">Predicting membership using discrete
+inference</a></li>
+<li><a class="reference external" href="#Predicting-membership-by-enumerating-in-the-guide">Predicting membership by enumerating in the
+guide</a></li>
+</ul>
+</li>
+</ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
 <span></span>In [1]:
@@ -444,7 +453,7 @@ marginalizing out a variable.</p>
 <span class="kn">from</span> <span class="nn">pyro</span> <span class="k">import</span> <span class="n">poutine</span>
 <span class="kn">from</span> <span class="nn">pyro.contrib.autoguide</span> <span class="k">import</span> <span class="n">AutoDelta</span>
 <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="k">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">,</span> <span class="n">infer_discrete</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.0&#39;</span><span class="p">)</span>
@@ -452,8 +461,22 @@ marginalizing out a variable.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="Dataset">
-<h2>Dataset<a class="headerlink" href="#Dataset" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Overview">
+<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
+<p>Pyro’s
+<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a>
+can automatically marginalize out variables in both the guide and the
+model. When enumerating guide variables, Pyro can either enumerate
+sequentially (which is useful if the variables determine downstream
+control flow), or enumerate in parallel by allocating a new tensor
+dimension and using nonstandard evaluation to create a tensor of
+possible values at the variable’s sample site. These nonstandard values
+are then replayed in the model. When enumerating variables in the model,
+the variables must be enumerated in parallel and must not appear in the
+guide. Mathematically, guide-side enumeration simply reduces variance in
+a stochastic ELBO by enumerating all values, whereas model-side
+enumeration avoids an application of Jensen’s inequality by exactly
+marginalizing out a variable.</p>
 <p>Here is our tiny dataset. It has five points.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
@@ -466,8 +489,8 @@ marginalizing out a variable.</p>
 </div>
 </div>
 </div>
-<div class="section" id="MAP-estimation">
-<h2>MAP estimation<a class="headerlink" href="#MAP-estimation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Training-a-MAP-estimator">
+<h3>Training a MAP estimator<a class="headerlink" href="#Training-a-MAP-estimator" title="Permalink to this headline">¶</a></h3>
 <p>Let’s start by learning model parameters <code class="docutils literal notranslate"><span class="pre">weights</span></code>, <code class="docutils literal notranslate"><span class="pre">locs</span></code>, and
 <code class="docutils literal notranslate"><span class="pre">scale</span></code> given priors and data. We will learn point estimates of these
 using an
@@ -504,8 +527,8 @@ will marginalize out the assignments of datapoints to clusters.</p>
 </div>
 <p>To run inference with this <code class="docutils literal notranslate"><span class="pre">(model,guide)</span></code> pair, we use Pyro’s
 <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.infer.enum.config_enumerate">config_enumerate()</a>
-function to enumerate over all assignments in each iteration. Since
-we’ve wrapped the batched Categorical assignments in a
+handler to enumerate over all assignments in each iteration. Since we’ve
+wrapped the batched Categorical assignments in a
 <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">pyro.plate</a>
 indepencence context, this enumeration can happen in parallel: we
 enumerate only 2 possibilites, rather than <code class="docutils literal notranslate"><span class="pre">2**len(data)</span> <span class="pre">=</span> <span class="pre">32</span></code>.
@@ -670,8 +693,8 @@ convergence. We can do this using PyTorch’s <code class="docutils literal notr
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-weights = [0.375      0.62500006]
-locs = [ 0.49898112 10.984461  ]
+weights = [0.375 0.625]
+locs = [ 0.49887404 10.984463  ]
 scale = 0.651433706284
 </pre></div></div>
 </div>
@@ -711,20 +734,137 @@ observed that the mixture model gets stuck in an
 everthing-in-one-cluster hypothesis if <code class="docutils literal notranslate"><span class="pre">scale</span></code> is initialized to be
 too large.</p>
 </div>
-<div class="section" id="Enumerating-in-the-Guide:-predicting-membership">
-<h2>Enumerating in the Guide: predicting membership<a class="headerlink" href="#Enumerating-in-the-Guide:-predicting-membership" title="Permalink to this headline">¶</a></h2>
-<p>So far we’ve marginalized out the assignment variables in the model.
-While this provides fast convergence, it prevents us from reading the
-cluster assignments from the guide.</p>
-<p>To read cluster assignemnts from the guide, we’ll define a new
+<div class="section" id="Serving-the-model:-predicting-membership">
+<h3>Serving the model: predicting membership<a class="headerlink" href="#Serving-the-model:-predicting-membership" title="Permalink to this headline">¶</a></h3>
+<p>Now that we’ve trained a mixture model, we might want to use the model
+as a classifier. During training we marginalized out the assignment
+variables in the model. While this provides fast convergence, it
+prevents us from reading the cluster assignments from the guide. We’ll
+discuss two options for treating the model as a classifier: first using
+<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.discrete.infer_discrete">infer_discrete</a>
+(much faster) and second by training a secondary guide using enumeration
+inside SVI (slower but more general).</p>
+<div class="section" id="Predicting-membership-using-discrete-inference">
+<h4>Predicting membership using discrete inference<a class="headerlink" href="#Predicting-membership-using-discrete-inference" title="Permalink to this headline">¶</a></h4>
+<p>The fastest way to predict membership is to use the
+<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.discrete.infer_discrete">infer_discrete</a>
+handler, together with <code class="docutils literal notranslate"><span class="pre">trace</span></code> and <code class="docutils literal notranslate"><span class="pre">replay</span></code>. Let’s start out with a
+MAP classifier, setting <code class="docutils literal notranslate"><span class="pre">infer_discrete</span></code>’s temperature parameter to
+zero. For a deeper look at effect handlers like <code class="docutils literal notranslate"><span class="pre">trace</span></code>, <code class="docutils literal notranslate"><span class="pre">replay</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">infer_discrete</span></code>, see the <a class="reference external" href="http://pyro.ai/examples/effect_handlers.html">effect handler
+tutorial</a>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<span></span>In [11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">guide_trace</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">global_guide</span><span class="p">)</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># record the globals</span>
+<span class="n">trained_model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">replay</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">trace</span><span class="o">=</span><span class="n">guide_trace</span><span class="p">)</span>  <span class="c1"># replay the globals</span>
+
+<span class="k">def</span> <span class="nf">classifier</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">inferred_model</span> <span class="o">=</span> <span class="n">infer_discrete</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+                                    <span class="n">first_available_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># avoid conflict with data plate</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">inferred_model</span><span class="p">)</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s2">&quot;assignment&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">classifier</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor([0, 0, 1, 1, 1])
+</pre></div></div>
+</div>
+<p>Indeed we can run this classifer on new data</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<span></span>In [12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">new_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="n">assignment</span> <span class="o">=</span> <span class="n">classifier</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">new_data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;MAP assignment&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;data value&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;class assignment&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/gmm_21_0.png" src="_images/gmm_21_0.png" />
+</div>
+</div>
+<p>To generate random posterior assignments rather than MAP assignments, we
+could set <code class="docutils literal notranslate"><span class="pre">temperature=1</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<span></span>In [13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="n">classifier</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor([0, 0, 1, 1, 1])
+</pre></div></div>
+</div>
+<p>Since the classes are very well separated, we zoom in to the boundary
+between classes, around 5.75.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
+<span></span>In [14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">new_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">5.5</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">)</span>
+<span class="n">assignment</span> <span class="o">=</span> <span class="n">classifier</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">new_data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s1">&#39;bx&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Random posterior assignment&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;data value&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;class assignment&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/gmm_25_0.png" src="_images/gmm_25_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Predicting-membership-by-enumerating-in-the-guide">
+<h4>Predicting membership by enumerating in the guide<a class="headerlink" href="#Predicting-membership-by-enumerating-in-the-guide" title="Permalink to this headline">¶</a></h4>
+<p>A second way to predict class membership is to enumerate in the guide.
+This doesn’t work well for serving classifier models, since we need to
+run stochastic optimization for each new input data batch, but it is
+more general in that it can be embedded in larger variational models.</p>
+<p>To read cluster assignments from the guide, we’ll define a new
 <code class="docutils literal notranslate"><span class="pre">full_guide</span></code> that fits both global parameters (as above) and local
 parameters (which were previously marginalized out). Since we’ve already
-learned good values for globals, we’ll prevent SVI from updating those
-by using
+learned good values for the global variables, we will block SVI from
+updating those by using
 <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.block">poutine.block</a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [11]:
+<span></span>In [15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -744,7 +884,7 @@ by using
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [12]:
+<span></span>In [16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -778,7 +918,7 @@ by using
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [13]:
+<span></span>In [17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -795,12 +935,12 @@ by using
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/gmm_22_0.png" src="_images/gmm_22_0.png" />
+<img alt="_images/gmm_29_0.png" src="_images/gmm_29_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [14]:
+<span></span>In [18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -819,18 +959,18 @@ by using
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/gmm_23_0.png" src="_images/gmm_23_0.png" />
+<img alt="_images/gmm_30_0.png" src="_images/gmm_30_0.png" />
 </div>
 </div>
 <p>We can now examine the guide’s local <code class="docutils literal notranslate"><span class="pre">assignment_probs</span></code> variable.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [15]:
+<span></span>In [19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">assignment_probs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;assignment_probs&#39;</span><span class="p">)</span>
-<span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment_probs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">,</span>
             <span class="n">label</span><span class="o">=</span><span class="s1">&#39;component with mean </span><span class="si">{:0.2g}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">assignment_probs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;bo&#39;</span><span class="p">,</span>
@@ -846,7 +986,9 @@ by using
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/gmm_25_0.png" src="_images/gmm_25_0.png" />
+<img alt="_images/gmm_32_0.png" src="_images/gmm_32_0.png" />
+</div>
+</div>
 </div>
 </div>
 </div>
