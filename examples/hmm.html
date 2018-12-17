@@ -123,6 +123,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
@@ -135,7 +136,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Hidden Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lda.html">Latent Dirichlet Allocation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcmc.html">Markov Chain Monte Carlo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Sprase Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Sparse Gamma Deep Exponential Family</a></li>
 </ul>
 
             
@@ -652,14 +653,14 @@
         <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s1">&#39;torch.cuda.FloatTensor&#39;</span><span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading data&#39;</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">poly</span><span class="o">.</span><span class="n">load_data</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">poly</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">JSB_CHORALES</span><span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">]</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Training {} on {} sequences&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
         <span class="n">model</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">][</span><span class="s1">&#39;sequences&#39;</span><span class="p">])))</span>
-    <span class="n">sequences</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">][</span><span class="s1">&#39;sequences&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="n">lengths</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">][</span><span class="s1">&#39;sequence_lengths&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">sequences</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">][</span><span class="s1">&#39;sequences&#39;</span><span class="p">]</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">][</span><span class="s1">&#39;sequence_lengths&#39;</span><span class="p">]</span>
 
     <span class="c1"># find all the notes that are present at least once in the training set</span>
     <span class="n">present_notes</span> <span class="o">=</span> <span class="p">((</span><span class="n">sequences</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
@@ -713,8 +714,8 @@
     <span class="c1"># Finally we evaluate on the test dataset.</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Evaluating on {} test sequences&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">][</span><span class="s1">&#39;sequences&#39;</span><span class="p">])))</span>
-    <span class="n">sequences</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">][</span><span class="s1">&#39;sequences&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">present_notes</span><span class="p">]</span>
-    <span class="n">lengths</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">][</span><span class="s1">&#39;sequence_lengths&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">sequences</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">][</span><span class="s1">&#39;sequences&#39;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="n">present_notes</span><span class="p">]</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">][</span><span class="s1">&#39;sequence_lengths&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">truncate</span><span class="p">:</span>
         <span class="n">lengths</span><span class="o">.</span><span class="n">clamp_</span><span class="p">(</span><span class="nb">max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">truncate</span><span class="p">)</span>
     <span class="n">num_observations</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
