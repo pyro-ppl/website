@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mini-Pyro &mdash; Pyro Tutorials 0.3.0 documentation</title>
+  <title>Mini-Pyro &mdash; Pyro Tutorials 0.3.1 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.3.1 documentation" href="index.html"/>
         <link rel="next" title="Poutine: A Guide to Programming with Effect Handlers in Pyro" href="effect_handlers.html"/>
         <link rel="prev" title="Using the PyTorch JIT Compiler with Pyro" href="jit.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.3.1
               </div>
             
           
@@ -136,10 +136,13 @@
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Capture-Recapture Models (CJS Models)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lda.html">Latent Dirichlet Allocation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcmc.html">Markov Chain Monte Carlo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dkl.html">Deep Kernel Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="einsum.html">Plated Einsum</a></li>
 </ul>
 
             
@@ -256,18 +259,19 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">weakref</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="c1"># Pyro keeps track of two kinds of global state:</span>
 <span class="c1"># i)  The effect handler stack, which enables non-standard interpretations of</span>
 <span class="c1">#     Pyro primitives like sample();</span>
-<span class="c1">#     See http://docs.pyro.ai/en/0.3.0-release/poutine.html</span>
+<span class="c1">#     See http://docs.pyro.ai/en/0.3.1/poutine.html</span>
 <span class="c1"># ii) Trainable parameters in the Pyro ParamStore;</span>
-<span class="c1">#     See http://docs.pyro.ai/en/0.3.0-release/parameters.html</span>
+<span class="c1">#     See http://docs.pyro.ai/en/0.3.1/parameters.html</span>
 
 <span class="n">PYRO_STACK</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">PARAM_STORE</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">PARAM_STORE</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># maps name -&gt; (unconstrained_value, constraint)</span>
 
 
 <span class="k">def</span> <span class="nf">get_param_store</span><span class="p">():</span>
@@ -409,25 +413,37 @@
     <span class="k">return</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
 
 
-<span class="c1"># param is an effectful version of PARAM_STORE.setdefault</span>
+<span class="c1"># param is an effectful version of PARAM_STORE.setdefault that also handles constraints.</span>
 <span class="c1"># When any effect handlers are active, it constructs an initial message and calls apply_stack.</span>
-<span class="k">def</span> <span class="nf">param</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">init_value</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">param</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">init_value</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">real</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">fn</span><span class="p">(</span><span class="n">init_value</span><span class="p">):</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="n">PARAM_STORE</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">init_value</span><span class="p">)</span>
-        <span class="n">value</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">fn</span><span class="p">(</span><span class="n">init_value</span><span class="p">,</span> <span class="n">constraint</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">PARAM_STORE</span><span class="p">:</span>
+            <span class="n">unconstrained_value</span><span class="p">,</span> <span class="n">constraint</span> <span class="o">=</span> <span class="n">PARAM_STORE</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Initialize with a constrained value.</span>
+            <span class="k">assert</span> <span class="n">init_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">constrained_value</span> <span class="o">=</span> <span class="n">init_value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+                <span class="n">unconstrained_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">constrained_value</span><span class="p">)</span>
+            <span class="n">unconstrained_value</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
+            <span class="n">PARAM_STORE</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">unconstrained_value</span><span class="p">,</span> <span class="n">constraint</span>
+
+        <span class="c1"># Transform from unconstrained space to constrained space.</span>
+        <span class="n">constrained_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)(</span><span class="n">unconstrained_value</span><span class="p">)</span>
+        <span class="n">constrained_value</span><span class="o">.</span><span class="n">unconstrained</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">unconstrained_value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constrained_value</span>
 
     <span class="c1"># if there are no active Messengers, we just draw a sample and return it as expected:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">PYRO_STACK</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">init_value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">init_value</span><span class="p">,</span> <span class="n">constraint</span><span class="p">)</span>
 
     <span class="c1"># Otherwise, we initialize a message...</span>
     <span class="n">initial_msg</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;param&quot;</span><span class="p">,</span>
         <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
         <span class="s2">&quot;fn&quot;</span><span class="p">:</span> <span class="n">fn</span><span class="p">,</span>
-        <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">init_value</span><span class="p">,),</span>
+        <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">init_value</span><span class="p">,</span> <span class="n">constraint</span><span class="p">),</span>
         <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
     <span class="p">}</span>
 
@@ -443,7 +459,7 @@
 
 <span class="c1"># This is a thin wrapper around the `torch.optim.Adam` class that</span>
 <span class="c1"># dynamically generates optimizers for dynamically generated parameters.</span>
-<span class="c1"># See http://docs.pyro.ai/en/0.3.0-release/optimization.html</span>
+<span class="c1"># See http://docs.pyro.ai/en/0.3.1/optimization.html</span>
 <span class="k">class</span> <span class="nc">Adam</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optim_args</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optim_args</span> <span class="o">=</span> <span class="n">optim_args</span>
@@ -468,7 +484,7 @@
 
 <span class="c1"># This is a unified interface for stochastic variational inference in Pyro.</span>
 <span class="c1"># The actual construction of the loss is taken care of by `loss`.</span>
-<span class="c1"># See http://docs.pyro.ai/en/0.3.0-release/inference_algos.html</span>
+<span class="c1"># See http://docs.pyro.ai/en/0.3.1/inference_algos.html</span>
 <span class="k">class</span> <span class="nc">SVI</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
@@ -489,7 +505,8 @@
         <span class="c1"># Differentiate the loss.</span>
         <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
         <span class="c1"># Grab all the parameters from the trace.</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">param_capture</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span>
+                  <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">param_capture</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
         <span class="c1"># Take a step w.r.t. each parameter in params.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="c1"># Zero out the gradients so that they don&#39;t accumulate.</span>
@@ -502,7 +519,7 @@
 <span class="c1"># fundamental objective in Variational Inference.</span>
 <span class="c1"># See http://pyro.ai/examples/svi_part_i.html for details.</span>
 <span class="c1"># This implementation has various limitations (for example it only supports</span>
-<span class="c1"># random variablbes with reparameterized samplers), but all the ELBO</span>
+<span class="c1"># random variables with reparameterized samplers), but all the ELBO</span>
 <span class="c1"># implementations in Pyro share the same basic logic.</span>
 <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Run the guide with the arguments passed to SVI.step() and trace the execution,</span>
@@ -531,6 +548,11 @@
     <span class="c1"># Return (-elbo) since by convention we do gradient descent on a loss and</span>
     <span class="c1"># the ELBO is a lower bound that needs to be maximized.</span>
     <span class="k">return</span> <span class="o">-</span><span class="n">elbo</span>
+
+
+<span class="c1"># This is a wrapper for compatibility with full Pyro.</span>
+<span class="k">def</span> <span class="nf">Trace_ELBO</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">elbo</span>
 </pre></div>
 </div>
 <div class="section" id="example-use-of-mini-pyro">
@@ -548,21 +570,13 @@
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
+<span class="c1"># We use the pyro.generic interface to support dynamic choice of backend.</span>
+<span class="kn">from</span> <span class="nn">pyro.generic</span> <span class="kn">import</span> <span class="n">pyro_backend</span>
+<span class="kn">from</span> <span class="nn">pyro.generic</span> <span class="kn">import</span> <span class="n">distributions</span> <span class="k">as</span> <span class="n">dist</span>
+<span class="kn">from</span> <span class="nn">pyro.generic</span> <span class="kn">import</span> <span class="n">infer</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">pyro</span>
 
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="c1"># Because the API in minipyro matches that of Pyro proper, this</span>
-    <span class="c1"># example code works with both implementations.</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">full_pyro</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">pyro</span>
-        <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-        <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-        <span class="n">elbo</span> <span class="o">=</span> <span class="n">Trace_ELBO</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">pyro.contrib.minipyro</span> <span class="kn">as</span> <span class="nn">pyro</span>
-        <span class="kn">from</span> <span class="nn">pyro.contrib.minipyro</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Adam</span><span class="p">,</span> <span class="n">elbo</span>
-
     <span class="c1"># Define a basic model with a single Normal latent random variable `loc`</span>
     <span class="c1"># and a batch of Normally distributed observations.</span>
     <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
@@ -580,34 +594,39 @@
     <span class="c1"># Generate some data.</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="mf">3.0</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
-    <span class="c1"># Construct an SVI object so we can do variational inference on our</span>
-    <span class="c1"># model/guide pair.</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">}),</span> <span class="n">elbo</span><span class="p">)</span>
+    <span class="c1"># Because the API in minipyro matches that of Pyro proper,</span>
+    <span class="c1"># training code works with generic Pyro implementations.</span>
+    <span class="k">with</span> <span class="n">pyro_backend</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="p">):</span>
+        <span class="c1"># Construct an SVI object so we can do variational inference on our</span>
+        <span class="c1"># model/guide pair.</span>
+        <span class="n">elbo</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span>
+        <span class="n">adam</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
+        <span class="n">svi</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">adam</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
 
-    <span class="c1"># Basic training loop</span>
-    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_steps</span><span class="p">):</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;step {} loss = {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
+        <span class="c1"># Basic training loop</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_steps</span><span class="p">):</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s2">&quot;step {} loss = {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
 
-    <span class="c1"># Report the final values of the variational parameters</span>
-    <span class="c1"># in the guide after training.</span>
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;{} = {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+        <span class="c1"># Report the final values of the variational parameters</span>
+        <span class="c1"># in the guide after training.</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">():</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;{} = {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
 
-    <span class="c1"># For this simple (conjugate) model we know the exact posterior. In</span>
-    <span class="c1"># particular we know that the variational distribution should be</span>
-    <span class="c1"># centered near 3.0. So let&#39;s check this explicitly.</span>
-    <span class="k">assert</span> <span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_loc&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.1</span>
+        <span class="c1"># For this simple (conjugate) model we know the exact posterior. In</span>
+        <span class="c1"># particular we know that the variational distribution should be</span>
+        <span class="c1"># centered near 3.0. So let&#39;s check this explicitly.</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_loc&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.1</span>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">pyro</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.0&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.1&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Mini Pyro demo&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="s2">&quot;--full-pyro&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--backend&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;minipyro&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-steps&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1001</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-lr&quot;</span><span class="p">,</span> <span class="s2">&quot;--learning-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
@@ -661,7 +680,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.3.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

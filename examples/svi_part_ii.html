@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 0.3.0 documentation</title>
+  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 0.3.1 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.3.0 documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.3.1 documentation" href="index.html"/>
         <link rel="next" title="SVI Part III: ELBO Gradient Estimators" href="svi_part_iii.html"/>
         <link rel="prev" title="SVI Part I: An Introduction to Stochastic Variational Inference in Pyro" href="svi_part_i.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.3.1
               </div>
             
           
@@ -101,10 +101,10 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">SVI Part II: Conditional Independence, Subsampling, and Amortization</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#The-Goal:-Scaling-SVI-to-Large-Datasets">The Goal: Scaling SVI to Large Datasets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Marking-Conditional-Independence-in-Pyro">Marking Conditional Independence in Pyro</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#sequential-plate">sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Sequential-plate">Sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Vectorized-plate">Vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#vectorized-plate">vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Subsampling">Subsampling</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Automatic-subsampling-with-plate">Automatic subsampling with <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Custom-subsampling-strategies-with-plate">Custom subsampling strategies with <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
@@ -151,10 +151,13 @@
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Capture-Recapture Models (CJS Models)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lda.html">Latent Dirichlet Allocation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcmc.html">Markov Chain Monte Carlo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dkl.html">Deep Kernel Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="einsum.html">Plated Einsum</a></li>
 </ul>
 
             
@@ -279,8 +282,8 @@ Pyro can leverage the relevant conditional independencies. Let’s see how
 this is done. Pyro provides two language primitives for marking
 conditional independencies: <code class="docutils literal notranslate"><span class="pre">plate</span></code> and <code class="docutils literal notranslate"><span class="pre">markov</span></code>. Let’s start with
 the simpler of the two.</p>
-<div class="section" id="sequential-plate">
-<h3>sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#sequential-plate" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="Sequential-plate">
+<h3>Sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Sequential-plate" title="Permalink to this headline">¶</a></h3>
 <p>Let’s return to the example we used in the <a class="reference internal" href="svi_part_i.html"><span class="doc">previous
 tutorial</span></a>. For convenience let’s replicate the main
 logic of <code class="docutils literal notranslate"><span class="pre">model</span></code> here:</p>
@@ -341,9 +344,8 @@ not appropriate for temporal models where each iteration of a loop
 depends on the previous iteration; in this case a <code class="docutils literal notranslate"><span class="pre">range</span></code> or
 <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> should be used instead.</p>
 </div>
-</div>
-<div class="section" id="vectorized-plate">
-<h2>vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#vectorized-plate" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Vectorized-plate">
+<h3>Vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Vectorized-plate" title="Permalink to this headline">¶</a></h3>
 <p>Conceptually vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code> is the same as sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code>
 except that it is a vectorized operation (as <code class="docutils literal notranslate"><span class="pre">torch.arange</span></code> is to
 <code class="docutils literal notranslate"><span class="pre">range</span></code>). As such it potentially enables large speed-ups compared to
@@ -368,6 +370,7 @@ no need to specify the length of the tensor(s) involved in the <code class="docu
 context</p>
 <p>Note that the gotchas mentioned in the case of sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code> also
 apply to vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code>.</p>
+</div>
 </div>
 <div class="section" id="Subsampling">
 <h2>Subsampling<a class="headerlink" href="#Subsampling" title="Permalink to this headline">¶</a></h2>
@@ -579,7 +582,7 @@ Welling</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0',
+            VERSION:'0.3.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
