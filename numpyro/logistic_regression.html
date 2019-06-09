@@ -1,0 +1,799 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Benchmark NumPyro in large dataset &mdash; Numpyro Tutorials 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Time Series Forecasting" href="time_series_forecasting.html" />
+    <link rel="prev" title="Bayesian Regression Using NumPyro" href="bayesian_regression.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/Pyro_logo_wide.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Examples:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression Using NumPyro</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmark NumPyro in large dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Benchmark-HMC">Benchmark HMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Benchmark-NUTS">Benchmark NUTS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Average-time-for-each-leapfrog-(verlet)-step">Average time for each leapfrog (verlet) step</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#References">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="time_series_forecasting.html">Time Series Forecasting</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Numpyro Tutorials</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Benchmark NumPyro in large dataset</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/logistic_regression.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 5ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Benchmark-NumPyro-in-large-dataset">
+<h1>Benchmark NumPyro in large dataset<a class="headerlink" href="#Benchmark-NumPyro-in-large-dataset" title="Permalink to this headline">¶</a></h1>
+<p>This notebook uses <code class="docutils literal notranslate"><span class="pre">numpyro</span></code> and replicates experiments in references [1] which evaluates the performance of NUTS on various frameworks. The benchmark is run with CUDA 10.0 on a NVIDIA RTX 2070.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">onp</span>
+
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="c1"># NB: replace gpu by cpu to run this notebook in cpu</span>
+<span class="kn">from</span> <span class="nn">jax.config</span> <span class="kn">import</span> <span class="n">config</span><span class="p">;</span> <span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;jax_platform_name&quot;</span><span class="p">,</span> <span class="s2">&quot;gpu&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
+<span class="kn">from</span> <span class="nn">numpyro.diagnostics</span> <span class="kn">import</span> <span class="n">summary</span>
+<span class="kn">from</span> <span class="nn">numpyro.examples.datasets</span> <span class="kn">import</span> <span class="n">COVTYPE</span><span class="p">,</span> <span class="n">load_dataset</span>
+<span class="kn">from</span> <span class="nn">numpyro.handlers</span> <span class="kn">import</span> <span class="n">sample</span>
+<span class="kn">from</span> <span class="nn">numpyro.hmc_util</span> <span class="kn">import</span> <span class="n">initialize_model</span>
+<span class="kn">from</span> <span class="nn">numpyro.mcmc</span> <span class="kn">import</span> <span class="n">hmc</span><span class="p">,</span> <span class="n">mcmc</span>
+<span class="kn">from</span> <span class="nn">numpyro.util</span> <span class="kn">import</span> <span class="n">fori_collect</span>
+</pre></div>
+</div>
+</div>
+<p>We do preprocessing steps as in <a class="reference external" href="https://github.com/google-research/google-research/blob/master/simple_probabilistic_programming/no_u_turn_sampler/logistic_regression.py">source code</a> of reference [1]:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">_</span><span class="p">,</span> <span class="n">fetch</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">COVTYPE</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">features</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">fetch</span><span class="p">()</span>
+
+<span class="c1"># normalize features and add intercept</span>
+<span class="n">features</span> <span class="o">=</span> <span class="p">(</span><span class="n">features</span> <span class="o">-</span> <span class="n">features</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="n">features</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">features</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))])</span>
+
+<span class="c1"># make binary feature</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">onp</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">specific_category</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">(</span><span class="n">labels</span> <span class="o">==</span> <span class="n">specific_category</span><span class="p">)</span>
+
+<span class="n">N</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Data shape:&quot;</span><span class="p">,</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Label distribution: {} has label 1, {} has label 0&quot;</span>
+      <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">N</span> <span class="o">-</span> <span class="n">labels</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Data shape: (581012, 55)
+Label distribution: 211840 has label 1, 369172 has label 0
+</pre></div></div>
+</div>
+<p>Now, we construct the model:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+    <span class="n">coefs</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;coefs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dim</span><span class="p">)))</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coefs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">step_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">/</span> <span class="n">N</span><span class="p">)</span>
+<span class="n">init_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;coefs&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">)}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="Benchmark-HMC">
+<h2>Benchmark HMC<a class="headerlink" href="#Benchmark-HMC" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">_</span><span class="p">,</span> <span class="n">potential_fn</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">initialize_model</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">model</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">mcmc</span><span class="p">(</span><span class="n">num_warmup</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">init_params</span><span class="o">=</span><span class="n">init_params</span><span class="p">,</span> <span class="n">potential_fn</span><span class="o">=</span><span class="n">potential_fn</span><span class="p">,</span>
+               <span class="n">algo</span><span class="o">=</span><span class="s1">&#39;HMC&#39;</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="n">step_size</span><span class="p">,</span> <span class="n">trajectory_length</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">step_size</span><span class="p">),</span>
+               <span class="n">adapt_step_size</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">num_leapfrogs</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">10</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;number of leapfrog steps:&quot;</span><span class="p">,</span> <span class="n">num_leapfrogs</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;avg. time for each step :&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+warmup: 0it [00:00, ?it/s]
+sample: 100%|██████████| 1000/1000 [00:40&lt;00:00, 26.43it/s, 10 steps of size 9.28e-04. acc. prob=0.93]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+
+                           mean         sd       5.5%      94.5%      n_eff       Rhat
+            coefs[0]       1.97       0.01       1.96       1.99     327.37       1.02
+            coefs[1]      -0.04       0.01      -0.05      -0.03    1003.13       1.00
+            coefs[2]      -0.07       0.02      -0.09      -0.04       5.77       1.31
+            coefs[3]      -0.30       0.01      -0.31      -0.29    3253.70       1.00
+            coefs[4]      -0.09       0.01      -0.10      -0.09    2783.86       1.00
+            coefs[5]      -0.14       0.01      -0.15      -0.14    1898.41       1.00
+            coefs[6]       0.19       0.09       0.11       0.31       5.43       1.32
+            coefs[7]      -0.63       0.06      -0.70      -0.58       5.52       1.31
+            coefs[8]       0.52       0.11       0.43       0.66       5.44       1.32
+            coefs[9]      -0.01       0.01      -0.02      -0.00   -4414.57       1.00
+           coefs[10]       0.37       0.07       0.25       0.46       4.55       1.37
+           coefs[11]      -0.06       0.03      -0.12      -0.02       4.71       1.36
+           coefs[12]       0.06       0.07      -0.07       0.14       4.56       1.37
+           coefs[13]      -0.94       0.12      -1.08      -0.75       2.82       1.95
+           coefs[14]       0.04       0.10      -0.15       0.18       4.09       1.56
+           coefs[15]      -0.53       0.08      -0.67      -0.42       5.11       1.28
+           coefs[16]      -0.43       0.12      -0.60      -0.23       5.24       1.14
+           coefs[17]      -0.05       0.03      -0.07      -0.03      66.70       1.04
+           coefs[18]      -0.17       0.13      -0.31       0.07       3.43       1.50
+           coefs[19]      -0.49       0.17      -0.77      -0.28       2.78       2.42
+           coefs[20]      -0.19       0.11      -0.36      -0.06       2.92       2.00
+           coefs[21]       0.01       0.00       0.00       0.01     153.13       1.02
+           coefs[22]       0.07       0.01       0.06       0.07      70.25       1.03
+           coefs[23]       0.09       0.04       0.06       0.12      54.08       1.04
+           coefs[24]       0.04       0.02       0.02       0.05      51.13       1.05
+           coefs[25]      -0.08       0.02      -0.11      -0.06      37.56       1.08
+           coefs[26]       0.02       0.01       0.01       0.04      30.23       1.10
+           coefs[27]      -0.14       0.06      -0.23      -0.04       7.69       1.17
+           coefs[28]      -0.08       0.08      -0.23       0.02       4.90       1.38
+           coefs[29]       0.05       0.01       0.04       0.06      45.08       1.07
+           coefs[30]       0.05       0.01       0.04       0.06      63.38       1.04
+           coefs[31]       0.00       0.01      -0.01       0.01      83.56       1.03
+           coefs[32]       0.08       0.01       0.06       0.09      47.91       1.06
+           coefs[33]       0.14       0.01       0.13       0.15      26.70       1.11
+           coefs[34]       0.14       0.01       0.13       0.16     285.16       1.00
+           coefs[35]       0.32       0.03       0.30       0.35     107.98       1.02
+           coefs[36]       0.32       0.02       0.28       0.34      23.44       1.13
+           coefs[37]       0.16       0.01       0.14       0.17      22.94       1.11
+           coefs[38]      -0.02       0.01      -0.03      -0.01     383.32       1.01
+           coefs[39]       0.01       0.01       0.00       0.02      48.78       1.05
+           coefs[40]       0.05       0.01       0.04       0.06     122.14       1.02
+           coefs[41]      -0.01       0.01      -0.02      -0.00     175.05       1.03
+           coefs[42]       0.02       0.03      -0.02       0.05      17.97       1.16
+           coefs[43]      -0.02       0.02      -0.04       0.00      33.50       1.08
+           coefs[44]       0.16       0.02       0.13       0.19      51.30       1.05
+           coefs[45]       0.09       0.02       0.06       0.12      32.44       1.09
+           coefs[46]       0.20       0.02       0.17       0.22      28.96       1.10
+           coefs[47]      -0.07       0.01      -0.08      -0.06      98.33       1.04
+           coefs[48]      -0.08       0.01      -0.09      -0.07      55.15       1.05
+           coefs[49]      -0.03       0.00      -0.03      -0.02     394.88       1.01
+           coefs[50]      -0.28       0.06      -0.37      -0.17       9.20       1.05
+           coefs[51]      -0.12       0.01      -0.14      -0.11      22.07       1.15
+           coefs[52]      -0.12       0.02      -0.14      -0.10      76.28       1.04
+           coefs[53]      -0.16       0.01      -0.18      -0.15      28.68       1.11
+           coefs[54]      -1.46       0.05      -1.51      -1.38       3.53       1.81
+number of leapfrog steps: 10000
+avg. time for each step : 0.004272571754455567
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>In CPU, we get <code class="docutils literal notranslate"><span class="pre">avg.</span> <span class="pre">time</span> <span class="pre">for</span> <span class="pre">each</span> <span class="pre">step</span> <span class="pre">:</span> <span class="pre">0.03028029832839966</span></code>.</p>
+</div>
+<div class="section" id="Benchmark-NUTS">
+<h2>Benchmark NUTS<a class="headerlink" href="#Benchmark-NUTS" title="Permalink to this headline">¶</a></h2>
+<p>To have a fair benchmark in NUTS, we need to record the number of leapfrog steps during sampling. Hence we will use the api <a class="reference external" href="https://numpyro.readthedocs.io/en/latest/mcmc.html#numpyro.mcmc.hmc">hmc</a> and <code class="docutils literal notranslate"><span class="pre">fori_collect</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">_</span><span class="p">,</span> <span class="n">potential_fn</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">initialize_model</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">model</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+<span class="n">init_kernel</span><span class="p">,</span> <span class="n">sample_kernel</span> <span class="o">=</span> <span class="n">hmc</span><span class="p">(</span><span class="n">potential_fn</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="s1">&#39;NUTS&#39;</span><span class="p">)</span>
+<span class="n">hmc_state</span> <span class="o">=</span> <span class="n">init_kernel</span><span class="p">(</span><span class="n">init_params</span><span class="p">,</span> <span class="n">num_warmup</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="n">step_size</span><span class="p">,</span> <span class="n">adapt_step_size</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+warmup: 0it [00:00, ?it/s]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">hmc_states</span> <span class="o">=</span> <span class="n">fori_collect</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">sample_kernel</span><span class="p">,</span> <span class="n">hmc_state</span><span class="p">,</span>
+                          <span class="n">transform</span><span class="o">=</span><span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;coefs&#39;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="s1">&#39;coefs&#39;</span><span class="p">],</span>
+                                                   <span class="s1">&#39;num_steps&#39;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">num_steps</span><span class="p">})</span>
+<span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">summary</span><span class="p">(</span><span class="n">hmc_states</span><span class="p">)</span>
+<span class="n">num_leapfrogs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hmc_states</span><span class="p">[</span><span class="s1">&#39;num_steps&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;number of leapfrog steps:&quot;</span><span class="p">,</span> <span class="n">num_leapfrogs</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;avg. time for each step :&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_leapfrogs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+100%|██████████| 100/100 [05:00&lt;00:00,  3.31s/it]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+
+                           mean         sd       5.5%      94.5%      n_eff       Rhat
+            coefs[0]       1.86       0.37       1.72       2.00      10.49       1.10
+            coefs[1]      -0.04       0.01      -0.06      -0.03      21.48       1.00
+            coefs[2]      -0.07       0.03      -0.12      -0.04       9.70       1.11
+            coefs[3]      -0.28       0.07      -0.31      -0.25      10.50       1.10
+            coefs[4]      -0.09       0.01      -0.10      -0.08      27.55       1.00
+            coefs[5]      -0.13       0.06      -0.15      -0.11      10.55       1.10
+            coefs[6]       0.17       0.16      -0.18       0.29       5.04       1.28
+            coefs[7]      -0.58       0.17      -0.72      -0.34       5.29       1.24
+            coefs[8]       0.47       0.22       0.06       0.69       4.68       1.30
+            coefs[9]      -0.01       0.01      -0.02      -0.01      45.16       1.00
+           coefs[10]       0.81       0.49       0.06       1.42       7.40       1.19
+           coefs[11]       0.15       0.19      -0.12       0.40      12.36       1.13
+           coefs[12]       0.50       0.46      -0.09       1.09       8.42       1.17
+           coefs[13]      -1.17       0.71      -2.11      -0.14       5.96       1.35
+           coefs[14]      -0.60       0.65      -1.54       0.24       6.90       1.52
+           coefs[15]      -0.88       0.59      -1.81      -0.07       9.30       1.01
+           coefs[16]      -0.98       0.81      -1.84      -0.05      12.45       1.09
+           coefs[17]      -0.05       0.14      -0.21       0.19      11.53       1.01
+           coefs[18]      -0.45       0.48      -1.46       0.05      13.30       1.15
+           coefs[19]      -0.42       0.58      -1.42       0.25      13.41       1.03
+           coefs[20]      -1.04       0.93      -2.58      -0.01       5.62       1.00
+           coefs[21]       0.01       0.02      -0.02       0.03      11.85       1.01
+           coefs[22]       0.06       0.05      -0.03       0.11      10.93       0.99
+           coefs[23]       0.08       0.22      -0.19       0.46      10.37       0.99
+           coefs[24]       0.03       0.14      -0.13       0.28      11.10       1.00
+           coefs[25]      -0.07       0.20      -0.30       0.29      11.83       1.02
+           coefs[26]       0.03       0.15      -0.15       0.30      11.75       1.02
+           coefs[27]      -0.55       0.48      -1.25      -0.01      11.43       1.06
+           coefs[28]      -0.30       0.30      -0.75       0.03      13.33       1.14
+           coefs[29]       0.05       0.07      -0.03       0.17      11.89       1.01
+           coefs[30]       0.05       0.07      -0.05       0.18      10.71       1.00
+           coefs[31]       0.00       0.05      -0.07       0.09      10.81       1.01
+           coefs[32]       0.08       0.07      -0.00       0.22      11.99       1.04
+           coefs[33]       0.14       0.12       0.01       0.35      11.83       1.01
+           coefs[34]       0.14       0.04       0.09       0.22      14.11       1.00
+           coefs[35]       0.34       0.21       0.09       0.71      12.28       1.04
+           coefs[36]       0.33       0.27       0.02       0.82      12.17       1.04
+           coefs[37]       0.17       0.17      -0.03       0.47      12.13       1.04
+           coefs[38]      -0.01       0.03      -0.05       0.03      12.49       1.05
+           coefs[39]       0.01       0.06      -0.06       0.12      11.72       1.02
+           coefs[40]       0.05       0.04       0.00       0.12      12.18       1.03
+           coefs[41]      -0.01       0.04      -0.06       0.05      11.41       1.01
+           coefs[42]       0.05       0.35      -0.37       0.69      12.14       1.05
+           coefs[43]      -0.00       0.20      -0.24       0.36      12.06       1.04
+           coefs[44]       0.17       0.18      -0.04       0.50      12.09       1.03
+           coefs[45]       0.11       0.25      -0.19       0.57      12.14       1.04
+           coefs[46]       0.21       0.24      -0.06       0.64      11.97       1.03
+           coefs[47]      -0.07       0.05      -0.13       0.01      12.74       1.07
+           coefs[48]      -0.07       0.05      -0.14       0.02      12.51       1.12
+           coefs[49]      -0.03       0.01      -0.04      -0.00      15.81       1.07
+           coefs[50]      -0.55       0.40      -1.05      -0.02      19.81       1.06
+           coefs[51]      -0.10       0.15      -0.29       0.14      12.47       1.11
+           coefs[52]      -0.09       0.14      -0.27       0.14      12.51       1.11
+           coefs[53]      -0.14       0.12      -0.28       0.04      12.64       1.13
+           coefs[54]      -1.71       0.49      -2.31      -1.10       4.96       1.30
+           num_steps     640.26     456.14       7.00    1023.00       7.09       1.23
+number of leapfrog steps: 64026
+avg. time for each step : 0.004700204475792964
+</pre></div></div>
+</div>
+<p>In CPU, we get <code class="docutils literal notranslate"><span class="pre">avg.</span> <span class="pre">time</span> <span class="pre">for</span> <span class="pre">each</span> <span class="pre">step</span> <span class="pre">:</span> <span class="pre">0.029775922484157266</span></code>.</p>
+<div class="section" id="Average-time-for-each-leapfrog-(verlet)-step">
+<h3>Average time for each leapfrog (verlet) step<a class="headerlink" href="#Average-time-for-each-leapfrog-(verlet)-step" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="48%" />
+<col width="26%" />
+<col width="26%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"></th>
+<th class="head">HMC</th>
+<th class="head">NUTS</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Edward2 (CPU)</td>
+<td>&#160;</td>
+<td>68.4 ms</td>
+</tr>
+<tr class="row-odd"><td>Edward2 (GPU)</td>
+<td>&#160;</td>
+<td>9.7 ms</td>
+</tr>
+<tr class="row-even"><td>NumPyro (CPU)</td>
+<td>30.3 ms</td>
+<td>29.8 ms</td>
+</tr>
+<tr class="row-odd"><td>NumPyro (GPU)</td>
+<td>4.3 ms</td>
+<td>4.7 ms</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note:</em> Edward 2 results are obtained from reference [1], which is run under a different environment system.</p>
+<p><strong>Some takeaways:</strong> + The overhead of iterative NUTS is small. So most of computation time is indeed spent for evaluating potential function and its gradient. + GPU outperforms CPU by a large margin. The data is large, so evaluating potential function in GPU is clearly faster than doing so in CPU. + Iterative NUTS is 2.2x faster (in both GPU and CPU) than the reported speed in reference [2]. This illustates the benefit of a graph-mode (using iterative algorithm) over an eager-mode (using
+recursive algorithm).</p>
+</div>
+</div>
+<div class="section" id="References">
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><code class="docutils literal notranslate"><span class="pre">Simple,</span> <span class="pre">Distributed,</span> <span class="pre">and</span> <span class="pre">Accelerated</span> <span class="pre">Probabilistic</span> <span class="pre">Programming,</span></code> <a class="reference external" href="https://arxiv.org/abs/1811.02091">arxiv</a> Dustin Tran, Matthew D. Hoffman, Dave Moore, Christopher Suter, Srinivas Vasudevan, Alexey Radul, Matthew Johnson, Rif A. Saurous</li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="time_series_forecasting.html" class="btn btn-neutral float-right" title="Time Series Forecasting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="bayesian_regression.html" class="btn btn-neutral float-left" title="Bayesian Regression Using NumPyro" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, Uber Technologies, Inc
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
