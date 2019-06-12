@@ -92,6 +92,7 @@
               <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Bayesian Regression Using NumPyro</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Tutorial-Outline:">Tutorial Outline:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Dataset">Dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Regression-Model-to-Predict-Divorce-Rate">Regression Model to Predict Divorce Rate</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Model-1:-Predictor---Marriage-Rate">Model 1: Predictor - Marriage Rate</a><ul>
@@ -118,7 +119,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="bnn.html">Bayesian Neural Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="minipyro.html">MiniPyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ucbadmit.html">Generalized Linear Mixed Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="baseball.html">Baseball</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
@@ -414,9 +414,32 @@ div.rendered_html tbody tr:hover {
 <h1>Bayesian Regression Using NumPyro<a class="headerlink" href="#Bayesian-Regression-Using-NumPyro" title="Permalink to this headline">¶</a></h1>
 <p>In this tutorial, we will explore how to do bayesian regression in NumPyro, using a simple example adapted from Statistical Rethinking [<a class="reference external" href="#References">1</a>]. In particular, we would like to explore the following: - Write a simple model using the <code class="docutils literal notranslate"><span class="pre">sample</span></code> NumPyro primitive. - Run inference using MCMC in NumPyro, in particular, using the No U-Turn Sampler (NUTS) to get a posterior distribution over our regression parameters of interest. - Learn about utilities such as <code class="docutils literal notranslate"><span class="pre">initialize_model</span></code> that
 are useful for running HMC. - Learn how we can use effect-handlers in NumPyro to generate execution traces, condition on sample sites, seed models with RNG seeds, etc., and use this to implement various utilities that will be useful for MCMC. e.g.&nbsp;computing model log likelihood, generating empirical distribution over the posterior predictive, etc.</p>
-<p><strong>Tutorial Outline:</strong> 1. <a class="reference external" href="#Dataset">Dataset</a> 2. <a class="reference external" href="#Regression-Model-to-Predict-Divorce-Rate">Regression Model to Predict Divorce Rate</a> - <a class="reference external" href="#Model-1:-Predictor---Marriage-Rate">Model-1: Predictor-Marriage Rate</a> - <a class="reference external" href="#Posterior-Distribution-over-the-Regression-Parameters">Posterior Distribution over the Regression Parameters</a> - <a class="reference external" href="#Posterior-Predictive-Distribution">Posterior Predictive Distribution</a> - <a class="reference external" href="#Model-Log-Likelihood">Model Log Likelihood</a> - <a class="reference external" href="#Model-2:-Predictor---Median-Age-of-Marriage">Model-2: Predictor-Median Age of
-Marriage</a> - <a class="reference external" href="Model-3:-Predictor---Marriage-Rate-and-Median-Age-of-Marriage">Model-3: Predictor-Marriage Rate and Median Age of Marriage</a> - <a class="reference external" href="#Divorce-Rate-Residuals-by-State">Divorce Rate Residuals by State</a> 3. <a class="reference external" href="#Regression-Model-with-Measurement-Error">Regression Model with Measurement Error</a> - <a class="reference external" href="#Effect-of-Incorporating-Measurement-Noise-on-Residuals">Effect of Incorporating Measurement Noise on Residuals</a> 4.
-<a class="reference external" href="#References">References</a></p>
+<div class="section" id="Tutorial-Outline:">
+<h2>Tutorial Outline:<a class="headerlink" href="#Tutorial-Outline:" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><a class="reference external" href="#Dataset">Dataset</a></li>
+<li><a class="reference external" href="#Regression-Model-to-Predict-Divorce-Rate">Regression Model to Predict Divorce Rate</a></li>
+</ol>
+<ul class="simple">
+<li><a class="reference external" href="#Model-1:-Predictor---Marriage-Rate">Model-1: Predictor-Marriage Rate</a><ul>
+<li><a class="reference external" href="#Posterior-Distribution-over-the-Regression-Parameters">Posterior Distribution over the Regression Parameters</a></li>
+<li><a class="reference external" href="#Posterior-Predictive-Distribution">Posterior Predictive Distribution</a></li>
+<li><a class="reference external" href="#Model-Log-Likelihood">Model Log Likelihood</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#Model-2:-Predictor---Median-Age-of-Marriage">Model-2: Predictor-Median Age of Marriage</a></li>
+<li><a class="reference external" href="Model-3:-Predictor---Marriage-Rate-and-Median-Age-of-Marriage">Model-3: Predictor-Marriage Rate and Median Age of Marriage</a></li>
+<li><a class="reference external" href="#Divorce-Rate-Residuals-by-State">Divorce Rate Residuals by State</a></li>
+</ul>
+<ol class="arabic simple" start="3">
+<li><a class="reference external" href="#Regression-Model-with-Measurement-Error">Regression Model with Measurement Error</a></li>
+</ol>
+<ul class="simple">
+<li><a class="reference external" href="#Effect-of-Incorporating-Measurement-Noise-on-Residuals">Effect of Incorporating Measurement Noise on Residuals</a></li>
+</ul>
+<ol class="arabic simple" start="4">
+<li><a class="reference external" href="#References">References</a></li>
+</ol>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -456,6 +479,7 @@ Marriage</a> - <a class="reference external" href="Model-3:-Predictor---Marriage
                      <span class="s1">&#39;axes.titlesize&#39;</span><span class="p">:</span> <span class="s1">&#39;large&#39;</span><span class="p">,</span>
                      <span class="s1">&#39;axes.labelsize&#39;</span><span class="p">:</span> <span class="s1">&#39;medium&#39;</span><span class="p">})</span>
 </pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="Dataset">

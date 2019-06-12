@@ -106,7 +106,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="bnn.html">Bayesian Neural Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="minipyro.html">MiniPyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ucbadmit.html">Generalized Linear Mixed Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="baseball.html">Baseball</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
@@ -475,26 +474,24 @@ Length of time series: 114
 <p>The model we are going to use is called <strong>Seasonal, Global Trend</strong>, which when tested on 3003 time series of the <a class="reference external" href="https://forecasters.org/resources/time-series-data/m3-competition/">M-3 competition</a>, has been known to outperform other models originally participating in the competition:</p>
 <p><span class="math">\begin{equation*}
 \begin{gathered}
-\text{exp_val}_{t} = \text{level}_{t-1} + \text{coef_trend} \times \text{level}_{t-1}^{\text{pow_trend}}
-+ \text{s}_t \times \text{level}_{t-1}^{\text{pow_season}}, \\
+\text{exp_val}_{t} = \text{level}_{t-1} + \text{coef_trend} \times \text{level}_{t-1}^{\text{pow_trend}} + \text{s}_t \times \text{level}_{t-1}^{\text{pow_season}}, \\
 \sigma_{t} = \sigma \times \text{exp_val}_{t}^{\text{powx}} + \text{offset}, \\
 y_{t} \sim \text{StudentT}(\nu, \text{exp_val}_{t}, \sigma_{t}),
 \end{gathered}
 \end{equation*}</span></p>
 <p>where <code class="docutils literal notranslate"><span class="pre">level</span></code> and <code class="docutils literal notranslate"><span class="pre">s</span></code> follows the following recursion rules:</p>
-<p>:nbsphinx-math:<a href="#id1"><span class="problematic" id="id2">`</span></a>begin{equation*}
-begin{gathered}
-text{level_p} =</p>
-<blockquote>
-<div>begin{cases}
-y_t - text{s}_t times text{level}_{t-1}^{text{pow_season}} &amp; text{if } t le text{seasonality}, \
-text{Average} left[y(t - text{seasonality} + 1), ldots, y(t)right] &amp; text{otherwise},
-end{cases} \</div></blockquote>
-<p>text{level}_{t} = text{level_sm} times text{level_p} + (1 - text{level_sm}) times text{level}_{t-1}, \
-text{s}_{t + text{seasonality}} = text{s_sm} times frac{y_{t} - text{level}_{t}}{text{level}_{t-1}^{text{pow_trend}}}
-+ (1 - text{s_sm}) times text{s}_{t}.
-end{gathered}
-end{equation*}`</p>
+<p><span class="math">\begin{equation*}
+\begin{gathered}
+\text{level_p} =
+\begin{cases}
+y_t - \text{s}_t \times \text{level}_{t-1}^{\text{pow_season}} & \text{if } t \le \text{seasonality}, \\
+\text{Average} \left[y(t - \text{seasonality} + 1), \ldots, y(t)\right] & \text{otherwise},
+\end{cases} \\
+\text{level}_{t} = \text{level_sm} \times \text{level_p} + (1 - \text{level_sm}) \times \text{level}_{t-1}, \\
+\text{s}_{t + \text{seasonality}} = \text{s_sm} \times \frac{y_{t} - \text{level}_{t}}{\text{level}_{t-1}^{\text{pow_trend}}}
++ (1 - \text{s_sm}) \times \text{s}_{t}.
+\end{gathered}
+\end{equation*}</span></p>
 <p>A more detailed explanation for SGT model can be found in <a class="reference external" href="https://cran.r-project.org/web/packages/Rlgt/vignettes/GT_models.html">this vignette</a> from the authors of Rlgt package. Here we summarize the core ideas of this model: + <a class="reference external" href="https://en.wikipedia.org/wiki/Student%27s_t-distribution">Student’s t-distribution</a>, which has heavier tails than normal distribution, is used for the likelihood. + The expected value <code class="docutils literal notranslate"><span class="pre">exp_val</span></code> consists of a trending component and a seasonal component: - The
 trend is governed by the map <span class="math notranslate nohighlight">\(x \mapsto x + ax^b\)</span>, where <span class="math notranslate nohighlight">\(x\)</span> is <code class="docutils literal notranslate"><span class="pre">level</span></code>, <span class="math notranslate nohighlight">\(a\)</span> is <code class="docutils literal notranslate"><span class="pre">coef_trend</span></code>, and <span class="math notranslate nohighlight">\(b\)</span> is <code class="docutils literal notranslate"><span class="pre">pow_trend</span></code>. Note that when <span class="math notranslate nohighlight">\(b \sim 0\)</span>, the trend is linear with <span class="math notranslate nohighlight">\(a\)</span> is the slope, and when <span class="math notranslate nohighlight">\(b \sim 1\)</span>, the trend is exponential with <span class="math notranslate nohighlight">\(a\)</span> is the rate. So that function can cover a large family of trend. - When time changes, <code class="docutils literal notranslate"><span class="pre">level</span></code> and <code class="docutils literal notranslate"><span class="pre">s</span></code> are updated to new values. Coefficients <code class="docutils literal notranslate"><span class="pre">level_sm</span></code> and <code class="docutils literal notranslate"><span class="pre">s_sm</span></code> are used to make the transition
 smoothly. + When <code class="docutils literal notranslate"><span class="pre">powx</span></code> is near <span class="math notranslate nohighlight">\(0\)</span>, the error <span class="math notranslate nohighlight">\(\sigma_t\)</span> will be nearly constant while when <code class="docutils literal notranslate"><span class="pre">powx</span></code> is near <span class="math notranslate nohighlight">\(1\)</span>, the error will be propotional to the expected value. + There are several varieties of SGT. In this tutorial, we use generalized seasonality and seasonal average method.</p>
