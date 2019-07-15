@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Latent Dirichlet Allocation &mdash; Pyro Tutorials 0.3.1 documentation</title>
+  <title>Latent Dirichlet Allocation &mdash; Pyro Tutorials 0.3.3 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.3.1 documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.3.3 documentation" href="index.html"/>
         <link rel="next" title="Markov Chain Monte Carlo" href="mcmc.html"/>
         <link rel="prev" title="Hidden Markov Model" href="hmm.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.3.3
               </div>
             
           
@@ -125,6 +125,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
@@ -241,14 +242,22 @@
 <h1>Latent Dirichlet Allocation<a class="headerlink" href="#latent-dirichlet-allocation" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://github.com/uber/pyro/blob/dev/examples/lda.py">View lda.py on github</a></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This example demonstrates how to marginalize out discrete assignment variables</span>
-<span class="sd">in a Pyro model.</span>
+<span class="sd">This example implements amortized Latent Dirichlet Allocation [1],</span>
+<span class="sd">demonstrating how to marginalize out discrete assignment variables in a Pyro</span>
+<span class="sd">model. This model and inference algorithm treat documents as vectors of</span>
+<span class="sd">categorical variables (vectors of word ids), and collapses word-topic</span>
+<span class="sd">assignments using Pyro&#39;s enumeration. We use PyTorch&#39;s reparametrized Gamma and</span>
+<span class="sd">Dirichlet distributions [2], avoiding the need for Laplace approximations as in</span>
+<span class="sd">[1]. Following [1] we use the Adam optimizer and clip gradients.</span>
 
-<span class="sd">Our example model is Latent Dirichlet Allocation. While the model in this</span>
-<span class="sd">example does work, it is not the recommended way of coding up LDA in Pyro.</span>
-<span class="sd">Whereas the model in this example treats documents as vectors of categorical</span>
-<span class="sd">variables (vectors of word ids), it is usually more efficient to treat</span>
-<span class="sd">documents as bags of words (histograms of word counts).</span>
+<span class="sd">**References:**</span>
+
+<span class="sd">[1] Akash Srivastava, Charles Sutton. ICLR 2017.</span>
+<span class="sd">    &quot;Autoencoding Variational Inference for Topic Models&quot;</span>
+<span class="sd">    https://arxiv.org/pdf/1703.01488.pdf</span>
+<span class="sd">[2] Martin Jankowiak, Fritz Obermeyer. ICML 2018.</span>
+<span class="sd">    &quot;Pathwise gradients beyond the reparametrization trick&quot;</span>
+<span class="sd">    https://arxiv.org/pdf/1806.01851.pdf</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
@@ -263,7 +272,7 @@
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">JitTraceEnum_ELBO</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">ClippedAdam</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(relativeCreated) 9d</span><span class="s1"> </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
@@ -334,13 +343,11 @@
     <span class="c1"># Use an amortized guide for local variables.</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;predictor&quot;</span><span class="p">,</span> <span class="n">predictor</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;documents&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_docs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span> <span class="k">as</span> <span class="n">ind</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">ind</span><span class="p">]</span>
         <span class="c1"># The neural network will operate on histograms rather than word</span>
         <span class="c1"># index vectors, so we&#39;ll convert the raw data to a histogram.</span>
-        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_get_tracing_state</span><span class="p">():</span>
-            <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">1024</span><span class="p">)[</span><span class="n">data</span><span class="p">[:,</span> <span class="n">ind</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_words</span><span class="p">,</span> <span class="n">ind</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-            <span class="n">counts</span><span class="o">.</span><span class="n">scatter_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">ind</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_words</span><span class="p">,</span> <span class="n">ind</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                       <span class="o">.</span><span class="n">scatter_add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
         <span class="n">doc_topics</span> <span class="o">=</span> <span class="n">predictor</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
         <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;doc_topics&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">doc_topics</span><span class="p">,</span> <span class="n">event_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
@@ -349,7 +356,7 @@
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Generating data&#39;</span><span class="p">)</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="n">__debug__</span><span class="p">)</span>
 
     <span class="c1"># We can generate synthetic data directly by calling the model.</span>
     <span class="n">true_topic_weights</span><span class="p">,</span> <span class="n">true_topic_words</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
@@ -361,7 +368,7 @@
     <span class="n">guide</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">parametrized_guide</span><span class="p">,</span> <span class="n">predictor</span><span class="p">)</span>
     <span class="n">Elbo</span> <span class="o">=</span> <span class="n">JitTraceEnum_ELBO</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">jit</span> <span class="k">else</span> <span class="n">TraceEnum_ELBO</span>
     <span class="n">elbo</span> <span class="o">=</span> <span class="n">Elbo</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
+    <span class="n">optim</span> <span class="o">=</span> <span class="n">ClippedAdam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
     <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Step</span><span class="se">\t</span><span class="s1">Loss&#39;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_steps</span><span class="p">):</span>
@@ -373,7 +380,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.1&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.3&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Amortized Latent Dirichlet Allocation&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-topics&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-w&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-words&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -381,7 +388,7 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-wd&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-words-per-doc&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-steps&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="s2">&quot;--layer-sizes&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;100-100&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-lr&quot;</span><span class="p">,</span> <span class="s2">&quot;--learning-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-lr&quot;</span><span class="p">,</span> <span class="s2">&quot;--learning-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--batch-size&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--jit&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
@@ -416,6 +423,7 @@
 
     </p>
   </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -433,7 +441,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.1',
+            VERSION:'0.3.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

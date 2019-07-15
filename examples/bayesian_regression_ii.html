@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Bayesian Regression - Inference Algorithms (Part 2) &mdash; Pyro Tutorials 0.3.1 documentation</title>
+  <title>Bayesian Regression - Inference Algorithms (Part 2) &mdash; Pyro Tutorials 0.3.3 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.3.1 documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.3.3 documentation" href="index.html"/>
         <link rel="next" title="Deep Markov Model" href="dmm.html"/>
         <link rel="prev" title="Bayesian Regression - Introduction (Part 1)" href="bayesian_regression.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.3.3
               </div>
             
           
@@ -134,6 +134,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
@@ -424,9 +425,7 @@ inference techniques. We’ll use the same dataset as before.</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
@@ -438,16 +437,14 @@ inference techniques. We’ll use the same dataset as before.</p>
 
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
-<span class="kn">from</span> <span class="nn">pyro.distributions.util</span> <span class="k">import</span> <span class="n">logsumexp</span>
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">EmpiricalMarginal</span><span class="p">,</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.abstract_infer</span> <span class="k">import</span> <span class="n">TracePredictive</span>
 <span class="kn">from</span> <span class="nn">pyro.contrib.autoguide</span> <span class="k">import</span> <span class="n">AutoMultivariateNormal</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.mcmc</span> <span class="k">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.mcmc.api</span> <span class="k">import</span> <span class="n">MCMC</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.mcmc</span> <span class="k">import</span> <span class="n">NUTS</span>
 <span class="kn">import</span> <span class="nn">pyro.optim</span> <span class="k">as</span> <span class="nn">optim</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.1&#39;</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -501,7 +498,7 @@ scale parameters.</p>
     <span class="n">b_ar</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
     <span class="n">sigma</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">))</span>
     <span class="n">mean</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b_a</span> <span class="o">*</span> <span class="n">is_cont_africa</span> <span class="o">+</span> <span class="n">b_r</span> <span class="o">*</span> <span class="n">ruggedness</span> <span class="o">+</span> <span class="n">b_ar</span> <span class="o">*</span> <span class="n">is_cont_africa</span> <span class="o">*</span> <span class="n">ruggedness</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">iarange</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ruggedness</span><span class="p">)):</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ruggedness</span><span class="p">)):</span>
         <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">sigma</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">log_gdp</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span><span class="p">):</span>
@@ -528,16 +525,13 @@ scale parameters.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># Utility function</span>
-<span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="n">traces</span><span class="p">,</span> <span class="n">sites</span><span class="p">):</span>
-    <span class="n">marginal</span> <span class="o">=</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">traces</span><span class="p">,</span> <span class="n">sites</span><span class="p">)</span><span class="o">.</span><span class="n">_get_samples_and_weights</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span></span><span class="c1"># Utility function to print latent sites&#39; quantile information.</span>
+<span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="n">samples</span><span class="p">):</span>
     <span class="n">site_stats</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">marginal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
-        <span class="n">site_name</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">marginal_site</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">marginal</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
-        <span class="n">describe</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="o">.</span><span class="n">describe</span><span class="p">,</span> <span class="n">percentiles</span><span class="o">=</span><span class="p">[</span><span class="o">.</span><span class="mi">05</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">])</span>
-        <span class="n">site_stats</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">marginal_site</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">describe</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> \
-            <span class="p">[[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;5%&quot;</span><span class="p">,</span> <span class="s2">&quot;25%&quot;</span><span class="p">,</span> <span class="s2">&quot;50%&quot;</span><span class="p">,</span> <span class="s2">&quot;75%&quot;</span><span class="p">,</span> <span class="s2">&quot;95%&quot;</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">site_name</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">marginal_site</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">describe</span> <span class="o">=</span> <span class="n">marginal_site</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="n">percentiles</span><span class="o">=</span><span class="p">[</span><span class="o">.</span><span class="mi">05</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">site_stats</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">describe</span><span class="p">[[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;5%&quot;</span><span class="p">,</span> <span class="s2">&quot;25%&quot;</span><span class="p">,</span> <span class="s2">&quot;50%&quot;</span><span class="p">,</span> <span class="s2">&quot;75%&quot;</span><span class="p">,</span> <span class="s2">&quot;95%&quot;</span><span class="p">]]</span>
     <span class="k">return</span> <span class="n">site_stats</span>
 
 <span class="c1"># Prepare training data</span>
@@ -565,7 +559,7 @@ scale parameters.</p>
           <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span> <span class="o">=</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">num_iters</span> <span class="o">=</span> <span class="mi">8000</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span>
+<span class="n">num_iters</span> <span class="o">=</span> <span class="mi">10000</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iters</span><span class="p">):</span>
     <span class="n">elbo</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">500</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -594,6 +588,10 @@ Elbo loss: 259.70689755678177
 Elbo loss: 250.59875017404556
 Elbo loss: 254.11627012491226
 Elbo loss: 252.16994631290436
+Elbo loss: 267.0337792634964
+Elbo loss: 252.09639006853104
+Elbo loss: 253.12625759840012
+Elbo loss: 252.6920239329338
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -616,7 +614,11 @@ variables in the model.</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;bA&quot;</span><span class="p">,</span> <span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">]</span>
 
-<span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">summary</span><span class="p">(</span><span class="n">svi_diagnorm_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="n">svi_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">site</span><span class="p">:</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">svi_diagnorm_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">site</span><span class="p">)</span>
+                     <span class="o">.</span><span class="n">enumerate_support</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+               <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">}</span>
+
+<span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">summary</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Site: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">site</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
@@ -628,24 +630,24 @@ variables in the model.</p>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Site: a
-       mean       std        5%       25%      50%       75%       95%
-0  9.201031  0.082693  9.069252  9.147532  9.19815  9.252062  9.341837
+       mean       std        5%       25%       50%       75%       95%
+0  9.192743  0.073744  9.074027  9.140702  9.197718  9.243423  9.303659
 
 Site: bA
-       mean       std        5%       25%       50%      75%       95%
-0 -1.802036  0.134565 -2.021231 -1.898413 -1.807264 -1.71605 -1.575664
+       mean       std        5%       25%       50%       75%       95%
+0 -1.853577  0.134715 -2.073369 -1.940101 -1.849553 -1.762716 -1.641578
 
 Site: bR
-       mean      std        5%       25%       50%       75%       95%
-0 -0.171068  0.04753 -0.251084 -0.204082 -0.170505 -0.138484 -0.093576
+       mean      std        5%      25%       50%       75%       95%
+0 -0.172035  0.04103 -0.239187 -0.20123 -0.169727 -0.143967 -0.103523
 
 Site: bAR
-       mean       std        5%      25%       50%      75%       95%
-0  0.373914  0.082028  0.240475  0.31524  0.374232  0.43036  0.504412
+       mean       std        5%       25%       50%       75%       95%
+0  0.333441  0.083769  0.190482  0.277777  0.334467  0.393399  0.474023
 
 Site: sigma
-       mean       std        5%       25%       50%       75%       95%
-0  0.952945  0.048892  0.876614  0.921292  0.952167  0.983158  1.036316
+       mean      std        5%       25%       50%       75%       95%
+0  0.956975  0.05094  0.872172  0.925918  0.956211  0.991062  1.037548
 
 </pre></div></div>
 </div>
@@ -667,25 +669,21 @@ variational inference, but provides an exact estimate.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">adapt_step_size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span></span><span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
-<span class="n">hmc_posterior</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span> \
-    <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span><span class="p">)</span>
+<span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span><span class="p">)</span>
+
+<span class="n">hmc_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5ee17036a2564e5088bd4fc619a8a3a1", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area docutils container">
+<div class="stderr output_area docutils container">
 <div class="highlight"><pre>
-
+sample: 100%|██████████| 1200/1200 [00:46&lt;00:00, 25.73it/s, step size=2.77e-01, acc. rate=0.977]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -694,7 +692,7 @@ variational inference, but provides an exact estimate.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">summary</span><span class="p">(</span><span class="n">hmc_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span></span><span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">summary</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Site: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">site</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
@@ -706,24 +704,24 @@ variational inference, but provides an exact estimate.</p>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Site: a
-       mean       std        5%       25%       50%       75%       95%
-0  9.187324  0.138029  8.953644  9.090484  9.191498  9.282197  9.415926
+       mean       std        5%      25%       50%      75%       95%
+0  9.182983  0.132835  8.964112  9.08637  9.185863  9.27735  9.383123
 
 Site: bA
-       mean       std        5%       25%       50%       75%       95%
-0 -1.845455  0.227408 -2.243472 -1.985775 -1.846355 -1.694642 -1.451345
+       mean       std        5%      25%       50%       75%       95%
+0 -1.853396  0.211737 -2.194149 -1.99672 -1.850201 -1.712565 -1.512865
 
 Site: bR
-       mean       std        5%       25%       50%      75%       95%
-0 -0.186864  0.076814 -0.310594 -0.238113 -0.186715 -0.13447 -0.060283
+       mean     std        5%       25%       50%       75%       95%
+0 -0.183974  0.0743 -0.303686 -0.234047 -0.184152 -0.133012 -0.066403
 
 Site: bAR
-       mean       std        5%       25%       50%       75%       95%
-0  0.349127  0.132638  0.123123  0.258823  0.353356  0.437964  0.552352
+       mean       std        5%       25%       50%      75%       95%
+0  0.351953  0.124772  0.150154  0.262533  0.354959  0.43502  0.562396
 
 Site: sigma
-       mean       std        5%       25%       50%       75%       95%
-0  0.953111  0.053052  0.870771  0.917283  0.949017  0.986648  1.049277
+      mean       std       5%       25%       50%       75%      95%
+0  0.95217  0.051362  0.87976  0.916158  0.949182  0.985384  1.04206
 
 </pre></div></div>
 </div>
@@ -748,28 +746,15 @@ and the resulting approximation is overconfident (under-dispersed)</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">svi_diagnorm_empirical</span> <span class="o">=</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">svi_diagnorm_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span><span class="p">)</span> \
-                         <span class="o">.</span><span class="n">_get_samples_and_weights</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> \
-                         <span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-<span class="n">hmc_empirical</span> <span class="o">=</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">hmc_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span><span class="p">)</span><span class="o">.</span><span class="n">_get_samples_and_weights</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Marginal Posterior density - Regression Coefficients&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
-    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (DiagNormal)&quot;</span><span class="p">)</span>
-    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">sites</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (DiagNormal)&quot;</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[10]:
-</pre></div>
-</div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.legend.Legend at 0x11e871d68&gt;
+<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -777,7 +762,7 @@ and the resulting approximation is overconfident (under-dispersed)</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_17_1.png" src="_images/bayesian_regression_ii_17_1.png" />
+<img alt="_images/bayesian_regression_ii_17_0.png" src="_images/bayesian_regression_ii_17_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -788,24 +773,14 @@ and the resulting approximation is overconfident (under-dispersed)</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Cross-section of the Posterior Distribution&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (DiagNormal)&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bA&quot;</span><span class="p">],</span> <span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bA&quot;</span><span class="p">],</span> <span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (DiagNormal)&quot;</span><span class="p">)</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;bA&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (DiagNormal)&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bAR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bAR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (DiagNormal)&quot;</span><span class="p">)</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[11]:
-</pre></div>
-</div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.legend.Legend at 0x122a38e10&gt;
+<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -813,7 +788,7 @@ and the resulting approximation is overconfident (under-dispersed)</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_18_1.png" src="_images/bayesian_regression_ii_18_1.png" />
+<img alt="_images/bayesian_regression_ii_18_0.png" src="_images/bayesian_regression_ii_18_0.png" />
 </div>
 </div>
 </div>
@@ -831,7 +806,9 @@ latent variables so we could sample a Multivarite Normal jointly.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">guide</span> <span class="o">=</span> <span class="n">AutoMultivariateNormal</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span></span><span class="kn">from</span> <span class="nn">pyro.contrib.autoguide.initialization</span> <span class="k">import</span> <span class="n">init_to_mean</span>
+
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoMultivariateNormal</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_to_mean</span><span class="p">)</span>
 
 <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
           <span class="n">guide</span><span class="p">,</span>
@@ -852,22 +829,26 @@ latent variables so we could sample a Multivarite Normal jointly.</p>
 </div>
 <div class="stderr output_area docutils container">
 <div class="highlight"><pre>
-Elbo loss: 571.0312964916229
-Elbo loss: 554.6292096376419
-Elbo loss: 522.1938552260399
-Elbo loss: 497.2108246088028
-Elbo loss: 518.4177484512329
-Elbo loss: 452.42299622297287
-Elbo loss: 492.90250730514526
-Elbo loss: 472.3296730518341
-Elbo loss: 398.4358947277069
-Elbo loss: 410.0162795782089
-Elbo loss: 267.7939188480377
-Elbo loss: 253.1294464468956
-Elbo loss: 256.14391285181046
-Elbo loss: 251.53698712587357
-Elbo loss: 251.73150616884232
-Elbo loss: 252.90503132343292
+Elbo loss: 410.2805206775665
+Elbo loss: 381.9615013599396
+Elbo loss: 352.09824854135513
+Elbo loss: 286.242218375206
+Elbo loss: 284.58705800771713
+Elbo loss: 251.88318115472794
+Elbo loss: 249.86689043045044
+Elbo loss: 251.72228783369064
+Elbo loss: 250.9775346517563
+Elbo loss: 256.0202656984329
+Elbo loss: 251.94402569532394
+Elbo loss: 251.75862383842468
+Elbo loss: 251.58239632844925
+Elbo loss: 253.0613318681717
+Elbo loss: 251.47836750745773
+Elbo loss: 252.37667101621628
+Elbo loss: 251.49254143238068
+Elbo loss: 251.6520973443985
+Elbo loss: 251.27644211053848
+Elbo loss: 251.1703153848648
 </pre></div></div>
 </div>
 <p>Let’s look at the shape of the posteriors again. You can see the
@@ -879,26 +860,18 @@ multivariate guide is able to capture more of the true posterior.</p>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">svi_mvn_posterior</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">log_gdp</span><span class="p">,</span> <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">)</span>
-<span class="n">svi_mvn_empirical</span> <span class="o">=</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">svi_mvn_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">sites</span><span class="p">)</span><span class="o">.</span><span class="n">_get_samples_and_weights</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> \
-                    <span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">svi_mvn_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">site</span><span class="p">:</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">svi_mvn_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">site</span><span class="p">)</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">()</span>
+                         <span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                   <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">}</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Marginal Posterior density - Regression Coefficients&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
-    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
-    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">sites</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">svi_mvn_samples</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[13]:
-</pre></div>
-</div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.legend.Legend at 0x1243d55c0&gt;
+<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -906,7 +879,7 @@ multivariate guide is able to capture more of the true posterior.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_22_1.png" src="_images/bayesian_regression_ii_22_1.png" />
+<img alt="_images/bayesian_regression_ii_22_0.png" src="_images/bayesian_regression_ii_22_0.png" />
 </div>
 </div>
 <p>Now let’s compare the posterior computed by the Diagonal Normal guide vs
@@ -920,24 +893,14 @@ is more dispresed than the Diagonal Normal.</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Cross-sections of the Posterior Distribution&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bA&quot;</span><span class="p">],</span> <span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bA&quot;</span><span class="p">],</span> <span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;bA&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">svi_diagnorm_empirical</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Diagonal Normal)&quot;</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">svi_samples</span><span class="p">[</span><span class="s2">&quot;bAR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Diagonal Normal)&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bAR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[14]:
-</pre></div>
-</div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.legend.Legend at 0x124f98d68&gt;
+<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -945,7 +908,7 @@ is more dispresed than the Diagonal Normal.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_24_1.png" src="_images/bayesian_regression_ii_24_1.png" />
+<img alt="_images/bayesian_regression_ii_24_0.png" src="_images/bayesian_regression_ii_24_0.png" />
 </div>
 </div>
 <p>and the Multivariate guide with the posterior computed by HMC. Note that
@@ -958,24 +921,14 @@ the Multivariate guide better captures the true posterior.</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Cross-sections of the Posterior Distribution&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bA&quot;</span><span class="p">],</span> <span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bA&quot;</span><span class="p">],</span> <span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;bA&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">hmc_empirical</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">svi_mvn_empirical</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">hmc_samples</span><span class="p">[</span><span class="s2">&quot;bAR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shade</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HMC&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bR&quot;</span><span class="p">],</span> <span class="n">svi_mvn_samples</span><span class="p">[</span><span class="s2">&quot;bAR&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;SVI (Multivariate Normal)&quot;</span><span class="p">)</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[15]:
-</pre></div>
-</div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.legend.Legend at 0x1249d9400&gt;
+<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -983,7 +936,7 @@ the Multivariate guide better captures the true posterior.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_26_1.png" src="_images/bayesian_regression_ii_26_1.png" />
+<img alt="_images/bayesian_regression_ii_26_0.png" src="_images/bayesian_regression_ii_26_0.png" />
 </div>
 </div>
 </div>
@@ -1022,6 +975,7 @@ Machine Learning Research 15.1 (2014): 1593-1623.
 
     </p>
   </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -1039,7 +993,7 @@ Machine Learning Research 15.1 (2014): 1593-1623.
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.1',
+            VERSION:'0.3.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Markov Chain Monte Carlo &mdash; Pyro Tutorials 0.3.1 documentation</title>
+  <title>Markov Chain Monte Carlo &mdash; Pyro Tutorials 0.3.3 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.3.1 documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.3.3 documentation" href="index.html"/>
         <link rel="next" title="Sparse Gamma Deep Exponential Family" href="sparse_gamma.html"/>
         <link rel="prev" title="Latent Dirichlet Allocation" href="lda.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.3.3
               </div>
             
           
@@ -125,6 +125,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
@@ -245,17 +246,17 @@
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">import</span> <span class="nn">data</span>
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
 <span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="kn">as</span> <span class="nn">poutine</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.mcmc</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.mcmc</span> <span class="kn">import</span> <span class="n">NUTS</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.mcmc.api</span> <span class="kn">import</span> <span class="n">MCMC</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="n">__debug__</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 
@@ -275,20 +276,16 @@
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
     <span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">conditioned_model</span><span class="p">,</span> <span class="n">jit_compile</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jit</span><span class="p">,)</span>
-    <span class="n">posterior</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span>
-                     <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
-                     <span class="n">warmup_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
-                     <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-    <span class="n">marginal</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">marginal</span><span class="p">(</span><span class="n">sites</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;tau&quot;</span><span class="p">,</span> <span class="s2">&quot;eta&quot;</span><span class="p">])</span>
-    <span class="n">marginal</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">marginal</span><span class="o">.</span><span class="n">support</span><span class="p">(</span><span class="n">flatten</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-    <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mu&#39;</span><span class="p">,</span> <span class="s1">&#39;tau&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[0]&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[1]&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[2]&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[3]&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[4]&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[5]&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[6]&#39;</span><span class="p">,</span> <span class="s1">&#39;eta[7]&#39;</span><span class="p">]</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">marginal</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
-    <span class="n">df_summary</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="o">.</span><span class="n">describe</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;25%&quot;</span><span class="p">,</span> <span class="s2">&quot;50%&quot;</span><span class="p">,</span> <span class="s2">&quot;75%&quot;</span><span class="p">]]</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">df_summary</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                <span class="n">warmup_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
+                <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.1&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.3&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Eight Schools MCMC&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num-samples&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;number of MCMC samples (default: 1000)&#39;</span><span class="p">)</span>
@@ -330,6 +327,7 @@
 
     </p>
   </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -347,7 +345,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.1',
+            VERSION:'0.3.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

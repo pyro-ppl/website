@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mini-Pyro &mdash; Pyro Tutorials 0.3.1 documentation</title>
+  <title>Mini-Pyro &mdash; Pyro Tutorials 0.3.3 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.3.1 documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.3.3 documentation" href="index.html"/>
         <link rel="next" title="Poutine: A Guide to Programming with Effect Handlers in Pyro" href="effect_handlers.html"/>
         <link rel="prev" title="Using the PyTorch JIT Compiler with Pyro" href="jit.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.3.3
               </div>
             
           
@@ -128,6 +128,7 @@
 <li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
 <li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
@@ -258,10 +259,13 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">weakref</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">validation_enabled</span>
 
 <span class="c1"># Pyro keeps track of two kinds of global state:</span>
 <span class="c1"># i)  The effect handler stack, which enables non-standard interpretations of</span>
@@ -315,7 +319,8 @@
     <span class="c1"># trace illustrates why we need postprocess_message in addition to process_message:</span>
     <span class="c1"># We only want to record a value after all other effects have been applied</span>
     <span class="k">def</span> <span class="nf">postprocess_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="p">,</span> <span class="s2">&quot;all sites must have unique names&quot;</span>
+        <span class="k">assert</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;sample&quot;</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="p">,</span> \
+            <span class="s2">&quot;sample sites must have unique names&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="p">[</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">get_trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -511,7 +516,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="c1"># Zero out the gradients so that they don&#39;t accumulate.</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
-            <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
 
@@ -551,8 +556,49 @@
 
 
 <span class="c1"># This is a wrapper for compatibility with full Pyro.</span>
-<span class="k">def</span> <span class="nf">Trace_ELBO</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">Trace_ELBO</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">elbo</span>
+
+
+<span class="c1"># This is a Jit wrapper around elbo() that (1) delays tracing until the first</span>
+<span class="c1"># invocation, and (2) registers pyro.param() statements with torch.jit.trace.</span>
+<span class="c1"># This version does not support variable number of args or non-tensor kwargs.</span>
+<span class="k">class</span> <span class="nc">JitTrace_ELBO</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_jit_warnings</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;ignore_jit_warnings&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="c1"># On first call, initialize params and save their names.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">block</span><span class="p">(),</span> <span class="n">trace</span><span class="p">()</span> <span class="k">as</span> <span class="n">tr</span><span class="p">,</span> <span class="n">block</span><span class="p">(</span><span class="n">hide_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;param&quot;</span><span class="p">):</span>
+                <span class="n">elbo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span> <span class="o">=</span> <span class="n">tr</span>
+
+        <span class="c1"># Augment args with reads from the global param store.</span>
+        <span class="n">unconstrained_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span>
+                                     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">)</span>
+        <span class="n">params_and_args</span> <span class="o">=</span> <span class="n">unconstrained_params</span> <span class="o">+</span> <span class="n">args</span>
+
+        <span class="c1"># On first call, create a compiled elbo.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">compiled</span><span class="p">(</span><span class="o">*</span><span class="n">params_and_args</span><span class="p">):</span>
+                <span class="n">unconstrained_params</span> <span class="o">=</span> <span class="n">params_and_args</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">)]</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="n">params_and_args</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">):]</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">unconstrained_param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">,</span> <span class="n">unconstrained_params</span><span class="p">):</span>
+                    <span class="n">constrained_param</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># assume param has been initialized</span>
+                    <span class="k">assert</span> <span class="n">constrained_param</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span> <span class="ow">is</span> <span class="n">unconstrained_param</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrained_param</span>
+                <span class="k">return</span> <span class="n">replay</span><span class="p">(</span><span class="n">elbo</span><span class="p">,</span> <span class="n">guide_trace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">)(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">validation_enabled</span><span class="p">(</span><span class="bp">False</span><span class="p">),</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_jit_warnings</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">TracerWarning</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">compiled</span><span class="p">,</span> <span class="n">params_and_args</span><span class="p">,</span> <span class="n">check_trace</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span><span class="p">(</span><span class="o">*</span><span class="n">params_and_args</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="section" id="example-use-of-mini-pyro">
@@ -600,7 +646,8 @@
     <span class="k">with</span> <span class="n">pyro_backend</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="p">):</span>
         <span class="c1"># Construct an SVI object so we can do variational inference on our</span>
         <span class="c1"># model/guide pair.</span>
-        <span class="n">elbo</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span>
+        <span class="n">Elbo</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">JitTrace_ELBO</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">jit</span> <span class="k">else</span> <span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span>
+        <span class="n">elbo</span> <span class="o">=</span> <span class="n">Elbo</span><span class="p">()</span>
         <span class="n">adam</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
         <span class="n">svi</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">adam</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
 
@@ -624,11 +671,12 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.1&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.3&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Mini Pyro demo&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--backend&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;minipyro&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-steps&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1001</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-lr&quot;</span><span class="p">,</span> <span class="s2">&quot;--learning-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--jit&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
@@ -662,6 +710,7 @@
 
     </p>
   </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -679,7 +728,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.1',
+            VERSION:'0.3.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
