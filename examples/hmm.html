@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Hidden Markov Model &mdash; Pyro Tutorials 0.3.3 documentation</title>
+  <title>Hidden Markov Model &mdash; Pyro Tutorials 0.3.4 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Pyro Tutorials 0.3.3 documentation" href="index.html"/>
+    <link rel="top" title="Pyro Tutorials 0.3.4 documentation" href="index.html"/>
         <link rel="next" title="Latent Dirichlet Allocation" href="lda.html"/>
         <link rel="prev" title="Capture-Recapture Models (CJS Models)" href="capture_recapture.html"/> 
 
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.3.3
+                0.3.4
               </div>
             
           
@@ -623,17 +623,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="c1"># Check dimension of y so this can be used with and without enumeration.</span>
-        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-
         <span class="c1"># Hidden units depend on two inputs: a one-hot encoded categorical variable x, and</span>
         <span class="c1"># a bernoulli variable y. Whereas x will typically be enumerated, y will be observed.</span>
         <span class="c1"># We apply x_to_hidden independently from y_to_hidden, then broadcast the non-enumerated</span>
         <span class="c1"># y part up to the enumerated x part in the + operation.</span>
-        <span class="n">x_onehot</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-                    <span class="o">.</span><span class="n">scatter_</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">y_conv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="n">x_onehot</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,))</span><span class="o">.</span><span class="n">scatter_</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">y_conv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dim</span><span class="p">)))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
         <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_to_hidden</span><span class="p">(</span><span class="n">x_onehot</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_to_hidden</span><span class="p">(</span><span class="n">y_conv</span><span class="p">))</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_to_logits</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
 
@@ -736,6 +731,41 @@
                                 <span class="n">obs</span><span class="o">=</span><span class="n">sequences</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="n">t</span><span class="p">])</span>
 
 
+<span class="c1"># Next we demonstrate how to parallelize the neural HMM above using Pyro&#39;s</span>
+<span class="c1"># DiscreteHMM distribution. This model is equivalent to model_5 above, but we</span>
+<span class="c1"># manually unroll loops and fuse ops, leading to a single sample statement.</span>
+<span class="c1"># DiscreteHMM can lead to over 10x speedup in models where it is applicable.</span>
+<span class="k">def</span> <span class="nf">model_7</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">include_prior</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">ignore_jit_warnings</span><span class="p">():</span>
+        <span class="n">num_sequences</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">data_dim</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">sequences</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">lengths</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_sequences</span><span class="p">,)</span>
+        <span class="k">assert</span> <span class="n">lengths</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">max_length</span>
+
+    <span class="c1"># Initialize a global module instance if needed.</span>
+    <span class="k">global</span> <span class="n">tones_generator</span>
+    <span class="k">if</span> <span class="n">tones_generator</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">tones_generator</span> <span class="o">=</span> <span class="n">TonesGenerator</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data_dim</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;tones_generator&quot;</span><span class="p">,</span> <span class="n">tones_generator</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">include_prior</span><span class="p">):</span>
+        <span class="n">probs_x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;probs_x&quot;</span><span class="p">,</span>
+                              <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="mf">0.9</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.1</span><span class="p">)</span>
+                                  <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;sequences&quot;</span><span class="p">,</span> <span class="n">num_sequences</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
+        <span class="n">lengths</span> <span class="o">=</span> <span class="n">lengths</span><span class="p">[</span><span class="n">batch</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">sequences</span><span class="p">[</span><span class="n">batch</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">jit</span> <span class="k">else</span> <span class="n">sequences</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="p">:</span><span class="n">lengths</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">init_logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,),</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+        <span class="n">init_logits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">trans_logits</span> <span class="o">=</span> <span class="n">probs_x</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">ignore_jit_warnings</span><span class="p">():</span>
+            <span class="n">obs_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">tones_generator</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)))</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">obs_dist</span> <span class="o">=</span> <span class="n">obs_dist</span><span class="o">.</span><span class="n">mask</span><span class="p">((</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">lengths</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">hmm_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">DiscreteHMM</span><span class="p">(</span><span class="n">init_logits</span><span class="p">,</span> <span class="n">trans_logits</span><span class="p">,</span> <span class="n">obs_dist</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">hmm_dist</span><span class="p">,</span> <span class="n">obs</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+
+
 <span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="s1">&#39;model_&#39;</span><span class="p">):]:</span> <span class="n">model</span>
           <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
           <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;model_&#39;</span><span class="p">)}</span>
@@ -789,7 +819,9 @@
     <span class="c1"># Enumeration requires a TraceEnum elbo and declaring the max_plate_nesting.</span>
     <span class="c1"># All of our models have two plates: &quot;data&quot; and &quot;tones&quot;.</span>
     <span class="n">Elbo</span> <span class="o">=</span> <span class="n">JitTraceEnum_ELBO</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">jit</span> <span class="k">else</span> <span class="n">TraceEnum_ELBO</span>
-    <span class="n">elbo</span> <span class="o">=</span> <span class="n">Elbo</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="n">model_0</span> <span class="k">else</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">elbo</span> <span class="o">=</span> <span class="n">Elbo</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="n">model_0</span> <span class="k">else</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">strict_enumeration_warning</span><span class="o">=</span><span class="p">(</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">model_7</span><span class="p">),</span>
+                <span class="n">jit_options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;optimize&quot;</span><span class="p">:</span> <span class="n">model</span> <span class="ow">is</span> <span class="n">model_7</span><span class="p">})</span>
     <span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
     <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
 
@@ -827,7 +859,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.3&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.4&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;MAP Baum-Welch learning Bach Chorales&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;one of: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">keys</span><span class="p">()))))</span>
@@ -874,7 +906,6 @@
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -892,7 +923,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.3',
+            VERSION:'0.3.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
