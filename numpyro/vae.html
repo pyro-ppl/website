@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Variational Autoencoder &mdash; Numpyro Tutorials 0.1.0 documentation</title>
+  <title>Variational Autoencoder &mdash; Numpyro Tutorials 0.2.0 documentation</title>
   
 
   
@@ -17,37 +17,42 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
-  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Stochastic Volatility" href="stochastic_volatility.html" /> 
+
+  
+  
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Numpyro Tutorials 0.2.0 documentation" href="index.html"/>
+        <link rel="next" title="Neal’s Funnel" href="funnel.html"/>
+        <link rel="prev" title="Stochastic Volatility" href="stochastic_volatility.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -56,7 +61,7 @@
 
           
             
-            <img src="_static/Pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <img src="_static/Pyro_logo_wide.png" class="logo" />
           
           </a>
 
@@ -64,7 +69,7 @@
             
             
               <div class="version">
-                0.1.0
+                0.2.0
               </div>
             
           
@@ -102,6 +107,8 @@
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stochastic_volatility.html">Stochastic Volatility</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Variational Autoencoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="funnel.html">Neal’s Funnel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Sparse Regression</a></li>
 </ul>
 
             
@@ -113,7 +120,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">Numpyro Tutorials</a>
@@ -121,10 +128,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -181,13 +187,23 @@
     margin-top: -19px;
 }
 
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
 .admonition > p:before {
     margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
 }
 </style>
 <div class="section" id="variational-autoencoder">
@@ -199,32 +215,16 @@
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 
-<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">lax</span><span class="p">,</span> <span class="n">random</span>
-<span class="kn">from</span> <span class="nn">jax.experimental</span> <span class="kn">import</span> <span class="n">optimizers</span><span class="p">,</span> <span class="n">stax</span>
+<span class="kn">from</span> <span class="nn">jax.experimental</span> <span class="kn">import</span> <span class="n">stax</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">jax.random</span> <span class="kn">import</span> <span class="n">PRNGKey</span>
 
+<span class="kn">import</span> <span class="nn">numpyro</span>
+<span class="kn">from</span> <span class="nn">numpyro</span> <span class="kn">import</span> <span class="n">optim</span>
 <span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
 <span class="kn">from</span> <span class="nn">numpyro.examples.datasets</span> <span class="kn">import</span> <span class="n">MNIST</span><span class="p">,</span> <span class="n">load_dataset</span>
-<span class="kn">from</span> <span class="nn">numpyro.handlers</span> <span class="kn">import</span> <span class="n">param</span><span class="p">,</span> <span class="n">sample</span>
-<span class="kn">from</span> <span class="nn">numpyro.svi</span> <span class="kn">import</span> <span class="n">elbo</span><span class="p">,</span> <span class="n">svi</span>
-
-
-<span class="k">def</span> <span class="nf">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-
-
-<span class="c1"># TODO: move to JAX</span>
-<span class="k">def</span> <span class="nf">_elemwise_no_params</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">init_fun</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">):</span> <span class="k">return</span> <span class="n">input_shape</span><span class="p">,</span> <span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">apply_fun</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span> <span class="k">return</span> <span class="n">fun</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">init_fun</span><span class="p">,</span> <span class="n">apply_fun</span>
-
-
-<span class="n">Sigmoid</span> <span class="o">=</span> <span class="n">_elemwise_no_params</span><span class="p">(</span><span class="n">sigmoid</span><span class="p">)</span>
-
+<span class="kn">from</span> <span class="nn">numpyro.svi</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">elbo</span>
 
 <span class="n">RESULTS_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span>
                               <span class="s1">&#39;.results&#39;</span><span class="p">))</span>
@@ -243,97 +243,94 @@
 <span class="k">def</span> <span class="nf">decoder</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">out_dim</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">stax</span><span class="o">.</span><span class="n">serial</span><span class="p">(</span>
         <span class="n">stax</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">W_init</span><span class="o">=</span><span class="n">stax</span><span class="o">.</span><span class="n">randn</span><span class="p">()),</span> <span class="n">stax</span><span class="o">.</span><span class="n">Softplus</span><span class="p">,</span>
-        <span class="n">stax</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">out_dim</span><span class="p">,</span> <span class="n">W_init</span><span class="o">=</span><span class="n">stax</span><span class="o">.</span><span class="n">randn</span><span class="p">()),</span> <span class="n">Sigmoid</span><span class="p">,</span>
+        <span class="n">stax</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">out_dim</span><span class="p">,</span> <span class="n">W_init</span><span class="o">=</span><span class="n">stax</span><span class="o">.</span><span class="n">randn</span><span class="p">()),</span> <span class="n">stax</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">,</span>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">decode</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;decode&#39;</span><span class="p">]</span>
-    <span class="n">decoder_params</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="s1">&#39;decoder&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-    <span class="n">z_dim</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;z_dim&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">z_dim</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
     <span class="n">batch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">z_dim</span><span class="p">,)),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">z_dim</span><span class="p">,))))</span>
-    <span class="n">img_loc</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">decoder_params</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">img_loc</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">batch_dim</span><span class="p">,</span> <span class="n">out_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">decode</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;decoder&#39;</span><span class="p">,</span> <span class="n">decoder</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">out_dim</span><span class="p">),</span> <span class="p">(</span><span class="n">batch_dim</span><span class="p">,</span> <span class="n">z_dim</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">z_dim</span><span class="p">,)),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">z_dim</span><span class="p">,))))</span>
+    <span class="n">img_loc</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">img_loc</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">encode</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;encode&#39;</span><span class="p">]</span>
-    <span class="n">encoder_params</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="s1">&#39;encoder&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">z_dim</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
     <span class="n">batch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-    <span class="n">z_loc</span><span class="p">,</span> <span class="n">z_std</span> <span class="o">=</span> <span class="n">encode</span><span class="p">(</span><span class="n">encoder_params</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_loc</span><span class="p">,</span> <span class="n">z_std</span><span class="p">))</span>
+    <span class="n">batch_dim</span><span class="p">,</span> <span class="n">out_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">encode</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;encoder&#39;</span><span class="p">,</span> <span class="n">encoder</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">z_dim</span><span class="p">),</span> <span class="p">(</span><span class="n">batch_dim</span><span class="p">,</span> <span class="n">out_dim</span><span class="p">))</span>
+    <span class="n">z_loc</span><span class="p">,</span> <span class="n">z_std</span> <span class="o">=</span> <span class="n">encode</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_loc</span><span class="p">,</span> <span class="n">z_std</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">z</span>
 
 
 <span class="nd">@jit</span>
 <span class="k">def</span> <span class="nf">binarize</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
-    <span class="n">rng</span><span class="p">,</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">rng</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="n">encoder_init</span><span class="p">,</span> <span class="n">encode</span> <span class="o">=</span> <span class="n">encoder</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">z_dim</span><span class="p">)</span>
-    <span class="n">decoder_init</span><span class="p">,</span> <span class="n">decode</span> <span class="o">=</span> <span class="n">decoder</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">28</span> <span class="o">*</span> <span class="mi">28</span><span class="p">)</span>
-    <span class="n">opt_init</span><span class="p">,</span> <span class="n">opt_update</span><span class="p">,</span> <span class="n">get_params</span> <span class="o">=</span> <span class="n">optimizers</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
-    <span class="n">svi_init</span><span class="p">,</span> <span class="n">svi_update</span><span class="p">,</span> <span class="n">svi_eval</span> <span class="o">=</span> <span class="n">svi</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">elbo</span><span class="p">,</span> <span class="n">opt_init</span><span class="p">,</span> <span class="n">opt_update</span><span class="p">,</span> <span class="n">get_params</span><span class="p">,</span>
-                                         <span class="n">encode</span><span class="o">=</span><span class="n">encode</span><span class="p">,</span> <span class="n">decode</span><span class="o">=</span><span class="n">decode</span><span class="p">,</span> <span class="n">z_dim</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">z_dim</span><span class="p">)</span>
-    <span class="n">svi_update</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">svi_update</span><span class="p">)</span>
+    <span class="n">encoder_nn</span> <span class="o">=</span> <span class="n">encoder</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">z_dim</span><span class="p">)</span>
+    <span class="n">decoder_nn</span> <span class="o">=</span> <span class="n">decoder</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">28</span> <span class="o">*</span> <span class="mi">28</span><span class="p">)</span>
+    <span class="n">adam</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
+    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">elbo</span><span class="p">,</span> <span class="n">adam</span><span class="p">,</span>
+              <span class="n">z_dim</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">z_dim</span><span class="p">,</span>
+              <span class="n">hidden_dim</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">train_init</span><span class="p">,</span> <span class="n">train_fetch</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">MNIST</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">)</span>
     <span class="n">test_init</span><span class="p">,</span> <span class="n">test_fetch</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">MNIST</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
     <span class="n">num_train</span><span class="p">,</span> <span class="n">train_idx</span> <span class="o">=</span> <span class="n">train_init</span><span class="p">()</span>
-    <span class="n">rng</span><span class="p">,</span> <span class="n">rng_enc</span><span class="p">,</span> <span class="n">rng_dec</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-    <span class="n">_</span><span class="p">,</span> <span class="n">encoder_params</span> <span class="o">=</span> <span class="n">encoder_init</span><span class="p">(</span><span class="n">rng_enc</span><span class="p">,</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">28</span> <span class="o">*</span> <span class="mi">28</span><span class="p">))</span>
-    <span class="n">_</span><span class="p">,</span> <span class="n">decoder_params</span> <span class="o">=</span> <span class="n">decoder_init</span><span class="p">(</span><span class="n">rng_dec</span><span class="p">,</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">z_dim</span><span class="p">))</span>
-    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="n">encoder_params</span><span class="p">,</span> <span class="s1">&#39;decoder&#39;</span><span class="p">:</span> <span class="n">decoder_params</span><span class="p">}</span>
-    <span class="n">rng</span><span class="p">,</span> <span class="n">sample_batch</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">train_fetch</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">train_idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">opt_state</span> <span class="o">=</span> <span class="n">svi_init</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="p">(</span><span class="n">sample_batch</span><span class="p">,),</span> <span class="p">(</span><span class="n">sample_batch</span><span class="p">,),</span> <span class="n">params</span><span class="p">)</span>
-    <span class="n">rng</span><span class="p">,</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">rng</span><span class="p">,</span> <span class="n">rng_binarize</span><span class="p">,</span> <span class="n">rng_init</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">sample_batch</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng_binarize</span><span class="p">,</span> <span class="n">train_fetch</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">train_idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">svi_state</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">rng_init</span><span class="p">,</span> <span class="p">(</span><span class="n">sample_batch</span><span class="p">,),</span> <span class="p">(</span><span class="n">sample_batch</span><span class="p">,))</span>
 
     <span class="nd">@jit</span>
-    <span class="k">def</span> <span class="nf">epoch_train</span><span class="p">(</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">epoch_train</span><span class="p">(</span><span class="n">svi_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">body_fn</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
-            <span class="n">loss_sum</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span> <span class="o">=</span> <span class="n">val</span>
-            <span class="n">rng</span><span class="p">,</span> <span class="n">batch</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">train_fetch</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">train_idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">loss</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span> <span class="o">=</span> <span class="n">svi_update</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="p">(</span><span class="n">batch</span><span class="p">,),</span> <span class="p">(</span><span class="n">batch</span><span class="p">,),)</span>
+            <span class="n">loss_sum</span><span class="p">,</span> <span class="n">svi_state</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="n">rng_binarize</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">fold_in</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng_binarize</span><span class="p">,</span> <span class="n">train_fetch</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">train_idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">svi_state</span><span class="p">,</span> <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">svi_state</span><span class="p">,</span> <span class="p">(</span><span class="n">batch</span><span class="p">,),</span> <span class="p">(</span><span class="n">batch</span><span class="p">,))</span>
             <span class="n">loss_sum</span> <span class="o">+=</span> <span class="n">loss</span>
-            <span class="k">return</span> <span class="n">loss_sum</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span>
+            <span class="k">return</span> <span class="n">loss_sum</span><span class="p">,</span> <span class="n">svi_state</span>
 
-        <span class="k">return</span> <span class="n">lax</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_train</span><span class="p">,</span> <span class="n">body_fn</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">lax</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_train</span><span class="p">,</span> <span class="n">body_fn</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">svi_state</span><span class="p">))</span>
 
     <span class="nd">@jit</span>
-    <span class="k">def</span> <span class="nf">eval_test</span><span class="p">(</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">body_fun</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
-            <span class="n">loss_sum</span><span class="p">,</span> <span class="n">rng</span> <span class="o">=</span> <span class="n">val</span>
-            <span class="n">rng</span><span class="p">,</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">rng</span><span class="p">,</span> <span class="n">batch</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">test_fetch</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">test_idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">svi_eval</span><span class="p">(</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="p">(</span><span class="n">batch</span><span class="p">,),</span> <span class="p">(</span><span class="n">batch</span><span class="p">,))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">eval_test</span><span class="p">(</span><span class="n">svi_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">body_fun</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">loss_sum</span><span class="p">):</span>
+            <span class="n">rng_binarize</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">fold_in</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng_binarize</span><span class="p">,</span> <span class="n">test_fetch</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">test_idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># FIXME: does this lead to a requirement for an rng arg in svi_eval?</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">svi_state</span><span class="p">,</span> <span class="p">(</span><span class="n">batch</span><span class="p">,),</span> <span class="p">(</span><span class="n">batch</span><span class="p">,))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
             <span class="n">loss_sum</span> <span class="o">+=</span> <span class="n">loss</span>
-            <span class="k">return</span> <span class="n">loss_sum</span><span class="p">,</span> <span class="n">rng</span>
+            <span class="k">return</span> <span class="n">loss_sum</span>
 
-        <span class="n">loss</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_test</span><span class="p">,</span> <span class="n">body_fun</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">rng</span><span class="p">))</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_test</span><span class="p">,</span> <span class="n">body_fun</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span> <span class="o">/</span> <span class="n">num_test</span>
         <span class="k">return</span> <span class="n">loss</span>
 
-    <span class="k">def</span> <span class="nf">reconstruct_img</span><span class="p">(</span><span class="n">epoch</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">reconstruct_img</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
         <span class="n">img</span> <span class="o">=</span> <span class="n">test_fetch</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">test_idx</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">RESULTS_DIR</span><span class="p">,</span> <span class="s1">&#39;original_epoch={}.png&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">epoch</span><span class="p">)),</span> <span class="n">img</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">test_sample</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="n">get_params</span><span class="p">(</span><span class="n">opt_state</span><span class="p">)</span>
-        <span class="n">z_mean</span><span class="p">,</span> <span class="n">z_var</span> <span class="o">=</span> <span class="n">encode</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;encoder&#39;</span><span class="p">],</span> <span class="n">test_sample</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_mean</span><span class="p">,</span> <span class="n">z_var</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
-        <span class="n">img_loc</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;decoder&#39;</span><span class="p">],</span> <span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">])</span>
+        <span class="n">rng_binarize</span><span class="p">,</span> <span class="n">rng_sample</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+        <span class="n">test_sample</span> <span class="o">=</span> <span class="n">binarize</span><span class="p">(</span><span class="n">rng_binarize</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">svi_state</span><span class="p">)</span>
+        <span class="n">z_mean</span><span class="p">,</span> <span class="n">z_var</span> <span class="o">=</span> <span class="n">encoder_nn</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;encoder$params&#39;</span><span class="p">],</span> <span class="n">test_sample</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_mean</span><span class="p">,</span> <span class="n">z_var</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">rng_sample</span><span class="p">)</span>
+        <span class="n">img_loc</span> <span class="o">=</span> <span class="n">decoder_nn</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;decoder$params&#39;</span><span class="p">],</span> <span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">])</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">RESULTS_DIR</span><span class="p">,</span> <span class="s1">&#39;recons_epoch={}.png&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">epoch</span><span class="p">)),</span> <span class="n">img_loc</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
+        <span class="n">rng</span><span class="p">,</span> <span class="n">rng_train</span><span class="p">,</span> <span class="n">rng_test</span><span class="p">,</span> <span class="n">rng_reconstruct</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">t_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">num_train</span><span class="p">,</span> <span class="n">train_idx</span> <span class="o">=</span> <span class="n">train_init</span><span class="p">()</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span> <span class="o">=</span> <span class="n">epoch_train</span><span class="p">(</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
-        <span class="n">rng</span><span class="p">,</span> <span class="n">rng_test</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">svi_state</span> <span class="o">=</span> <span class="n">epoch_train</span><span class="p">(</span><span class="n">svi_state</span><span class="p">,</span> <span class="n">rng_train</span><span class="p">)</span>
+        <span class="n">rng</span><span class="p">,</span> <span class="n">rng_test</span><span class="p">,</span> <span class="n">rng_reconstruct</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="n">num_test</span><span class="p">,</span> <span class="n">test_idx</span> <span class="o">=</span> <span class="n">test_init</span><span class="p">()</span>
-        <span class="n">test_loss</span> <span class="o">=</span> <span class="n">eval_test</span><span class="p">(</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">rng_test</span><span class="p">)</span>
-        <span class="n">reconstruct_img</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">test_loss</span> <span class="o">=</span> <span class="n">eval_test</span><span class="p">(</span><span class="n">svi_state</span><span class="p">,</span> <span class="n">rng_test</span><span class="p">)</span>
+        <span class="n">reconstruct_img</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">rng_reconstruct</span><span class="p">)</span>
         <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Epoch {}: loss = {} ({:.2f} s.)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">test_loss</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t_start</span><span class="p">))</span>
 
 
@@ -352,14 +349,18 @@
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="funnel.html" class="btn btn-neutral float-right" title="Neal’s Funnel" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-        <a href="stochastic_volatility.html" class="btn btn-neutral float-left" title="Stochastic Volatility" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+        <a href="stochastic_volatility.html" class="btn btn-neutral" title="Stochastic Volatility" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -368,11 +369,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017-2018, Uber Technologies, Inc
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -385,15 +386,37 @@
   
 
 
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
 
   
   
-    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
    
 
 </body>

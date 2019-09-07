@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Gaussian Process &mdash; Numpyro Tutorials 0.1.0 documentation</title>
+  <title>Gaussian Process &mdash; Numpyro Tutorials 0.2.0 documentation</title>
   
 
   
@@ -17,38 +17,42 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
-  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Generalized Linear Mixed Models" href="ucbadmit.html" />
-    <link rel="prev" title="Bayesian Neural Network" href="bnn.html" /> 
+
+  
+  
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Numpyro Tutorials 0.2.0 documentation" href="index.html"/>
+        <link rel="next" title="Generalized Linear Mixed Models" href="ucbadmit.html"/>
+        <link rel="prev" title="Bayesian Neural Network" href="bnn.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -57,7 +61,7 @@
 
           
             
-            <img src="_static/Pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <img src="_static/Pyro_logo_wide.png" class="logo" />
           
           </a>
 
@@ -65,7 +69,7 @@
             
             
               <div class="version">
-                0.1.0
+                0.2.0
               </div>
             
           
@@ -103,6 +107,8 @@
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stochastic_volatility.html">Stochastic Volatility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="funnel.html">Neal’s Funnel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Sparse Regression</a></li>
 </ul>
 
             
@@ -114,7 +120,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">Numpyro Tutorials</a>
@@ -122,10 +128,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -182,34 +187,45 @@
     margin-top: -19px;
 }
 
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
 .admonition > p:before {
     margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
 }
 </style>
 <div class="section" id="gaussian-process">
 <h1>Gaussian Process<a class="headerlink" href="#gaussian-process" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://github.com/pyro-ppl/numpyro/blob/master/examples/gp.py">View gp.py on github</a></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">onp</span>
 
 <span class="kn">import</span> <span class="nn">jax</span>
-<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">jax.random</span> <span class="kn">as</span> <span class="nn">random</span>
 <span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">vmap</span>
 <span class="kn">from</span> <span class="nn">jax.config</span> <span class="kn">import</span> <span class="n">config</span> <span class="k">as</span> <span class="n">jax_config</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">jax.random</span> <span class="kn">as</span> <span class="nn">random</span>
 
+<span class="kn">import</span> <span class="nn">numpyro</span>
 <span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">numpyro.handlers</span> <span class="kn">import</span> <span class="n">sample</span>
-<span class="kn">from</span> <span class="nn">numpyro.hmc_util</span> <span class="kn">import</span> <span class="n">initialize_model</span>
-<span class="kn">from</span> <span class="nn">numpyro.mcmc</span> <span class="kn">import</span> <span class="n">mcmc</span>
+<span class="kn">from</span> <span class="nn">numpyro.mcmc</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
 
 <span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E402</span>
 
@@ -230,24 +246,26 @@
 
 <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
     <span class="c1"># set uninformative log-normal priors on our three kernel hyperparameters</span>
-    <span class="n">var</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kernel_var&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
-    <span class="n">noise</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kernel_noise&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
-    <span class="n">length</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kernel_length&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kernel_var&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kernel_noise&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kernel_length&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
 
     <span class="c1"># compute kernel</span>
     <span class="n">k</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">noise</span><span class="p">)</span>
 
     <span class="c1"># sample Y according to the standard gaussian process formula</span>
-    <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">covariance_matrix</span><span class="o">=</span><span class="n">k</span><span class="p">),</span>
-           <span class="n">obs</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">covariance_matrix</span><span class="o">=</span><span class="n">k</span><span class="p">),</span>
+                   <span class="n">obs</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
 
 
 <span class="c1"># helper function for doing hmc inference</span>
 <span class="k">def</span> <span class="nf">run_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
-    <span class="n">init_params</span><span class="p">,</span> <span class="n">potential_fn</span><span class="p">,</span> <span class="n">constrain_fn</span> <span class="o">=</span> <span class="n">initialize_model</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
-    <span class="n">samples</span> <span class="o">=</span> <span class="n">mcmc</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_warmup</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">init_params</span><span class="p">,</span>
-                   <span class="n">sampler</span><span class="o">=</span><span class="s1">&#39;hmc&#39;</span><span class="p">,</span> <span class="n">potential_fn</span><span class="o">=</span><span class="n">potential_fn</span><span class="p">,</span> <span class="n">constrain_fn</span><span class="o">=</span><span class="n">constrain_fn</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">samples</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_warmup</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">MCMC elapsed time:&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
 
 
 <span class="c1"># do GP prediction for a given set of hyperparameters. this makes use of the well-known</span>
@@ -292,7 +310,7 @@
     <span class="n">samples</span> <span class="o">=</span> <span class="n">run_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
 
     <span class="c1"># do prediction</span>
-    <span class="n">vmap_args</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_predict</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">),</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;kernel_var&#39;</span><span class="p">],</span>
+    <span class="n">vmap_args</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_predict</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">*</span> <span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">),</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;kernel_var&#39;</span><span class="p">],</span>
                  <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;kernel_length&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;kernel_noise&#39;</span><span class="p">])</span>
     <span class="n">means</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rng</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">noise</span><span class="p">:</span>
                               <span class="n">predict</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">noise</span><span class="p">))(</span><span class="o">*</span><span class="n">vmap_args</span><span class="p">)</span>
@@ -319,9 +337,15 @@
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Gaussian Process example&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-samples&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-warmup&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-chains&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-data&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--device&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;use &quot;cpu&quot; or &quot;gpu&quot;.&#39;</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">num_chains</span> <span class="o">&lt;=</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">():</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;XLA_FLAGS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;--xla_force_host_platform_device_count={}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -329,7 +353,9 @@
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -338,7 +364,7 @@
         <a href="ucbadmit.html" class="btn btn-neutral float-right" title="Generalized Linear Mixed Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="bnn.html" class="btn btn-neutral float-left" title="Bayesian Neural Network" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="bnn.html" class="btn btn-neutral" title="Bayesian Neural Network" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -347,11 +373,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017-2018, Uber Technologies, Inc
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -364,15 +390,37 @@
   
 
 
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
 
   
   
-    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
    
 
 </body>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>MiniPyro &mdash; Numpyro Tutorials 0.1.0 documentation</title>
+  <title>MiniPyro &mdash; Numpyro Tutorials 0.2.0 documentation</title>
   
 
   
@@ -17,36 +17,40 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
-  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+
+  
+  
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Numpyro Tutorials 0.2.0 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -55,7 +59,7 @@
 
           
             
-            <img src="_static/Pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <img src="_static/Pyro_logo_wide.png" class="logo" />
           
           </a>
 
@@ -63,7 +67,7 @@
             
             
               <div class="version">
-                0.1.0
+                0.2.0
               </div>
             
           
@@ -101,6 +105,8 @@
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stochastic_volatility.html">Stochastic Volatility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="funnel.html">Neal’s Funnel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Sparse Regression</a></li>
 </ul>
 
             
@@ -112,7 +118,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">Numpyro Tutorials</a>
@@ -120,10 +126,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -180,13 +185,23 @@
     margin-top: -19px;
 }
 
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
 .admonition > p:before {
     margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
 }
 </style>
 <div class="section" id="minipyro">
@@ -194,27 +209,28 @@
 <p><a class="reference external" href="https://github.com/pyro-ppl/numpyro/blob/master/examples/minipyro.py">View minipyro.py on github</a></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
 
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">random</span>
 <span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">lax</span><span class="p">,</span> <span class="n">random</span>
-<span class="kn">from</span> <span class="nn">jax.experimental</span> <span class="kn">import</span> <span class="n">optimizers</span>
 <span class="kn">from</span> <span class="nn">jax.random</span> <span class="kn">import</span> <span class="n">PRNGKey</span>
 
+<span class="kn">import</span> <span class="nn">numpyro</span>
+<span class="kn">from</span> <span class="nn">numpyro</span> <span class="kn">import</span> <span class="n">optim</span>
 <span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">numpyro.handlers</span> <span class="kn">import</span> <span class="n">param</span><span class="p">,</span> <span class="n">sample</span>
-<span class="kn">from</span> <span class="nn">numpyro.svi</span> <span class="kn">import</span> <span class="n">elbo</span><span class="p">,</span> <span class="n">svi</span>
+<span class="kn">from</span> <span class="nn">numpyro.svi</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">elbo</span>
+<span class="kn">from</span> <span class="nn">numpyro.util</span> <span class="kn">import</span> <span class="n">fori_loop</span>
 
 
 <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">loc</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
-    <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 
 
 <span class="c1"># Define a guide (i.e. variational distribution) with a Normal</span>
 <span class="c1"># distribution over the latent random variable `loc`.</span>
 <span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
-    <span class="n">guide_loc</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_loc&quot;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-    <span class="n">guide_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_scale_log&quot;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">))</span>
-    <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guide_loc</span><span class="p">,</span> <span class="n">guide_scale</span><span class="p">))</span>
+    <span class="n">guide_loc</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_loc&quot;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+    <span class="n">guide_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">numpyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_scale_log&quot;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">))</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guide_loc</span><span class="p">,</span> <span class="n">guide_scale</span><span class="p">))</span>
 
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
@@ -223,24 +239,20 @@
 
     <span class="c1"># Construct an SVI object so we can do variational inference on our</span>
     <span class="c1"># model/guide pair.</span>
-    <span class="n">opt_init</span><span class="p">,</span> <span class="n">opt_update</span><span class="p">,</span> <span class="n">get_params</span> <span class="o">=</span> <span class="n">optimizers</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
-    <span class="n">svi_init</span><span class="p">,</span> <span class="n">svi_update</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">svi</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">elbo</span><span class="p">,</span> <span class="n">opt_init</span><span class="p">,</span> <span class="n">opt_update</span><span class="p">,</span> <span class="n">get_params</span><span class="p">)</span>
-    <span class="n">rng</span> <span class="o">=</span> <span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">opt_state</span> <span class="o">=</span> <span class="n">svi_init</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,))</span>
+    <span class="n">adam</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
+    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">elbo</span><span class="p">,</span> <span class="n">adam</span><span class="p">)</span>
+    <span class="n">svi_state</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,))</span>
 
     <span class="c1"># Training loop</span>
-    <span class="n">rng</span><span class="p">,</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">body_fn</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
-        <span class="n">opt_state_</span><span class="p">,</span> <span class="n">rng_</span> <span class="o">=</span> <span class="n">val</span>
-        <span class="n">loss</span><span class="p">,</span> <span class="n">opt_state_</span><span class="p">,</span> <span class="n">rng_</span> <span class="o">=</span> <span class="n">svi_update</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">opt_state_</span><span class="p">,</span> <span class="n">rng_</span><span class="p">,</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,))</span>
-        <span class="k">return</span> <span class="n">opt_state_</span><span class="p">,</span> <span class="n">rng_</span>
+        <span class="n">svi_state</span><span class="p">,</span> <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="n">svi_state</span>
 
-    <span class="n">opt_state</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">lax</span><span class="o">.</span><span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_steps</span><span class="p">,</span> <span class="n">body_fn</span><span class="p">,</span> <span class="p">(</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">rng</span><span class="p">))</span>
+    <span class="n">svi_state</span> <span class="o">=</span> <span class="n">fori_loop</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_steps</span><span class="p">,</span> <span class="n">body_fn</span><span class="p">,</span> <span class="n">svi_state</span><span class="p">)</span>
 
     <span class="c1"># Report the final values of the variational parameters</span>
     <span class="c1"># in the guide after training.</span>
-    <span class="n">params</span> <span class="o">=</span> <span class="n">get_params</span><span class="p">(</span><span class="n">opt_state</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">svi_state</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">print</span><span class="p">(</span><span class="s2">&quot;{} = {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
 
@@ -263,7 +275,9 @@
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -272,11 +286,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017-2018, Uber Technologies, Inc
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -289,15 +303,37 @@
   
 
 
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
 
   
   
-    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
    
 
 </body>

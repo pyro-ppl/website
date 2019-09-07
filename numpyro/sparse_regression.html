@@ -1,0 +1,618 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Sparse Regression &mdash; Numpyro Tutorials 0.2.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Numpyro Tutorials 0.2.0 documentation" href="index.html"/>
+        <link rel="prev" title="Neal’s Funnel" href="funnel.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/Pyro_logo_wide.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Examples:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression Using NumPyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="time_series_forecasting.html">Time Series Forecasting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Code Examples:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="bnn.html">Bayesian Neural Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ucbadmit.html">Generalized Linear Mixed Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="baseball.html">Baseball</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stochastic_volatility.html">Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="funnel.html">Neal’s Funnel</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Sparse Regression</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Numpyro Tutorials</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Sparse Regression</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/sparse_regression.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="sparse-regression">
+<h1>Sparse Regression<a class="headerlink" href="#sparse-regression" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://github.com/pyro-ppl/numpyro/blob/master/examples/sparse_regression.py">View sparse_regression.py on github</a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">onp</span>
+
+<span class="kn">import</span> <span class="nn">jax</span>
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">vmap</span>
+<span class="kn">from</span> <span class="nn">jax.config</span> <span class="kn">import</span> <span class="n">config</span> <span class="k">as</span> <span class="n">jax_config</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">jax.random</span> <span class="kn">as</span> <span class="nn">random</span>
+
+<span class="kn">import</span> <span class="nn">numpyro</span>
+<span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
+<span class="kn">from</span> <span class="nn">numpyro.mcmc</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">We demonstrate how to do (fully Bayesian) sparse linear regression using the</span>
+<span class="sd">approach described in [1]. This approach is particularly suitable for situations</span>
+<span class="sd">with many feature dimensions (large P) but not too many datapoints (small N).</span>
+<span class="sd">In particular we consider a quadratic regressor of the form:</span>
+
+<span class="sd">f(X) = constant + sum_i theta_i X_i + sum_{i&lt;j} theta_ij X_i X_j + observation noise</span>
+
+<span class="sd">References</span>
+<span class="sd">[1] The Kernel Interaction Trick: Fast Bayesian Discovery of Pairwise</span>
+<span class="sd">    Interactions in High Dimensions.</span>
+<span class="sd">    Raj Agrawal, Jonathan H. Huggins, Brian Trippe, Tamara Broderick</span>
+<span class="sd">    https://arxiv.org/abs/1905.06501</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">dot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">None</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+
+<span class="c1"># The kernel that corresponds to our quadratic regressor.</span>
+<span class="k">def</span> <span class="nf">kernel</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="mf">1.0e-6</span><span class="p">):</span>
+    <span class="n">eta1sq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span><span class="p">)</span>
+    <span class="n">eta2sq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta2</span><span class="p">)</span>
+    <span class="n">k1</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">eta2sq</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">))</span>
+    <span class="n">k2</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">eta2sq</span> <span class="o">*</span> <span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span>
+    <span class="n">k3</span> <span class="o">=</span> <span class="p">(</span><span class="n">eta1sq</span> <span class="o">-</span> <span class="n">eta2sq</span><span class="p">)</span> <span class="o">*</span> <span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+    <span class="n">k4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">eta2sq</span>
+    <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="n">k4</span> <span class="o">+=</span> <span class="n">jitter</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">k1</span> <span class="o">+</span> <span class="n">k2</span> <span class="o">+</span> <span class="n">k3</span> <span class="o">+</span> <span class="n">k4</span>
+
+
+<span class="c1"># Most of the model code is concerned with constructing the sparsity inducing prior.</span>
+<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">hypers</span><span class="p">):</span>
+    <span class="n">S</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;expected_sparsity&#39;</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;alpha3&#39;</span><span class="p">]))</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">S</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">P</span> <span class="o">-</span> <span class="n">S</span><span class="p">)</span>
+    <span class="n">eta1</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;eta1&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfCauchy</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
+
+    <span class="n">msq</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;msq&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">InverseGamma</span><span class="p">(</span><span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;alpha1&#39;</span><span class="p">],</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;beta1&#39;</span><span class="p">]))</span>
+    <span class="n">xisq</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;xisq&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">InverseGamma</span><span class="p">(</span><span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;alpha2&#39;</span><span class="p">],</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;beta2&#39;</span><span class="p">]))</span>
+
+    <span class="n">eta2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xisq</span><span class="p">)</span> <span class="o">/</span> <span class="n">msq</span>
+
+    <span class="n">lam</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;lambda&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfCauchy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">P</span><span class="p">)))</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span><span class="p">)</span> <span class="o">*</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span> <span class="o">*</span> <span class="n">lam</span><span class="p">))</span>
+
+    <span class="c1"># sample observation noise</span>
+    <span class="n">var_obs</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;var_obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">InverseGamma</span><span class="p">(</span><span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;alpha_obs&#39;</span><span class="p">],</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;beta_obs&#39;</span><span class="p">]))</span>
+
+    <span class="c1"># compute kernel</span>
+    <span class="n">kX</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">X</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kX</span><span class="p">,</span> <span class="n">kX</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="n">var_obs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">k</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="c1"># sample Y according to the standard gaussian process formula</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">covariance_matrix</span><span class="o">=</span><span class="n">k</span><span class="p">),</span>
+                   <span class="n">obs</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+
+
+<span class="c1"># Compute the mean and variance of coefficient theta_i (where i = dimension) for a</span>
+<span class="c1"># MCMC sample of the kernel hyperparameters (eta1, xisq, ...).</span>
+<span class="c1"># Compare to theorem 5.1 in reference [1].</span>
+<span class="k">def</span> <span class="nf">compute_singleton_mean_variance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">msq</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">xisq</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">var_obs</span><span class="p">):</span>
+    <span class="n">P</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">probe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">P</span><span class="p">))</span>
+    <span class="n">probe</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">probe</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[:,</span> <span class="n">dimension</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]))</span>
+
+    <span class="n">eta2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xisq</span><span class="p">)</span> <span class="o">/</span> <span class="n">msq</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span><span class="p">)</span> <span class="o">*</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span> <span class="o">*</span> <span class="n">lam</span><span class="p">))</span>
+
+    <span class="n">kX</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">X</span>
+    <span class="n">kprobe</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">probe</span>
+
+    <span class="n">k_xx</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kX</span><span class="p">,</span> <span class="n">kX</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="o">+</span> <span class="n">var_obs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">k_xx_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">k_xx</span><span class="p">)</span>
+    <span class="n">k_probeX</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kprobe</span><span class="p">,</span> <span class="n">kX</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+    <span class="n">k_prbprb</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kprobe</span><span class="p">,</span> <span class="n">kprobe</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.50</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.50</span><span class="p">])</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_xx_inv</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+
+    <span class="n">var</span> <span class="o">=</span> <span class="n">k_prbprb</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_xx_inv</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">)))</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">var</span>
+
+
+<span class="c1"># Compute the mean and variance of coefficient theta_ij for a MCMC sample of the</span>
+<span class="c1"># kernel hyperparameters (eta1, xisq, ...). Compare to theorem 5.1 in reference [1].</span>
+<span class="k">def</span> <span class="nf">compute_pairwise_mean_variance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">msq</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">xisq</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">var_obs</span><span class="p">):</span>
+    <span class="n">P</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">probe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="n">P</span><span class="p">))</span>
+    <span class="n">probe</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">probe</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[:,</span> <span class="n">dim1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]))</span>
+    <span class="n">probe</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">probe</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[:,</span> <span class="n">dim2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]))</span>
+
+    <span class="n">eta2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xisq</span><span class="p">)</span> <span class="o">/</span> <span class="n">msq</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span><span class="p">)</span> <span class="o">*</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span> <span class="o">*</span> <span class="n">lam</span><span class="p">))</span>
+
+    <span class="n">kX</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">X</span>
+    <span class="n">kprobe</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">probe</span>
+
+    <span class="n">k_xx</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kX</span><span class="p">,</span> <span class="n">kX</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="o">+</span> <span class="n">var_obs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">k_xx_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">k_xx</span><span class="p">)</span>
+    <span class="n">k_probeX</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kprobe</span><span class="p">,</span> <span class="n">kX</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+    <span class="n">k_prbprb</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kprobe</span><span class="p">,</span> <span class="n">kprobe</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">])</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_xx_inv</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+
+    <span class="n">var</span> <span class="o">=</span> <span class="n">k_prbprb</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_xx_inv</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">)))</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">var</span>
+
+
+<span class="c1"># Sample coefficients theta from the posterior for a given MCMC sample.</span>
+<span class="c1"># The first P returned values are {theta_1, theta_2, ...., theta_P}, while</span>
+<span class="c1"># the remaining values are {theta_ij} for i,j in the list `active_dims`,</span>
+<span class="c1"># sorted so that i &lt; j.</span>
+<span class="k">def</span> <span class="nf">sample_theta_space</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">active_dims</span><span class="p">,</span> <span class="n">msq</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">xisq</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">var_obs</span><span class="p">):</span>
+    <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">M</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_dims</span><span class="p">)</span>
+    <span class="c1"># the total number of coefficients we return</span>
+    <span class="n">num_coefficients</span> <span class="o">=</span> <span class="n">P</span> <span class="o">+</span> <span class="n">M</span> <span class="o">*</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+    <span class="n">probe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">M</span> <span class="o">*</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">P</span><span class="p">))</span>
+    <span class="n">vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_coefficients</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">P</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">M</span> <span class="o">*</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="n">start1</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">start2</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">P</span><span class="p">):</span>
+        <span class="n">probe</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">probe</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">start1</span><span class="p">:</span><span class="n">start1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]))</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">start2</span><span class="p">,</span> <span class="n">start1</span><span class="p">:</span><span class="n">start1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">]))</span>
+        <span class="n">start1</span> <span class="o">+=</span> <span class="mi">2</span>
+        <span class="n">start2</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">active_dims</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">active_dims</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dim1</span> <span class="o">&gt;=</span> <span class="n">dim2</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">probe</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">probe</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">start1</span><span class="p">:</span><span class="n">start1</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dim1</span><span class="p">],</span>
+                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]))</span>
+            <span class="n">probe</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">probe</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">start1</span><span class="p">:</span><span class="n">start1</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dim2</span><span class="p">],</span>
+                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]))</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index_update</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">start2</span><span class="p">,</span> <span class="n">start1</span><span class="p">:</span><span class="n">start1</span> <span class="o">+</span> <span class="mi">4</span><span class="p">],</span>
+                                       <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">]))</span>
+            <span class="n">start1</span> <span class="o">+=</span> <span class="mi">4</span>
+            <span class="n">start2</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">eta2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xisq</span><span class="p">)</span> <span class="o">/</span> <span class="n">msq</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span><span class="p">)</span> <span class="o">*</span> <span class="n">lam</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msq</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">eta1</span> <span class="o">*</span> <span class="n">lam</span><span class="p">))</span>
+
+    <span class="n">kX</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">X</span>
+    <span class="n">kprobe</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">probe</span>
+
+    <span class="n">k_xx</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kX</span><span class="p">,</span> <span class="n">kX</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="o">+</span> <span class="n">var_obs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">k_xx_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">k_xx</span><span class="p">)</span>
+    <span class="n">k_probeX</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kprobe</span><span class="p">,</span> <span class="n">kX</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+    <span class="n">k_prbprb</span> <span class="o">=</span> <span class="n">kernel</span><span class="p">(</span><span class="n">kprobe</span><span class="p">,</span> <span class="n">kprobe</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">eta2</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_xx_inv</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mu</span> <span class="o">*</span> <span class="n">vec</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">covar</span> <span class="o">=</span> <span class="n">k_prbprb</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">k_xx_inv</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">k_probeX</span><span class="p">)))</span>
+    <span class="n">covar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">covar</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">vec</span><span class="p">)))</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">covar</span><span class="p">)</span>
+
+    <span class="c1"># sample from N(mu, covar)</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">onp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_coefficients</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">sample</span>
+
+
+<span class="c1"># Helper function for doing HMC inference</span>
+<span class="k">def</span> <span class="nf">run_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">hypers</span><span class="p">):</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_warmup</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">hypers</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">MCMC elapsed time:&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
+
+
+<span class="c1"># Get the mean and variance of a gaussian mixture</span>
+<span class="k">def</span> <span class="nf">gaussian_mixture_stats</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">variances</span><span class="p">):</span>
+    <span class="n">mean_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mus</span><span class="p">)</span>
+    <span class="n">mean_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">variances</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">mus</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">mean_mu</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mean_mu</span><span class="p">,</span> <span class="n">mean_var</span>
+
+
+<span class="c1"># Create artificial regression dataset where only S out of P feature</span>
+<span class="c1"># dimensions contain signal and where there is a single pairwise interaction</span>
+<span class="c1"># between the first and second dimensions.</span>
+<span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">S</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">sigma_obs</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">S</span> <span class="o">&lt;</span> <span class="n">P</span> <span class="ow">and</span> <span class="n">P</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">S</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">onp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">onp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+    <span class="c1"># generate S coefficients with non-negligible magnitude</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">2.5</span> <span class="o">*</span> <span class="n">onp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+    <span class="c1"># generate data using the S coefficients and a single pairwise interaction</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">onp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">S</span><span class="p">]</span> <span class="o">*</span> <span class="n">W</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">sigma_obs</span> <span class="o">*</span> <span class="n">onp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+    <span class="n">Y_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">N</span><span class="p">,)</span>
+
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">/</span> <span class="n">Y_std</span><span class="p">,</span> <span class="n">W</span> <span class="o">/</span> <span class="n">Y_std</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">Y_std</span>
+
+
+<span class="c1"># Helper function for analyzing the posterior statistics for coefficient theta_i</span>
+<span class="k">def</span> <span class="nf">analyze_dimension</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">hypers</span><span class="p">):</span>
+    <span class="n">vmap_args</span> <span class="o">=</span> <span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;msq&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;lambda&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;eta1&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;xisq&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;var_obs&#39;</span><span class="p">])</span>
+    <span class="n">mus</span><span class="p">,</span> <span class="n">variances</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">msq</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">xisq</span><span class="p">,</span> <span class="n">var_obs</span><span class="p">:</span>
+                          <span class="n">compute_singleton_mean_variance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">msq</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span>
+                                                          <span class="n">eta1</span><span class="p">,</span> <span class="n">xisq</span><span class="p">,</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">],</span> <span class="n">var_obs</span><span class="p">))(</span><span class="o">*</span><span class="n">vmap_args</span><span class="p">)</span>
+    <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">gaussian_mixture_stats</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">variances</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span>
+
+
+<span class="c1"># Helper function for analyzing the posterior statistics for coefficient theta_ij</span>
+<span class="k">def</span> <span class="nf">analyze_pair_of_dimensions</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">hypers</span><span class="p">):</span>
+    <span class="n">vmap_args</span> <span class="o">=</span> <span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;msq&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;lambda&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;eta1&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;xisq&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;var_obs&#39;</span><span class="p">])</span>
+    <span class="n">mus</span><span class="p">,</span> <span class="n">variances</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">msq</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">xisq</span><span class="p">,</span> <span class="n">var_obs</span><span class="p">:</span>
+                          <span class="n">compute_pairwise_mean_variance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">msq</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span>
+                                                         <span class="n">eta1</span><span class="p">,</span> <span class="n">xisq</span><span class="p">,</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">],</span> <span class="n">var_obs</span><span class="p">))(</span><span class="o">*</span><span class="n">vmap_args</span><span class="p">)</span>
+    <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">gaussian_mixture_stats</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">variances</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">jax_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s1">&#39;jax_platform_name&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">expected_thetas</span><span class="p">,</span> <span class="n">expected_pairwise</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_data</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_dimensions</span><span class="p">,</span>
+                                                        <span class="n">S</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">active_dimensions</span><span class="p">)</span>
+
+    <span class="c1"># setup hyperparameters</span>
+    <span class="n">hypers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;expected_sparsity&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_dimensions</span> <span class="o">/</span> <span class="mi">10</span><span class="p">),</span>
+              <span class="s1">&#39;alpha1&#39;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s1">&#39;beta1&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+              <span class="s1">&#39;alpha2&#39;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s1">&#39;beta2&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+              <span class="s1">&#39;alpha3&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+              <span class="s1">&#39;alpha_obs&#39;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s1">&#39;beta_obs&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+
+    <span class="c1"># do inference</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">run_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">hypers</span><span class="p">)</span>
+
+    <span class="c1"># compute the mean and square root variance of each coefficient theta_i</span>
+    <span class="n">means</span><span class="p">,</span> <span class="n">stds</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dim</span><span class="p">:</span> <span class="n">analyze_dimension</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">hypers</span><span class="p">))(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_dimensions</span><span class="p">))</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Coefficients theta_1 to theta_</span><span class="si">%d</span><span class="s2"> used to generate the data:&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">active_dimensions</span><span class="p">,</span> <span class="n">expected_thetas</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;The single quadratic coefficient theta_{1,2} used to generate the data:&quot;</span><span class="p">,</span> <span class="n">expected_pairwise</span><span class="p">)</span>
+    <span class="n">active_dimensions</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">)):</span>
+        <span class="c1"># we mark the dimension as inactive if the interval [mean - 3 * std, mean + 3 * std] contains zero</span>
+        <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">-</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">std</span><span class="p">,</span> <span class="n">mean</span> <span class="o">+</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">std</span>
+        <span class="n">inactive</span> <span class="o">=</span> <span class="s2">&quot;inactive&quot;</span> <span class="k">if</span> <span class="n">lower</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">upper</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="s2">&quot;active&quot;</span>
+        <span class="k">if</span> <span class="n">inactive</span> <span class="o">==</span> <span class="s2">&quot;active&quot;</span><span class="p">:</span>
+            <span class="n">active_dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[dimension </span><span class="si">%02d</span><span class="s2">/</span><span class="si">%02d</span><span class="s2">]  </span><span class="si">%s</span><span class="s2">:</span><span class="se">\t</span><span class="si">%.2e</span><span class="s2"> +- </span><span class="si">%.2e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_dimensions</span><span class="p">,</span> <span class="n">inactive</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Identified a total of </span><span class="si">%d</span><span class="s2"> active dimensions; expected </span><span class="si">%d</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">active_dimensions</span><span class="p">),</span>
+                                                                        <span class="n">args</span><span class="o">.</span><span class="n">active_dimensions</span><span class="p">))</span>
+
+    <span class="c1"># Compute the mean and square root variance of coefficients theta_ij for i,j active dimensions.</span>
+    <span class="c1"># Note that the resulting numbers are only meaningful for i != j.</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_dimensions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">dim_pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">active_dimensions</span><span class="p">,</span> <span class="n">active_dimensions</span><span class="p">)))</span>
+        <span class="n">means</span><span class="p">,</span> <span class="n">stds</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dim_pair</span><span class="p">:</span> <span class="n">analyze_pair_of_dimensions</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span>
+                                                                       <span class="n">dim_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dim_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">hypers</span><span class="p">))(</span><span class="n">dim_pairs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">dim_pair</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dim_pairs</span><span class="p">,</span> <span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">):</span>
+            <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span> <span class="o">=</span> <span class="n">dim_pair</span>
+            <span class="k">if</span> <span class="n">dim1</span> <span class="o">&gt;=</span> <span class="n">dim2</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">-</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">std</span><span class="p">,</span> <span class="n">mean</span> <span class="o">+</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">std</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lower</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">upper</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">):</span>
+                <span class="n">format_str</span> <span class="o">=</span> <span class="s2">&quot;Identified pairwise interaction between dimensions </span><span class="si">%d</span><span class="s2"> and </span><span class="si">%d</span><span class="s2">: </span><span class="si">%.2e</span><span class="s2"> +- </span><span class="si">%.2e</span><span class="s2">&quot;</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">format_str</span> <span class="o">%</span> <span class="p">(</span><span class="n">dim1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dim2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
+
+        <span class="c1"># Draw a single sample of coefficients theta from the posterior, where we return all singleton</span>
+        <span class="c1"># coefficients theta_i and pairwise coefficients theta_ij for i, j active dimensions. We use the</span>
+        <span class="c1"># final MCMC sample obtained from the HMC sampler.</span>
+        <span class="n">thetas</span> <span class="o">=</span> <span class="n">sample_theta_space</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">active_dimensions</span><span class="p">,</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;msq&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;lambda&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                    <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;eta1&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;xisq&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hypers</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;var_obs&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Single posterior sample theta:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">thetas</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Gaussian Process example&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-samples&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-warmup&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-chains&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-data&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-dimensions&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--active-dimensions&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--device&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;use &quot;cpu&quot; or &quot;gpu&quot;.&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">num_chains</span> <span class="o">&lt;=</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">():</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;XLA_FLAGS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;--xla_force_host_platform_device_count={}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+
+    <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="funnel.html" class="btn btn-neutral" title="Neal’s Funnel" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

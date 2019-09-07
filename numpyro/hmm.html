@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Hidden Markov Model &mdash; Numpyro Tutorials 0.1.0 documentation</title>
+  <title>Hidden Markov Model &mdash; Numpyro Tutorials 0.2.0 documentation</title>
   
 
   
@@ -17,38 +17,42 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
-  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Stochastic Volatility" href="stochastic_volatility.html" />
-    <link rel="prev" title="Baseball" href="baseball.html" /> 
+
+  
+  
+    <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Numpyro Tutorials 0.2.0 documentation" href="index.html"/>
+        <link rel="next" title="Stochastic Volatility" href="stochastic_volatility.html"/>
+        <link rel="prev" title="Baseball" href="baseball.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -57,7 +61,7 @@
 
           
             
-            <img src="_static/Pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <img src="_static/Pyro_logo_wide.png" class="logo" />
           
           </a>
 
@@ -65,7 +69,7 @@
             
             
               <div class="version">
-                0.1.0
+                0.2.0
               </div>
             
           
@@ -103,6 +107,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Hidden Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stochastic_volatility.html">Stochastic Volatility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="funnel.html">Neal’s Funnel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Sparse Regression</a></li>
 </ul>
 
             
@@ -114,7 +120,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">Numpyro Tutorials</a>
@@ -122,10 +128,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -182,32 +187,42 @@
     margin-top: -19px;
 }
 
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
 .admonition > p:before {
     margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
 }
 </style>
 <div class="section" id="hidden-markov-model">
 <h1>Hidden Markov Model<a class="headerlink" href="#hidden-markov-model" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://github.com/pyro-ppl/numpyro/blob/master/examples/hmm.py">View hmm.py on github</a></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">onp</span>
 
-<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">lax</span><span class="p">,</span> <span class="n">random</span>
 <span class="kn">from</span> <span class="nn">jax.config</span> <span class="kn">import</span> <span class="n">config</span> <span class="k">as</span> <span class="n">jax_config</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">jax.scipy.special</span> <span class="kn">import</span> <span class="n">logsumexp</span>
 
+<span class="kn">import</span> <span class="nn">numpyro</span>
 <span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="kn">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">numpyro.handlers</span> <span class="kn">import</span> <span class="n">sample</span>
-<span class="kn">from</span> <span class="nn">numpyro.hmc_util</span> <span class="kn">import</span> <span class="n">initialize_model</span>
-<span class="kn">from</span> <span class="nn">numpyro.mcmc</span> <span class="kn">import</span> <span class="n">mcmc</span>
+<span class="kn">from</span> <span class="nn">numpyro.mcmc</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
 
 
 <span class="sd">&quot;&quot;&quot;</span>
@@ -287,18 +302,18 @@
                         <span class="n">supervised_categories</span><span class="p">,</span> <span class="n">supervised_words</span><span class="p">,</span>
                         <span class="n">unsupervised_words</span><span class="p">):</span>
     <span class="n">num_categories</span><span class="p">,</span> <span class="n">num_words</span> <span class="o">=</span> <span class="n">transition_prior</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">emission_prior</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">transition_prob</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;transition_prob&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span>
+    <span class="n">transition_prob</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;transition_prob&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">transition_prior</span><span class="p">,</span> <span class="p">(</span><span class="n">num_categories</span><span class="p">,</span> <span class="n">num_categories</span><span class="p">))))</span>
-    <span class="n">emission_prob</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;emission_prob&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span>
+    <span class="n">emission_prob</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;emission_prob&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">emission_prior</span><span class="p">,</span> <span class="p">(</span><span class="n">num_categories</span><span class="p">,</span> <span class="n">num_words</span><span class="p">))))</span>
 
     <span class="c1"># models supervised data;</span>
     <span class="c1"># here we don&#39;t make any assumption about the first supervised category, in other words,</span>
     <span class="c1"># we place a flat/uniform prior on it.</span>
-    <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;supervised_categories&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">transition_prob</span><span class="p">[</span><span class="n">supervised_categories</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]),</span>
-           <span class="n">obs</span><span class="o">=</span><span class="n">supervised_categories</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-    <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;supervised_words&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">emission_prob</span><span class="p">[</span><span class="n">supervised_categories</span><span class="p">]),</span>
-           <span class="n">obs</span><span class="o">=</span><span class="n">supervised_words</span><span class="p">)</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;supervised_categories&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">transition_prob</span><span class="p">[</span><span class="n">supervised_categories</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]),</span>
+                   <span class="n">obs</span><span class="o">=</span><span class="n">supervised_categories</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;supervised_words&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">emission_prob</span><span class="p">[</span><span class="n">supervised_categories</span><span class="p">]),</span>
+                   <span class="n">obs</span><span class="o">=</span><span class="n">supervised_words</span><span class="p">)</span>
 
     <span class="c1"># computes log prob of unsupervised data</span>
     <span class="n">transition_log_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">transition_prob</span><span class="p">)</span>
@@ -308,9 +323,8 @@
                                 <span class="n">transition_log_prob</span><span class="p">,</span> <span class="n">emission_log_prob</span><span class="p">)</span>
     <span class="n">log_prob</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="c1"># inject log_prob to potential function</span>
-    <span class="c1"># NB: This is a trick (uses an invalid value `0` of Multinomial distribution) to add an</span>
-    <span class="c1"># additional term to potential energy.</span>
-    <span class="k">return</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;forward_log_prob&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">logits</span><span class="o">=-</span><span class="n">log_prob</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># NB: This is a trick to add an additional term to potential energy.</span>
+    <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;forward_log_prob&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">log_density</span><span class="o">=</span><span class="n">log_prob</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">print_results</span><span class="p">(</span><span class="n">posterior</span><span class="p">,</span> <span class="n">transition_prob</span><span class="p">,</span> <span class="n">emission_prob</span><span class="p">):</span>
@@ -346,16 +360,13 @@
         <span class="n">num_unsupervised_data</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_unsupervised</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Starting inference...&#39;</span><span class="p">)</span>
-    <span class="n">init_params</span><span class="p">,</span> <span class="n">potential_fn</span><span class="p">,</span> <span class="n">constrain_fn</span> <span class="o">=</span> <span class="n">initialize_model</span><span class="p">(</span>
-        <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
-        <span class="n">semi_supervised_hmm</span><span class="p">,</span>
-        <span class="n">transition_prior</span><span class="p">,</span> <span class="n">emission_prior</span><span class="p">,</span> <span class="n">supervised_categories</span><span class="p">,</span>
-        <span class="n">supervised_words</span><span class="p">,</span> <span class="n">unsupervised_words</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">samples</span> <span class="o">=</span> <span class="n">mcmc</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_warmup</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">init_params</span><span class="p">,</span>
-                   <span class="n">potential_fn</span><span class="o">=</span><span class="n">potential_fn</span><span class="p">,</span> <span class="n">constrain_fn</span><span class="o">=</span><span class="n">constrain_fn</span><span class="p">,</span>
-                   <span class="n">progbar</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">semi_supervised_hmm</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_warmup</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">transition_prior</span><span class="p">,</span> <span class="n">emission_prior</span><span class="p">,</span> <span class="n">supervised_categories</span><span class="p">,</span>
+             <span class="n">supervised_words</span><span class="p">,</span> <span class="n">unsupervised_words</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
     <span class="k">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">MCMC elapsed time:&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
     <span class="n">print_results</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">transition_prob</span><span class="p">,</span> <span class="n">emission_prob</span><span class="p">)</span>
 
@@ -368,8 +379,14 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num-unsupervised&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;--num-samples&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num-warmup&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-chains&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--device&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;use &quot;cpu&quot; or &quot;gpu&quot;.&#39;</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">num_chains</span> <span class="o">&lt;=</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">():</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;XLA_FLAGS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;--xla_force_host_platform_device_count={}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -377,7 +394,9 @@
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -386,7 +405,7 @@
         <a href="stochastic_volatility.html" class="btn btn-neutral float-right" title="Stochastic Volatility" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="baseball.html" class="btn btn-neutral float-left" title="Baseball" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="baseball.html" class="btn btn-neutral" title="Baseball" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -395,11 +414,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017-2018, Uber Technologies, Inc
+        &copy; Copyright 2017-2018, Uber Technologies, Inc.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -412,15 +431,37 @@
   
 
 
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
 
   
   
-    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
    
 
 </body>
