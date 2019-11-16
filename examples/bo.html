@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Bayesian Optimization &mdash; Pyro Tutorials 0.4.1 documentation</title>
+  <title>Bayesian Optimization &mdash; Pyro Tutorials 1.0.0+027e7382 documentation</title>
   
 
   
@@ -17,38 +17,34 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
+
   <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Writing guides using EasyGuide" href="easyguide.html" />
     <link rel="prev" title="Gaussian Process Latent Variable Model" href="gplvm.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -65,7 +61,7 @@
             
             
               <div class="version">
-                0.4.1
+                1.0.0+027e7382
               </div>
             
           
@@ -105,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul>
@@ -447,16 +444,19 @@ div.rendered_html tbody tr:hover {
 <p>To solve the minimization problem, we will construct a sequence of points <span class="math notranslate nohighlight">\(\{x_n\}\)</span> that converge to <span class="math notranslate nohighlight">\(x^*\)</span>. Since we implicitly assume that we have a fixed budget (say 100 evaluations), we do not expect to find the exact minumum <span class="math notranslate nohighlight">\(x^*\)</span>: the goal is to get the best approximate solution we can given the allocated budget.</p>
 <p>The Bayesian optimization strategy works as follows:</p>
 <ol class="arabic">
-<li><p>Place a prior on the objective function <span class="math notranslate nohighlight">\(f\)</span>. Each time we evaluate <span class="math notranslate nohighlight">\(f\)</span> at a new point <span class="math notranslate nohighlight">\(x_n\)</span>, we update our model for <span class="math notranslate nohighlight">\(f(x)\)</span>. This model serves as a surrogate objective function and reflects our beliefs about <span class="math notranslate nohighlight">\(f\)</span> (in particular it reflects our beliefs about where we expect <span class="math notranslate nohighlight">\(f(x)\)</span> to be close to <span class="math notranslate nohighlight">\(f(x^*)\)</span>). Since we are being Bayesian, our beliefs are encoded in a posterior that allows us to systematically reason about the uncertainty of our model
-predictions.</p></li>
-<li><p>Use the posterior to derive an “acquisition” function <span class="math notranslate nohighlight">\(\alpha(x)\)</span> that is easy to evaluate and differentiate (so that optimizing <span class="math notranslate nohighlight">\(\alpha(x)\)</span> is easy). In contrast to <span class="math notranslate nohighlight">\(f(x)\)</span>, we will generally evaluate <span class="math notranslate nohighlight">\(\alpha(x)\)</span> at many points <span class="math notranslate nohighlight">\(x\)</span>, since doing so will be cheap.</p></li>
-<li><p>Repeat until convergence:</p>
+<li><p class="first">Place a prior on the objective function <span class="math notranslate nohighlight">\(f\)</span>. Each time we evaluate <span class="math notranslate nohighlight">\(f\)</span> at a new point <span class="math notranslate nohighlight">\(x_n\)</span>, we update our model for <span class="math notranslate nohighlight">\(f(x)\)</span>. This model serves as a surrogate objective function and reflects our beliefs about <span class="math notranslate nohighlight">\(f\)</span> (in particular it reflects our beliefs about where we expect <span class="math notranslate nohighlight">\(f(x)\)</span> to be close to <span class="math notranslate nohighlight">\(f(x^*)\)</span>). Since we are being Bayesian, our beliefs are encoded in a posterior that allows us to systematically reason about the uncertainty of our model
+predictions.</p>
+</li>
+<li><p class="first">Use the posterior to derive an “acquisition” function <span class="math notranslate nohighlight">\(\alpha(x)\)</span> that is easy to evaluate and differentiate (so that optimizing <span class="math notranslate nohighlight">\(\alpha(x)\)</span> is easy). In contrast to <span class="math notranslate nohighlight">\(f(x)\)</span>, we will generally evaluate <span class="math notranslate nohighlight">\(\alpha(x)\)</span> at many points <span class="math notranslate nohighlight">\(x\)</span>, since doing so will be cheap.</p>
+</li>
+<li><p class="first">Repeat until convergence:</p>
 <ul>
-<li><p>Use the acquisition function to derive the next query point according to</p>
+<li><p class="first">Use the acquisition function to derive the next query point according to</p>
 <div class="math notranslate nohighlight">
 \[x_{n+1} = \text{arg}\min \ \alpha(x).\]</div>
 </li>
-<li><p>Evaluate <span class="math notranslate nohighlight">\(f(x_{n+1})\)</span> and update the posterior.</p></li>
+<li><p class="first">Evaluate <span class="math notranslate nohighlight">\(f(x_{n+1})\)</span> and update the posterior.</p>
+</li>
 </ul>
 </li>
 </ol>
@@ -478,7 +478,7 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="k">as</span> <span class="nn">gp</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.4.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.0.0&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># can help with debugging</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
@@ -487,7 +487,7 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 </div>
 <div class="section" id="Define-an-objective-function">
 <h2>Define an objective function<a class="headerlink" href="#Define-an-objective-function" title="Permalink to this headline">¶</a></h2>
-<p>For the purposes of demonstration, the objective function we are going to consider is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008) function</a>:</p>
+<p>For the purposes of demonstration, the objective function we are going to consider is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008) function</a>:</p>
 <div class="math notranslate nohighlight">
 \[f(x) = (6x-2)^2 \sin(12x-4), \quad x\in [0, 1].\]</div>
 <p>This function has both a local minimum and a global minimum. The global minimum is at <span class="math notranslate nohighlight">\(x^* = 0.75725\)</span>.</p>
@@ -583,9 +583,9 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 </div>
 <p>The final component we need is a way to find (approximate) minimizing points <span class="math notranslate nohighlight">\(x_{\rm min}\)</span> of the acquisition function. There are several ways to proceed, including gradient-based and non-gradient-based techniques. Here we will follow the gradient-based approach. One of the possible drawbacks of gradient descent methods is that the minimization algorithm can get stuck at a local minimum. In this tutorial, we adopt a (very) simple approach to address this issue:</p>
 <ul class="simple">
-<li><p>First, we seed our minimization algorithm with 5 different values: i) one is chosen to be <span class="math notranslate nohighlight">\(x_{n-1}\)</span>, i.e. the candidate <span class="math notranslate nohighlight">\(x\)</span> used in the previous step; and ii) four are chosen uniformly at random from the domain of the objective function.</p></li>
-<li><p>We then run the minimization algorithm to approximate convergence for each seed value.</p></li>
-<li><p>Finally, from the five candidate <span class="math notranslate nohighlight">\(x\)</span>s identified by the minimization algorithm, we select the one that minimizes the acquisition function.</p></li>
+<li>First, we seed our minimization algorithm with 5 different values: i) one is chosen to be <span class="math notranslate nohighlight">\(x_{n-1}\)</span>, i.e.&nbsp;the candidate <span class="math notranslate nohighlight">\(x\)</span> used in the previous step; and ii) four are chosen uniformly at random from the domain of the objective function.</li>
+<li>We then run the minimization algorithm to approximate convergence for each seed value.</li>
+<li>Finally, from the five candidate <span class="math notranslate nohighlight">\(x\)</span>s identified by the minimization algorithm, we select the one that minimizes the acquisition function.</li>
 </ul>
 <p>Please refer to reference [2] for a more detailed discussion of this problem in Bayesian Optimization.</p>
 <div class="nbinput nblast docutils container">
@@ -598,7 +598,7 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
     <span class="n">constraint</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">)</span>
     <span class="n">unconstrained_x_init</span> <span class="o">=</span> <span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">x_init</span><span class="p">)</span>
     <span class="n">unconstrained_x</span> <span class="o">=</span> <span class="n">unconstrained_x_init</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">minimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">LBFGS</span><span class="p">([</span><span class="n">unconstrained_x</span><span class="p">])</span>
+    <span class="n">minimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">LBFGS</span><span class="p">([</span><span class="n">unconstrained_x</span><span class="p">],</span> <span class="n">line_search_fn</span><span class="o">=</span><span class="s1">&#39;strong_wolfe&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">closure</span><span class="p">():</span>
         <span class="n">minimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
@@ -706,13 +706,13 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 <img alt="_images/bo_22_0.png" src="_images/bo_22_0.png" />
 </div>
 </div>
-<p>Because we have assumed that our observations contain noise, it is improbable that we will find the exact minimizer of the function <span class="math notranslate nohighlight">\(f\)</span>. Still, with a relatively small budget of evaluations (12) we see that the algorithm has converged to very close to the global minimum at <span class="math notranslate nohighlight">\(x^* = 0.75725\)</span>.</p>
+<p>Because we have assumed that our observations contain noise, it is improbable that we will find the exact minimizer of the function <span class="math notranslate nohighlight">\(f\)</span>. Still, with a relatively small budget of evaluations (8) we see that the algorithm has converged to very close to the global minimum at <span class="math notranslate nohighlight">\(x^* = 0.75725\)</span>.</p>
 <p>While this tutorial is only intended to be a brief introduction to Bayesian Optimization, we hope that we have been able to convey the basic underlying ideas. Consider watching the lecture by Nando de Freitas [3] for an excellent exposition of the basic theory. Finally, the reference paper [2] gives a review of recent research on Bayesian Optimization, together with many discussions about important technical details.</p>
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
-<p>[1] <code class="docutils literal notranslate"><span class="pre">Practical</span> <span class="pre">bayesian</span> <span class="pre">optimization</span> <span class="pre">of</span> <span class="pre">machine</span> <span class="pre">learning</span> <span class="pre">algorithms</span></code>,     Jasper Snoek, Hugo Larochelle, and Ryan P. Adams</p>
-<p>[2] <code class="docutils literal notranslate"><span class="pre">Taking</span> <span class="pre">the</span> <span class="pre">human</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">loop:</span> <span class="pre">A</span> <span class="pre">review</span> <span class="pre">of</span> <span class="pre">bayesian</span> <span class="pre">optimization</span></code>,     Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, and Nando De Freitas</p>
+<p>[1] <code class="docutils literal notranslate"><span class="pre">Practical</span> <span class="pre">bayesian</span> <span class="pre">optimization</span> <span class="pre">of</span> <span class="pre">machine</span> <span class="pre">learning</span> <span class="pre">algorithms</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Jasper Snoek, Hugo Larochelle, and Ryan P. Adams</p>
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Taking</span> <span class="pre">the</span> <span class="pre">human</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">loop:</span> <span class="pre">A</span> <span class="pre">review</span> <span class="pre">of</span> <span class="pre">bayesian</span> <span class="pre">optimization</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, and Nando De Freitas</p>
 <p>[3] <a class="reference external" href="https://www.youtube.com/watch?v=vz3D36VXefI">Machine learning - Bayesian optimization and multi-armed bandits</a></p>
 </div>
 </div>
@@ -728,7 +728,7 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
         <a href="easyguide.html" class="btn btn-neutral float-right" title="Writing guides using EasyGuide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="gplvm.html" class="btn btn-neutral float-left" title="Gaussian Process Latent Variable Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="gplvm.html" class="btn btn-neutral" title="Gaussian Process Latent Variable Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -754,16 +754,28 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
   
 
 
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

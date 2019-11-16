@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 0.4.1 documentation</title>
+  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 1.0.0+027e7382 documentation</title>
   
 
   
@@ -17,38 +17,34 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
+
   <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Capture-Recapture Models (CJS Models)" href="capture_recapture.html" />
     <link rel="prev" title="Kalman Filter" href="ekf.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -65,7 +61,7 @@
             
             
               <div class="version">
-                0.4.1
+                1.0.0+027e7382
               </div>
             
           
@@ -105,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul>
@@ -442,7 +439,12 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Designing-Adaptive-Experiments-to-Study-Working-Memory">
 <h1>Designing Adaptive Experiments to Study Working Memory<a class="headerlink" href="#Designing-Adaptive-Experiments-to-Study-Working-Memory" title="Permalink to this headline">¶</a></h1>
 <p>In most of machine learning, we begin with data and go on to learn a model. In other contexts, we also have a hand in the data generation process. This gives us an exciting opportunity: we can try to obtain data that will help our model learn more effectively. This procedure is called <em>optimal experimental design</em> (OED) and Pyro supports choosing optimal designs through the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.oed</span></code> module.</p>
-<p>When using OED, the data generation and modelling works as follows: 1. Write down a Bayesian model involving a design parameter, an unknown latent variable and an observable. 2. Choose the optimal design (more details on this later). 3. Collect the data and fit the model, e.g. using <code class="docutils literal notranslate"><span class="pre">SVI</span></code>.</p>
+<p>When using OED, the data generation and modelling works as follows:</p>
+<ol class="arabic simple">
+<li>Write down a Bayesian model involving a design parameter, an unknown latent variable and an observable.</li>
+<li>Choose the optimal design (more details on this later).</li>
+<li>Collect the data and fit the model, e.g.&nbsp;using <code class="docutils literal notranslate"><span class="pre">SVI</span></code>.</li>
+</ol>
 <p>We can also run multiple ‘rounds’ or iterations of experiments. When doing this, we take the learned model from step 3 and use it as our prior in step 1 for the next round. This approach can be particularly useful because it allows us to design the next experiment based on what has already been learned: the experiments are <em>adaptive</em>.</p>
 <p>In this tutorial, we work through a specific example of this entire OED procedure with multiple rounds. We will show how to design adaptive experiments to learn a participant’s working memory capacity. The design we will be adapting is the <em>length of a sequence of digits that we ask a participant to remember</em>. Let’s dive into the full details.</p>
 <div class="section" id="The-experiment-set-up">
@@ -460,7 +462,7 @@ div.rendered_html tbody tr:hover {
 two” [1].</p>
 <p><strong>Note</strong>: <span class="math notranslate nohighlight">\(\theta\)</span> actually represents the point where the participant has a 50/50 chance of remembering the sequence correctly.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -493,7 +495,7 @@ two” [1].</p>
 </div>
 <p>The probability of successfully remembering the sequence is plotted below, for five random samples of <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -530,7 +532,7 @@ two” [1].</p>
 <h3>Inference in the model<a class="headerlink" href="#Inference-in-the-model" title="Permalink to this headline">¶</a></h3>
 <p>With the model in hand, we quickly demonstrate variational inference in Pyro for this model. We define a Normal guide for variational inference.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -546,7 +548,7 @@ two” [1].</p>
 </div>
 <p>We finally specify the following data: the participant was shown sequences of lengths 5, 7 and 9. They remembered the first two correctly, but not the third one.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -557,7 +559,7 @@ two” [1].</p>
 </div>
 <p>We can now run SVI on the model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -584,20 +586,20 @@ two” [1].</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Neg ELBO: 1.886851191520691
-Neg ELBO: 0.9231349229812622
-Neg ELBO: 1.4990777969360352
-Neg ELBO: 1.1078827381134033
-Neg ELBO: 1.1302160024642944
-Neg ELBO: 1.1922011375427246
-Neg ELBO: 1.2378656268119812
-Neg ELBO: 1.2518667578697205
-Neg ELBO: 1.2874375581741333
-Neg ELBO: 1.3205691576004028
+Neg ELBO: 1.6167092323303223
+Neg ELBO: 3.706324815750122
+Neg ELBO: 0.9958380460739136
+Neg ELBO: 1.0630500316619873
+Neg ELBO: 1.1738307476043701
+Neg ELBO: 1.6654635667800903
+Neg ELBO: 1.296904444694519
+Neg ELBO: 1.305729627609253
+Neg ELBO: 1.2626266479492188
+Neg ELBO: 1.3095542192459106
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -613,7 +615,7 @@ Neg ELBO: 1.3205691576004028
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Prior:     N(7.000, 2.000)
-Posterior: N(7.725, 1.204)
+Posterior: N(7.749, 1.282)
 </pre></div></div>
 </div>
 <p>Under our posterior, we can see that we have an updated estimate for the participant’s working memory capacity, and our uncertainty has now decreased.</p>
@@ -628,17 +630,17 @@ Posterior: N(7.725, 1.204)
 <p>In words, the information gain is the KL divergence from the posterior to the prior. It therefore represents the distance we “move” the posterior by running an experiment with length <span class="math notranslate nohighlight">\(l\)</span> and getting back the outcome <span class="math notranslate nohighlight">\(y\)</span>.</p>
 <p>Unfortunately, we will not know <span class="math notranslate nohighlight">\(y\)</span> until we actually run the experiment. Therefore, we choose <span class="math notranslate nohighlight">\(l\)</span> on the basis of the <em>expected</em> information gain [2]</p>
 <div class="math notranslate nohighlight">
-\[\text{EIG}(l) = \mathbb{E}_{y\sim p(y|\theta,l)}\quad [KL(p(\theta|y,l)||p(\theta))].\]</div>
+\[\text{EIG}(l) = \mathbb{E}_{y\sim p(y|\theta,l)} [KL(p(\theta|y,l)||p(\theta))].\]</div>
 <p>Because it features the posterior density <span class="math notranslate nohighlight">\(p(y|\theta,l)\)</span>, the EIG is not immediately tractable. However, we can make use of the following variational estimator for EIG [3]</p>
 <div class="math notranslate nohighlight">
-\[\text{EIG}(l) = \min_q \mathbb{E}_{\theta,y \sim p(\theta)p(y|\theta,l)}\quad \left[ \log \frac{p(y|\theta,l)}{q(y|l)} \right].\]</div>
+\[\text{EIG}(l) = \min_q \mathbb{E}_{\theta,y \sim p(\theta)p(y|\theta,l)} \left[ \log \frac{p(y|\theta,l)}{q(y|l)} \right].\]</div>
 </div>
 </div>
 <div class="section" id="Optimal-experimental-design-in-Pyro">
 <h2>Optimal experimental design in Pyro<a class="headerlink" href="#Optimal-experimental-design-in-Pyro" title="Permalink to this headline">¶</a></h2>
 <p>Fortunately, Pyro comes ready with tools to estimate the EIG. All we have to do is define the “marginal guide” <span class="math notranslate nohighlight">\(q(y|l)\)</span> in the formula above.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -651,7 +653,7 @@ Posterior: N(7.725, 1.204)
 </div>
 <p>This is not a guide for inference, like the guides normally encountered in Pyro and used in <code class="docutils literal notranslate"><span class="pre">SVI</span></code>. Instead, this guide samples <em>only</em> the observed sample sites: in this case <code class="docutils literal notranslate"><span class="pre">&quot;y&quot;</span></code>. This makes sense because conventional guides approximate the posterior <span class="math notranslate nohighlight">\(p(\theta|y, l)\)</span> whereas our guide approximates the marginal <span class="math notranslate nohighlight">\(p(y|l)\)</span>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -682,11 +684,12 @@ Posterior: N(7.725, 1.204)
 </div>
 <p>We can visualize the EIG estimates that we found.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">candidate_designs</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">eig</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$l$&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;EIG($l$)&quot;</span><span class="p">)</span>
@@ -702,7 +705,7 @@ Posterior: N(7.725, 1.204)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -722,7 +725,7 @@ Optimal design: 7
 <p>This tells us that the first round should be run with a sequence of length 7. Note that, while we might have been able to guess this optimal design intuitively, this same framework applies equally well to more sophisticated models and experiments where finding the optimal design by intuition is more challenging.</p>
 <p>As a side-effect of training, our marginal guide <span class="math notranslate nohighlight">\(q(y|l)\)</span> has approximately learned the marginal distribution <span class="math notranslate nohighlight">\(p(y|l)\)</span>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -739,20 +742,20 @@ Optimal design: 7
 <div class="output_area docutils container">
 <div class="highlight"><pre>
    l | q(y = 1 | l)
-   1 | 0.9848213791847229
-   2 | 0.9683489203453064
-   3 | 0.9335139989852905
-   4 | 0.8705301880836487
-   5 | 0.7762389779090881
-   6 | 0.6508143544197083
-   7 | 0.5044041275978088
-   8 | 0.34979164600372314
-   9 | 0.22518539428710938
-  10 | 0.13129842281341553
-  11 | 0.06649186462163925
-  12 | 0.03222290053963661
-  13 | 0.014763563871383667
-  14 | 0.008090713992714882
+   1 | 0.9849993586540222
+   2 | 0.9676634669303894
+   3 | 0.9329487681388855
+   4 | 0.871809720993042
+   5 | 0.7761920690536499
+   6 | 0.6436398029327393
+   7 | 0.4999988079071045
+   8 | 0.34875917434692383
+   9 | 0.22899287939071655
+  10 | 0.13036076724529266
+  11 | 0.06722454726696014
+  12 | 0.03191758319735527
+  13 | 0.015132307074964046
+  14 | 0.00795808993279934
 </pre></div></div>
 </div>
 <p>The elements of this fitted tensor represent the marginal over <span class="math notranslate nohighlight">\(y\)</span>, for each possible sequence length <span class="math notranslate nohighlight">\(l\)</span> in <code class="docutils literal notranslate"><span class="pre">candidate_designs</span></code>. We have marginalised out the unknown <span class="math notranslate nohighlight">\(\theta\)</span> so this fitted tensor shows the probabilities for an ‘average’ participant.</p>
@@ -762,7 +765,7 @@ Optimal design: 7
 <p>At the first iteration, step 1 is done using the prior as above. However, for subsequent iterations, we use the posterior given all the data so far.</p>
 <p>In this notebook, the “experiment” is performed using the following synthesiser</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -777,7 +780,7 @@ Optimal design: 7
 </div>
 <p>The following code allows us to update the model as we gather more data.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -801,7 +804,7 @@ Optimal design: 7
 </div>
 <p>Now we have everything to run a 10-step experiment using adaptive designs.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -861,58 +864,58 @@ Optimal design: 7
 Round 1
 Asking the participant to remember a sequence of length 7
 Participant could not remember the sequence
-Estimate of θ: 5.791 ± 1.615
+Estimate of θ: 5.788 ± 1.636
 
 Round 2
 Asking the participant to remember a sequence of length 6
 Participant could not remember the sequence
-Estimate of θ: 4.966 ± 1.355
+Estimate of θ: 4.943 ± 1.252
 
 Round 3
 Asking the participant to remember a sequence of length 5
 Participant remembered correctly
-Estimate of θ: 5.715 ± 1.127
+Estimate of θ: 5.731 ± 1.043
 
 Round 4
 Asking the participant to remember a sequence of length 6
 Participant could not remember the sequence
-Estimate of θ: 5.263 ± 1.053
+Estimate of θ: 5.261 ± 0.928
 
 Round 5
-Asking the participant to remember a sequence of length 6
-Participant could not remember the sequence
-Estimate of θ: 4.914 ± 0.962
+Asking the participant to remember a sequence of length 5
+Participant remembered correctly
+Estimate of θ: 5.615 ± 0.859
 
 Round 6
-Asking the participant to remember a sequence of length 5
-Participant remembered correctly
-Estimate of θ: 5.421 ± 0.801
-
-Round 7
-Asking the participant to remember a sequence of length 5
-Participant remembered correctly
-Estimate of θ: 5.619 ± 0.752
-
-Round 8
 Asking the participant to remember a sequence of length 6
 Participant could not remember the sequence
-Estimate of θ: 5.401 ± 0.733
+Estimate of θ: 5.423 ± 0.888
+
+Round 7
+Asking the participant to remember a sequence of length 6
+Participant could not remember the sequence
+Estimate of θ: 5.092 ± 0.763
+
+Round 8
+Asking the participant to remember a sequence of length 5
+Participant remembered correctly
+Estimate of θ: 5.371 ± 0.717
 
 Round 9
 Asking the participant to remember a sequence of length 5
 Participant remembered correctly
-Estimate of θ: 5.596 ± 0.713
+Estimate of θ: 5.597 ± 0.720
 
 Round 10
 Asking the participant to remember a sequence of length 6
 Participant could not remember the sequence
-Estimate of θ: 5.408 ± 0.642
+Estimate of θ: 5.434 ± 0.640
 
 </pre></div></div>
 </div>
 <p>Now let’s visualize the evolution of the posterior over <span class="math notranslate nohighlight">\(\theta\)</span>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -922,10 +925,11 @@ Estimate of θ: 5.408 ± 0.642
 <span class="kn">import</span> <span class="nn">matplotlib.cm</span> <span class="k">as</span> <span class="nn">cmx</span>
 
 
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
 <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s1">&#39;winter&#39;</span><span class="p">)</span>
 <span class="n">cNorm</span>  <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">scalarMap</span> <span class="o">=</span> <span class="n">cmx</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">norm</span><span class="o">=</span><span class="n">cNorm</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">sd</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">history</span><span class="p">):</span>
     <span class="n">color</span> <span class="o">=</span> <span class="n">scalarMap</span><span class="o">.</span><span class="n">to_rgba</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
@@ -947,7 +951,7 @@ Estimate of θ: 5.408 ± 0.642
 <p>(Blue = prior, light green = 10 step posterior)</p>
 <p>By contrast, suppose we use a simplistic design: try sequences of lengths 1, 2, …, 10.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -967,11 +971,12 @@ Estimate of θ: 5.408 ± 0.642
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
 <span class="n">y1</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_mean&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
               <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_sd&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 <span class="n">y2</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
@@ -996,7 +1001,7 @@ Estimate of θ: 5.408 ± 0.642
 <div class="section" id="Extensions">
 <h3>Extensions<a class="headerlink" href="#Extensions" title="Permalink to this headline">¶</a></h3>
 <p>In this tutorial we used variational inference to fit an approximate posterior for <span class="math notranslate nohighlight">\(\theta\)</span>. This could be substituted for an alternative posterior inference strategy, such as Hamiltonian Monte Carlo.</p>
-<p>The model in this tutorial is very simple and could be extended in a number of ways. For instance, it’s possible that as well as measuring whether the participant did or did not remember the sequence, we might collect some other information as well. We could build a model for the number of mistakes made (e.g. the edit distance between the correct sequence and the participant’s response) or jointly model the correctness and the time taken to respond. Here is an example model where we model the
+<p>The model in this tutorial is very simple and could be extended in a number of ways. For instance, it’s possible that as well as measuring whether the participant did or did not remember the sequence, we might collect some other information as well. We could build a model for the number of mistakes made (e.g.&nbsp;the edit distance between the correct sequence and the participant’s response) or jointly model the correctness and the time taken to respond. Here is an example model where we model the
 response time using a LogNormal distribution, as suggested by [4].</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
@@ -1041,7 +1046,7 @@ means to select the optimal design in such scenarios.</p>
         <a href="capture_recapture.html" class="btn btn-neutral float-right" title="Capture-Recapture Models (CJS Models)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="ekf.html" class="btn btn-neutral float-left" title="Kalman Filter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ekf.html" class="btn btn-neutral" title="Kalman Filter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1067,16 +1072,28 @@ means to select the optimal design in such scenarios.</p>
   
 
 
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

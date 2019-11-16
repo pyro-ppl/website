@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Bayesian Regression - Inference Algorithms (Part 2) &mdash; Pyro Tutorials 0.4.1 documentation</title>
+  <title>Bayesian Regression - Inference Algorithms (Part 2) &mdash; Pyro Tutorials 1.0.0+027e7382 documentation</title>
   
 
   
@@ -17,38 +17,34 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
+
   <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Deep Markov Model" href="dmm.html" />
     <link rel="prev" title="Bayesian Regression - Introduction (Part 1)" href="bayesian_regression.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -65,7 +61,7 @@
             
             
               <div class="version">
-                0.4.1
+                1.0.0+027e7382
               </div>
             
           
@@ -105,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul class="current">
@@ -442,6 +439,15 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%</span><span class="k">reset</span> -sf
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
@@ -454,23 +460,21 @@ div.rendered_html tbody tr:hover {
 
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">EmpiricalMarginal</span><span class="p">,</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="k">import</span> <span class="n">AutoMultivariateNormal</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.mcmc.api</span> <span class="k">import</span> <span class="n">MCMC</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.mcmc</span> <span class="k">import</span> <span class="n">NUTS</span>
 <span class="kn">import</span> <span class="nn">pyro.optim</span> <span class="k">as</span> <span class="nn">optim</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.4.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.0.0&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 <span class="c1"># Enable validation checks</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
@@ -487,15 +491,15 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="section" id="Model-+-Guide">
 <h2>Model + Guide<a class="headerlink" href="#Model-+-Guide" title="Permalink to this headline">¶</a></h2>
-<p>We will write out the model again, similar to that in <a class="reference internal" href="bayesian_regression.html"><span class="doc">Part I</span></a>, but explicitly without the use of <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>. We will write out each term in the regression, using the same priors. <code class="docutils literal notranslate"><span class="pre">bA</span></code> and <code class="docutils literal notranslate"><span class="pre">bR</span></code> are regression coefficients corresponding to <code class="docutils literal notranslate"><span class="pre">is_cont_africa</span></code> and <code class="docutils literal notranslate"><span class="pre">ruggedness</span></code>, <code class="docutils literal notranslate"><span class="pre">a</span></code> is the intercept, and <code class="docutils literal notranslate"><span class="pre">bAR</span></code> is the correlating factor between the two features.</p>
+<p>We will write out the model again, similar to that in <a class="reference internal" href="bayesian_regression.html"><span class="doc">Part I</span></a>, but explicitly without the use of <code class="docutils literal notranslate"><span class="pre">PyroModule</span></code>. We will write out each term in the regression, using the same priors. <code class="docutils literal notranslate"><span class="pre">bA</span></code> and <code class="docutils literal notranslate"><span class="pre">bR</span></code> are regression coefficients corresponding to <code class="docutils literal notranslate"><span class="pre">is_cont_africa</span></code> and <code class="docutils literal notranslate"><span class="pre">ruggedness</span></code>, <code class="docutils literal notranslate"><span class="pre">a</span></code> is the intercept, and <code class="docutils literal notranslate"><span class="pre">bAR</span></code> is the correlating factor between the two features.</p>
 <p>Writing down a guide will proceed in close analogy to the construction of our model, with the key difference that the guide parameters need to be trainable. To do this we register the guide parameters in the ParamStore using <code class="docutils literal notranslate"><span class="pre">pyro.param()</span></code>. Note the positive constraints on scale parameters.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span><span class="p">):</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">8.</span><span class="p">,</span> <span class="mf">1000.</span><span class="p">))</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">))</span>
     <span class="n">b_a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;bA&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
     <span class="n">b_r</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
     <span class="n">b_ar</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
@@ -523,7 +527,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -549,18 +553,21 @@ div.rendered_html tbody tr:hover {
 <h2>SVI<a class="headerlink" href="#SVI" title="Permalink to this headline">¶</a></h2>
 <p>As before, we will use SVI to perform inference.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+<span></span><span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
+
+
+<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
           <span class="n">guide</span><span class="p">,</span>
-          <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="o">.</span><span class="mi">005</span><span class="p">}),</span>
-          <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
-          <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+          <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="o">.</span><span class="mi">05</span><span class="p">}),</span>
+          <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+
 <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span> <span class="o">=</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">num_iters</span> <span class="o">=</span> <span class="mi">10000</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span>
+<span class="n">num_iters</span> <span class="o">=</span> <span class="mi">5000</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iters</span><span class="p">):</span>
     <span class="n">elbo</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">500</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -573,50 +580,41 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Elbo loss: 5800.070857703686
-Elbo loss: 628.4037374258041
-Elbo loss: 580.5144180059433
-Elbo loss: 559.3133664131165
-Elbo loss: 475.76387599110603
-Elbo loss: 483.09800106287
-Elbo loss: 463.2627730369568
-Elbo loss: 431.5990067124367
-Elbo loss: 404.8111544251442
-Elbo loss: 371.7402448654175
-Elbo loss: 306.60169237852097
-Elbo loss: 286.20131355524063
-Elbo loss: 259.70689755678177
-Elbo loss: 250.59875017404556
-Elbo loss: 254.11627012491226
-Elbo loss: 252.16994631290436
-Elbo loss: 267.0337792634964
-Elbo loss: 252.09639006853104
-Elbo loss: 253.12625759840012
-Elbo loss: 252.6920239329338
+Elbo loss: 5795.467590510845
+Elbo loss: 415.8169444799423
+Elbo loss: 250.71916329860687
+Elbo loss: 247.19457268714905
+Elbo loss: 249.2004036307335
+Elbo loss: 250.96484470367432
+Elbo loss: 249.35092514753342
+Elbo loss: 248.7831552028656
+Elbo loss: 248.62140649557114
+Elbo loss: 250.4274433851242
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">svi_diagnorm_posterior</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">log_gdp</span><span class="p">,</span> <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">)</span>
+<span></span><span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">Predictive</span>
+
+
+<span class="n">num_samples</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">predictive</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="n">guide</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+<span class="n">svi_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+               <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">predictive</span><span class="p">(</span><span class="n">log_gdp</span><span class="p">,</span> <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+               <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;obs&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
 <p>Let us observe the posterior distribution over the different latent variables in the model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;bA&quot;</span><span class="p">,</span> <span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">]</span>
-
-<span class="n">svi_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">site</span><span class="p">:</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">svi_diagnorm_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">site</span><span class="p">)</span>
-                     <span class="o">.</span><span class="n">enumerate_support</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-               <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">}</span>
-
-<span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">summary</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span></span><span class="k">for</span> <span class="n">site</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">summary</span><span class="p">(</span><span class="n">svi_samples</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Site: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">site</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
@@ -628,24 +626,24 @@ Elbo loss: 252.6920239329338
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Site: a
-       mean       std        5%       25%       50%       75%       95%
-0  9.192743  0.073744  9.074027  9.140702  9.197718  9.243423  9.303659
+       mean       std       5%       25%       50%       75%      95%
+0  9.177024  0.059607  9.07811  9.140463  9.178211  9.217098  9.27152
 
 Site: bA
-       mean       std        5%       25%       50%       75%       95%
-0 -1.853577  0.134715 -2.073369 -1.940101 -1.849553 -1.762716 -1.641578
+       mean       std       5%       25%       50%       75%       95%
+0 -1.890622  0.122805 -2.08849 -1.979107 -1.887476 -1.803683 -1.700853
 
 Site: bR
-       mean      std        5%      25%       50%       75%       95%
-0 -0.172035  0.04103 -0.239187 -0.20123 -0.169727 -0.143967 -0.103523
+       mean       std       5%       25%       50%       75%       95%
+0 -0.157847  0.039538 -0.22324 -0.183673 -0.157873 -0.133102 -0.091713
 
 Site: bAR
        mean       std        5%       25%       50%       75%       95%
-0  0.333441  0.083769  0.190482  0.277777  0.334467  0.393399  0.474023
+0  0.304515  0.067683  0.194583  0.259464  0.304907  0.348932  0.415128
 
 Site: sigma
-       mean      std        5%       25%       50%       75%       95%
-0  0.956975  0.05094  0.872172  0.925918  0.956211  0.991062  1.037548
+       mean       std        5%       25%       50%       75%       95%
+0  0.902898  0.047971  0.824166  0.870317  0.901981  0.935171  0.981577
 
 </pre></div></div>
 </div>
@@ -655,11 +653,14 @@ Site: sigma
 <p>In contrast to using variational inference which gives us an approximate posterior over our latent variables, we can also do exact inference using <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html">Markov Chain Monte Carlo</a> (MCMC), a class of algorithms that in the limit, allow us to draw unbiased samples from the true posterior. The algorithm that we will be using is called the No-U Turn Sampler (NUTS) [1], which provides an efficient and automated way of running Hamiltonian Monte Carlo. It is slightly
 slower than variational inference, but provides an exact estimate.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span></span><span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="k">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
+
+
+<span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
 <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">warmup_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
 <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span><span class="p">)</span>
@@ -673,11 +674,11 @@ slower than variational inference, but provides an exact estimate.</p>
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-sample: 100%|██████████| 1200/1200 [00:46&lt;00:00, 25.73it/s, step size=2.77e-01, acc. rate=0.977]
+Sample: 100%|██████████| 1200/1200 [00:30, 38.99it/s, step size=2.76e-01, acc. prob=0.934]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -693,24 +694,24 @@ sample: 100%|██████████| 1200/1200 [00:46&lt;00:00, 25.73it/
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Site: a
-       mean       std        5%      25%       50%      75%       95%
-0  9.182983  0.132835  8.964112  9.08637  9.185863  9.27735  9.383123
+       mean      std        5%       25%       50%       75%       95%
+0  9.182098  0.13545  8.958712  9.095588  9.181347  9.277673  9.402615
 
 Site: bA
-       mean       std        5%      25%       50%       75%       95%
-0 -1.853396  0.211737 -2.194149 -1.99672 -1.850201 -1.712565 -1.512865
+       mean       std       5%       25%       50%      75%       95%
+0 -1.847651  0.217768 -2.19934 -1.988024 -1.846978 -1.70495 -1.481822
 
 Site: bR
-       mean     std        5%       25%       50%       75%       95%
-0 -0.183974  0.0743 -0.303686 -0.234047 -0.184152 -0.133012 -0.066403
+       mean       std        5%       25%       50%       75%       95%
+0 -0.183031  0.078067 -0.311403 -0.237077 -0.185945 -0.131043 -0.051233
 
 Site: bAR
-       mean       std        5%       25%       50%      75%       95%
-0  0.351953  0.124772  0.150154  0.262533  0.354959  0.43502  0.562396
+       mean       std        5%       25%      50%       75%       95%
+0  0.348332  0.127478  0.131907  0.266548  0.34641  0.427984  0.560221
 
 Site: sigma
-      mean       std       5%       25%       50%       75%      95%
-0  0.95217  0.051362  0.87976  0.916158  0.949182  0.985384  1.04206
+       mean       std        5%       25%       50%       75%       95%
+0  0.952041  0.052024  0.869388  0.914335  0.949961  0.986266  1.038723
 
 </pre></div></div>
 </div>
@@ -720,11 +721,13 @@ Site: sigma
 <p>Let us compare the posterior distribution of the latent variables that we obtained from variational inference with those from Hamiltonian Monte Carlo. As can be seen below, for Variational Inference, the marginal distribution of the different regression coefficients is under-dispersed w.r.t. the true posterior (from HMC). This is an artifact of the <em>KL(q||p)</em> loss (the KL divergence of the true posterior from the approximate posterior) that is minimized by Variational Inference.</p>
 <p>This can be better seen when we plot different cross sections from the joint posterior distribution overlaid with the approximate posterior from variational inference. Note that since our variational family has diagonal covariance, we cannot model any correlation between the latents and the resulting approximation is overconfident (under-dispersed)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span></span><span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;bA&quot;</span><span class="p">,</span> <span class="s2">&quot;bR&quot;</span><span class="p">,</span> <span class="s2">&quot;bAR&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">]</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Marginal Posterior density - Regression Coefficients&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
     <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -740,11 +743,11 @@ Site: sigma
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_17_0.png" src="_images/bayesian_regression_ii_17_0.png" />
+<img alt="_images/bayesian_regression_ii_18_0.png" src="_images/bayesian_regression_ii_18_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -765,7 +768,7 @@ Site: sigma
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_18_0.png" src="_images/bayesian_regression_ii_18_0.png" />
+<img alt="_images/bayesian_regression_ii_19_0.png" src="_images/bayesian_regression_ii_19_0.png" />
 </div>
 </div>
 </div>
@@ -773,19 +776,20 @@ Site: sigma
 <h2>MultivariateNormal Guide<a class="headerlink" href="#MultivariateNormal-Guide" title="Permalink to this headline">¶</a></h2>
 <p>As comparison to the previously obtained results from Diagonal Normal guide, we will now use a guide that generates samples from a Cholesky factorization of a multivariate normal distribution. This allows us to capture the correlations between the latent variables via a covariance matrix. If we wrote this manually, we would need to combine all the latent variables so we could sample a Multivarite Normal jointly.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="k">import</span> <span class="n">init_to_mean</span>
+<span></span><span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="k">import</span> <span class="n">AutoMultivariateNormal</span><span class="p">,</span> <span class="n">init_to_mean</span>
+
 
 <span class="n">guide</span> <span class="o">=</span> <span class="n">AutoMultivariateNormal</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_to_mean</span><span class="p">)</span>
 
 <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
           <span class="n">guide</span><span class="p">,</span>
-          <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="o">.</span><span class="mi">005</span><span class="p">}),</span>
-          <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
-          <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+          <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="o">.</span><span class="mi">01</span><span class="p">}),</span>
+          <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+
 <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">,</span> <span class="n">log_gdp</span> <span class="o">=</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iters</span><span class="p">):</span>
@@ -800,38 +804,28 @@ Site: sigma
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Elbo loss: 410.2805206775665
-Elbo loss: 381.9615013599396
-Elbo loss: 352.09824854135513
-Elbo loss: 286.242218375206
-Elbo loss: 284.58705800771713
-Elbo loss: 251.88318115472794
-Elbo loss: 249.86689043045044
-Elbo loss: 251.72228783369064
-Elbo loss: 250.9775346517563
-Elbo loss: 256.0202656984329
-Elbo loss: 251.94402569532394
-Elbo loss: 251.75862383842468
-Elbo loss: 251.58239632844925
-Elbo loss: 253.0613318681717
-Elbo loss: 251.47836750745773
-Elbo loss: 252.37667101621628
-Elbo loss: 251.49254143238068
-Elbo loss: 251.6520973443985
-Elbo loss: 251.27644211053848
-Elbo loss: 251.1703153848648
+Elbo loss: 703.0100790262222
+Elbo loss: 444.6930855512619
+Elbo loss: 258.20718491077423
+Elbo loss: 249.05364602804184
+Elbo loss: 247.2170884013176
+Elbo loss: 247.28261297941208
+Elbo loss: 246.61236548423767
+Elbo loss: 249.86004841327667
+Elbo loss: 249.1157277226448
+Elbo loss: 249.86634194850922
 </pre></div></div>
 </div>
 <p>Let’s look at the shape of the posteriors again. You can see the multivariate guide is able to capture more of the true posterior.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">svi_mvn_posterior</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">log_gdp</span><span class="p">,</span> <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">)</span>
-<span class="n">svi_mvn_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">site</span><span class="p">:</span> <span class="n">EmpiricalMarginal</span><span class="p">(</span><span class="n">svi_mvn_posterior</span><span class="p">,</span> <span class="n">sites</span><span class="o">=</span><span class="n">site</span><span class="p">)</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">()</span>
-                         <span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-                   <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">}</span>
+<span></span><span class="n">predictive</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="n">guide</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+<span class="n">svi_mvn_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                   <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">predictive</span><span class="p">(</span><span class="n">log_gdp</span><span class="p">,</span> <span class="n">is_cont_africa</span><span class="p">,</span> <span class="n">ruggedness</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                   <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;obs&quot;</span><span class="p">}</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Marginal Posterior density - Regression Coefficients&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
@@ -848,12 +842,12 @@ Elbo loss: 251.1703153848648
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_22_0.png" src="_images/bayesian_regression_ii_22_0.png" />
+<img alt="_images/bayesian_regression_ii_23_0.png" src="_images/bayesian_regression_ii_23_0.png" />
 </div>
 </div>
 <p>Now let’s compare the posterior computed by the Diagonal Normal guide vs the Multivariate Normal guide. Note that the multivariate distribution is more dispresed than the Diagonal Normal.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -874,12 +868,12 @@ Elbo loss: 251.1703153848648
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_24_0.png" src="_images/bayesian_regression_ii_24_0.png" />
+<img alt="_images/bayesian_regression_ii_25_0.png" src="_images/bayesian_regression_ii_25_0.png" />
 </div>
 </div>
 <p>and the Multivariate guide with the posterior computed by HMC. Note that the Multivariate guide better captures the true posterior.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -900,7 +894,7 @@ Elbo loss: 251.1703153848648
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/bayesian_regression_ii_26_0.png" src="_images/bayesian_regression_ii_26_0.png" />
+<img alt="_images/bayesian_regression_ii_27_0.png" src="_images/bayesian_regression_ii_27_0.png" />
 </div>
 </div>
 </div>
@@ -921,7 +915,7 @@ Elbo loss: 251.1703153848648
         <a href="dmm.html" class="btn btn-neutral float-right" title="Deep Markov Model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="bayesian_regression.html" class="btn btn-neutral float-left" title="Bayesian Regression - Introduction (Part 1)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="bayesian_regression.html" class="btn btn-neutral" title="Bayesian Regression - Introduction (Part 1)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -947,16 +941,28 @@ Elbo loss: 251.1703153848648
   
 
 
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 0.4.1 documentation</title>
+  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 1.0.0+027e7382 documentation</title>
   
 
   
@@ -17,38 +17,34 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
+
   <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="SVI Part III: ELBO Gradient Estimators" href="svi_part_iii.html" />
     <link rel="prev" title="SVI Part I: An Introduction to Stochastic Variational Inference in Pyro" href="svi_part_i.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -65,7 +61,7 @@
             
             
               <div class="version">
-                0.4.1
+                1.0.0+027e7382
               </div>
             
           
@@ -123,6 +119,7 @@
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul>
@@ -284,8 +281,8 @@ log likelihood term in the ELBO can be approximated with</p>
 <p>We see that <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> is very similar to <code class="docutils literal notranslate"><span class="pre">range</span></code> with one main difference: each invocation of <code class="docutils literal notranslate"><span class="pre">plate</span></code> requires the user to provide a unique name. The second argument is an integer just like for <code class="docutils literal notranslate"><span class="pre">range</span></code>.</p>
 <p>So far so good. Pyro can now leverage the conditional independency of the observations given the latent random variable. But how does this actually work? Basically <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> is implemented using a context manager. At every execution of the body of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop we enter a new (conditional) independence context which is then exited at the end of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop body. Let’s be very explicit about this:</p>
 <ul class="simple">
-<li><p>because each observed <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statement occurs within a different execution of the body of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop, Pyro marks each observation as independent</p></li>
-<li><p>this independence is properly a <em>conditional</em> independence <em>given</em> <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> because <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> is sampled <em>outside</em> of the context of <code class="docutils literal notranslate"><span class="pre">data_loop</span></code>.</p></li>
+<li>because each observed <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statement occurs within a different execution of the body of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop, Pyro marks each observation as independent</li>
+<li>this independence is properly a <em>conditional</em> independence <em>given</em> <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> because <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> is sampled <em>outside</em> of the context of <code class="docutils literal notranslate"><span class="pre">data_loop</span></code>.</li>
 </ul>
 <p>Before moving on, let’s mention some gotchas to be avoided when using sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code>. Consider the following variant of the above code snippet:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># WARNING do not do this!</span>
@@ -397,8 +394,8 @@ precisely the approach used in the <a class="reference internal" href="vae.html"
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
-<p>[1] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,      Matthew D. Hoffman, David M. Blei, Chong Wang, John Paisley</p>
-<p>[2] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>
+<p>[1] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>, &nbsp;&nbsp;&nbsp;&nbsp; Matthew D. Hoffman, David M. Blei, Chong Wang, John Paisley</p>
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Diederik P Kingma, Max Welling</p>
 </div>
 </div>
 
@@ -413,7 +410,7 @@ precisely the approach used in the <a class="reference internal" href="vae.html"
         <a href="svi_part_iii.html" class="btn btn-neutral float-right" title="SVI Part III: ELBO Gradient Estimators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="svi_part_i.html" class="btn btn-neutral float-left" title="SVI Part I: An Introduction to Stochastic Variational Inference in Pyro" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="svi_part_i.html" class="btn btn-neutral" title="SVI Part I: An Introduction to Stochastic Variational Inference in Pyro" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -439,16 +436,28 @@ precisely the approach used in the <a class="reference internal" href="vae.html"
   
 
 
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

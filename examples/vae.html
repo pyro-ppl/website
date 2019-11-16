@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Variational Autoencoders &mdash; Pyro Tutorials 0.4.1 documentation</title>
+  <title>Variational Autoencoders &mdash; Pyro Tutorials 1.0.0+027e7382 documentation</title>
   
 
   
@@ -17,38 +17,34 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
+
   <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Bayesian Regression - Introduction (Part 1)" href="bayesian_regression.html" />
-    <link rel="prev" title="Poutine: A Guide to Programming with Effect Handlers in Pyro" href="effect_handlers.html" /> 
+    <link rel="prev" title="Predicting the outcome of a US presidential election using Bayesian optimal experimental design" href="elections.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -65,7 +61,7 @@
             
             
               <div class="version">
-                0.4.1
+                1.0.0+027e7382
               </div>
             
           
@@ -105,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul class="current">
@@ -441,36 +438,36 @@ div.rendered_html tbody tr:hover {
 what’s of particular importance here is that we allow for each <span class="math notranslate nohighlight">\(\bf x_i\)</span> to depend on <span class="math notranslate nohighlight">\(\bf z_i\)</span> in a complex, non-linear way. In practice this dependency will be parameterized by a (deep) neural network with parameters <span class="math notranslate nohighlight">\(\theta\)</span>. It’s this non-linearity that makes inference for this class of models particularly challenging.</p>
 <p>Of course this non-linear structure is also one reason why this class of models offers a very flexible approach to modeling complex data. Indeed it’s worth emphasizing that each of the components of the model can be ‘reconfigured’ in a variety of different ways. For example:</p>
 <ul class="simple">
-<li><p>the neural network in <span class="math notranslate nohighlight">\(p_\theta({\bf x} | {\bf z})\)</span> can be varied in all the usual ways (number of layers, type of non-linearities, number of hidden units, etc.)</p></li>
-<li><p>we can choose observation likelihoods that suit the dataset at hand: gaussian, bernoulli, categorical, etc.</p></li>
-<li><p>we can choose the number of dimensions in the latent space</p></li>
+<li>the neural network in <span class="math notranslate nohighlight">\(p_\theta({\bf x} | {\bf z})\)</span> can be varied in all the usual ways (number of layers, type of non-linearities, number of hidden units, etc.)</li>
+<li>we can choose observation likelihoods that suit the dataset at hand: gaussian, bernoulli, categorical, etc.</li>
+<li>we can choose the number of dimensions in the latent space</li>
 </ul>
 <p>The graphical model representation is a useful way to think about the structure of the model, but it can also be fruitful to look at an explicit factorization of the joint probability density:</p>
 <div class="math notranslate nohighlight">
 \[p({\bf x}, {\bf z}) = \prod_{i=1}^N p_\theta({\bf x}_i | {\bf z}_i) p({\bf z}_i)\]</div>
-<p>The fact that <span class="math notranslate nohighlight">\(p({\bf x}, {\bf z})\)</span> breaks up into a product of terms like this makes it clear what we mean when we call <span class="math notranslate nohighlight">\(\bf z_i\)</span> a local random variable. For any particular <span class="math notranslate nohighlight">\(i\)</span>, only the single datapoint <span class="math notranslate nohighlight">\(\bf x_i\)</span> depends on <span class="math notranslate nohighlight">\(\bf z_i\)</span>. As such the <span class="math notranslate nohighlight">\(\{\bf z_i\}\)</span> describe local structure, i.e. structure that is private to each data point. This factorized structure also means that we can do subsampling during the course of learning. As such this sort of model
+<p>The fact that <span class="math notranslate nohighlight">\(p({\bf x}, {\bf z})\)</span> breaks up into a product of terms like this makes it clear what we mean when we call <span class="math notranslate nohighlight">\(\bf z_i\)</span> a local random variable. For any particular <span class="math notranslate nohighlight">\(i\)</span>, only the single datapoint <span class="math notranslate nohighlight">\(\bf x_i\)</span> depends on <span class="math notranslate nohighlight">\(\bf z_i\)</span>. As such the <span class="math notranslate nohighlight">\(\{\bf z_i\}\)</span> describe local structure, i.e.&nbsp;structure that is private to each data point. This factorized structure also means that we can do subsampling during the course of learning. As such this sort of model
 is amenable to the large data setting. (For more discussion on this and related topics see <a class="reference internal" href="svi_part_ii.html"><span class="doc">SVI Part II</span></a>.)</p>
-<p>That’s all there is to the model. Since the observations depend on the latent random variables in a complicated, non-linear way, we expect the posterior over the latents to have a complex structure. Consequently in order to do inference in this model we need to specify a flexibly family of guides (i.e. variational distributions). Since we want to be able to scale to large datasets, our guide is going to make use of amortization to keep the number of variational parameters under control (see <a class="reference internal" href="svi_part_ii.html"><span class="doc">SVI
+<p>That’s all there is to the model. Since the observations depend on the latent random variables in a complicated, non-linear way, we expect the posterior over the latents to have a complex structure. Consequently in order to do inference in this model we need to specify a flexibly family of guides (i.e.&nbsp;variational distributions). Since we want to be able to scale to large datasets, our guide is going to make use of amortization to keep the number of variational parameters under control (see <a class="reference internal" href="svi_part_ii.html"><span class="doc">SVI
 Part II</span></a> for a somewhat more general discussion of amortization).</p>
 <p>Recall that the job of the guide is to ‘guess’ good values for the latent random variables—good in the sense that they’re true to the model prior <em>and</em> true to the data. If we weren’t making use of amortization, we would introduce variational parameters <span class="math notranslate nohighlight">\(\{ \lambda_i \}\)</span> for <em>each</em> datapoint <span class="math notranslate nohighlight">\(\bf x_i\)</span>. These variational parameters would represent our belief about ‘good’ values of <span class="math notranslate nohighlight">\(\bf z_i\)</span>; for example, they could encode the mean and variance of a gaussian distribution in
 <span class="math notranslate nohighlight">\({\bf z}_i\)</span> space. Amortization means that, rather than introducing variational parameters <span class="math notranslate nohighlight">\(\{ \lambda_i \}\)</span>, we instead learn a <em>function</em> that maps each <span class="math notranslate nohighlight">\(\bf x_i\)</span> to an appropriate <span class="math notranslate nohighlight">\(\lambda_i\)</span>. Since we need this function to be flexible, we parameterize it as a neural network. We thus end up with a parameterized family of distributions over the latent <span class="math notranslate nohighlight">\(\bf z\)</span> space that can be instantiated for all <span class="math notranslate nohighlight">\(N\)</span> datapoint <span class="math notranslate nohighlight">\({\bf x}_i\)</span> (see Fig. 2).</p>
 <center><figure><img src="_static/img/vae_guide.png" style="width: 200px;"><figcaption> <font size="+1"><b>Figure 2</b>: a graphical representation of the guide. </font></figcaption></figure></center><br><p>Note that the guide <span class="math notranslate nohighlight">\(q_{\phi}({\bf z} | {\bf x})\)</span> is parameterized by a global parameter <span class="math notranslate nohighlight">\(\phi\)</span> shared by all the datapoints. The goal of inference will be to find ‘good’ values for <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> so that two conditions are satisfied:</p>
 <ul class="simple">
-<li><p>the log evidence <span class="math notranslate nohighlight">\(\log p_\theta({\bf x})\)</span> is large. this means our model is a good fit to the data</p></li>
-<li><p>the guide <span class="math notranslate nohighlight">\(q_{\phi}({\bf z} | {\bf x})\)</span> provides a good approximation to the posterior</p></li>
+<li>the log evidence <span class="math notranslate nohighlight">\(\log p_\theta({\bf x})\)</span> is large. this means our model is a good fit to the data</li>
+<li>the guide <span class="math notranslate nohighlight">\(q_{\phi}({\bf z} | {\bf x})\)</span> provides a good approximation to the posterior</li>
 </ul>
 <p>(For an introduction to stochastic variational inference see <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI Part I</span></a>.)</p>
 <p>At this point we can zoom out and consider the high level structure of our setup. For concreteness, let’s suppose the <span class="math notranslate nohighlight">\(\{ \bf x_i \}\)</span> are images so that the model is a generative model of images. Once we’ve learned a good value of <span class="math notranslate nohighlight">\(\theta\)</span> we can generate images from the model as follows:</p>
 <ul class="simple">
-<li><p>sample <span class="math notranslate nohighlight">\(\bf z\)</span> according to the prior <span class="math notranslate nohighlight">\(p({\bf z})\)</span></p></li>
-<li><p>sample <span class="math notranslate nohighlight">\(\bf x\)</span> according to the likelihood <span class="math notranslate nohighlight">\(p_\theta({\bf x}|{\bf z})\)</span></p></li>
+<li>sample <span class="math notranslate nohighlight">\(\bf z\)</span> according to the prior <span class="math notranslate nohighlight">\(p({\bf z})\)</span></li>
+<li>sample <span class="math notranslate nohighlight">\(\bf x\)</span> according to the likelihood <span class="math notranslate nohighlight">\(p_\theta({\bf x}|{\bf z})\)</span></li>
 </ul>
 <p>Each image is being represented by a latent code <span class="math notranslate nohighlight">\(\bf z\)</span> and that code gets mapped to images using the likelihood, which depends on the <span class="math notranslate nohighlight">\(\theta\)</span> we’ve learned. This is why the likelihood is often called the decoder in this context: its job is to decode <span class="math notranslate nohighlight">\(\bf z\)</span> into <span class="math notranslate nohighlight">\(\bf x\)</span>. Note that since this is a probabilistic model, there is uncertainty about the <span class="math notranslate nohighlight">\(\bf z\)</span> that encodes a given datapoint <span class="math notranslate nohighlight">\(\bf x\)</span>.</p>
 <p>Once we’ve learned good values for <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> we can also go through the following exercise.</p>
 <ul class="simple">
-<li><p>we start with a given image <span class="math notranslate nohighlight">\(\bf x\)</span></p></li>
-<li><p>using our guide we encode it as <span class="math notranslate nohighlight">\(\bf z\)</span></p></li>
-<li><p>using the model likelihood we decode <span class="math notranslate nohighlight">\(\bf z\)</span> and get a reconstructed image <span class="math notranslate nohighlight">\({\bf x}_\rm{reco}\)</span></p></li>
+<li>we start with a given image <span class="math notranslate nohighlight">\(\bf x\)</span></li>
+<li>using our guide we encode it as <span class="math notranslate nohighlight">\(\bf z\)</span></li>
+<li>using the model likelihood we decode <span class="math notranslate nohighlight">\(\bf z\)</span> and get a reconstructed image <span class="math notranslate nohighlight">\({\bf x}_\rm{reco}\)</span></li>
 </ul>
 <p>If we’ve learned good values for <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span>, <span class="math notranslate nohighlight">\(\bf x\)</span> and <span class="math notranslate nohighlight">\({\bf x}_\rm{reco}\)</span> should be similar. This should clarify how the word autoencoder ended up being used to describe this setup: the model is the decoder and the guide is the encoder. Together, they can be thought of as an autoencoder.</p>
 </div>
@@ -502,7 +499,7 @@ Part II</span></a> for a somewhat more general discussion of amortization).</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.4.1&#39;</span><span class="p">)</span>
+<span></span><span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.0.0&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -619,11 +616,11 @@ Part II</span></a> for a somewhat more general discussion of amortization).</p>
 </div>
 <p>Note that <code class="docutils literal notranslate"><span class="pre">model()</span></code> is a callable that takes in a mini-batch of images <code class="docutils literal notranslate"><span class="pre">x</span></code> as input. This is a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> of size <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> x 784.</p>
 <p>The first thing we do inside of <code class="docutils literal notranslate"><span class="pre">model()</span></code> is register the (previously instantiated) decoder module with Pyro. Note that we give it an appropriate (and unique) name. This call to <code class="docutils literal notranslate"><span class="pre">pyro.module</span></code> lets Pyro know about all the parameters inside of the decoder network.</p>
-<p>Next we setup the hyperparameters for our prior, which is just a unit normal gaussian distribution. Note that: - we specifically designate independence amongst the data in our mini-batch (i.e. the leftmost dimension) via <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>. Also, note the use of <code class="docutils literal notranslate"><span class="pre">.to_event(1)</span></code> when sampling from the latent <code class="docutils literal notranslate"><span class="pre">z</span></code> - this ensures that instead of treating our sample as being generated from a univariate normal with <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">z_dim</span></code>, we treat them as being generated from a multivariate normal
+<p>Next we setup the hyperparameters for our prior, which is just a unit normal gaussian distribution. Note that: - we specifically designate independence amongst the data in our mini-batch (i.e.&nbsp;the leftmost dimension) via <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>. Also, note the use of <code class="docutils literal notranslate"><span class="pre">.to_event(1)</span></code> when sampling from the latent <code class="docutils literal notranslate"><span class="pre">z</span></code> - this ensures that instead of treating our sample as being generated from a univariate normal with <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">z_dim</span></code>, we treat them as being generated from a multivariate normal
 distribution with diagonal covariance. As such, the log probabilities along each dimension is summed out when we evaluate <code class="docutils literal notranslate"><span class="pre">.log_prob</span></code> for a “latent” sample. Refer to the <a class="reference internal" href="tensor_shapes.html"><span class="doc">Tensor Shapes</span></a> tutorial for more details. - since we’re processing an entire mini-batch of images, we need the leftmost dimension of <code class="docutils literal notranslate"><span class="pre">z_loc</span></code> and <code class="docutils literal notranslate"><span class="pre">z_scale</span></code> to equal the mini-batch size - in case we’re on GPU, we use <code class="docutils literal notranslate"><span class="pre">new_zeros</span></code> and <code class="docutils literal notranslate"><span class="pre">new_ones</span></code> to ensure that newly created tensors are on the same
 GPU device.</p>
 <p>Next we sample the latent <code class="docutils literal notranslate"><span class="pre">z</span></code> from the prior, making sure to give the random variable a unique Pyro name <code class="docutils literal notranslate"><span class="pre">'latent'</span></code>. Then we pass <code class="docutils literal notranslate"><span class="pre">z</span></code> through the decoder network, which returns <code class="docutils literal notranslate"><span class="pre">loc_img</span></code>. We then score the observed images in the mini-batch <code class="docutils literal notranslate"><span class="pre">x</span></code> against the Bernoulli likelihood parametrized by <code class="docutils literal notranslate"><span class="pre">loc_img</span></code>. Note that we flatten <code class="docutils literal notranslate"><span class="pre">x</span></code> so that all the pixels are in the rightmost dimension.</p>
-<p>That’s all there is to it! Note how closely the flow of Pyro primitives in <code class="docutils literal notranslate"><span class="pre">model</span></code> follows the generative story of our model, e.g. as encapsulated by Figure 1. Now we move on to the guide:</p>
+<p>That’s all there is to it! Note how closely the flow of Pyro primitives in <code class="docutils literal notranslate"><span class="pre">model</span></code> follows the generative story of our model, e.g.&nbsp;as encapsulated by Figure 1. Now we move on to the guide:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -765,8 +762,8 @@ mini-batch dimension, and <code class="docutils literal notranslate"><span class
 </div>
 <p>Note that all the mini-batch logic is handled by the data loader. The meat of the training loop is <code class="docutils literal notranslate"><span class="pre">svi.step(x)</span></code>. There are two things we should draw attention to here:</p>
 <ul class="simple">
-<li><p>any arguments to <code class="docutils literal notranslate"><span class="pre">step</span></code> are passed to the model and the guide. consequently <code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">guide</span></code> need to have the same call signature</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">step</span></code> returns a noisy estimate of the loss (i.e. minus the ELBO). this estimate is not normalized in any way, so e.g. it scales with the size of the mini-batch</p></li>
+<li>any arguments to <code class="docutils literal notranslate"><span class="pre">step</span></code> are passed to the model and the guide. consequently <code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">guide</span></code> need to have the same call signature</li>
+<li><code class="docutils literal notranslate"><span class="pre">step</span></code> returns a noisy estimate of the loss (i.e.&nbsp;minus the ELBO). this estimate is not normalized in any way, so e.g.&nbsp;it scales with the size of the mini-batch</li>
 </ul>
 <p>The logic for adding evaluation logic is analogous:</p>
 <div class="nbinput nblast docutils container">
@@ -884,8 +881,8 @@ statement is stochastic, we’ll get different draws of z every time we run the 
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
-<p>[1] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>
-<p>[2] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Backpropagation</span> <span class="pre">and</span> <span class="pre">Approximate</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Deep</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>,      Danilo Jimenez Rezende, Shakir Mohamed, Daan Wierstra</p>
+<p>[1] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Diederik P Kingma, Max Welling</p>
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Backpropagation</span> <span class="pre">and</span> <span class="pre">Approximate</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Deep</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>, &nbsp;&nbsp;&nbsp;&nbsp; Danilo Jimenez Rezende, Shakir Mohamed, Daan Wierstra</p>
 </div>
 </div>
 
@@ -900,7 +897,7 @@ statement is stochastic, we’ll get different draws of z every time we run the 
         <a href="bayesian_regression.html" class="btn btn-neutral float-right" title="Bayesian Regression - Introduction (Part 1)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="effect_handlers.html" class="btn btn-neutral float-left" title="Poutine: A Guide to Programming with Effect Handlers in Pyro" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="elections.html" class="btn btn-neutral" title="Predicting the outcome of a US presidential election using Bayesian optimal experimental design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -926,16 +923,28 @@ statement is stochastic, we’ll get different draws of z every time we run the 
   
 
 
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

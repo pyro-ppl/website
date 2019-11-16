@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>The Semi-Supervised VAE &mdash; Pyro Tutorials 0.4.1 documentation</title>
+  <title>The Semi-Supervised VAE &mdash; Pyro Tutorials 1.0.0+027e7382 documentation</title>
   
 
   
@@ -17,38 +17,34 @@
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+  
+  
     
 
   
+
   <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Gaussian Mixture Model" href="gmm.html" />
     <link rel="prev" title="Attend Infer Repeat" href="air.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -65,7 +61,7 @@
             
             
               <div class="version">
-                0.4.1
+                1.0.0+027e7382
               </div>
             
           
@@ -105,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul class="current">
@@ -451,13 +448,13 @@ div.rendered_html tbody tr:hover {
 <h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p>Most of the models we’ve covered in the tutorials are unsupervised:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="vae.html"><span class="doc">Variational Autoencoder (VAE)</span></a></p></li>
-<li><p><a class="reference internal" href="dmm.html"><span class="doc">DMM</span></a></p></li>
-<li><p><a class="reference internal" href="air.html"><span class="doc">Attend-Infer-Repeat</span></a></p></li>
+<li><a class="reference internal" href="vae.html"><span class="doc">Variational Autoencoder (VAE)</span></a></li>
+<li><a class="reference internal" href="dmm.html"><span class="doc">DMM</span></a></li>
+<li><a class="reference internal" href="air.html"><span class="doc">Attend-Infer-Repeat</span></a></li>
 </ul>
 <p>We’ve also covered a simple supervised model:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="bayesian_regression.html"><span class="doc">Bayesian Regression</span></a></p></li>
+<li><a class="reference internal" href="bayesian_regression.html"><span class="doc">Bayesian Regression</span></a></li>
 </ul>
 <p>The semi-supervised setting represents an interesting intermediate case where some of the data is labeled and some is not. It is also of great practical importance, since we often have very little labeled data and much more unlabeled data. We’d clearly like to leverage labeled data to improve our models of the unlabeled data.</p>
 <p>The semi-supervised setting is also well suited to generative models, where missing data can be accounted for quite naturally—at least conceptually. As we will see, in restricting our attention to semi-supervised generative models, there will be no shortage of different model variants and possible inference strategies. Although we’ll only be able to explore a few of these variants in detail, hopefully you will come away from the tutorial with a greater appreciation for the abstractions and
@@ -474,11 +471,11 @@ of <span class="math notranslate nohighlight">\(({\bf x}_i, {\bf y}_i, {\bf z}_i
 <h2>The Challenges of Inference<a class="headerlink" href="#The-Challenges-of-Inference" title="Permalink to this headline">¶</a></h2>
 <p>For concreteness we’re going to continue to assume that the partially-observed <span class="math notranslate nohighlight">\(\{ {\bf y}_i \}\)</span> are discrete labels; we will also assume that the <span class="math notranslate nohighlight">\(\{ {\bf z}_i \}\)</span> are continuous.</p>
 <ul class="simple">
-<li><p>If we apply the general recipe for stochastic variational inference to our model (see <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI Part I</span></a>) we would be sampling the discrete (and thus non-reparameterizable) variable <span class="math notranslate nohighlight">\({\bf y}_i\)</span> whenever it’s unobserved. As discussed in <a class="reference internal" href="svi_part_iii.html"><span class="doc">SVI Part III</span></a> this will generally lead to high-variance gradient estimates.</p></li>
-<li><p>A common way to ameliorate this problem—and one that we’ll explore below—is to forego sampling and instead sum out all ten values of the class label <span class="math notranslate nohighlight">\({\bf y}_i\)</span> when we calculate the ELBO for an unlabeled datapoint <span class="math notranslate nohighlight">\({\bf x}_i\)</span>. This is more expensive per step, but can help us reduce the variance of our gradient estimator and thereby take fewer steps.</p></li>
-<li><p>Recall that the role of the guide is to ‘fill in’ <em>latent</em> random variables. Concretely, one component of our guide will be a digit classifier <span class="math notranslate nohighlight">\(q_\phi({\bf y} | {\bf x})\)</span> that will randomly ‘fill in’ labels <span class="math notranslate nohighlight">\(\{ {\bf y}_i \}\)</span> given an image <span class="math notranslate nohighlight">\(\{ {\bf x}_i \}\)</span>. Crucially, this means that the only term in the ELBO that will depend on <span class="math notranslate nohighlight">\(q_\phi(\cdot | {\bf x})\)</span> is the term that involves a sum over <em>unlabeled</em> datapoints. This means that our classifier
-<span class="math notranslate nohighlight">\(q_\phi(\cdot | {\bf x})\)</span>—which in many cases will be the primary object of interest—will not be learning from the labeled datapoints (at least not directly).</p></li>
-<li><p>This seems like a potential problem. Luckily, various fixes are possible. Below we’ll follow the approach in reference [1], which involves introducing an additional objective function for the classifier to ensure that the classifier learns directly from the labeled data.</p></li>
+<li>If we apply the general recipe for stochastic variational inference to our model (see <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI Part I</span></a>) we would be sampling the discrete (and thus non-reparameterizable) variable <span class="math notranslate nohighlight">\({\bf y}_i\)</span> whenever it’s unobserved. As discussed in <a class="reference internal" href="svi_part_iii.html"><span class="doc">SVI Part III</span></a> this will generally lead to high-variance gradient estimates.</li>
+<li>A common way to ameliorate this problem—and one that we’ll explore below—is to forego sampling and instead sum out all ten values of the class label <span class="math notranslate nohighlight">\({\bf y}_i\)</span> when we calculate the ELBO for an unlabeled datapoint <span class="math notranslate nohighlight">\({\bf x}_i\)</span>. This is more expensive per step, but can help us reduce the variance of our gradient estimator and thereby take fewer steps.</li>
+<li>Recall that the role of the guide is to ‘fill in’ <em>latent</em> random variables. Concretely, one component of our guide will be a digit classifier <span class="math notranslate nohighlight">\(q_\phi({\bf y} | {\bf x})\)</span> that will randomly ‘fill in’ labels <span class="math notranslate nohighlight">\(\{ {\bf y}_i \}\)</span> given an image <span class="math notranslate nohighlight">\(\{ {\bf x}_i \}\)</span>. Crucially, this means that the only term in the ELBO that will depend on <span class="math notranslate nohighlight">\(q_\phi(\cdot | {\bf x})\)</span> is the term that involves a sum over <em>unlabeled</em> datapoints. This means that our classifier
+<span class="math notranslate nohighlight">\(q_\phi(\cdot | {\bf x})\)</span>—which in many cases will be the primary object of interest—will not be learning from the labeled datapoints (at least not directly).</li>
+<li>This seems like a potential problem. Luckily, various fixes are possible. Below we’ll follow the approach in reference [1], which involves introducing an additional objective function for the classifier to ensure that the classifier learns directly from the labeled data.</li>
 </ul>
 <p>We have our work cut out for us so let’s get started!</p>
 </div>
@@ -486,21 +483,21 @@ of <span class="math notranslate nohighlight">\(({\bf x}_i, {\bf y}_i, {\bf z}_i
 <h2>First Variant: Standard objective function, naive estimator<a class="headerlink" href="#First-Variant:-Standard-objective-function,-naive-estimator" title="Permalink to this headline">¶</a></h2>
 <p>As discussed in the introduction, we’re considering the model depicted in Figure 1. In more detail, the model has the following structure:</p>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(p({\bf y}) = Cat({\bf y}~|~{\bf \pi})\)</span>: multinomial (or categorical) prior for the class label</p></li>
-<li><p><span class="math notranslate nohighlight">\(p({\bf z}) = \mathcal{N}({\bf z}~|~{\bf 0,I})\)</span>: unit normal prior for the latent code <span class="math notranslate nohighlight">\(\bf z\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(p_{\theta}({\bf x}~|~{\bf z,y}) = Bernoulli\left({\bf x}~|~\mu\left({\bf z,y}\right)\right)\)</span>: parameterized Bernoulli likelihood function; <span class="math notranslate nohighlight">\(\mu\left({\bf z,y}\right)\)</span> corresponds to <code class="docutils literal notranslate"><span class="pre">decoder</span></code> in the code</p></li>
+<li><span class="math notranslate nohighlight">\(p({\bf y}) = Cat({\bf y}~|~{\bf \pi})\)</span>: multinomial (or categorical) prior for the class label</li>
+<li><span class="math notranslate nohighlight">\(p({\bf z}) = \mathcal{N}({\bf z}~|~{\bf 0,I})\)</span>: unit normal prior for the latent code <span class="math notranslate nohighlight">\(\bf z\)</span></li>
+<li><span class="math notranslate nohighlight">\(p_{\theta}({\bf x}~|~{\bf z,y}) = Bernoulli\left({\bf x}~|~\mu\left({\bf z,y}\right)\right)\)</span>: parameterized Bernoulli likelihood function; <span class="math notranslate nohighlight">\(\mu\left({\bf z,y}\right)\)</span> corresponds to <code class="docutils literal notranslate"><span class="pre">decoder</span></code> in the code</li>
 </ul>
 <p>We structure the components of our guide <span class="math notranslate nohighlight">\(q_{\phi}(.)\)</span> as follows:</p>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(q_{\phi}({\bf y}~|~{\bf x}) = Cat({\bf y}~|~{\bf \alpha}_{\phi}\left({\bf x}\right))\)</span>: parameterized multinomial (or categorical) distribution; <span class="math notranslate nohighlight">\({\bf \alpha}_{\phi}\left({\bf x}\right)\)</span> corresponds to <code class="docutils literal notranslate"><span class="pre">encoder_y</span></code> in the code</p></li>
-<li><p><span class="math notranslate nohighlight">\(q_{\phi}({\bf z}~|~{\bf x, y}) = \mathcal{N}({\bf z}~|~{\bf \mu}_{\phi}\left({\bf x, y}\right), {\bf \sigma^2_{\phi}\left(x, y\right)})\)</span>: parameterized normal distribution; <span class="math notranslate nohighlight">\({\bf \mu}_{\phi}\left({\bf x, y}\right)\)</span> and <span class="math notranslate nohighlight">\({\bf \sigma^2_{\phi}\left(x, y\right)}\)</span> correspond to the neural digit classifier <code class="docutils literal notranslate"><span class="pre">encoder_z</span></code> in the code</p></li>
+<li><span class="math notranslate nohighlight">\(q_{\phi}({\bf y}~|~{\bf x}) = Cat({\bf y}~|~{\bf \alpha}_{\phi}\left({\bf x}\right))\)</span>: parameterized multinomial (or categorical) distribution; <span class="math notranslate nohighlight">\({\bf \alpha}_{\phi}\left({\bf x}\right)\)</span> corresponds to <code class="docutils literal notranslate"><span class="pre">encoder_y</span></code> in the code</li>
+<li><span class="math notranslate nohighlight">\(q_{\phi}({\bf z}~|~{\bf x, y}) = \mathcal{N}({\bf z}~|~{\bf \mu}_{\phi}\left({\bf x, y}\right), {\bf \sigma^2_{\phi}\left(x, y\right)})\)</span>: parameterized normal distribution; <span class="math notranslate nohighlight">\({\bf \mu}_{\phi}\left({\bf x, y}\right)\)</span> and <span class="math notranslate nohighlight">\({\bf \sigma^2_{\phi}\left(x, y\right)}\)</span> correspond to the neural digit classifier <code class="docutils literal notranslate"><span class="pre">encoder_z</span></code> in the code</li>
 </ul>
 <p>These choices reproduce the structure of model M2 and its corresponding inference network in reference [1].</p>
 <p>We translate this model and guide pair into Pyro code below. Note that:</p>
 <ul class="simple">
-<li><p>The labels <code class="docutils literal notranslate"><span class="pre">ys</span></code>, which are represented with a one-hot encoding, are only partially observed (<code class="docutils literal notranslate"><span class="pre">None</span></code> denotes unobserved values).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">model()</span></code> handles both the observed and unobserved case.</p></li>
-<li><p>The code assumes that <code class="docutils literal notranslate"><span class="pre">xs</span></code> and <code class="docutils literal notranslate"><span class="pre">ys</span></code> are mini-batches of images and labels, respectively, with the size of each batch denoted by <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p></li>
+<li>The labels <code class="docutils literal notranslate"><span class="pre">ys</span></code>, which are represented with a one-hot encoding, are only partially observed (<code class="docutils literal notranslate"><span class="pre">None</span></code> denotes unobserved values).</li>
+<li><code class="docutils literal notranslate"><span class="pre">model()</span></code> handles both the observed and unobserved case.</li>
+<li>The code assumes that <code class="docutils literal notranslate"><span class="pre">xs</span></code> and <code class="docutils literal notranslate"><span class="pre">ys</span></code> are mini-batches of images and labels, respectively, with the size of each batch denoted by <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</li>
 </ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -555,7 +552,7 @@ of <span class="math notranslate nohighlight">\(({\bf x}_i, {\bf y}_i, {\bf z}_i
 <div class="section" id="MNIST-Pre-Processing">
 <h3>MNIST Pre-Processing<a class="headerlink" href="#MNIST-Pre-Processing" title="Permalink to this headline">¶</a></h3>
 <p>We normalize the pixel values to the range <span class="math notranslate nohighlight">\([0.0, 1.0]\)</span>. We use the <a class="reference external" href="http://pytorch.org/docs/master/torchvision/datasets.html#torchvision.datasets.MNIST">MNIST data loader</a> from the <code class="docutils literal notranslate"><span class="pre">torchvision</span></code> library. The testing set consists of <span class="math notranslate nohighlight">\(10000\)</span> examples. The default training set consists of <span class="math notranslate nohighlight">\(60000\)</span> examples. We use the first <span class="math notranslate nohighlight">\(50000\)</span> examples for training (divided into supervised and un-supervised parts) and the remaining <span class="math notranslate nohighlight">\(10000\)</span> images for validation. For our
-experiments, we use <span class="math notranslate nohighlight">\(4\)</span> configurations of supervision in the training set, i.e. we consider <span class="math notranslate nohighlight">\(3000\)</span>, <span class="math notranslate nohighlight">\(1000\)</span>, <span class="math notranslate nohighlight">\(600\)</span> and <span class="math notranslate nohighlight">\(100\)</span> supervised examples selected randomly (while ensuring that each class is balanced).</p>
+experiments, we use <span class="math notranslate nohighlight">\(4\)</span> configurations of supervision in the training set, i.e.&nbsp;we consider <span class="math notranslate nohighlight">\(3000\)</span>, <span class="math notranslate nohighlight">\(1000\)</span>, <span class="math notranslate nohighlight">\(600\)</span> and <span class="math notranslate nohighlight">\(100\)</span> supervised examples selected randomly (while ensuring that each class is balanced).</p>
 </div>
 <div class="section" id="The-Objective-Function">
 <h3>The Objective Function<a class="headerlink" href="#The-Objective-Function" title="Permalink to this headline">¶</a></h3>
@@ -645,9 +642,9 @@ that the items in a minibatch are indeed independent by wrapping our vectorized 
 <p>where <span class="math notranslate nohighlight">\(\tilde{p_l}({\bf x,y})\)</span> is the empirical distribution over the labeled (or supervised) data and <span class="math notranslate nohighlight">\(\alpha' \equiv \frac{\alpha}{|\mathcal{D}_{supervised}|}\)</span>. Note that we’ve introduced an arbitrary hyperparameter <span class="math notranslate nohighlight">\(\alpha\)</span> that modulates the importance of the new term.</p>
 <p>To learn using this modified objective in Pyro we do the following:</p>
 <ul class="simple">
-<li><p>We use a new model and guide pair (see the code snippet below) that corresponds to scoring the observed label <span class="math notranslate nohighlight">\({\bf y}\)</span> for a given image <span class="math notranslate nohighlight">\({\bf x}\)</span> against the predictive distribution <span class="math notranslate nohighlight">\(q_{\phi}({\bf y}~|~ {\bf x})\)</span></p></li>
-<li><p>We specify the scaling factor <span class="math notranslate nohighlight">\(\alpha'\)</span> (<code class="docutils literal notranslate"><span class="pre">aux_loss_multiplier</span></code> in the code) in the <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> call by making use of <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code>. Note that <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code> was used to similar effect in the <a class="reference internal" href="dmm.html"><span class="doc">Deep Markov Model</span></a> to implement KL annealing.</p></li>
-<li><p>We create a new <code class="docutils literal notranslate"><span class="pre">SVI</span></code> object and use it to take gradient steps on the new objective term</p></li>
+<li>We use a new model and guide pair (see the code snippet below) that corresponds to scoring the observed label <span class="math notranslate nohighlight">\({\bf y}\)</span> for a given image <span class="math notranslate nohighlight">\({\bf x}\)</span> against the predictive distribution <span class="math notranslate nohighlight">\(q_{\phi}({\bf y}~|~ {\bf x})\)</span></li>
+<li>We specify the scaling factor <span class="math notranslate nohighlight">\(\alpha'\)</span> (<code class="docutils literal notranslate"><span class="pre">aux_loss_multiplier</span></code> in the code) in the <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> call by making use of <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code>. Note that <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code> was used to similar effect in the <a class="reference internal" href="dmm.html"><span class="doc">Deep Markov Model</span></a> to implement KL annealing.</li>
+<li>We create a new <code class="docutils literal notranslate"><span class="pre">SVI</span></code> object and use it to take gradient steps on the new objective term</li>
 </ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -692,46 +689,46 @@ that the items in a minibatch are indeed independent by wrapping our vectorized 
 </figure></center></div>
 <div class="section" id="Results">
 <h2>Results<a class="headerlink" href="#Results" title="Permalink to this headline">¶</a></h2>
-<table class="docutils align-default">
+<table border="1" class="docutils">
 <colgroup>
-<col style="width: 21%" />
-<col style="width: 18%" />
-<col style="width: 18%" />
-<col style="width: 18%" />
-<col style="width: 24%" />
+<col width="21%" />
+<col width="18%" />
+<col width="18%" />
+<col width="18%" />
+<col width="24%" />
 </colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Supervised data</p></th>
-<th class="head"><p>First variant</p></th>
-<th class="head"><p>Second variant</p></th>
-<th class="head"><p>Third variant</p></th>
-<th class="head"><p>Baseline classifier</p></th>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Supervised data</th>
+<th class="head">First variant</th>
+<th class="head">Second variant</th>
+<th class="head">Third variant</th>
+<th class="head">Baseline classifier</th>
 </tr>
 </thead>
-<tbody>
-<tr class="row-even"><td><p>100</p></td>
-<td><p>0.2007(0.0353)</p></td>
-<td><p>0.2254(0.0346)</p></td>
-<td><p>0.9319(0.0060)</p></td>
-<td><p>0.7712(0.0159)</p></td>
+<tbody valign="top">
+<tr class="row-even"><td>100</td>
+<td>0.2007(0.0353)</td>
+<td>0.2254(0.0346)</td>
+<td>0.9319(0.0060)</td>
+<td>0.7712(0.0159)</td>
 </tr>
-<tr class="row-odd"><td><p>600</p></td>
-<td><p>0.1791(0.0244)</p></td>
-<td><p>0.6939(0.0345)</p></td>
-<td><p>0.9437(0.0070)</p></td>
-<td><p>0.8716(0.0064)</p></td>
+<tr class="row-odd"><td>600</td>
+<td>0.1791(0.0244)</td>
+<td>0.6939(0.0345)</td>
+<td>0.9437(0.0070)</td>
+<td>0.8716(0.0064)</td>
 </tr>
-<tr class="row-even"><td><p>1000</p></td>
-<td><p>0.2006(0.0295)</p></td>
-<td><p>0.7562(0.0235)</p></td>
-<td><p>0.9487(0.0038)</p></td>
-<td><p>0.8863(0.0025)</p></td>
+<tr class="row-even"><td>1000</td>
+<td>0.2006(0.0295)</td>
+<td>0.7562(0.0235)</td>
+<td>0.9487(0.0038)</td>
+<td>0.8863(0.0025)</td>
 </tr>
-<tr class="row-odd"><td><p>3000</p></td>
-<td><p>0.1982(0.0522)</p></td>
-<td><p>0.8932(0.0159)</p></td>
-<td><p>0.9582(0.0012)</p></td>
-<td><p>0.9108(0.0015)</p></td>
+<tr class="row-odd"><td>3000</td>
+<td>0.1982(0.0522)</td>
+<td>0.8932(0.0159)</td>
+<td>0.9582(0.0012)</td>
+<td>0.9108(0.0015)</td>
 </tr>
 </tbody>
 </table>
@@ -811,8 +808,8 @@ another. And there are a lot of variants (see Figure 7)!</p>
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
-<p>[1] <code class="docutils literal notranslate"><span class="pre">Semi-supervised</span> <span class="pre">Learning</span> <span class="pre">with</span> <span class="pre">Deep</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>,     Diederik P. Kingma, Danilo J. Rezende, Shakir Mohamed, Max Welling</p>
-<p>[2] <code class="docutils literal notranslate"><span class="pre">Learning</span> <span class="pre">Disentangled</span> <span class="pre">Representations</span> <span class="pre">with</span> <span class="pre">Semi-Supervised</span> <span class="pre">Deep</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>,      N. Siddharth, Brooks Paige, Jan-Willem Van de Meent, Alban Desmaison, Frank Wood,      Noah D. Goodman, Pushmeet Kohli, Philip H.S. Torr</p>
+<p>[1] <code class="docutils literal notranslate"><span class="pre">Semi-supervised</span> <span class="pre">Learning</span> <span class="pre">with</span> <span class="pre">Deep</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Diederik P. Kingma, Danilo J. Rezende, Shakir Mohamed, Max Welling</p>
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Learning</span> <span class="pre">Disentangled</span> <span class="pre">Representations</span> <span class="pre">with</span> <span class="pre">Semi-Supervised</span> <span class="pre">Deep</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>, &nbsp;&nbsp;&nbsp;&nbsp; N. Siddharth, Brooks Paige, Jan-Willem Van de Meent, Alban Desmaison, Frank Wood, &nbsp;&nbsp;&nbsp;&nbsp; Noah D. Goodman, Pushmeet Kohli, Philip H.S. Torr</p>
 </div>
 </div>
 
@@ -827,7 +824,7 @@ another. And there are a lot of variants (see Figure 7)!</p>
         <a href="gmm.html" class="btn btn-neutral float-right" title="Gaussian Mixture Model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="air.html" class="btn btn-neutral float-left" title="Attend Infer Repeat" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="air.html" class="btn btn-neutral" title="Attend Infer Repeat" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -853,16 +850,28 @@ another. And there are a lot of variants (see Figure 7)!</p>
   
 
 
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
