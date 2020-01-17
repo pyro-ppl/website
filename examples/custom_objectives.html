@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Custom SVI Objectives &mdash; Pyro Tutorials 1.1.0 documentation</title>
+  <title>Custom SVI Objectives &mdash; Pyro Tutorials 1.2.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -124,6 +124,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Daily-S&amp;P-500-data">Daily S&amp;P 500 data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Fitting-a-single-distribution-to-log-returns">Fitting a single distribution to log returns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Modeling-stochastic-volatility">Modeling stochastic volatility</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Contributed:</span></p>
 <ul>
@@ -139,6 +143,10 @@
 <li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html"><strong>Dirichlet Process Mixture Models in Pyro</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Inference"><strong>Inference</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Criticism"><strong>Criticism</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#References">References</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
@@ -245,15 +253,16 @@
 <a class="reference external" href="http://pyro.ai/examples/svi_part_iii.html">III</a> for background on SVI.</p>
 <p>In this tutorial we show how advanced users can modify and/or augment the variational objectives (alternatively: loss functions) provided by Pyro to support special use cases.</p>
 <ol class="arabic simple">
-<li><a class="reference external" href="#Basic-SVI-Usage">Basic SVI Usage</a><ol class="arabic">
-<li><a class="reference external" href="#A-Lower-Level-Pattern">A Lower Level Pattern</a></li>
+<li><p><a class="reference external" href="#Basic-SVI-Usage">Basic SVI Usage</a></p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="#A-Lower-Level-Pattern">A Lower Level Pattern</a></p></li>
 </ol>
 </li>
-<li><a class="reference external" href="#Example:-Custom-Regularizer">Example: Custom Regularizer</a></li>
-<li><a class="reference external" href="#Example:-Scaling-the-Loss">Example: Scaling the Loss</a></li>
-<li><a class="reference external" href="#Example:-Mixing-Optimizers">Example: Mixing Optimizers</a></li>
-<li><a class="reference external" href="#Example:-Custom-ELBO">Example: Custom ELBO</a></li>
-<li><a class="reference external" href="#Example:-KL-Annealing">Example: KL Annealing</a></li>
+<li><p><a class="reference external" href="#Example:-Custom-Regularizer">Example: Custom Regularizer</a></p></li>
+<li><p><a class="reference external" href="#Example:-Scaling-the-Loss">Example: Scaling the Loss</a></p></li>
+<li><p><a class="reference external" href="#Example:-Mixing-Optimizers">Example: Mixing Optimizers</a></p></li>
+<li><p><a class="reference external" href="#Example:-Custom-ELBO">Example: Custom ELBO</a></p></li>
+<li><p><a class="reference external" href="#Example:-KL-Annealing">Example: KL Annealing</a></p></li>
 </ol>
 <div class="section" id="Basic-SVI-Usage">
 <h2>Basic SVI Usage<a class="headerlink" href="#Basic-SVI-Usage" title="Permalink to this headline">¶</a></h2>
@@ -267,8 +276,8 @@
 <h3>A Lower-Level Pattern<a class="headerlink" href="#A-Lower-Level-Pattern" title="Permalink to this headline">¶</a></h3>
 <p>The nice thing about the above pattern is that it allows Pyro to take care of various details for us, for example:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">pyro.optim.Adam</span></code> dynamically creates a new <code class="docutils literal notranslate"><span class="pre">torch.optim.Adam</span></code> optimizer whenever a new parameter is encountered</li>
-<li><code class="docutils literal notranslate"><span class="pre">SVI.step()</span></code> zeros gradients between gradient steps</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pyro.optim.Adam</span></code> dynamically creates a new <code class="docutils literal notranslate"><span class="pre">torch.optim.Adam</span></code> optimizer whenever a new parameter is encountered</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SVI.step()</span></code> zeros gradients between gradient steps</p></li>
 </ul>
 <p>If we want more control, we can directly manipulate the differentiable loss method of the various <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> classes. For example, (assuming we know all the parameters in advance) this is equivalent to the previous code snippet:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># define optimizer and loss function</span>
@@ -329,7 +338,7 @@
 </div>
 <div class="section" id="Example:-Mixing-Optimizers">
 <h2>Example: Mixing Optimizers<a class="headerlink" href="#Example:-Mixing-Optimizers" title="Permalink to this headline">¶</a></h2>
-<p>The various optimizers in <code class="docutils literal notranslate"><span class="pre">pyro.optim</span></code> allow the user to specify optimization settings (e.g.&nbsp;learning rates) on a per-parameter basis. But what if we want to use different optimization algorithms for different parameters? We can do this using Pyro’s <code class="docutils literal notranslate"><span class="pre">MultiOptimizer</span></code> (see below), but we can also achieve the same thing if we directly manipulate <code class="docutils literal notranslate"><span class="pre">differentiable_loss</span></code>:</p>
+<p>The various optimizers in <code class="docutils literal notranslate"><span class="pre">pyro.optim</span></code> allow the user to specify optimization settings (e.g. learning rates) on a per-parameter basis. But what if we want to use different optimization algorithms for different parameters? We can do this using Pyro’s <code class="docutils literal notranslate"><span class="pre">MultiOptimizer</span></code> (see below), but we can also achieve the same thing if we directly manipulate <code class="docutils literal notranslate"><span class="pre">differentiable_loss</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">adam</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_parameters</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)})</span>
 <span class="n">sgd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">sgd_parameters</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">})</span>
 <span class="n">loss_fn</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span><span class="o">.</span><span class="n">differentiable_loss</span>
@@ -378,7 +387,7 @@
 <p>Note that this is basically what the <code class="docutils literal notranslate"><span class="pre">elbo</span></code> implementation in <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/pyro/contrib/minipyro.py">“mini-pyro”</a> looks like.</p>
 <div class="section" id="Example:-KL-Annealing">
 <h3>Example: KL Annealing<a class="headerlink" href="#Example:-KL-Annealing" title="Permalink to this headline">¶</a></h3>
-<p>In the <a class="reference external" href="http://pyro.ai/examples/dmm.html">Deep Markov Model Tutorial</a> the ELBO variational objective is modified during training. In particular the various KL-divergence terms between latent random variables are scaled downward (i.e.&nbsp;annealed) relative to the log probabilities of the observed data. In the tutorial this is accomplished using <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code>. We can accomplish the same thing by defining a custom loss function. This latter option is not a very elegant pattern but we include it
+<p>In the <a class="reference external" href="http://pyro.ai/examples/dmm.html">Deep Markov Model Tutorial</a> the ELBO variational objective is modified during training. In particular the various KL-divergence terms between latent random variables are scaled downward (i.e. annealed) relative to the log probabilities of the observed data. In the tutorial this is accomplished using <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code>. We can accomplish the same thing by defining a custom loss function. This latter option is not a very elegant pattern but we include it
 anyway to show the flexibility we have at our disposal.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">simple_elbo_kl_annealing</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># get the annealing factor and latents to anneal from the keyword</span>

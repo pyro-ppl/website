@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Using the PyTorch JIT Compiler with Pyro &mdash; Pyro Tutorials 1.1.0 documentation</title>
+  <title>Using the PyTorch JIT Compiler with Pyro &mdash; Pyro Tutorials 1.2.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -119,6 +119,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Daily-S&amp;P-500-data">Daily S&amp;P 500 data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Fitting-a-single-distribution-to-log-returns">Fitting a single distribution to log returns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Modeling-stochastic-volatility">Modeling stochastic volatility</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Contributed:</span></p>
 <ul>
@@ -134,6 +138,10 @@
 <li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html"><strong>Dirichlet Process Mixture Models in Pyro</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Inference"><strong>Inference</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Criticism"><strong>Criticism</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#References">References</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
@@ -438,36 +446,28 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Summary:">
 <h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first">You can use compiled functions in Pyro models.</p>
-</li>
-<li><p class="first">You cannot use pyro primitives inside compiled functions.</p>
-</li>
-<li><p class="first">If your model has static structure, you can use a <code class="docutils literal notranslate"><span class="pre">Jit*</span></code> version of an <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> algorithm, e.g.</p>
+<li><p>You can use compiled functions in Pyro models.</p></li>
+<li><p>You cannot use pyro primitives inside compiled functions.</p></li>
+<li><p>If your model has static structure, you can use a <code class="docutils literal notranslate"><span class="pre">Jit*</span></code> version of an <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> algorithm, e.g.</p>
 <div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- Trace_ELBO()</span>
 <span class="gi">+ JitTrace_ELBO()</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">The <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.HMC">HMC</a> and <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.NUTS">NUTS</a> classes accept <code class="docutils literal notranslate"><span class="pre">jit_compile=True</span></code> kwarg.</p>
-</li>
-<li><p class="first">Models should input all tensors as <code class="docutils literal notranslate"><span class="pre">*args</span></code> and all non-tensors as <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</p>
-</li>
-<li><p class="first">Each different value of <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> triggers a separate compilation.</p>
-</li>
-<li><p class="first">Use <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to specify all variation in structure (e.g.&nbsp;time series length).</p>
-</li>
-<li><p class="first">To ignore jit warnings in safe code blocks, use <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">pyro.util.ignore_jit_warnings():</span></code>.</p>
-</li>
-<li><p class="first">To ignore all jit warnings in <code class="docutils literal notranslate"><span class="pre">HMC</span></code> or <code class="docutils literal notranslate"><span class="pre">NUTS</span></code>, pass <code class="docutils literal notranslate"><span class="pre">ignore_jit_warnings=True</span></code>.</p>
-</li>
+<li><p>The <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.HMC">HMC</a> and <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.NUTS">NUTS</a> classes accept <code class="docutils literal notranslate"><span class="pre">jit_compile=True</span></code> kwarg.</p></li>
+<li><p>Models should input all tensors as <code class="docutils literal notranslate"><span class="pre">*args</span></code> and all non-tensors as <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</p></li>
+<li><p>Each different value of <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> triggers a separate compilation.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to specify all variation in structure (e.g. time series length).</p></li>
+<li><p>To ignore jit warnings in safe code blocks, use <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">pyro.util.ignore_jit_warnings():</span></code>.</p></li>
+<li><p>To ignore all jit warnings in <code class="docutils literal notranslate"><span class="pre">HMC</span></code> or <code class="docutils literal notranslate"><span class="pre">NUTS</span></code>, pass <code class="docutils literal notranslate"><span class="pre">ignore_jit_warnings=True</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="Table-of-contents">
 <h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference external" href="#Introduction">Introduction</a></li>
-<li><a class="reference external" href="#A-simple-model">A simple model</a></li>
-<li><a class="reference external" href="#Varying-structure">Varying structure</a></li>
+<li><p><a class="reference external" href="#Introduction">Introduction</a></p></li>
+<li><p><a class="reference external" href="#A-simple-model">A simple model</a></p></li>
+<li><p><a class="reference external" href="#Varying-structure">Varying structure</a></p></li>
 </ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -487,7 +487,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="k">import</span> <span class="n">Adam</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.1.0&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.2.0&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>    <span class="c1"># &lt;---- This is always a good idea!</span>
 </pre></div>
 </div>
@@ -640,8 +640,8 @@ Wall time: 2.09 s
 <h3>Varying structure<a class="headerlink" href="#Varying-structure" title="Permalink to this headline">¶</a></h3>
 <p>Time series models often run on datasets of multiple time series with different lengths. To accomodate varying structure like this, Pyro requires models to separate all model inputs into tensors and non-tensors.<span class="math notranslate nohighlight">\(^\dagger\)</span></p>
 <ul class="simple">
-<li>Non-tensor inputs should be passed as <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to the model and guide. These can determine model structure, so that a model is compiled for each value of the passed <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</li>
-<li>Tensor inputs should be passed as <code class="docutils literal notranslate"><span class="pre">*args</span></code>. These must not determine model structure. However <code class="docutils literal notranslate"><span class="pre">len(args)</span></code> may determine model structure (as is used e.g.&nbsp;in semisupervised models).</li>
+<li><p>Non-tensor inputs should be passed as <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to the model and guide. These can determine model structure, so that a model is compiled for each value of the passed <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</p></li>
+<li><p>Tensor inputs should be passed as <code class="docutils literal notranslate"><span class="pre">*args</span></code>. These must not determine model structure. However <code class="docutils literal notranslate"><span class="pre">len(args)</span></code> may determine model structure (as is used e.g. in semisupervised models).</p></li>
 </ul>
 <p>To illustrate this with a time series model, we will pass in a sequence of observations as a tensor <code class="docutils literal notranslate"><span class="pre">arg</span></code> and the sequence length as a non-tensor <code class="docutils literal notranslate"><span class="pre">kwarg</span></code>:</p>
 <div class="nbinput nblast docutils container">

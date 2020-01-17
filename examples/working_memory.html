@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 1.1.0 documentation</title>
+  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 1.2.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -110,6 +110,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Daily-S&amp;P-500-data">Daily S&amp;P 500 data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Fitting-a-single-distribution-to-log-returns">Fitting a single distribution to log returns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Modeling-stochastic-volatility">Modeling stochastic volatility</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Contributed:</span></p>
 <ul class="current">
@@ -139,6 +143,10 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html"><strong>Dirichlet Process Mixture Models in Pyro</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Inference"><strong>Inference</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Criticism"><strong>Criticism</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#References">References</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
@@ -442,9 +450,9 @@ div.rendered_html tbody tr:hover {
 <p>In most of machine learning, we begin with data and go on to learn a model. In other contexts, we also have a hand in the data generation process. This gives us an exciting opportunity: we can try to obtain data that will help our model learn more effectively. This procedure is called <em>optimal experimental design</em> (OED) and Pyro supports choosing optimal designs through the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.oed</span></code> module.</p>
 <p>When using OED, the data generation and modelling works as follows:</p>
 <ol class="arabic simple">
-<li>Write down a Bayesian model involving a design parameter, an unknown latent variable and an observable.</li>
-<li>Choose the optimal design (more details on this later).</li>
-<li>Collect the data and fit the model, e.g.&nbsp;using <code class="docutils literal notranslate"><span class="pre">SVI</span></code>.</li>
+<li><p>Write down a Bayesian model involving a design parameter, an unknown latent variable and an observable.</p></li>
+<li><p>Choose the optimal design (more details on this later).</p></li>
+<li><p>Collect the data and fit the model, e.g. using <code class="docutils literal notranslate"><span class="pre">SVI</span></code>.</p></li>
 </ol>
 <p>We can also run multiple ‘rounds’ or iterations of experiments. When doing this, we take the learned model from step 3 and use it as our prior in step 1 for the next round. This approach can be particularly useful because it allows us to design the next experiment based on what has already been learned: the experiments are <em>adaptive</em>.</p>
 <p>In this tutorial, we work through a specific example of this entire OED procedure with multiple rounds. We will show how to design adaptive experiments to learn a participant’s working memory capacity. The design we will be adapting is the <em>length of a sequence of digits that we ask a participant to remember</em>. Let’s dive into the full details.</p>
@@ -764,9 +772,9 @@ Optimal design: 7
 <h3>The adaptive experiment<a class="headerlink" href="#The-adaptive-experiment" title="Permalink to this headline">¶</a></h3>
 <p>We now have the ingredients to build an adaptive experiment to study working memory. We repeat the following steps:</p>
 <ol class="arabic simple">
-<li>Use the EIG to find the optimal sequence length <span class="math notranslate nohighlight">\(l\)</span></li>
-<li>Run the test using a sequence of length <span class="math notranslate nohighlight">\(l\)</span></li>
-<li>Update the posterior distribution with the new data</li>
+<li><p>Use the EIG to find the optimal sequence length <span class="math notranslate nohighlight">\(l\)</span></p></li>
+<li><p>Run the test using a sequence of length <span class="math notranslate nohighlight">\(l\)</span></p></li>
+<li><p>Update the posterior distribution with the new data</p></li>
 </ol>
 <p>At the first iteration, step 1 is done using the prior as above. However, for subsequent iterations, we use the posterior given all the data so far.</p>
 <p>In this notebook, the “experiment” is performed using the following synthesiser</p>
@@ -1007,7 +1015,7 @@ Estimate of θ: 5.434 ± 0.640
 <div class="section" id="Extensions">
 <h3>Extensions<a class="headerlink" href="#Extensions" title="Permalink to this headline">¶</a></h3>
 <p>In this tutorial we used variational inference to fit an approximate posterior for <span class="math notranslate nohighlight">\(\theta\)</span>. This could be substituted for an alternative posterior inference strategy, such as Hamiltonian Monte Carlo.</p>
-<p>The model in this tutorial is very simple and could be extended in a number of ways. For instance, it’s possible that as well as measuring whether the participant did or did not remember the sequence, we might collect some other information as well. We could build a model for the number of mistakes made (e.g.&nbsp;the edit distance between the correct sequence and the participant’s response) or jointly model the correctness and the time taken to respond. Here is an example model where we model the
+<p>The model in this tutorial is very simple and could be extended in a number of ways. For instance, it’s possible that as well as measuring whether the participant did or did not remember the sequence, we might collect some other information as well. We could build a model for the number of mistakes made (e.g. the edit distance between the correct sequence and the participant’s response) or jointly model the correctness and the time taken to respond. Here is an example model where we model the
 response time using a LogNormal distribution, as suggested by [4].</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:

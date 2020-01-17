@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 1.1.0 documentation</title>
+  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 1.2.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -128,6 +128,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Daily-S&amp;P-500-data">Daily S&amp;P 500 data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Fitting-a-single-distribution-to-log-returns">Fitting a single distribution to log returns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Modeling-stochastic-volatility">Modeling stochastic volatility</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Contributed:</span></p>
 <ul>
@@ -143,6 +147,10 @@
 <li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html"><strong>Dirichlet Process Mixture Models in Pyro</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Inference"><strong>Inference</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Criticism"><strong>Criticism</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#References">References</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
@@ -282,8 +290,8 @@ log likelihood term in the ELBO can be approximated with</p>
 <p>We see that <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> is very similar to <code class="docutils literal notranslate"><span class="pre">range</span></code> with one main difference: each invocation of <code class="docutils literal notranslate"><span class="pre">plate</span></code> requires the user to provide a unique name. The second argument is an integer just like for <code class="docutils literal notranslate"><span class="pre">range</span></code>.</p>
 <p>So far so good. Pyro can now leverage the conditional independency of the observations given the latent random variable. But how does this actually work? Basically <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> is implemented using a context manager. At every execution of the body of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop we enter a new (conditional) independence context which is then exited at the end of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop body. Let’s be very explicit about this:</p>
 <ul class="simple">
-<li>because each observed <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statement occurs within a different execution of the body of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop, Pyro marks each observation as independent</li>
-<li>this independence is properly a <em>conditional</em> independence <em>given</em> <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> because <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> is sampled <em>outside</em> of the context of <code class="docutils literal notranslate"><span class="pre">data_loop</span></code>.</li>
+<li><p>because each observed <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statement occurs within a different execution of the body of the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop, Pyro marks each observation as independent</p></li>
+<li><p>this independence is properly a <em>conditional</em> independence <em>given</em> <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> because <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> is sampled <em>outside</em> of the context of <code class="docutils literal notranslate"><span class="pre">data_loop</span></code>.</p></li>
 </ul>
 <p>Before moving on, let’s mention some gotchas to be avoided when using sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code>. Consider the following variant of the above code snippet:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># WARNING do not do this!</span>
@@ -382,7 +390,7 @@ docs</a> for details.</p>
 \[ p({\bf x}, {\bf z}, \beta) = p(\beta)
 \prod_{i=1}^N p({\bf x}_i | {\bf z}_i) p({\bf z}_i | \beta)  \qquad \qquad
 q({\bf z}, \beta) = q(\beta) \prod_{i=1}^N q({\bf z}_i | \beta, \lambda_i)\]</div>
-<p>For small to medium-sized <span class="math notranslate nohighlight">\(N\)</span> using local variational parameters like this can be a good approach. If <span class="math notranslate nohighlight">\(N\)</span> is large, however, the fact that the space we’re doing optimization over grows with <span class="math notranslate nohighlight">\(N\)</span> can be a real probelm. One way to avoid this nasty growth with the size of the dataset is <em>amortization</em>.</p>
+<p>For small to medium-sized <span class="math notranslate nohighlight">\(N\)</span> using local variational parameters like this can be a good approach. If <span class="math notranslate nohighlight">\(N\)</span> is large, however, the fact that the space we’re doing optimization over grows with <span class="math notranslate nohighlight">\(N\)</span> can be a real problem. One way to avoid this nasty growth with the size of the dataset is <em>amortization</em>.</p>
 <p>This works as follows. Instead of introducing local variational parameters, we’re going to learn a single parametric function <span class="math notranslate nohighlight">\(f(\cdot)\)</span> and work with a variational distribution that has the form</p>
 <div class="math notranslate nohighlight">
 \[q(\beta) \prod_{n=1}^N q({\bf z}_i | f({\bf x}_i))\]</div>
@@ -395,8 +403,8 @@ precisely the approach used in the <a class="reference internal" href="vae.html"
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
-<p>[1] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>, &nbsp;&nbsp;&nbsp;&nbsp; Matthew D. Hoffman, David M. Blei, Chong Wang, John Paisley</p>
-<p>[2] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Diederik P Kingma, Max Welling</p>
+<p>[1] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,      Matthew D. Hoffman, David M. Blei, Chong Wang, John Paisley</p>
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>
 </div>
 </div>
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Poutine: A Guide to Programming with Effect Handlers in Pyro &mdash; Pyro Tutorials 1.1.0 documentation</title>
+  <title>Poutine: A Guide to Programming with Effect Handlers in Pyro &mdash; Pyro Tutorials 1.2.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -128,6 +128,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Daily-S&amp;P-500-data">Daily S&amp;P 500 data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Fitting-a-single-distribution-to-log-returns">Fitting a single distribution to log returns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Modeling-stochastic-volatility">Modeling stochastic volatility</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Contributed:</span></p>
 <ul>
@@ -143,6 +147,10 @@
 <li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html"><strong>Dirichlet Process Mixture Models in Pyro</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Inference"><strong>Inference</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Criticism"><strong>Criticism</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#References">References</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
@@ -558,7 +566,7 @@ tensor(-3.0203)
 </div>
 <p>This makes things a little more clear: we can now see that <code class="docutils literal notranslate"><span class="pre">poutine.trace</span></code> and <code class="docutils literal notranslate"><span class="pre">poutine.condition</span></code> are wrappers for context managers that presumably communicate with the model through something inside <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>. We can also see that <code class="docutils literal notranslate"><span class="pre">poutine.trace</span></code> produces a data structure (a <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#trace">Trace</a>) containing a dictionary whose keys are <code class="docutils literal notranslate"><span class="pre">sample</span></code> site names and values are dictionaries containing the distribution (<code class="docutils literal notranslate"><span class="pre">&quot;fn&quot;</span></code>) and output
 (<code class="docutils literal notranslate"><span class="pre">&quot;value&quot;</span></code>) at each site, and that the output values at each site are exactly the values specified in <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p>
-<p>Finally, <code class="docutils literal notranslate"><span class="pre">TraceMessenger</span></code> and <code class="docutils literal notranslate"><span class="pre">ConditionMessenger</span></code> are Pyro effect handlers, or <code class="docutils literal notranslate"><span class="pre">Messenger</span></code>s: stateful context manager objects that are placed on a global stack and send messages (hence the name) up and down the stack at each effectful operation, like a <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> call. A <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> is placed at the bottom of the stack when its <code class="docutils literal notranslate"><span class="pre">__enter__</span></code> method is called, i.e.&nbsp;when it is used in a “with” statement.</p>
+<p>Finally, <code class="docutils literal notranslate"><span class="pre">TraceMessenger</span></code> and <code class="docutils literal notranslate"><span class="pre">ConditionMessenger</span></code> are Pyro effect handlers, or <code class="docutils literal notranslate"><span class="pre">Messenger</span></code>s: stateful context manager objects that are placed on a global stack and send messages (hence the name) up and down the stack at each effectful operation, like a <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> call. A <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> is placed at the bottom of the stack when its <code class="docutils literal notranslate"><span class="pre">__enter__</span></code> method is called, i.e. when it is used in a “with” statement.</p>
 <p>We’ll look at this process in more detail later in this tutorial. For a simplified implementation in only a few lines of code, see <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/pyro/contrib/minipyro.py">pyro.contrib.minipyro</a>.</p>
 </div>
 <div class="section" id="Implementing-new-effect-handlers-with-the-Messenger-API">
@@ -997,12 +1005,12 @@ tensor(6.5436)
 <p>This section contains some references to PL papers for readers interested in this direction.</p>
 <p>Algebraic effects and handlers, which were developed starting in the early 2000s and are a subject of active research in the programming languages community, are a versatile abstraction for building modular implementations of nonstandard interpreters of particular statements in a programming language, like <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> or <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code>. They were originally introduced to address the difficulty of composing nonstandard interpreters implemented with monads and monad transformers.</p>
 <ul class="simple">
-<li>For an accessible introduction to the effect handlers literature, see the excellent review/tutorial paper <a class="reference external" href="http://homepages.inf.ed.ac.uk/slindley/papers/handlers.pdf">“Handlers in Action”</a> by Ohad Kammar, Sam Lindley, and Nicolas Oury, and the references therein.</li>
-<li>Algebraic effect handlers were originally introduced by Gordon Plotkin and Matija Pretnar in the paper <a class="reference external" href="https://link.springer.com/chapter/10.1007/978-3-642-00590-9_7">“Handlers of Algebraic Effects”</a>.</li>
-<li>A useful mental model of effect handlers is as exception handlers that are capable of resuming computation in the <code class="docutils literal notranslate"><span class="pre">try</span></code> block after raising an exception and performing some processing in the <code class="docutils literal notranslate"><span class="pre">except</span></code> block. This metaphor is explored further in the experimental programming language <a class="reference external" href="http://math.andrej.com/eff/">Eff</a> and its companion paper <a class="reference external" href="https://arxiv.org/abs/1203.1539">“Programming with Algebraic Effects and Handlers”</a> by Andrej Bauer and Matija Pretnar.</li>
-<li>Most effect handlers in Pyro are “linear,” meaning that they only resume once per effectful operation and do not alter the order of execution of the original program. One exception is <code class="docutils literal notranslate"><span class="pre">poutine.queue</span></code>, which uses an inefficient implementation strategy for multiple resumptions like the one described for delimited continuations in the paper <a class="reference external" href="http://delivery.acm.org/10.1145/3240000/3236771/icfp18main-p36-p.pdf">“Capturing the Future by Replaying the Past”</a> by James Koppel, Gabriel Scherer,
-and Armando Solar-Lezama.</li>
-<li>More efficient implementation strategies for effect handlers in mainstream programming languages like Python or JavaScript is an area of active research. One promising line of work involves selective continuation-passing style transforms as in the paper <a class="reference external" href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/12/algeff.pdf">“Type-Directed Compilation of Row-Typed Algebraic Effects”</a> by Daan Leijen.</li>
+<li><p>For an accessible introduction to the effect handlers literature, see the excellent review/tutorial paper <a class="reference external" href="http://homepages.inf.ed.ac.uk/slindley/papers/handlers.pdf">“Handlers in Action”</a> by Ohad Kammar, Sam Lindley, and Nicolas Oury, and the references therein.</p></li>
+<li><p>Algebraic effect handlers were originally introduced by Gordon Plotkin and Matija Pretnar in the paper <a class="reference external" href="https://link.springer.com/chapter/10.1007/978-3-642-00590-9_7">“Handlers of Algebraic Effects”</a>.</p></li>
+<li><p>A useful mental model of effect handlers is as exception handlers that are capable of resuming computation in the <code class="docutils literal notranslate"><span class="pre">try</span></code> block after raising an exception and performing some processing in the <code class="docutils literal notranslate"><span class="pre">except</span></code> block. This metaphor is explored further in the experimental programming language <a class="reference external" href="http://math.andrej.com/eff/">Eff</a> and its companion paper <a class="reference external" href="https://arxiv.org/abs/1203.1539">“Programming with Algebraic Effects and Handlers”</a> by Andrej Bauer and Matija Pretnar.</p></li>
+<li><p>Most effect handlers in Pyro are “linear,” meaning that they only resume once per effectful operation and do not alter the order of execution of the original program. One exception is <code class="docutils literal notranslate"><span class="pre">poutine.queue</span></code>, which uses an inefficient implementation strategy for multiple resumptions like the one described for delimited continuations in the paper <a class="reference external" href="http://delivery.acm.org/10.1145/3240000/3236771/icfp18main-p36-p.pdf">“Capturing the Future by Replaying the Past”</a> by James Koppel, Gabriel Scherer,
+and Armando Solar-Lezama.</p></li>
+<li><p>More efficient implementation strategies for effect handlers in mainstream programming languages like Python or JavaScript is an area of active research. One promising line of work involves selective continuation-passing style transforms as in the paper <a class="reference external" href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/12/algeff.pdf">“Type-Directed Compilation of Row-Typed Algebraic Effects”</a> by Daan Leijen.</p></li>
 </ul>
 </div>
 </div>

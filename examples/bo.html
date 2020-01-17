@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Bayesian Optimization &mdash; Pyro Tutorials 1.1.0 documentation</title>
+  <title>Bayesian Optimization &mdash; Pyro Tutorials 1.2.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -110,6 +110,10 @@
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Daily-S&amp;P-500-data">Daily S&amp;P 500 data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Fitting-a-single-distribution-to-log-returns">Fitting a single distribution to log returns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html#Modeling-stochastic-volatility">Modeling stochastic volatility</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Contributed:</span></p>
 <ul class="current">
@@ -134,6 +138,10 @@
 <li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html"><strong>Dirichlet Process Mixture Models in Pyro</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Inference"><strong>Inference</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#Criticism"><strong>Criticism</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html#References">References</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Code Examples:</span></p>
 <ul>
@@ -445,19 +453,16 @@ div.rendered_html tbody tr:hover {
 <p>To solve the minimization problem, we will construct a sequence of points <span class="math notranslate nohighlight">\(\{x_n\}\)</span> that converge to <span class="math notranslate nohighlight">\(x^*\)</span>. Since we implicitly assume that we have a fixed budget (say 100 evaluations), we do not expect to find the exact minumum <span class="math notranslate nohighlight">\(x^*\)</span>: the goal is to get the best approximate solution we can given the allocated budget.</p>
 <p>The Bayesian optimization strategy works as follows:</p>
 <ol class="arabic">
-<li><p class="first">Place a prior on the objective function <span class="math notranslate nohighlight">\(f\)</span>. Each time we evaluate <span class="math notranslate nohighlight">\(f\)</span> at a new point <span class="math notranslate nohighlight">\(x_n\)</span>, we update our model for <span class="math notranslate nohighlight">\(f(x)\)</span>. This model serves as a surrogate objective function and reflects our beliefs about <span class="math notranslate nohighlight">\(f\)</span> (in particular it reflects our beliefs about where we expect <span class="math notranslate nohighlight">\(f(x)\)</span> to be close to <span class="math notranslate nohighlight">\(f(x^*)\)</span>). Since we are being Bayesian, our beliefs are encoded in a posterior that allows us to systematically reason about the uncertainty of our model
-predictions.</p>
-</li>
-<li><p class="first">Use the posterior to derive an “acquisition” function <span class="math notranslate nohighlight">\(\alpha(x)\)</span> that is easy to evaluate and differentiate (so that optimizing <span class="math notranslate nohighlight">\(\alpha(x)\)</span> is easy). In contrast to <span class="math notranslate nohighlight">\(f(x)\)</span>, we will generally evaluate <span class="math notranslate nohighlight">\(\alpha(x)\)</span> at many points <span class="math notranslate nohighlight">\(x\)</span>, since doing so will be cheap.</p>
-</li>
-<li><p class="first">Repeat until convergence:</p>
+<li><p>Place a prior on the objective function <span class="math notranslate nohighlight">\(f\)</span>. Each time we evaluate <span class="math notranslate nohighlight">\(f\)</span> at a new point <span class="math notranslate nohighlight">\(x_n\)</span>, we update our model for <span class="math notranslate nohighlight">\(f(x)\)</span>. This model serves as a surrogate objective function and reflects our beliefs about <span class="math notranslate nohighlight">\(f\)</span> (in particular it reflects our beliefs about where we expect <span class="math notranslate nohighlight">\(f(x)\)</span> to be close to <span class="math notranslate nohighlight">\(f(x^*)\)</span>). Since we are being Bayesian, our beliefs are encoded in a posterior that allows us to systematically reason about the uncertainty of our model
+predictions.</p></li>
+<li><p>Use the posterior to derive an “acquisition” function <span class="math notranslate nohighlight">\(\alpha(x)\)</span> that is easy to evaluate and differentiate (so that optimizing <span class="math notranslate nohighlight">\(\alpha(x)\)</span> is easy). In contrast to <span class="math notranslate nohighlight">\(f(x)\)</span>, we will generally evaluate <span class="math notranslate nohighlight">\(\alpha(x)\)</span> at many points <span class="math notranslate nohighlight">\(x\)</span>, since doing so will be cheap.</p></li>
+<li><p>Repeat until convergence:</p>
 <ul>
-<li><p class="first">Use the acquisition function to derive the next query point according to</p>
+<li><p>Use the acquisition function to derive the next query point according to</p>
 <div class="math notranslate nohighlight">
 \[x_{n+1} = \text{arg}\min \ \alpha(x).\]</div>
 </li>
-<li><p class="first">Evaluate <span class="math notranslate nohighlight">\(f(x_{n+1})\)</span> and update the posterior.</p>
-</li>
+<li><p>Evaluate <span class="math notranslate nohighlight">\(f(x_{n+1})\)</span> and update the posterior.</p></li>
 </ul>
 </li>
 </ol>
@@ -479,7 +484,7 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="k">as</span> <span class="nn">gp</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.1.0&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.2.0&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># can help with debugging</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
@@ -584,9 +589,9 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 </div>
 <p>The final component we need is a way to find (approximate) minimizing points <span class="math notranslate nohighlight">\(x_{\rm min}\)</span> of the acquisition function. There are several ways to proceed, including gradient-based and non-gradient-based techniques. Here we will follow the gradient-based approach. One of the possible drawbacks of gradient descent methods is that the minimization algorithm can get stuck at a local minimum. In this tutorial, we adopt a (very) simple approach to address this issue:</p>
 <ul class="simple">
-<li>First, we seed our minimization algorithm with 5 different values: i) one is chosen to be <span class="math notranslate nohighlight">\(x_{n-1}\)</span>, i.e.&nbsp;the candidate <span class="math notranslate nohighlight">\(x\)</span> used in the previous step; and ii) four are chosen uniformly at random from the domain of the objective function.</li>
-<li>We then run the minimization algorithm to approximate convergence for each seed value.</li>
-<li>Finally, from the five candidate <span class="math notranslate nohighlight">\(x\)</span>s identified by the minimization algorithm, we select the one that minimizes the acquisition function.</li>
+<li><p>First, we seed our minimization algorithm with 5 different values: i) one is chosen to be <span class="math notranslate nohighlight">\(x_{n-1}\)</span>, i.e. the candidate <span class="math notranslate nohighlight">\(x\)</span> used in the previous step; and ii) four are chosen uniformly at random from the domain of the objective function.</p></li>
+<li><p>We then run the minimization algorithm to approximate convergence for each seed value.</p></li>
+<li><p>Finally, from the five candidate <span class="math notranslate nohighlight">\(x\)</span>s identified by the minimization algorithm, we select the one that minimizes the acquisition function.</p></li>
 </ul>
 <p>Please refer to reference [2] for a more detailed discussion of this problem in Bayesian Optimization.</p>
 <div class="nbinput nblast docutils container">
@@ -712,8 +717,8 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 </div>
 <div class="section" id="References">
 <h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
-<p>[1] <code class="docutils literal notranslate"><span class="pre">Practical</span> <span class="pre">bayesian</span> <span class="pre">optimization</span> <span class="pre">of</span> <span class="pre">machine</span> <span class="pre">learning</span> <span class="pre">algorithms</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Jasper Snoek, Hugo Larochelle, and Ryan P. Adams</p>
-<p>[2] <code class="docutils literal notranslate"><span class="pre">Taking</span> <span class="pre">the</span> <span class="pre">human</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">loop:</span> <span class="pre">A</span> <span class="pre">review</span> <span class="pre">of</span> <span class="pre">bayesian</span> <span class="pre">optimization</span></code>,&nbsp;&nbsp;&nbsp;&nbsp; Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, and Nando De Freitas</p>
+<p>[1] <code class="docutils literal notranslate"><span class="pre">Practical</span> <span class="pre">bayesian</span> <span class="pre">optimization</span> <span class="pre">of</span> <span class="pre">machine</span> <span class="pre">learning</span> <span class="pre">algorithms</span></code>,     Jasper Snoek, Hugo Larochelle, and Ryan P. Adams</p>
+<p>[2] <code class="docutils literal notranslate"><span class="pre">Taking</span> <span class="pre">the</span> <span class="pre">human</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">loop:</span> <span class="pre">A</span> <span class="pre">review</span> <span class="pre">of</span> <span class="pre">bayesian</span> <span class="pre">optimization</span></code>,     Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, and Nando De Freitas</p>
 <p>[3] <a class="reference external" href="https://www.youtube.com/watch?v=vz3D36VXefI">Machine learning - Bayesian optimization and multi-armed bandits</a></p>
 </div>
 </div>
