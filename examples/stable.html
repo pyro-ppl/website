@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Levy Stable models of Stochastic Volatility &mdash; Pyro Tutorials 1.2.0 documentation</title>
+  <title>Levy Stable models of Stochastic Volatility &mdash; Pyro Tutorials 1.2.1 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.2.0
+                1.2.1
               </div>
             
           
@@ -148,6 +148,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dkl.html">Deep Kernel Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="einsum.html">Plated Einsum</a></li>
 <li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Sequential Monte Carlo Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Gaussian Process Time Series Models</a></li>
 </ul>
 
             
@@ -490,7 +491,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.ops.tensor_utils</span> <span class="k">import</span> <span class="n">convolve</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.2.0&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.2.1&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
 </pre></div>
@@ -691,14 +692,18 @@ Wall time: 2.38 s
 <h3>Modeling stochastic volatility<a class="headerlink" href="#Modeling-stochastic-volatility" title="Permalink to this headline">¶</a></h3>
 <p>We’ll next fit a stochastic volatility model. Let’s begin with a constant volatility model where log price <span class="math notranslate nohighlight">\(p\)</span> follows Brownian motion</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}    \log p_t = \log p_{t-1} + w_t \sqrt h\\where :math:`w_t` is a sequence of standard white noise. We can rewrite this model in terms of the log returns :math:`r_t=\log(p_t\,/\,p_{t-1})`:\end{aligned}\end{align} \]</div>
+\[\log p_t = \log p_{t-1} + w_t \sqrt h\]</div>
+<p>where <span class="math notranslate nohighlight">\(w_t\)</span> is a sequence of standard white noise. We can rewrite this model in terms of the log returns <span class="math notranslate nohighlight">\(r_t=\log(p_t\,/\,p_{t-1})\)</span>:</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}    r_t = w_t \sqrt h\\Now to account for `volatility clustering &lt;https://en.wikipedia.org/wiki/Volatility_clustering&gt;`__ we can generalize to a stochastic volatility model where volatility :math:`h` depends on time :math:`t`. Among the simplest such models is one where :math:`h_t` follows geometric Brownian motion\end{aligned}\end{align} \]</div>
+\[r_t = w_t \sqrt h\]</div>
+<p>Now to account for <a class="reference external" href="https://en.wikipedia.org/wiki/Volatility_clustering">volatility clustering</a> we can generalize to a stochastic volatility model where volatility <span class="math notranslate nohighlight">\(h\)</span> depends on time <span class="math notranslate nohighlight">\(t\)</span>. Among the simplest such models is one where <span class="math notranslate nohighlight">\(h_t\)</span> follows geometric Brownian motion</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}    \log h_t = \log h_{t-1} + \sigma v_t\\where again :math:`v_t` is a sequence of standard white noise. The entire model thus consists of a geometric Brownian motion :math:`h_t` that determines the diffusion rate of another geometric Brownian motion :math:`p_t`:\end{aligned}\end{align} \]</div>
+\[\log h_t = \log h_{t-1} + \sigma v_t\]</div>
+<p>where again <span class="math notranslate nohighlight">\(v_t\)</span> is a sequence of standard white noise. The entire model thus consists of a geometric Brownian motion <span class="math notranslate nohighlight">\(h_t\)</span> that determines the diffusion rate of another geometric Brownian motion <span class="math notranslate nohighlight">\(p_t\)</span>:</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}\begin{split}    \log h_t = \log h_{t-1} + \sigma v_t \\
-    \log p_t = \log p_{t-1} + w_t \sqrt h_t\end{split}\\Usually :math:`v_1` and :math:`w_t` are both Gaussian. We will generalize to a Stable distribution for :math:`w_t`, learning three parameters (stability, skew, and location), but still scaling by :math:`\sqrt h_t`.\end{aligned}\end{align} \]</div>
+\[\begin{split}\log h_t = \log h_{t-1} + \sigma v_t \\
+\log p_t = \log p_{t-1} + w_t \sqrt h_t\end{split}\]</div>
+<p>Usually <span class="math notranslate nohighlight">\(v_1\)</span> and <span class="math notranslate nohighlight">\(w_t\)</span> are both Gaussian. We will generalize to a Stable distribution for <span class="math notranslate nohighlight">\(w_t\)</span>, learning three parameters (stability, skew, and location), but still scaling by <span class="math notranslate nohighlight">\(\sqrt h_t\)</span>.</p>
 <p>Our Pyro model will sample the increments <span class="math notranslate nohighlight">\(v_t\)</span> and record the computation of <span class="math notranslate nohighlight">\(\log h_t\)</span> via <a class="reference external" href="http://docs.pyro.ai/en/stable/primitives.html#pyro.deterministic">pyro.deterministic</a>. Note that there are many ways of implementing this model in Pyro, and geometry can vary depending on implementation. The following version seems to have good geometry, when combined with reparameterizers.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -850,15 +855,6 @@ Wall time: 45.1 s
 </div>
 </div>
 <p>Observe that volatility roughly follows areas of large absolute log returns. Note that the uncertainty is underestimated, since we have used an approximate <code class="docutils literal notranslate"><span class="pre">AutoDiagonalNormal</span></code> guide. For more precise uncertainty estimates, one could use <a class="reference external" href="http://docs.pyro.ai/en/stable/mcmc.html#hmc">HMC</a> or <a class="reference external" href="http://docs.pyro.ai/en/stable/mcmc.html#nuts">NUTS</a> inference.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>
-</pre></div>
-</div>
-</div>
 </div>
 </div>
 </div>
