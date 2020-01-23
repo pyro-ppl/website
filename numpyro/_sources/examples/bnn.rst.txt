@@ -1,0 +1,265 @@
+.. note::
+    :class: sphx-glr-download-link-note
+
+    Click :ref:`here <sphx_glr_download_examples_bnn.py>` to download the full example code
+.. rst-class:: sphx-glr-example-title
+
+.. _sphx_glr_examples_bnn.py:
+
+
+Bayesian Neural Network
+=======================
+
+We demonstrate how to use NUTS to do inference on a simple (small)
+Bayesian neural network with two hidden layers.
+
+
+
+.. image:: /examples/images/sphx_glr_bnn_001.png
+    :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+
+                    mean       std    median      5.0%     95.0%     n_eff     r_hat
+      prec_obs     18.15      2.71     18.05     13.49     22.28   2226.09      1.00
+       w1[0,0]     -0.07      1.19     -0.11     -1.95      1.98    151.97      1.01
+       w1[0,1]      0.01      1.22      0.06     -2.01      1.98    161.13      1.01
+       w1[0,2]     -0.01      1.17      0.12     -2.11      1.67    238.96      1.01
+       w1[0,3]      0.03      1.13      0.07     -1.72      2.03    206.09      1.00
+       w1[0,4]     -0.09      1.15     -0.01     -2.05      1.78    153.45      1.00
+       w1[1,0]      0.01      1.15      0.03     -1.71      1.83    194.01      1.00
+       w1[1,1]     -0.02      1.18     -0.02     -1.79      1.84    197.06      1.00
+       w1[1,2]     -0.13      1.15     -0.18     -1.88      1.69    215.85      1.01
+       w1[1,3]     -0.01      1.15     -0.06     -1.79      1.74    199.49      1.00
+       w1[1,4]     -0.03      1.21     -0.04     -1.85      1.83    123.63      1.02
+       w1[2,0]      0.02      1.14     -0.03     -1.77      1.89    191.11      1.01
+       w1[2,1]     -0.04      1.15     -0.02     -1.89      1.73    155.91      1.00
+       w1[2,2]     -0.18      1.13     -0.15     -2.01      1.70    205.21      1.01
+       w1[2,3]     -0.04      1.13     -0.03     -1.89      1.76    179.83      1.00
+       w1[2,4]     -0.03      1.22      0.02     -2.01      1.86    122.07      1.01
+       w2[0,0]     -0.03      1.07     -0.02     -1.71      1.79    951.29      1.00
+       w2[0,1]     -0.04      1.05     -0.06     -1.71      1.66   1062.97      1.00
+       w2[0,2]     -0.07      1.08     -0.04     -1.79      1.68    927.43      1.00
+       w2[0,3]     -0.01      1.09     -0.02     -1.73      1.76    736.13      1.00
+       w2[0,4]     -0.02      1.03     -0.02     -1.63      1.72   1167.60      1.00
+       w2[1,0]     -0.01      1.08     -0.01     -1.78      1.69   1092.43      1.00
+       w2[1,1]     -0.01      1.06     -0.01     -1.65      1.77    870.50      1.00
+       w2[1,2]     -0.01      1.06     -0.00     -1.58      1.92   1041.01      1.00
+       w2[1,3]      0.03      1.09      0.01     -1.75      1.73    788.39      1.00
+       w2[1,4]      0.03      1.07      0.01     -1.86      1.63    881.00      1.00
+       w2[2,0]      0.01      1.02     -0.02     -1.64      1.66   1168.26      1.00
+       w2[2,1]     -0.03      1.02     -0.04     -1.72      1.64    804.30      1.00
+       w2[2,2]      0.03      1.05      0.05     -1.68      1.74   1184.83      1.00
+       w2[2,3]     -0.02      1.06      0.00     -1.70      1.73    919.81      1.00
+       w2[2,4]     -0.08      1.03     -0.07     -1.71      1.55   1070.69      1.00
+       w2[3,0]     -0.02      1.06      0.01     -1.86      1.61   1124.01      1.00
+       w2[3,1]      0.02      1.06      0.02     -1.52      1.91    990.15      1.00
+       w2[3,2]     -0.07      1.03     -0.10     -1.63      1.79   1198.77      1.00
+       w2[3,3]      0.04      1.06      0.03     -1.69      1.80   1114.58      1.00
+       w2[3,4]      0.04      1.05      0.06     -1.62      1.77   1007.77      1.00
+       w2[4,0]     -0.02      1.10     -0.01     -1.76      1.77    973.80      1.00
+       w2[4,1]      0.01      1.04      0.01     -1.63      1.74    986.43      1.00
+       w2[4,2]     -0.04      1.06     -0.05     -1.60      1.86   1101.12      1.00
+       w2[4,3]     -0.02      1.08     -0.02     -1.75      1.77   1037.09      1.00
+       w2[4,4]     -0.03      1.07     -0.02     -1.72      1.73   1124.94      1.00
+       w3[0,0]     -0.04      1.51     -0.05     -2.35      2.56    352.25      1.00
+       w3[1,0]     -0.07      1.50     -0.10     -2.55      2.33    418.93      1.00
+       w3[2,0]     -0.04      1.47     -0.04     -2.40      2.35    347.41      1.02
+       w3[3,0]     -0.12      1.56     -0.14     -2.42      2.63    308.15      1.00
+       w3[4,0]      0.01      1.50     -0.00     -2.46      2.47    441.55      1.00
+
+    Number of divergences: 24
+
+    MCMC elapsed time: 37.72228407859802
+
+
+
+
+
+
+|
+
+
+.. code-block:: default
+
+
+    import argparse
+    import os
+    import time
+
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import numpy as onp
+
+    from jax import vmap
+    import jax.numpy as np
+    import jax.random as random
+
+    import numpyro
+    from numpyro import handlers
+    import numpyro.distributions as dist
+    from numpyro.infer import MCMC, NUTS
+
+    matplotlib.use('Agg')  # noqa: E402
+
+
+    # the non-linearity we use in our neural network
+    def nonlin(x):
+        return np.tanh(x)
+
+
+    # a two-layer bayesian neural network with computational flow
+    # given by D_X => D_H => D_H => D_Y where D_H is the number of
+    # hidden units. (note we indicate tensor dimensions in the comments)
+    def model(X, Y, D_H):
+
+        D_X, D_Y = X.shape[1], 1
+
+        # sample first layer (we put unit normal priors on all weights)
+        w1 = numpyro.sample("w1", dist.Normal(np.zeros((D_X, D_H)), np.ones((D_X, D_H))))  # D_X D_H
+        z1 = nonlin(np.matmul(X, w1))   # N D_H  <= first layer of activations
+
+        # sample second layer
+        w2 = numpyro.sample("w2", dist.Normal(np.zeros((D_H, D_H)), np.ones((D_H, D_H))))  # D_H D_H
+        z2 = nonlin(np.matmul(z1, w2))  # N D_H  <= second layer of activations
+
+        # sample final layer of weights and neural network output
+        w3 = numpyro.sample("w3", dist.Normal(np.zeros((D_H, D_Y)), np.ones((D_H, D_Y))))  # D_H D_Y
+        z3 = np.matmul(z2, w3)  # N D_Y  <= output of the neural network
+
+        # we put a prior on the observation noise
+        prec_obs = numpyro.sample("prec_obs", dist.Gamma(3.0, 1.0))
+        sigma_obs = 1.0 / np.sqrt(prec_obs)
+
+        # observe data
+        numpyro.sample("Y", dist.Normal(z3, sigma_obs), obs=Y)
+
+
+    # helper function for HMC inference
+    def run_inference(model, args, rng_key, X, Y, D_H):
+        start = time.time()
+        kernel = NUTS(model)
+        mcmc = MCMC(kernel, args.num_warmup, args.num_samples, num_chains=args.num_chains,
+                    progress_bar=False if "NUMPYRO_SPHINXBUILD" in os.environ else True)
+        mcmc.run(rng_key, X, Y, D_H)
+        mcmc.print_summary()
+        print('\nMCMC elapsed time:', time.time() - start)
+        return mcmc.get_samples()
+
+
+    # helper function for prediction
+    def predict(model, rng_key, samples, X, D_H):
+        model = handlers.substitute(handlers.seed(model, rng_key), samples)
+        # note that Y will be sampled in the model because we pass Y=None here
+        model_trace = handlers.trace(model).get_trace(X=X, Y=None, D_H=D_H)
+        return model_trace['Y']['value']
+
+
+    # create artificial regression dataset
+    def get_data(N=50, D_X=3, sigma_obs=0.05, N_test=500):
+        D_Y = 1  # create 1d outputs
+        onp.random.seed(0)
+        X = np.linspace(-1, 1, N)
+        X = np.power(X[:, onp.newaxis], np.arange(D_X))
+        W = 0.5 * onp.random.randn(D_X)
+        Y = np.dot(X, W) + 0.5 * np.power(0.5 + X[:, 1], 2.0) * np.sin(4.0 * X[:, 1])
+        Y += sigma_obs * onp.random.randn(N)
+        Y = Y[:, onp.newaxis]
+        Y -= np.mean(Y)
+        Y /= np.std(Y)
+
+        assert X.shape == (N, D_X)
+        assert Y.shape == (N, D_Y)
+
+        X_test = np.linspace(-1.3, 1.3, N_test)
+        X_test = np.power(X_test[:, onp.newaxis], np.arange(D_X))
+
+        return X, Y, X_test
+
+
+    def main(args):
+        N, D_X, D_H = args.num_data, 3, args.num_hidden
+        X, Y, X_test = get_data(N=N, D_X=D_X)
+
+        # do inference
+        rng_key, rng_key_predict = random.split(random.PRNGKey(0))
+        samples = run_inference(model, args, rng_key, X, Y, D_H)
+
+        # predict Y_test at inputs X_test
+        vmap_args = (samples, random.split(rng_key_predict, args.num_samples * args.num_chains))
+        predictions = vmap(lambda samples, rng_key: predict(model, rng_key, samples, X_test, D_H))(*vmap_args)
+        predictions = predictions[..., 0]
+
+        # compute mean prediction and confidence interval around median
+        mean_prediction = np.mean(predictions, axis=0)
+        percentiles = onp.percentile(predictions, [5.0, 95.0], axis=0)
+
+        # make plots
+        fig, ax = plt.subplots(1, 1)
+
+        # plot training data
+        ax.plot(X[:, 1], Y[:, 0], 'kx')
+        # plot 90% confidence level of predictions
+        ax.fill_between(X_test[:, 1], percentiles[0, :], percentiles[1, :], color='lightblue')
+        # plot mean prediction
+        ax.plot(X_test[:, 1], mean_prediction, 'blue', ls='solid', lw=2.0)
+        ax.set(xlabel="X", ylabel="Y", title="Mean predictions with 90% CI")
+
+        plt.savefig('bnn_plot.pdf')
+        plt.tight_layout()
+
+
+    if __name__ == "__main__":
+        assert numpyro.__version__.startswith('0.2.4')
+        parser = argparse.ArgumentParser(description="Bayesian neural network example")
+        parser.add_argument("-n", "--num-samples", nargs="?", default=2000, type=int)
+        parser.add_argument("--num-warmup", nargs='?', default=1000, type=int)
+        parser.add_argument("--num-chains", nargs='?', default=1, type=int)
+        parser.add_argument("--num-data", nargs='?', default=100, type=int)
+        parser.add_argument("--num-hidden", nargs='?', default=5, type=int)
+        parser.add_argument("--device", default='cpu', type=str, help='use "cpu" or "gpu".')
+        args = parser.parse_args()
+
+        numpyro.set_platform(args.device)
+        numpyro.set_host_device_count(args.num_chains)
+
+        main(args)
+
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 0 minutes  39.519 seconds)
+
+
+.. _sphx_glr_download_examples_bnn.py:
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+    :class: sphx-glr-footer-example
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Python source code: bnn.py <bnn.py>`
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Jupyter notebook: bnn.ipynb <bnn.ipynb>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

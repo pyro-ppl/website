@@ -1,0 +1,459 @@
+.. note::
+    :class: sphx-glr-download-link-note
+
+    Click :ref:`here <sphx_glr_download_examples_sparse_regression.py>` to download the full example code
+.. rst-class:: sphx-glr-example-title
+
+.. _sphx_glr_examples_sparse_regression.py:
+
+
+Sparse Regression
+=================
+
+We demonstrate how to do (fully Bayesian) sparse linear regression using the
+approach described in [1]. This approach is particularly suitable for situations
+with many feature dimensions (large P) but not too many datapoints (small N).
+In particular we consider a quadratic regressor of the form:
+
+.. math::
+
+    f(X) = \text{constant} + \sum_i \theta_i X_i + \sum_{i<j} \theta_{ij} X_i X_j + \text{observation noise}
+
+**References:**
+
+    1. Raj Agrawal, Jonathan H. Huggins, Brian Trippe, Tamara Broderick (2019),
+       "The Kernel Interaction Trick: Fast Bayesian Discovery of Pairwise Interactions in High Dimensions",
+       (https://arxiv.org/abs/1905.06501)
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+
+                    mean       std    median      5.0%     95.0%     n_eff     r_hat
+          eta1      0.00      0.00      0.00      0.00      0.01    484.12      1.00
+     lambda[0]   1465.49   6755.55    246.71     20.32   1877.89    227.47      1.00
+     lambda[1]   4718.34  58610.14    268.06     39.85   1691.35    218.86      1.00
+     lambda[2]     75.73     93.69     51.82      8.74    143.97    663.63      1.00
+     lambda[3]      1.18      1.90      0.69      0.00      2.64    877.47      1.00
+     lambda[4]      1.34      1.99      0.80      0.01      2.90    598.92      1.00
+     lambda[5]      1.13      1.77      0.67      0.00      2.55   1036.51      1.00
+     lambda[6]      1.38      1.86      0.77      0.00      3.24    796.56      1.00
+     lambda[7]      1.24      1.73      0.73      0.01      2.74    968.85      1.00
+     lambda[8]      1.19      1.42      0.69      0.00      2.78    987.63      1.00
+     lambda[9]      1.24      1.67      0.75      0.00      2.70    825.57      1.00
+    lambda[10]      1.29      2.22      0.77      0.00      2.69    779.04      1.00
+    lambda[11]      1.23      1.89      0.71      0.00      2.85   1149.85      1.00
+    lambda[12]      1.24      1.65      0.75      0.00      2.60    876.28      1.00
+    lambda[13]      1.24      1.55      0.75      0.00      2.82    639.44      1.00
+    lambda[14]      1.15      1.53      0.73      0.01      2.46   1059.11      1.00
+    lambda[15]      1.28      1.71      0.75      0.02      2.97    779.79      1.00
+    lambda[16]      1.22      1.68      0.73      0.00      2.67    992.97      1.00
+    lambda[17]      1.35      2.09      0.76      0.00      3.07    948.32      1.00
+    lambda[18]      1.17      1.47      0.71      0.00      2.58   1135.38      1.00
+    lambda[19]      1.27      1.71      0.73      0.00      3.00   1009.98      1.00
+           msq      0.87      0.66      0.68      0.22      1.59    515.65      1.00
+         sigma      0.69      0.49      0.56      0.04      1.38   1208.58      1.00
+       var_obs      0.02      0.00      0.02      0.02      0.03   1202.84      1.00
+          xisq      0.37      0.25      0.29      0.11      0.65    778.94      1.00
+
+    Number of divergences: 0
+
+    MCMC elapsed time: 34.632214069366455
+    Coefficients theta_1 to theta_3 used to generate the data: [0.69618857 0.7082517  0.35156995]
+    The single quadratic coefficient theta_{1,2} used to generate the data: 0.4637312
+    [dimension 01/20]  active:      6.87e-01 +- 1.51e-02
+    [dimension 02/20]  active:      7.05e-01 +- 1.74e-02
+    [dimension 03/20]  active:      3.50e-01 +- 1.71e-02
+    [dimension 04/20]  inactive:    6.93e-05 +- 5.03e-03
+    [dimension 05/20]  inactive:    -2.64e-04 +- 5.97e-03
+    [dimension 06/20]  inactive:    -1.63e-04 +- 5.23e-03
+    [dimension 07/20]  inactive:    7.52e-04 +- 6.16e-03
+    [dimension 08/20]  inactive:    -3.88e-04 +- 5.21e-03
+    [dimension 09/20]  inactive:    -3.56e-04 +- 5.30e-03
+    [dimension 10/20]  inactive:    -1.28e-04 +- 5.59e-03
+    [dimension 11/20]  inactive:    3.72e-04 +- 5.70e-03
+    [dimension 12/20]  inactive:    -6.70e-04 +- 5.24e-03
+    [dimension 13/20]  inactive:    4.43e-04 +- 5.38e-03
+    [dimension 14/20]  inactive:    1.79e-04 +- 5.68e-03
+    [dimension 15/20]  inactive:    1.28e-04 +- 5.19e-03
+    [dimension 16/20]  inactive:    1.75e-04 +- 5.80e-03
+    [dimension 17/20]  inactive:    -5.83e-04 +- 5.48e-03
+    [dimension 18/20]  inactive:    1.32e-05 +- 5.78e-03
+    [dimension 19/20]  inactive:    1.86e-04 +- 5.22e-03
+    [dimension 20/20]  inactive:    2.60e-04 +- 5.97e-03
+    Identified a total of 3 active dimensions; expected 3.
+    Identified pairwise interaction between dimensions 1 and 2: 4.54e-01 +- 2.15e-02
+    Single posterior sample theta:
+     [ 6.3847774e-01  6.7602319e-01  3.6577702e-01  1.0994729e-04
+      1.6406282e-03  3.2857500e-04  3.6302960e-04 -2.1029441e-03
+     -3.2047948e-03  6.4017461e-04  7.1126106e-03 -3.3085134e-03
+      4.2705002e-04 -1.0203976e-03 -3.9924271e-03 -6.3013623e-04
+     -2.9055662e-03 -7.1937414e-03 -1.1409051e-04 -1.2197983e-04
+      4.4992653e-01 -2.0679738e-03 -1.7639464e-02]
+
+
+
+
+
+
+|
+
+
+.. code-block:: default
+
+
+    import argparse
+    import itertools
+    import os
+    import time
+
+    import numpy as onp
+
+    import jax
+    from jax import vmap
+    import jax.numpy as np
+    import jax.random as random
+
+    import numpyro
+    import numpyro.distributions as dist
+    from numpyro.infer import MCMC, NUTS
+
+
+    def dot(X, Z):
+        return np.dot(X, Z[..., None])[..., 0]
+
+
+    # The kernel that corresponds to our quadratic regressor.
+    def kernel(X, Z, eta1, eta2, c, jitter=1.0e-6):
+        eta1sq = np.square(eta1)
+        eta2sq = np.square(eta2)
+        k1 = 0.5 * eta2sq * np.square(1.0 + dot(X, Z))
+        k2 = -0.5 * eta2sq * dot(np.square(X), np.square(Z))
+        k3 = (eta1sq - eta2sq) * dot(X, Z)
+        k4 = np.square(c) - 0.5 * eta2sq
+        if X.shape == Z.shape:
+            k4 += jitter * np.eye(X.shape[0])
+        return k1 + k2 + k3 + k4
+
+
+    # Most of the model code is concerned with constructing the sparsity inducing prior.
+    def model(X, Y, hypers):
+        S, P, N = hypers['expected_sparsity'], X.shape[1], X.shape[0]
+
+        sigma = numpyro.sample("sigma", dist.HalfNormal(hypers['alpha3']))
+        phi = sigma * (S / np.sqrt(N)) / (P - S)
+        eta1 = numpyro.sample("eta1", dist.HalfCauchy(phi))
+
+        msq = numpyro.sample("msq", dist.InverseGamma(hypers['alpha1'], hypers['beta1']))
+        xisq = numpyro.sample("xisq", dist.InverseGamma(hypers['alpha2'], hypers['beta2']))
+
+        eta2 = np.square(eta1) * np.sqrt(xisq) / msq
+
+        lam = numpyro.sample("lambda", dist.HalfCauchy(np.ones(P)))
+        kappa = np.sqrt(msq) * lam / np.sqrt(msq + np.square(eta1 * lam))
+
+        # sample observation noise
+        var_obs = numpyro.sample("var_obs", dist.InverseGamma(hypers['alpha_obs'], hypers['beta_obs']))
+
+        # compute kernel
+        kX = kappa * X
+        k = kernel(kX, kX, eta1, eta2, hypers['c']) + var_obs * np.eye(N)
+        assert k.shape == (N, N)
+
+        # sample Y according to the standard gaussian process formula
+        numpyro.sample("Y", dist.MultivariateNormal(loc=np.zeros(X.shape[0]), covariance_matrix=k),
+                       obs=Y)
+
+
+    # Compute the mean and variance of coefficient theta_i (where i = dimension) for a
+    # MCMC sample of the kernel hyperparameters (eta1, xisq, ...).
+    # Compare to theorem 5.1 in reference [1].
+    def compute_singleton_mean_variance(X, Y, dimension, msq, lam, eta1, xisq, c, var_obs):
+        P, N = X.shape[1], X.shape[0]
+
+        probe = np.zeros((2, P))
+        probe = jax.ops.index_update(probe, jax.ops.index[:, dimension], np.array([1.0, -1.0]))
+
+        eta2 = np.square(eta1) * np.sqrt(xisq) / msq
+        kappa = np.sqrt(msq) * lam / np.sqrt(msq + np.square(eta1 * lam))
+
+        kX = kappa * X
+        kprobe = kappa * probe
+
+        k_xx = kernel(kX, kX, eta1, eta2, c) + var_obs * np.eye(N)
+        k_xx_inv = np.linalg.inv(k_xx)
+        k_probeX = kernel(kprobe, kX, eta1, eta2, c)
+        k_prbprb = kernel(kprobe, kprobe, eta1, eta2, c)
+
+        vec = np.array([0.50, -0.50])
+        mu = np.matmul(k_probeX, np.matmul(k_xx_inv, Y))
+        mu = np.dot(mu, vec)
+
+        var = k_prbprb - np.matmul(k_probeX, np.matmul(k_xx_inv, np.transpose(k_probeX)))
+        var = np.matmul(var, vec)
+        var = np.dot(var, vec)
+
+        return mu, var
+
+
+    # Compute the mean and variance of coefficient theta_ij for a MCMC sample of the
+    # kernel hyperparameters (eta1, xisq, ...). Compare to theorem 5.1 in reference [1].
+    def compute_pairwise_mean_variance(X, Y, dim1, dim2, msq, lam, eta1, xisq, c, var_obs):
+        P, N = X.shape[1], X.shape[0]
+
+        probe = np.zeros((4, P))
+        probe = jax.ops.index_update(probe, jax.ops.index[:, dim1], np.array([1.0, 1.0, -1.0, -1.0]))
+        probe = jax.ops.index_update(probe, jax.ops.index[:, dim2], np.array([1.0, -1.0, 1.0, -1.0]))
+
+        eta2 = np.square(eta1) * np.sqrt(xisq) / msq
+        kappa = np.sqrt(msq) * lam / np.sqrt(msq + np.square(eta1 * lam))
+
+        kX = kappa * X
+        kprobe = kappa * probe
+
+        k_xx = kernel(kX, kX, eta1, eta2, c) + var_obs * np.eye(N)
+        k_xx_inv = np.linalg.inv(k_xx)
+        k_probeX = kernel(kprobe, kX, eta1, eta2, c)
+        k_prbprb = kernel(kprobe, kprobe, eta1, eta2, c)
+
+        vec = np.array([0.25, -0.25, -0.25, 0.25])
+        mu = np.matmul(k_probeX, np.matmul(k_xx_inv, Y))
+        mu = np.dot(mu, vec)
+
+        var = k_prbprb - np.matmul(k_probeX, np.matmul(k_xx_inv, np.transpose(k_probeX)))
+        var = np.matmul(var, vec)
+        var = np.dot(var, vec)
+
+        return mu, var
+
+
+    # Sample coefficients theta from the posterior for a given MCMC sample.
+    # The first P returned values are {theta_1, theta_2, ...., theta_P}, while
+    # the remaining values are {theta_ij} for i,j in the list `active_dims`,
+    # sorted so that i < j.
+    def sample_theta_space(X, Y, active_dims, msq, lam, eta1, xisq, c, var_obs):
+        P, N, M = X.shape[1], X.shape[0], len(active_dims)
+        # the total number of coefficients we return
+        num_coefficients = P + M * (M - 1) // 2
+
+        probe = np.zeros((2 * P + 2 * M * (M - 1), P))
+        vec = np.zeros((num_coefficients, 2 * P + 2 * M * (M - 1)))
+        start1 = 0
+        start2 = 0
+
+        for dim in range(P):
+            probe = jax.ops.index_update(probe, jax.ops.index[start1:start1 + 2, dim], np.array([1.0, -1.0]))
+            vec = jax.ops.index_update(vec, jax.ops.index[start2, start1:start1 + 2], np.array([0.5, -0.5]))
+            start1 += 2
+            start2 += 1
+
+        for dim1 in active_dims:
+            for dim2 in active_dims:
+                if dim1 >= dim2:
+                    continue
+                probe = jax.ops.index_update(probe, jax.ops.index[start1:start1 + 4, dim1],
+                                             np.array([1.0, 1.0, -1.0, -1.0]))
+                probe = jax.ops.index_update(probe, jax.ops.index[start1:start1 + 4, dim2],
+                                             np.array([1.0, -1.0, 1.0, -1.0]))
+                vec = jax.ops.index_update(vec, jax.ops.index[start2, start1:start1 + 4],
+                                           np.array([0.25, -0.25, -0.25, 0.25]))
+                start1 += 4
+                start2 += 1
+
+        eta2 = np.square(eta1) * np.sqrt(xisq) / msq
+        kappa = np.sqrt(msq) * lam / np.sqrt(msq + np.square(eta1 * lam))
+
+        kX = kappa * X
+        kprobe = kappa * probe
+
+        k_xx = kernel(kX, kX, eta1, eta2, c) + var_obs * np.eye(N)
+        k_xx_inv = np.linalg.inv(k_xx)
+        k_probeX = kernel(kprobe, kX, eta1, eta2, c)
+        k_prbprb = kernel(kprobe, kprobe, eta1, eta2, c)
+
+        mu = np.matmul(k_probeX, np.matmul(k_xx_inv, Y))
+        mu = np.sum(mu * vec, axis=-1)
+
+        covar = k_prbprb - np.matmul(k_probeX, np.matmul(k_xx_inv, np.transpose(k_probeX)))
+        covar = np.matmul(vec, np.matmul(covar, np.transpose(vec)))
+        L = np.linalg.cholesky(covar)
+
+        # sample from N(mu, covar)
+        sample = mu + np.matmul(L, onp.random.randn(num_coefficients))
+
+        return sample
+
+
+    # Helper function for doing HMC inference
+    def run_inference(model, args, rng_key, X, Y, hypers):
+        start = time.time()
+        kernel = NUTS(model)
+        mcmc = MCMC(kernel, args.num_warmup, args.num_samples, num_chains=args.num_chains,
+                    progress_bar=False if "NUMPYRO_SPHINXBUILD" in os.environ else True)
+        mcmc.run(rng_key, X, Y, hypers)
+        mcmc.print_summary()
+        print('\nMCMC elapsed time:', time.time() - start)
+        return mcmc.get_samples()
+
+
+    # Get the mean and variance of a gaussian mixture
+    def gaussian_mixture_stats(mus, variances):
+        mean_mu = np.mean(mus)
+        mean_var = np.mean(variances) + np.mean(np.square(mus)) - np.square(mean_mu)
+        return mean_mu, mean_var
+
+
+    # Create artificial regression dataset where only S out of P feature
+    # dimensions contain signal and where there is a single pairwise interaction
+    # between the first and second dimensions.
+    def get_data(N=20, S=2, P=10, sigma_obs=0.05):
+        assert S < P and P > 1 and S > 0
+        onp.random.seed(0)
+
+        X = onp.random.randn(N, P)
+        # generate S coefficients with non-negligible magnitude
+        W = 0.5 + 2.5 * onp.random.rand(S)
+        # generate data using the S coefficients and a single pairwise interaction
+        Y = onp.sum(X[:, 0:S] * W, axis=-1) + X[:, 0] * X[:, 1] + sigma_obs * onp.random.randn(N)
+        Y -= np.mean(Y)
+        Y_std = np.std(Y)
+
+        assert X.shape == (N, P)
+        assert Y.shape == (N,)
+
+        return X, Y / Y_std, W / Y_std, 1.0 / Y_std
+
+
+    # Helper function for analyzing the posterior statistics for coefficient theta_i
+    def analyze_dimension(samples, X, Y, dimension, hypers):
+        vmap_args = (samples['msq'], samples['lambda'], samples['eta1'], samples['xisq'], samples['var_obs'])
+        mus, variances = vmap(lambda msq, lam, eta1, xisq, var_obs:
+                              compute_singleton_mean_variance(X, Y, dimension, msq, lam,
+                                                              eta1, xisq, hypers['c'], var_obs))(*vmap_args)
+        mean, variance = gaussian_mixture_stats(mus, variances)
+        std = np.sqrt(variance)
+        return mean, std
+
+
+    # Helper function for analyzing the posterior statistics for coefficient theta_ij
+    def analyze_pair_of_dimensions(samples, X, Y, dim1, dim2, hypers):
+        vmap_args = (samples['msq'], samples['lambda'], samples['eta1'], samples['xisq'], samples['var_obs'])
+        mus, variances = vmap(lambda msq, lam, eta1, xisq, var_obs:
+                              compute_pairwise_mean_variance(X, Y, dim1, dim2, msq, lam,
+                                                             eta1, xisq, hypers['c'], var_obs))(*vmap_args)
+        mean, variance = gaussian_mixture_stats(mus, variances)
+        std = np.sqrt(variance)
+        return mean, std
+
+
+    def main(args):
+        X, Y, expected_thetas, expected_pairwise = get_data(N=args.num_data, P=args.num_dimensions,
+                                                            S=args.active_dimensions)
+
+        # setup hyperparameters
+        hypers = {'expected_sparsity': max(1.0, args.num_dimensions / 10),
+                  'alpha1': 3.0, 'beta1': 1.0,
+                  'alpha2': 3.0, 'beta2': 1.0,
+                  'alpha3': 1.0, 'c': 1.0,
+                  'alpha_obs': 3.0, 'beta_obs': 1.0}
+
+        # do inference
+        rng_key = random.PRNGKey(0)
+        samples = run_inference(model, args, rng_key, X, Y, hypers)
+
+        # compute the mean and square root variance of each coefficient theta_i
+        means, stds = vmap(lambda dim: analyze_dimension(samples, X, Y, dim, hypers))(np.arange(args.num_dimensions))
+
+        print("Coefficients theta_1 to theta_%d used to generate the data:" % args.active_dimensions, expected_thetas)
+        print("The single quadratic coefficient theta_{1,2} used to generate the data:", expected_pairwise)
+        active_dimensions = []
+
+        for dim, (mean, std) in enumerate(zip(means, stds)):
+            # we mark the dimension as inactive if the interval [mean - 3 * std, mean + 3 * std] contains zero
+            lower, upper = mean - 3.0 * std, mean + 3.0 * std
+            inactive = "inactive" if lower < 0.0 and upper > 0.0 else "active"
+            if inactive == "active":
+                active_dimensions.append(dim)
+            print("[dimension %02d/%02d]  %s:\t%.2e +- %.2e" % (dim + 1, args.num_dimensions, inactive, mean, std))
+
+        print("Identified a total of %d active dimensions; expected %d." % (len(active_dimensions),
+                                                                            args.active_dimensions))
+
+        # Compute the mean and square root variance of coefficients theta_ij for i,j active dimensions.
+        # Note that the resulting numbers are only meaningful for i != j.
+        if len(active_dimensions) > 0:
+            dim_pairs = np.array(list(itertools.product(active_dimensions, active_dimensions)))
+            means, stds = vmap(lambda dim_pair: analyze_pair_of_dimensions(samples, X, Y,
+                                                                           dim_pair[0], dim_pair[1], hypers))(dim_pairs)
+            for dim_pair, mean, std in zip(dim_pairs, means, stds):
+                dim1, dim2 = dim_pair
+                if dim1 >= dim2:
+                    continue
+                lower, upper = mean - 3.0 * std, mean + 3.0 * std
+                if not (lower < 0.0 and upper > 0.0):
+                    format_str = "Identified pairwise interaction between dimensions %d and %d: %.2e +- %.2e"
+                    print(format_str % (dim1 + 1, dim2 + 1, mean, std))
+
+            # Draw a single sample of coefficients theta from the posterior, where we return all singleton
+            # coefficients theta_i and pairwise coefficients theta_ij for i, j active dimensions. We use the
+            # final MCMC sample obtained from the HMC sampler.
+            thetas = sample_theta_space(X, Y, active_dimensions, samples['msq'][-1], samples['lambda'][-1],
+                                        samples['eta1'][-1], samples['xisq'][-1], hypers['c'], samples['var_obs'][-1])
+            print("Single posterior sample theta:\n", thetas)
+
+
+    if __name__ == "__main__":
+        assert numpyro.__version__.startswith('0.2.4')
+        parser = argparse.ArgumentParser(description="Gaussian Process example")
+        parser.add_argument("-n", "--num-samples", nargs="?", default=1000, type=int)
+        parser.add_argument("--num-warmup", nargs='?', default=500, type=int)
+        parser.add_argument("--num-chains", nargs='?', default=1, type=int)
+        parser.add_argument("--num-data", nargs='?', default=100, type=int)
+        parser.add_argument("--num-dimensions", nargs='?', default=20, type=int)
+        parser.add_argument("--active-dimensions", nargs='?', default=3, type=int)
+        parser.add_argument("--device", default='cpu', type=str, help='use "cpu" or "gpu".')
+        args = parser.parse_args()
+
+        numpyro.set_platform(args.device)
+        numpyro.set_host_device_count(args.num_chains)
+
+        main(args)
+
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 0 minutes  47.407 seconds)
+
+
+.. _sphx_glr_download_examples_sparse_regression.py:
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+    :class: sphx-glr-footer-example
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Python source code: sparse_regression.py <sparse_regression.py>`
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Jupyter notebook: sparse_regression.ipynb <sparse_regression.ipynb>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_
