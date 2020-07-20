@@ -1,0 +1,960 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Epidemiological inference via HMC &mdash; Pyro Tutorials 1.4.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Toy Mixture Model With Discrete Enumeration" href="toy_mixture_model_discrete_enumeration.html" />
+    <link rel="prev" title="Epidemiological models: Regional" href="epi_regional.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.4.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Introduction:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">An Introduction to Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">An Introduction to Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html#MLE">MLE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html#MAP">MAP</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enumeration.html">Inference with Discrete Latent Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression_ii.html">Bayesian Regression - Inference Algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributed:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_i.html">Forecasting I: univariate, heavy tailed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_ii.html">Forecasting II: state space models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_iii.html">Forecasting III: hierarchical models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html">Dirichlet Process Mixture Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_intro.html">Epidemiological models: Introduction</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Code Examples:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Capture-Recapture Models (CJS Models)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cevae.html">Causal Effect VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm.html">Hidden Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lda.html">Latent Dirichlet Allocation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mcmc.html">Markov Chain Monte Carlo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neutra.html">NeuTraReparam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dkl.html">Deep Kernel Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="einsum.html">Plated Einsum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecast_simple.html">Multivariate Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Gaussian Process Time Series Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Sequential Monte Carlo Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_sir.html">Epidemiological models: Univariate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Epidemiological models: Regional</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Epidemiological inference via HMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#example-usage">Example Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-script">Tutorial Script</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toy_mixture_model_discrete_enumeration.html">Toy Mixture Model With Discrete Enumeration</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyro Tutorials</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Epidemiological inference via HMC</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/sir_hmc.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="epidemiological-inference-via-hmc">
+<h1>Epidemiological inference via HMC<a class="headerlink" href="#epidemiological-inference-via-hmc" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial is in the form of a script (see below).</p>
+<div class="section" id="example-usage">
+<h2>Example Usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<p>The following example
+runs the script to generate outbreak data for a population of 10000 observed
+for 60 days, then infer infection parameters and forecast new infections for
+another 30 days. This takes about 3 minutes on my laptop.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ python examples/sir_hmc.py -p 10000 -d 60 -f 30 --plot
+Generating data...
+Observed 452/871 infections:
+0 0 2 1 2 0 0 3 2 0 1 3 1 3 0 1 0 6 4 3 6 4 4 3 3 3 5 3 3 3 5 1 4 6 4 2 6 8 7 4 11 8 14 9 17 13 9 14 10 15 16 22 20 22 19 20 28 25 23 21
+Running inference...
+Sample: 100%|=========================| 300/300 [02:35,  1.93it/s, step size=9.67e-02, acc. prob=0.878]
+
+                mean       std    median      5.0%     95.0%     n_eff     r_hat
+        R0      1.40      0.07      1.40      1.28      1.49     26.56      1.06
+       rho      0.47      0.02      0.47      0.44      0.52      7.08      1.22
+  S_aux[0]   9998.74      0.64   9998.75   9997.84   9999.67     28.74      1.00
+  S_aux[1]   9998.37      0.72   9998.38   9997.28   9999.44     52.24      1.02
+  ...
+  I_aux[0]      1.11      0.64      0.99      0.19      2.02     22.01      1.00
+  I_aux[1]      1.55      0.74      1.65      0.05      2.47     10.05      1.10
+  ...
+
+Number of divergences: 0
+R0: truth = 1.5, estimate = 1.4 ± 0.0654
+rho: truth = 0.5, estimate = 0.475 ± 0.023
+</pre></div>
+</div>
+<img alt="Forecast of new infections" src="_images/forecast.png" />
+<a class="reference internal image-reference" href="_images/parameters.png"><img alt="Posterior distribution over parameters" src="_images/parameters.png" style="width: 30em;" /></a>
+<a class="reference internal image-reference" href="_images/energy-trace.png"><img alt="Trace plot of potential energy" src="_images/energy-trace.png" style="width: 30em;" /></a>
+</div>
+<div class="section" id="tutorial-script">
+<h2>Tutorial Script<a class="headerlink" href="#tutorial-script" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/sir_hmc.py">View sir_hmc.py on github</a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copyright Contributors to the Pyro project.</span>
+<span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+
+<span class="c1"># Introduction</span>
+<span class="c1"># ============</span>
+<span class="c1">#</span>
+<span class="c1"># This advanced Pyro tutorial demonstrates a number of inference and prediction</span>
+<span class="c1"># tricks in the context of epidemiological models, specifically stochastic</span>
+<span class="c1"># discrete time compartmental models with large discrete state spaces. This</span>
+<span class="c1"># tutorial assumes the reader has completed all introductory tutorials and</span>
+<span class="c1"># additionally the tutorials on enumeration and effect handlers (poutines):</span>
+<span class="c1"># http://pyro.ai/examples/enumeration.html</span>
+<span class="c1"># http://pyro.ai/examples/effect_handlers.html</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions.hmm</span>
+<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">,</span> <span class="n">infer_discrete</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">init_to_value</span>
+<span class="kn">from</span> <span class="nn">pyro.ops.special</span> <span class="kn">import</span> <span class="n">safe_log</span>
+<span class="kn">from</span> <span class="nn">pyro.ops.tensor_utils</span> <span class="kn">import</span> <span class="n">convolve</span>
+<span class="kn">from</span> <span class="nn">pyro.util</span> <span class="kn">import</span> <span class="n">warn_if_nan</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<span class="c1"># A Discrete SIR Model</span>
+<span class="c1"># ====================</span>
+<span class="c1">#</span>
+<span class="c1"># Let&#39;s consider one of the simplest compartmental models: an SIR model</span>
+<span class="c1"># https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SIR_model</span>
+<span class="c1"># This models the dynamics of three groups within a population:</span>
+<span class="c1">#</span>
+<span class="c1">#   population = Susceptible + Infected + Recovered</span>
+<span class="c1">#</span>
+<span class="c1"># At each discrete time step, each infected person infects a random number of</span>
+<span class="c1"># susceptible people, and then randomly may recover. We noisily observe the</span>
+<span class="c1"># number of people newly infected at each time step, assuming an unknown false</span>
+<span class="c1"># negative rate, but no false positives. Our eventual objective is to estimate</span>
+<span class="c1"># global model parameters R0 (the basic reproduction number), tau (the expected</span>
+<span class="c1"># recovery time), and rho (the mean response rate = 1 - false negative rate).</span>
+<span class="c1"># Having estimated these we will then estimate latent time series and forecast</span>
+<span class="c1"># forward.</span>
+<span class="c1">#</span>
+<span class="c1"># We&#39;ll start by defining a discrete_model that uses a helper global_model to</span>
+<span class="c1"># sample global parameters.</span>
+<span class="c1">#</span>
+<span class="c1"># Note we need to use ExtendedBinomial rather than Binomial because the data</span>
+<span class="c1"># may lie outside of the predicted support. For these values,</span>
+<span class="c1"># Binomial.log_prob() will error, whereas ExtendedBinomial.log_prob() will</span>
+<span class="c1"># return -inf.</span>
+
+<span class="k">def</span> <span class="nf">global_model</span><span class="p">(</span><span class="n">population</span><span class="p">):</span>
+    <span class="n">tau</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">recovery_time</span>  <span class="c1"># Assume this can be measured exactly.</span>
+    <span class="n">R0</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;R0&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Convert interpretable parameters to distribution parameters.</span>
+    <span class="n">rate_s</span> <span class="o">=</span> <span class="o">-</span><span class="n">R0</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau</span> <span class="o">*</span> <span class="n">population</span><span class="p">)</span>
+    <span class="n">prob_i</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">tau</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rate_s</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">,</span> <span class="n">rho</span>
+
+
+<span class="k">def</span> <span class="nf">discrete_model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="c1"># Sample global parameters.</span>
+    <span class="n">rate_s</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">,</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">global_model</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+
+    <span class="c1"># Sequentially sample time-local variables.</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">datum</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">S2I</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;S2I_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                          <span class="n">dist</span><span class="o">.</span><span class="n">Binomial</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">rate_s</span> <span class="o">*</span> <span class="n">I</span><span class="p">)</span><span class="o">.</span><span class="n">expm1</span><span class="p">()))</span>
+        <span class="n">I2R</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;I2R_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                          <span class="n">dist</span><span class="o">.</span><span class="n">Binomial</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">))</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;S_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">S</span> <span class="o">-</span> <span class="n">S2I</span><span class="p">)</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;I_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">I</span> <span class="o">+</span> <span class="n">S2I</span> <span class="o">-</span> <span class="n">I2R</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">S2I</span><span class="p">,</span> <span class="n">rho</span><span class="p">),</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">datum</span><span class="p">)</span>
+
+
+<span class="c1"># We can use this model to simulate data. We&#39;ll use poutine.condition to pin</span>
+<span class="c1"># parameter values and poutine.trace to record sample observations.</span>
+
+<span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generating data...&quot;</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;R0&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">basic_reproduction_number</span><span class="p">),</span>
+              <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">response_rate</span><span class="p">)}</span>
+    <span class="n">empty_data</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">forecast</span><span class="p">)</span>
+
+    <span class="c1"># We&#39;ll retry until we get an actual outbreak.</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">()</span> <span class="k">as</span> <span class="n">tr</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">params</span><span class="p">):</span>
+                <span class="n">discrete_model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">empty_data</span><span class="p">)</span>
+
+        <span class="c1"># Concatenate sequential time series into tensors.</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+                           <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">tr</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                           <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;obs_[0-9]+&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)])</span>
+        <span class="n">S2I</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+                          <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">tr</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                          <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;S2I_[0-9]+&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)])</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">empty_data</span><span class="p">)</span>
+
+        <span class="n">obs_sum</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">obs</span><span class="p">[:</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">S2I_sum</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">S2I</span><span class="p">[:</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">obs_sum</span> <span class="o">&gt;=</span> <span class="n">args</span><span class="o">.</span><span class="n">min_observations</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Observed </span><span class="si">{:d}</span><span class="s2">/</span><span class="si">{:d}</span><span class="s2"> infections:</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">obs_sum</span><span class="p">,</span> <span class="n">S2I_sum</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">[:</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span><span class="p">]])))</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;S2I&quot;</span><span class="p">:</span> <span class="n">S2I</span><span class="p">,</span> <span class="s2">&quot;obs&quot;</span><span class="p">:</span> <span class="n">obs</span><span class="p">}</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to generate </span><span class="si">{}</span><span class="s2"> observations. Try increasing &quot;</span>
+                     <span class="s2">&quot;--population or decreasing --min-observations&quot;</span>
+                     <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">min_observations</span><span class="p">))</span>
+
+
+<span class="c1"># Inference</span>
+<span class="c1"># =========</span>
+<span class="c1">#</span>
+<span class="c1"># While the above discrete_model is easy to understand, its discrete latent</span>
+<span class="c1"># variables pose a challenge for inference. One of the most popular inference</span>
+<span class="c1"># strategies for such models is Sequential Monte Carlo. However since Pyro and</span>
+<span class="c1"># PyTorch are stronger in gradient based vectorizable inference algorithms, we</span>
+<span class="c1"># will instead pursue inference based on Hamiltonian Monte Carlo (HMC).</span>
+<span class="c1">#</span>
+<span class="c1"># Our general inference strategy will be to:</span>
+<span class="c1"># 1. Introduce auxiliary variables to make the model Markov.</span>
+<span class="c1"># 2. Introduce more auxiliary variables to create a discrete parameterization.</span>
+<span class="c1"># 3. Marginalize out all remaining discrete latent variables.</span>
+<span class="c1"># 4. Vectorize to enable parallel-scan temporal filtering.</span>
+<span class="c1">#</span>
+<span class="c1"># Let&#39;s consider reparameterizing in terms of the variables (S, I) rather than</span>
+<span class="c1"># (S2I, I2R). Since these may lead to inconsistent states, we need to replace</span>
+<span class="c1"># the Binomial transition factors (S2I, I2R) with ExtendedBinomial.</span>
+<span class="c1">#</span>
+<span class="c1"># The following model is equivalent to the discrete_model:</span>
+
+<span class="nd">@config_enumerate</span>
+<span class="k">def</span> <span class="nf">reparameterized_discrete_model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="c1"># Sample global parameters.</span>
+    <span class="n">rate_s</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">,</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">global_model</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+
+    <span class="c1"># Sequentially sample time-local variables.</span>
+    <span class="n">S_curr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span>
+    <span class="n">I_curr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">datum</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="c1"># Sample reparameterizing variables.</span>
+        <span class="c1"># When reparameterizing to a factor graph, we ignored density via</span>
+        <span class="c1"># .mask(False). Thus distributions are used only for initialization.</span>
+        <span class="n">S_prev</span><span class="p">,</span> <span class="n">I_prev</span> <span class="o">=</span> <span class="n">S_curr</span><span class="p">,</span> <span class="n">I_curr</span>
+        <span class="n">S_curr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;S_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                             <span class="n">dist</span><span class="o">.</span><span class="n">Binomial</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">))</span>
+        <span class="n">I_curr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;I_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                             <span class="n">dist</span><span class="o">.</span><span class="n">Binomial</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">))</span>
+
+        <span class="c1"># Now we reverse the computation.</span>
+        <span class="n">S2I</span> <span class="o">=</span> <span class="n">S_prev</span> <span class="o">-</span> <span class="n">S_curr</span>
+        <span class="n">I2R</span> <span class="o">=</span> <span class="n">I_prev</span> <span class="o">-</span> <span class="n">I_curr</span> <span class="o">+</span> <span class="n">S2I</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;S2I_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">S_prev</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">rate_s</span> <span class="o">*</span> <span class="n">I_prev</span><span class="p">)</span><span class="o">.</span><span class="n">expm1</span><span class="p">()),</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">S2I</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;I2R_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">I_prev</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">),</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">I2R</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">S2I</span><span class="p">,</span> <span class="n">rho</span><span class="p">),</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">datum</span><span class="p">)</span>
+
+
+<span class="c1"># By reparameterizing, we have converted to coordinates that make the model</span>
+<span class="c1"># Markov. We have also replaced dynamic integer_interval constraints with</span>
+<span class="c1"># easier static integer_interval constraints (although we&#39;ll still need good</span>
+<span class="c1"># initialization to avoid NANs). Since the discrete latent variables are</span>
+<span class="c1"># bounded (by population size), we can enumerate out discrete latent variables</span>
+<span class="c1"># and perform HMC inference over the global latents. However enumeration</span>
+<span class="c1"># complexity is O(population^4), so this is only feasible for very small</span>
+<span class="c1"># populations.</span>
+<span class="c1">#</span>
+<span class="c1"># Here is an inference approach using an MCMC sampler.</span>
+
+<span class="k">def</span> <span class="nf">infer_hmc_enum</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">reparameterized_discrete_model</span>
+    <span class="k">return</span> <span class="n">_infer_hmc</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_infer_hmc</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">init_values</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running inference...&quot;</span><span class="p">)</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+                  <span class="n">full_mass</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;R0&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">)],</span>
+                  <span class="n">max_tree_depth</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">max_tree_depth</span><span class="p">,</span>
+                  <span class="n">init_strategy</span><span class="o">=</span><span class="n">init_to_value</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">init_values</span><span class="p">),</span>
+                  <span class="n">jit_compile</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jit</span><span class="p">,</span> <span class="n">ignore_jit_warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># We&#39;ll define a hook_fn to log potential energy values during inference.</span>
+    <span class="c1"># This is helpful to diagnose whether the chain is mixing.</span>
+    <span class="n">energies</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">hook_fn</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="o">*</span><span class="n">unused</span><span class="p">):</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">_potential_energy_last</span><span class="p">)</span>
+        <span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;potential = </span><span class="si">{:0.6g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">hook_fn</span><span class="o">=</span><span class="n">hook_fn</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                <span class="n">warmup_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">plot</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energies</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;MCMC step&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;potential energy&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;MCMC energy trace&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">samples</span>
+
+
+<span class="c1"># To scale to large populations, we&#39;ll continue to reparameterize, this time</span>
+<span class="c1"># replacing each of (S_aux,I_aux) with a combination of a bounded real</span>
+<span class="c1"># variable and a Categorical variable with only four values.</span>
+<span class="c1">#</span>
+<span class="c1"># This is the crux: we can now perform HMC over the real variable and</span>
+<span class="c1"># marginalize out the Categorical variables using variable elimination.</span>
+<span class="c1">#</span>
+<span class="c1"># We first define a helper to create enumerated Categorical sites.</span>
+
+<span class="k">def</span> <span class="nf">quantize</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">x_real</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Randomly quantize in a way that preserves probability mass.</span>
+<span class="sd">    We use a piecewise polynomial spline of order 3.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">min</span> <span class="o">&lt;</span> <span class="nb">max</span>
+    <span class="n">lb</span> <span class="o">=</span> <span class="n">x_real</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">floor</span><span class="p">()</span>
+
+    <span class="c1"># This cubic spline interpolates over the nearest four integers, ensuring</span>
+    <span class="c1"># piecewise quadratic gradients.</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">x_real</span> <span class="o">-</span> <span class="n">lb</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">s</span>
+    <span class="n">tt</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="n">t</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span>
+        <span class="n">t</span> <span class="o">*</span> <span class="n">tt</span><span class="p">,</span>
+        <span class="mi">4</span> <span class="o">+</span> <span class="n">ss</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">s</span> <span class="o">-</span> <span class="mi">6</span><span class="p">),</span>
+        <span class="mi">4</span> <span class="o">+</span> <span class="n">tt</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">t</span> <span class="o">-</span> <span class="mi">6</span><span class="p">),</span>
+        <span class="n">s</span> <span class="o">*</span> <span class="n">ss</span><span class="p">,</span>
+    <span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="p">)</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;Q_&quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="p">))</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">x_real</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">lb</span> <span class="o">+</span> <span class="n">q</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">min</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">max</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+
+<span class="c1"># Now we can define another equivalent model.</span>
+
+<span class="nd">@config_enumerate</span>
+<span class="k">def</span> <span class="nf">continuous_model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="c1"># Sample global parameters.</span>
+    <span class="n">rate_s</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">,</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">global_model</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+
+    <span class="c1"># Sample reparameterizing variables.</span>
+    <span class="n">S_aux</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;S_aux&quot;</span><span class="p">,</span>
+                        <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">I_aux</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;I_aux&quot;</span><span class="p">,</span>
+                        <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Sequentially sample time-local variables.</span>
+    <span class="n">S_curr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span>
+    <span class="n">I_curr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">poutine</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+        <span class="n">S_prev</span><span class="p">,</span> <span class="n">I_prev</span> <span class="o">=</span> <span class="n">S_curr</span><span class="p">,</span> <span class="n">I_curr</span>
+        <span class="n">S_curr</span> <span class="o">=</span> <span class="n">quantize</span><span class="p">(</span><span class="s2">&quot;S_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">S_aux</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">t</span><span class="p">],</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+        <span class="n">I_curr</span> <span class="o">=</span> <span class="n">quantize</span><span class="p">(</span><span class="s2">&quot;I_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">I_aux</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">t</span><span class="p">],</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+
+        <span class="c1"># Now we reverse the computation.</span>
+        <span class="n">S2I</span> <span class="o">=</span> <span class="n">S_prev</span> <span class="o">-</span> <span class="n">S_curr</span>
+        <span class="n">I2R</span> <span class="o">=</span> <span class="n">I_prev</span> <span class="o">-</span> <span class="n">I_curr</span> <span class="o">+</span> <span class="n">S2I</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;S2I_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">S_prev</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">rate_s</span> <span class="o">*</span> <span class="n">I_prev</span><span class="p">)</span><span class="o">.</span><span class="n">expm1</span><span class="p">()),</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">S2I</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;I2R_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">I_prev</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">),</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">I2R</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">S2I</span><span class="p">,</span> <span class="n">rho</span><span class="p">),</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">datum</span><span class="p">)</span>
+
+
+<span class="c1"># Now all latent variables in the continuous_model are either continuous or</span>
+<span class="c1"># enumerated, so we can use HMC. However we need to take special care with</span>
+<span class="c1"># constraints because the above Markov reparameterization covers regions of</span>
+<span class="c1"># hypothesis space that are infeasible (i.e. whose log_prob is -infinity). We</span>
+<span class="c1"># thus heuristically initialize to a feasible point.</span>
+
+<span class="k">def</span> <span class="nf">heuristic_init</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Heuristically initialize to a feasible point.&quot;&quot;&quot;</span>
+    <span class="c1"># Start with a single infection.</span>
+    <span class="n">S0</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="c1"># Assume 50% &lt;= response rate &lt;= 100%.</span>
+    <span class="n">S2I</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="mf">2.</span><span class="p">,</span> <span class="p">(</span><span class="n">S0</span> <span class="o">/</span> <span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span>
+    <span class="n">S_aux</span> <span class="o">=</span> <span class="p">(</span><span class="n">S0</span> <span class="o">-</span> <span class="n">S2I</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="c1"># Account for the single initial infection.</span>
+    <span class="n">S2I</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># Assume infection lasts less than a month.</span>
+    <span class="n">recovery</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">30.</span><span class="p">)</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">recovery_time</span><span class="p">)</span><span class="o">.</span><span class="n">neg</span><span class="p">()</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>
+    <span class="n">I_aux</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">S2I</span><span class="p">,</span> <span class="n">recovery</span><span class="p">)[:</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)]</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;R0&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">2.0</span><span class="p">),</span>
+        <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+        <span class="s2">&quot;S_aux&quot;</span><span class="p">:</span> <span class="n">S_aux</span><span class="p">,</span>
+        <span class="s2">&quot;I_aux&quot;</span><span class="p">:</span> <span class="n">I_aux</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">infer_hmc_cont</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="n">init_values</span> <span class="o">=</span> <span class="n">heuristic_init</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_infer_hmc</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">init_values</span><span class="o">=</span><span class="n">init_values</span><span class="p">)</span>
+
+
+<span class="c1"># Our final inference trick is to vectorize. We can repurpose DiscreteHMM&#39;s</span>
+<span class="c1"># implementation here, but we&#39;ll need to manually represent a Markov</span>
+<span class="c1"># neighborhood of multiple Categorical of size 4 as single joint Categorical</span>
+<span class="c1"># with 4 * 4 = 16 states, and then manually perform variable elimination (the</span>
+<span class="c1"># factors here don&#39;t quite conform to DiscreteHMM&#39;s interface).</span>
+
+<span class="k">def</span> <span class="nf">quantize_enumerate</span><span class="p">(</span><span class="n">x_real</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Randomly quantize in a way that preserves probability mass.</span>
+<span class="sd">    We use a piecewise polynomial spline of order 3.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">min</span> <span class="o">&lt;</span> <span class="nb">max</span>
+    <span class="n">lb</span> <span class="o">=</span> <span class="n">x_real</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">floor</span><span class="p">()</span>
+
+    <span class="c1"># This cubic spline interpolates over the nearest four integers, ensuring</span>
+    <span class="c1"># piecewise quadratic gradients.</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">x_real</span> <span class="o">-</span> <span class="n">lb</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">s</span>
+    <span class="n">tt</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="n">t</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span>
+        <span class="n">t</span> <span class="o">*</span> <span class="n">tt</span><span class="p">,</span>
+        <span class="mi">4</span> <span class="o">+</span> <span class="n">ss</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">s</span> <span class="o">-</span> <span class="mi">6</span><span class="p">),</span>
+        <span class="mi">4</span> <span class="o">+</span> <span class="n">tt</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">t</span> <span class="o">-</span> <span class="mi">6</span><span class="p">),</span>
+        <span class="n">s</span> <span class="o">*</span> <span class="n">ss</span><span class="p">,</span>
+    <span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="p">)</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">safe_log</span><span class="p">(</span><span class="n">probs</span><span class="p">)</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">q</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">min</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">max</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">logits</span>
+
+
+<span class="k">def</span> <span class="nf">vectorized_model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="c1"># Sample global parameters.</span>
+    <span class="n">rate_s</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">,</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">global_model</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+
+    <span class="c1"># Sample reparameterizing variables.</span>
+    <span class="n">S_aux</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;S_aux&quot;</span><span class="p">,</span>
+                        <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">I_aux</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;I_aux&quot;</span><span class="p">,</span>
+                        <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Manually enumerate.</span>
+    <span class="n">S_curr</span><span class="p">,</span> <span class="n">S_logp</span> <span class="o">=</span> <span class="n">quantize_enumerate</span><span class="p">(</span><span class="n">S_aux</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+    <span class="n">I_curr</span><span class="p">,</span> <span class="n">I_logp</span> <span class="o">=</span> <span class="n">quantize_enumerate</span><span class="p">(</span><span class="n">I_aux</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+    <span class="c1"># Truncate final value from the right then pad initial value onto the left.</span>
+    <span class="n">S_prev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">S_curr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">population</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">I_prev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">I_curr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Reshape to support broadcasting, similar to EnumMessenger.</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">S_prev</span> <span class="o">=</span> <span class="n">S_prev</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">I_prev</span> <span class="o">=</span> <span class="n">I_prev</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">S_curr</span> <span class="o">=</span> <span class="n">S_curr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">S_logp</span> <span class="o">=</span> <span class="n">S_logp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">I_curr</span> <span class="o">=</span> <span class="n">I_curr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span>
+    <span class="n">I_logp</span> <span class="o">=</span> <span class="n">I_logp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Reverse the S2I,I2R computation.</span>
+    <span class="n">S2I</span> <span class="o">=</span> <span class="n">S_prev</span> <span class="o">-</span> <span class="n">S_curr</span>
+    <span class="n">I2R</span> <span class="o">=</span> <span class="n">I_prev</span> <span class="o">-</span> <span class="n">I_curr</span> <span class="o">+</span> <span class="n">S2I</span>
+
+    <span class="c1"># Compute probability factors.</span>
+    <span class="n">S2I_logp</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">S_prev</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">rate_s</span> <span class="o">*</span> <span class="n">I_prev</span><span class="p">)</span><span class="o">.</span><span class="n">expm1</span><span class="p">())</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">S2I</span><span class="p">)</span>
+    <span class="n">I2R_logp</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">I_prev</span><span class="p">,</span> <span class="n">prob_i</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">I2R</span><span class="p">)</span>
+    <span class="n">obs_logp</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">ExtendedBinomial</span><span class="p">(</span><span class="n">S2I</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># Manually perform variable elimination.</span>
+    <span class="n">logp</span> <span class="o">=</span> <span class="n">S_logp</span> <span class="o">+</span> <span class="p">(</span><span class="n">I_logp</span> <span class="o">+</span> <span class="n">obs_logp</span><span class="p">)</span> <span class="o">+</span> <span class="n">S2I_logp</span> <span class="o">+</span> <span class="n">I2R_logp</span>
+    <span class="n">logp</span> <span class="o">=</span> <span class="n">logp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">Q</span> <span class="o">*</span> <span class="n">Q</span><span class="p">,</span> <span class="n">Q</span> <span class="o">*</span> <span class="n">Q</span><span class="p">)</span>
+    <span class="n">logp</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">hmm</span><span class="o">.</span><span class="n">_sequential_logmatmulexp</span><span class="p">(</span><span class="n">logp</span><span class="p">)</span>
+    <span class="n">logp</span> <span class="o">=</span> <span class="n">logp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">logsumexp</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">logp</span> <span class="o">=</span> <span class="n">logp</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># Account for S,I initial distributions.</span>
+    <span class="n">warn_if_nan</span><span class="p">(</span><span class="n">logp</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">logp</span><span class="p">)</span>
+
+
+<span class="c1"># We can fit vectorized_model exactly as we fit the original continuous_model,</span>
+<span class="c1"># using our infer_hmc_cont helper. The vectorized model is more than an order</span>
+<span class="c1"># of magnitude faster than the sequential version, and scales logarithmically</span>
+<span class="c1"># in time (up to your machine&#39;s parallelism).</span>
+<span class="c1">#</span>
+<span class="c1"># After inference we have samples of all latent variables. Let&#39;s define a</span>
+<span class="c1"># helper to examine the inferred posterior distributions.</span>
+
+<span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
+    <span class="c1"># Print estimated values.</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;basic_reproduction_number&quot;</span><span class="p">:</span> <span class="s2">&quot;R0&quot;</span><span class="p">,</span>
+             <span class="s2">&quot;response_rate&quot;</span><span class="p">:</span> <span class="s2">&quot;rho&quot;</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">names</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: truth = </span><span class="si">{:0.3g}</span><span class="s2">, estimate = </span><span class="si">{:0.3g}</span><span class="s2"> </span><span class="se">\u00B1</span><span class="s2"> </span><span class="si">{:0.3g}</span><span class="s2">&quot;</span>
+                     <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
+
+    <span class="c1"># Optionally plot histograms.</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">plot</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Posterior parameter estimates&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">names</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">truth</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;posterior&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">truth</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;truth&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(())</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+
+<span class="c1"># Prediction and Forecasting</span>
+<span class="c1"># ==========================</span>
+<span class="c1">#</span>
+<span class="c1"># So far we&#39;ve written four models that each describe the same probability</span>
+<span class="c1"># distribution. Each successive model made inference cheaper. Next let&#39;s move</span>
+<span class="c1"># beyond inference and consider predicting latent infection rate and</span>
+<span class="c1"># forecasting future infections.</span>
+<span class="c1">#</span>
+<span class="c1"># We&#39;ll use Pyro&#39;s effect handlers to combine multiple of the above models,</span>
+<span class="c1"># leveraging the vectorized_model for inference, then the continuous_model to</span>
+<span class="c1"># compute local latent variables, and finally the original discrete_model to</span>
+<span class="c1"># forecast forward in time. Let&#39;s assume posterior samples have already been</span>
+<span class="c1"># generated via infer_hmc_cont(vectorized_model, ...).</span>
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">truth</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Forecasting </span><span class="si">{}</span><span class="s2"> steps ahead...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">forecast</span><span class="p">))</span>
+    <span class="n">particle_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;particles&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># First we sample discrete auxiliary variables from the continuous</span>
+    <span class="c1"># variables sampled in vectorized_model. This samples only time steps</span>
+    <span class="c1"># [0:duration]. Here infer_discrete runs a forward-filter backward-sample</span>
+    <span class="c1"># algorithm. We&#39;ll add these new samples to the existing dict of samples.</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">continuous_model</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">particle_plate</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">infer_discrete</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">first_available_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">()</span> <span class="k">as</span> <span class="n">tr</span><span class="p">:</span>
+        <span class="n">model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+                          <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">tr</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                          <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Next we&#39;ll run the forward generative process in discrete_model. This</span>
+    <span class="c1"># samples time steps [duration:duration+forecast]. Again we&#39;ll update the</span>
+    <span class="c1"># dict of samples.</span>
+    <span class="n">extended_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">args</span><span class="o">.</span><span class="n">forecast</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">discrete_model</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">particle_plate</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">()</span> <span class="k">as</span> <span class="n">tr</span><span class="p">:</span>
+        <span class="n">model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">extended_data</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+                          <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">tr</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                          <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Finally we&#39;ll concatenate the sequentially sampled values into contiguous</span>
+    <span class="c1"># tensors. This operates on the entire time interval [0:duration+forecast].</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="s2">&quot;S2I&quot;</span><span class="p">,</span> <span class="s2">&quot;I2R&quot;</span><span class="p">):</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;_[0-9]+&quot;</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span>
+                  <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                  <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">name</span><span class="p">)]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="o">==</span> <span class="n">args</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">forecast</span>
+        <span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">series</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">samples</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">S2I</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;S2I&quot;</span><span class="p">]</span>
+    <span class="n">median</span> <span class="o">=</span> <span class="n">S2I</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Median prediction of new infections (starting on day 0):</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span>
+                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">median</span><span class="p">)))))</span>
+
+    <span class="c1"># Optionally plot the latent and forecasted series of new infections.</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">plot</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">forecast</span><span class="p">)</span>
+        <span class="n">p05</span> <span class="o">=</span> <span class="n">S2I</span><span class="o">.</span><span class="n">kthvalue</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">)),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">p95</span> <span class="o">=</span> <span class="n">S2I</span><span class="o">.</span><span class="n">kthvalue</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.95</span> <span class="o">*</span> <span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">)),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">p05</span><span class="p">,</span> <span class="n">p95</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;90% CI&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">median</span><span class="p">,</span> <span class="s2">&quot;r-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">[:</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span><span class="p">],</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;k.&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;observed&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">truth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="s2">&quot;k--&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;truth&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;day after first infection&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;new infections per day&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;New infections in population of </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">population</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">samples</span>
+
+
+<span class="c1"># Experiments</span>
+<span class="c1"># ===========</span>
+<span class="c1">#</span>
+<span class="c1"># Finally we&#39;ll define an experiment runner. For example we can simulate 60</span>
+<span class="c1"># days of infection on a population of 10000 and forecast forward another 30</span>
+<span class="c1"># days, and plot the results as follows (takes about 3 minutes on my laptop):</span>
+<span class="c1">#</span>
+<span class="c1"># python sir_hmc.py -p 10000 -d 60 -f 30 --plot</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="n">__debug__</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">generate_data</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">][:</span><span class="n">args</span><span class="o">.</span><span class="n">duration</span><span class="p">]</span>
+
+    <span class="c1"># Choose among inference methods.</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">enum</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">infer_hmc_enum</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">sequential</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">infer_hmc_cont</span><span class="p">(</span><span class="n">continuous_model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">infer_hmc_cont</span><span class="p">(</span><span class="n">vectorized_model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate fit.</span>
+    <span class="n">evaluate</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+
+    <span class="c1"># Predict latent time series.</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">forecast</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">truth</span><span class="o">=</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;S2I&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">samples</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.4.0&#39;</span><span class="p">)</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;SIR epidemiology modeling using HMC&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="s2">&quot;--population&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;--min-observations&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="s2">&quot;--duration&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="s2">&quot;--forecast&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-R0&quot;</span><span class="p">,</span> <span class="s2">&quot;--basic-reproduction-number&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-tau&quot;</span><span class="p">,</span> <span class="s2">&quot;--recovery-time&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">7.0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-rho&quot;</span><span class="p">,</span> <span class="s2">&quot;--response-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="s2">&quot;--enum&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;use the full enumeration model&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--sequential&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;use the sequential continuous model&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-samples&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-w&quot;</span><span class="p">,</span> <span class="s2">&quot;--warmup-steps&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;--max-tree-depth&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--rng-seed&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--double&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--jit&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--cuda&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--plot&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">double</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">DoubleTensor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">DoubleTensor</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span>
+
+    <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">plot</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="toy_mixture_model_discrete_enumeration.html" class="btn btn-neutral float-right" title="Toy Mixture Model With Discrete Enumeration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="epi_regional.html" class="btn btn-neutral float-left" title="Epidemiological models: Regional" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, Uber Technologies, Inc
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
