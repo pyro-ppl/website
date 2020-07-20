@@ -109,8 +109,23 @@
 <li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Normalizing Flows - Introduction (Part 1)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Univariate-Distributions">Univariate Distributions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Background">Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Fixed-Univariate-Transforms-in-Pyro">Fixed Univariate Transforms in Pyro</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Learnable-Univariate-Distributions-in-Pyro">Learnable Univariate Distributions in Pyro</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Multivariate-Distributions">Multivariate Distributions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Multivariate-Transforms-in-Pyro">Multivariate Transforms in Pyro</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Conditional-versus-Joint-Distributions">Conditional versus Joint Distributions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Conditional-Transforms-in-Pyro">Conditional Transforms in Pyro</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Conclusions">Conclusions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#References">References</a></li>
 </ul>
 </li>
 </ul>
@@ -480,42 +495,50 @@ div.rendered_html tbody tr:hover {
 univariate normal distributions to represent the variational family. The true posterior is neither independent nor normally distributed, which results in suboptimal inference and simplifies the model that is learnt. In other scenarios, we are likewise restricted by not being able to model multimodal distributions and heavy or light tails.</p>
 <p>Normalizing Flows [1-4] are a family of methods for constructing flexible learnable probability distributions, often with neural networks, which allow us to surpass the limitations of simple parametric forms. Pyro contains state-of-the-art normalizing flow implementations, and this tutorial explains how you can use this library for learning complex models and performing flexible variational inference. We introduce the main idea of Normalizing Flows (NFs) and demonstrate learning simple
 univariate distributions with element-wise, multivariate, and conditional flows.</p>
-<p>## Univariate Distributions ### Background Normalizing Flows are a family of methods for constructing flexible distributions. Let’s first restrict our attention to representing univariate distributions. The basic idea is that a simple source of noise, for example a variable with a standard normal distribution, <span class="math notranslate nohighlight">\(X\sim\mathcal{N}(0,1)\)</span>, is passed through a bijective (i.e. invertible) function, <span class="math notranslate nohighlight">\(g(\cdot)\)</span> to produce a more complex transformed variable <span class="math notranslate nohighlight">\(Y=g(X)\)</span>.</p>
+</div>
+<div class="section" id="Univariate-Distributions">
+<h2>Univariate Distributions<a class="headerlink" href="#Univariate-Distributions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Background">
+<h3>Background<a class="headerlink" href="#Background" title="Permalink to this headline">¶</a></h3>
+<p>Normalizing Flows are a family of methods for constructing flexible distributions. Let’s first restrict our attention to representing univariate distributions. The basic idea is that a simple source of noise, for example a variable with a standard normal distribution, <span class="math notranslate nohighlight">\(X\sim\mathcal{N}(0,1)\)</span>, is passed through a bijective (i.e. invertible) function, <span class="math notranslate nohighlight">\(g(\cdot)\)</span> to produce a more complex transformed variable <span class="math notranslate nohighlight">\(Y=g(X)\)</span>.</p>
 <p>For a given random variable, we typically want to perform two operations: sampling and scoring. Sampling <span class="math notranslate nohighlight">\(Y\)</span> is trivial. First, we sample <span class="math notranslate nohighlight">\(X=x\)</span>, then calculate <span class="math notranslate nohighlight">\(y=g(x)\)</span>. Scoring <span class="math notranslate nohighlight">\(Y\)</span>, or rather, evaluating the log-density <span class="math notranslate nohighlight">\(\log(p_Y(y))\)</span>, is more involved. How does the density of <span class="math notranslate nohighlight">\(Y\)</span> relate to the density of <span class="math notranslate nohighlight">\(X\)</span>? We can use the substitution rule of integral calculus to answer this. Suppose we want to evaluate the expectation of some function of <span class="math notranslate nohighlight">\(X\)</span>.
-Then, :nbsphinx-math:<a href="#id1"><span class="problematic" id="id2">`</span></a>begin{align}</p>
-<blockquote>
-<div><blockquote>
-<div><p>mathbb{E}_{p_X(cdot)}left[f(X)right] &amp;= int_{text{supp}(X)}f(x)p_X(x)dx\
-&amp;= int_{text{supp}(Y)}f(g^{-1}(y))p_X(g^{-1}(y))left|frac{dx}{dy}right|dy\
-&amp;= mathbb{E}_{p_Y(cdot)}left[f(g^{-1}(Y))right],</p>
-</div></blockquote>
-<dl class="simple">
-<dt>end{align}` where <span class="math notranslate nohighlight">\(\text{supp}(X)\)</span> denotes the support of <span class="math notranslate nohighlight">\(X\)</span>, which in this case is <span class="math notranslate nohighlight">\((-\infty,\infty)\)</span>. Crucially, we used the fact that <span class="math notranslate nohighlight">\(g\)</span> is bijective to apply the substitution rule in going from the first to the second line. Equating the last two lines we get, :nbsphinx-math:<a href="#id3"><span class="problematic" id="id4">`</span></a>begin{align}</dt><dd><p>log(p_Y(y)) &amp;= log(p_X(g^{-1}(y)))+logleft(left|frac{dx}{dy}right|right)\
-&amp;= log(p_X(g^{-1}(y)))-logleft(left|frac{dy}{dx}right|right).</p>
-</dd>
-</dl>
-<p>end{align}` Inituitively, this equation says that the density of <span class="math notranslate nohighlight">\(Y\)</span> is equal to the density at the corresponding point in <span class="math notranslate nohighlight">\(X\)</span> plus a term that corrects for the warp in volume around an infinitesimally small length around <span class="math notranslate nohighlight">\(Y\)</span> caused by the transformation.</p>
-</div></blockquote>
+Then,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+     \mathbb{E}_{p_X(\cdot)}\left[f(X)\right] &amp;= \int_{\text{supp}(X)}f(x)p_X(x)dx\\
+     &amp;= \int_{\text{supp}(Y)}f(g^{-1}(y))p_X(g^{-1}(y))\left|\frac{dx}{dy}\right|dy\\
+     &amp;= \mathbb{E}_{p_Y(\cdot)}\left[f(g^{-1}(Y))\right],
+\end{align}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\text{supp}(X)\)</span> denotes the support of <span class="math notranslate nohighlight">\(X\)</span>, which in this case is <span class="math notranslate nohighlight">\((-\infty,\infty)\)</span>. Crucially, we used the fact that <span class="math notranslate nohighlight">\(g\)</span> is bijective to apply the substitution rule in going from the first to the second line. Equating the last two lines we get,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+     \log(p_Y(y)) &amp;= \log(p_X(g^{-1}(y)))+\log\left(\left|\frac{dx}{dy}\right|\right)\\
+     &amp;= \log(p_X(g^{-1}(y)))-\log\left(\left|\frac{dy}{dx}\right|\right).
+\end{align}\end{split}\]</div>
+<p>Inituitively, this equation says that the density of <span class="math notranslate nohighlight">\(Y\)</span> is equal to the density at the corresponding point in <span class="math notranslate nohighlight">\(X\)</span> plus a term that corrects for the warp in volume around an infinitesimally small length around <span class="math notranslate nohighlight">\(Y\)</span> caused by the transformation.</p>
 <p>If <span class="math notranslate nohighlight">\(g\)</span> is cleverly constructed (and we will see several examples shortly), we can produce distributions that are more complex than standard normal noise and yet have easy sampling and computationally tractable scoring. Moreover, we can compose such bijective transformations to produce even more complex distributions. By an inductive argument, if we have <span class="math notranslate nohighlight">\(L\)</span> transforms <span class="math notranslate nohighlight">\(g_{(0)}, g_{(1)},\ldots,g_{(L-1)}\)</span>, then the log-density of the transformed variable
-<span class="math notranslate nohighlight">\(Y=(g_{(0)}\circ g_{(1)}\circ\cdots\circ g_{(L-1)})(X)\)</span> is :nbsphinx-math:<a href="#id5"><span class="problematic" id="id6">`</span></a>begin{align}</p>
-<blockquote>
-<div><blockquote>
-<div><p>log(p_Y(y)) &amp;= logleft(p_Xleft(left(g_{(L-1)}^{-1}circcdotscirc g_{(0)}^{-1}right)left(yright)right)right)+sum^{L-1}_{l=0}logleft(left|frac{dg^{-1}_{(l)}(y_{(l)})}{dy’}right|right),
-%left( g^{(l)}(y^{(l)})
-%right).</p>
-</div></blockquote>
-<p>end{align}` where we’ve defined <span class="math notranslate nohighlight">\(y_{(0)}=x\)</span>, <span class="math notranslate nohighlight">\(y_{(L-1)}=y\)</span> for convenience of notation.</p>
-</div></blockquote>
+<span class="math notranslate nohighlight">\(Y=(g_{(0)}\circ g_{(1)}\circ\cdots\circ g_{(L-1)})(X)\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+     \log(p_Y(y)) &amp;= \log\left(p_X\left(\left(g_{(L-1)}^{-1}\circ\cdots\circ g_{(0)}^{-1}\right)\left(y\right)\right)\right)+\sum^{L-1}_{l=0}\log\left(\left|\frac{dg^{-1}_{(l)}(y_{(l)})}{dy'}\right|\right),
+     %\left( g^{(l)}(y^{(l)})
+     %\right).
+\end{align}\]</div>
+<p>where we’ve defined <span class="math notranslate nohighlight">\(y_{(0)}=x\)</span>, <span class="math notranslate nohighlight">\(y_{(L-1)}=y\)</span> for convenience of notation.</p>
 <p>In a latter section, we will see how to generalize this method to multivariate <span class="math notranslate nohighlight">\(X\)</span>. The field of Normalizing Flows aims to construct such <span class="math notranslate nohighlight">\(g\)</span> for multivariate <span class="math notranslate nohighlight">\(X\)</span> to transform simple i.i.d. standard normal noise into complex, learnable, high-dimensional distributions. The methods have been applied to such diverse applications as image modeling, text-to-speech, unsupervised language induction, data compression, and modeling molecular structures. As probability distributions are
 the most fundamental component of probabilistic modeling we will likely see many more exciting state-of-the-art applications in the near future.</p>
-<p>### Fixed Univariate Transforms in Pyro PyTorch contains classes for representing <em>fixed</em> univariate bijective transformations, and sampling/scoring from transformed distributions derived from these. Pyro extends this with a comprehensive library of <em>learnable</em> univariate and multivariate transformations using the latest developments in the field. As Pyro imports all of PyTorch’s distributions and transformations, we will work solely with Pyro. We also note that the NF components in Pyro can be
-used independently of the probabilistic programming functionality of Pyro, which is what we will be doing in the first two tutorials.</p>
-<dl class="simple">
-<dt>Let us begin by showing how to represent and manipulate a simple transformed distribution, :nbsphinx-math:<a href="#id7"><span class="problematic" id="id8">`</span></a>begin{align}</dt><dd><p>X &amp;sim mathcal{N}(0,1)\
-Y &amp;= text{exp}(X).
-end{align}` You may have recognized that this is by definition, <span class="math notranslate nohighlight">\(Y\sim\text{LogNormal}(0,1)\)</span>.</p>
-</dd>
-</dl>
+</div>
+<div class="section" id="Fixed-Univariate-Transforms-in-Pyro">
+<h3>Fixed Univariate Transforms in Pyro<a class="headerlink" href="#Fixed-Univariate-Transforms-in-Pyro" title="Permalink to this headline">¶</a></h3>
+<p>PyTorch contains classes for representing <em>fixed</em> univariate bijective transformations, and sampling/scoring from transformed distributions derived from these. Pyro extends this with a comprehensive library of <em>learnable</em> univariate and multivariate transformations using the latest developments in the field. As Pyro imports all of PyTorch’s distributions and transformations, we will work solely with Pyro. We also note that the NF components in Pyro can be used independently of the probabilistic
+programming functionality of Pyro, which is what we will be doing in the first two tutorials.</p>
+<p>Let us begin by showing how to represent and manipulate a simple transformed distribution,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+ X &amp;\sim \mathcal{N}(0,1)\\
+ Y &amp;= \text{exp}(X).
+\end{align}\end{split}\]</div>
+<p>You may have recognized that this is by definition, <span class="math notranslate nohighlight">\(Y\sim\text{LogNormal}(0,1)\)</span>.</p>
 <p>We begin by importing the relevant libraries:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -544,15 +567,14 @@ end{align}` You may have recognized that this is by definition, <span class="mat
 </pre></div>
 </div>
 </div>
-<dl>
-<dt>The class <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.ExpTransform">ExpTransform</a> derives from <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.Transform">Transform</a> and defines the forward, inverse, and log-absolute-derivative operations for this transform, :nbsphinx-math:<a href="#id9"><span class="problematic" id="id10">`</span></a>begin{align}</dt><dd><blockquote>
-<div><p>g(x) &amp;= text{exp(x)}\
-g^{-1}(y) &amp;= log(y)\
-logleft(left|frac{dg}{dx}right|right) &amp;= y.</p>
-</div></blockquote>
-<p>end{align}` In general, a transform class defines these three operations, from which it is sufficient to perform sampling and scoring.</p>
-</dd>
-</dl>
+<p>The class <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.ExpTransform">ExpTransform</a> derives from <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.Transform">Transform</a> and defines the forward, inverse, and log-absolute-derivative operations for this transform,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+     g(x) &amp;= \text{exp(x)}\\
+     g^{-1}(y) &amp;= \log(y)\\
+     \log\left(\left|\frac{dg}{dx}\right|\right) &amp;= y.
+\end{align}\end{split}\]</div>
+<p>In general, a transform class defines these three operations, from which it is sufficient to perform sampling and scoring.</p>
 <p>The class <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transformed_distribution.TransformedDistribution">TransformedDistribution</a> takes a base distribution of simple noise and a list of transforms, and encapsulates the distribution formed by applying these transformations in sequence. We use it as:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -586,12 +608,13 @@ logleft(left|frac{dg}{dx}right|right) &amp;= y.</p>
 <img alt="_images/normalizing_flows_i_9_0.png" src="_images/normalizing_flows_i_9_0.png" />
 </div>
 </div>
-<dl class="simple">
-<dt>Our example uses a single transform. However, we can compose transforms to produce more expressive distributions. For instance, if we apply an affine transformation we can produce the general log-normal distribution, :nbsphinx-math:<a href="#id11"><span class="problematic" id="id12">`</span></a>begin{align}</dt><dd><p>X &amp;sim mathcal{N}(0,1)\
-Y &amp;= text{exp}(mu+sigma X).
-end{align}` or rather, <span class="math notranslate nohighlight">\(Y\sim\text{LogNormal}(\mu,\sigma^2)\)</span>. In Pyro this is accomplished, e.g. for <span class="math notranslate nohighlight">\(\mu=3, \sigma=0.5\)</span>, as follows:</p>
-</dd>
-</dl>
+<p>Our example uses a single transform. However, we can compose transforms to produce more expressive distributions. For instance, if we apply an affine transformation we can produce the general log-normal distribution,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+ X &amp;\sim \mathcal{N}(0,1)\\
+ Y &amp;= \text{exp}(\mu+\sigma X).
+\end{align}\end{split}\]</div>
+<p>or rather, <span class="math notranslate nohighlight">\(Y\sim\text{LogNormal}(\mu,\sigma^2)\)</span>. In Pyro this is accomplished, e.g. for <span class="math notranslate nohighlight">\(\mu=3, \sigma=0.5\)</span>, as follows:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
@@ -621,7 +644,10 @@ end{align}` or rather, <span class="math notranslate nohighlight">\(Y\sim\text{L
 </div>
 <p>For the forward operation, transformations are applied in the order of the list that is the second argument to <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transformed_distribution.TransformedDistribution">TransformedDistribution</a>. In this case, first <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.AffineTransform">AffineTransform</a> is applied to the base distribution and then
 <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.ExpTransform">ExpTransform</a>.</p>
-<p>### Learnable Univariate Distributions in Pyro Having introduced the interface for invertible transforms and transformed distributions, we now show how to represent <em>learnable</em> transforms and use them for density estimation. Our dataset in this section and the next will comprise samples along two concentric circles. Examining the joint and marginal distributions:</p>
+</div>
+<div class="section" id="Learnable-Univariate-Distributions-in-Pyro">
+<h3>Learnable Univariate Distributions in Pyro<a class="headerlink" href="#Learnable-Univariate-Distributions-in-Pyro" title="Permalink to this headline">¶</a></h3>
+<p>Having introduced the interface for invertible transforms and transformed distributions, we now show how to represent <em>learnable</em> transforms and use them for density estimation. Our dataset in this section and the next will comprise samples along two concentric circles. Examining the joint and marginal distributions:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -671,7 +697,8 @@ end{align}` or rather, <span class="math notranslate nohighlight">\(Y\sim\text{L
 <img alt="_images/normalizing_flows_i_14_1.png" src="_images/normalizing_flows_i_14_1.png" />
 </div>
 </div>
-<p>Standard transforms derive from the <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.ExpTransform">Transform</a> class and are not designed to contain learnable parameters. Learnable transforms, on the other hand, derive from <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.TransformModule">TransformModule</a>, which is a <a class="reference external" href="torch.nn.Module">torch.nn.Module</a> and registers parameters with the object.</p>
+<p>Standard transforms derive from the <a class="reference external" href="https://pytorch.org/docs/master/distributions.html#torch.distributions.transforms.ExpTransform">Transform</a> class and are not designed to contain learnable parameters. Learnable transforms, on the other hand, derive from <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.TransformModule">TransformModule</a>, which is a <a class="reference external" href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module">torch.nn.Module</a> and registers
+parameters with the object.</p>
 <p>We will learn the marginals of the above distribution using such a transform, <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.transforms.Spline">Spline</a> [5,6], defined on a two-dimensional input:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -781,49 +808,59 @@ Wall time: 5.01 s
 </div>
 </div>
 <p>As we can see, we have learnt close approximations to the marginal distributions, <span class="math notranslate nohighlight">\(p(x_1),p(x_2)\)</span>. It would have been challenging to fit the irregularly shaped marginals with standard methods, e.g., a mixture of normal distributions. As expected, since there is a dependency between the two dimensions, we do not learn a good representation of the joint, <span class="math notranslate nohighlight">\(p(x_1,x_2)\)</span>. In the next section, we explain how to learn multivariate distributions whose dimensions are not independent.</p>
-<p>## Multivariate Distributions ### Background The fundamental idea of normalizing flows also applies to multivariate random variables, and this is where its value is clearly seen - <em>representing complex high-dimensional distributions</em>. In this case, a simple multivariate source of noise, for example a standard i.i.d. normal distribution, <span class="math notranslate nohighlight">\(X\sim\mathcal{N}(\mathbf{0},I_{D\times D})\)</span>, is passed through a vector-valued bijection, <span class="math notranslate nohighlight">\(g:\mathbb{R}^D\rightarrow\mathbb{R}^D\)</span>, to produce the
-more complex transformed variable <span class="math notranslate nohighlight">\(Y=g(X)\)</span>.</p>
-<dl>
-<dt>Sampling <span class="math notranslate nohighlight">\(Y\)</span> is again trivial and involves evaluation of the forward pass of <span class="math notranslate nohighlight">\(g\)</span>. We can score <span class="math notranslate nohighlight">\(Y\)</span> using the multivariate substitution rule of integral calculus, :nbsphinx-math:<a href="#id13"><span class="problematic" id="id14">`</span></a>begin{align}</dt><dd><blockquote>
-<div><p>mathbb{E}_{p_X(cdot)}left[f(X)right] &amp;= int_{text{supp}(X)}f(mathbf{x})p_X(mathbf{x})dmathbf{x}\
-&amp;= int_{text{supp}(Y)}f(g^{-1}(mathbf{y}))p_X(g^{-1}(mathbf{y}))detleft|frac{dmathbf{x}}{dmathbf{y}}right|dmathbf{y}\
-&amp;= mathbb{E}_{p_Y(cdot)}left[f(g^{-1}(Y))right],</p>
-</div></blockquote>
-<dl class="simple">
-<dt>end{align}` where <span class="math notranslate nohighlight">\(d\mathbf{x}/d\mathbf{y}\)</span> denotes the Jacobian matrix of <span class="math notranslate nohighlight">\(g^{-1}(\mathbf{y})\)</span>. Equating the last two lines we get, :nbsphinx-math:<a href="#id15"><span class="problematic" id="id16">`</span></a>begin{align}</dt><dd><p>log(p_Y(y)) &amp;= log(p_X(g^{-1}(y)))+logleft(detleft|frac{dmathbf{x}}{dmathbf{y}}right|right)\
-&amp;= log(p_X(g^{-1}(y)))-logleft(detleft|frac{dmathbf{y}}{dmathbf{x}}right|right).</p>
-</dd>
-</dl>
-<p>end{align}` Inituitively, this equation says that the density of <span class="math notranslate nohighlight">\(Y\)</span> is equal to the density at the corresponding point in <span class="math notranslate nohighlight">\(X\)</span> plus a term that corrects for the warp in volume around an infinitesimally small volume around <span class="math notranslate nohighlight">\(Y\)</span> caused by the transformation. For instance, in <span class="math notranslate nohighlight">\(2\)</span>-dimensions, the geometric interpretation of the absolute value of the determinant of a Jacobian is that it represents the area of a parallelogram with edges defined by the columns of the Jacobian.</p>
-</dd>
-</dl>
-<p>In <span class="math notranslate nohighlight">\(n\)</span>-dimensions, the geometric interpretation of the absolute value of the determinant Jacobian is that is represents the hyper-volume of a parallelepiped with <span class="math notranslate nohighlight">\(n\)</span> edges defined by the columns of the Jacobian (see a calculus reference such as [7] for more details).</p>
-<dl>
-<dt>Similar to the univariate case, we can compose such bijective transformations to produce even more complex distributions. By an inductive argument, if we have <span class="math notranslate nohighlight">\(L\)</span> transforms <span class="math notranslate nohighlight">\(g_{(0)}, g_{(1)},\ldots,g_{(L-1)}\)</span>, then the log-density of the transformed variable <span class="math notranslate nohighlight">\(Y=(g_{(0)}\circ g_{(1)}\circ\cdots\circ g_{(L-1)})(X)\)</span> is :nbsphinx-math:<a href="#id17"><span class="problematic" id="id18">`</span></a>begin{align}</dt><dd><blockquote>
-<div><p>log(p_Y(y)) &amp;= logleft(p_Xleft(left(g_{(L-1)}^{-1}circcdotscirc g_{(0)}^{-1}right)left(yright)right)right)+sum^{L-1}_{l=0}logleft(left|frac{dg^{-1}_{(l)}(y_{(l)})}{dy’}right|right),
-%left( g^{(l)}(y^{(l)})
-%right).</p>
-</div></blockquote>
-<p>end{align}` where we’ve defined <span class="math notranslate nohighlight">\(y_{(0)}=x\)</span>, <span class="math notranslate nohighlight">\(y_{(L-1)}=y\)</span> for convenience of notation.</p>
-</dd>
-</dl>
+</div>
+</div>
+<div class="section" id="Multivariate-Distributions">
+<h2>Multivariate Distributions<a class="headerlink" href="#Multivariate-Distributions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Background<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>The fundamental idea of normalizing flows also applies to multivariate random variables, and this is where its value is clearly seen - <em>representing complex high-dimensional distributions</em>. In this case, a simple multivariate source of noise, for example a standard i.i.d. normal distribution, <span class="math notranslate nohighlight">\(X\sim\mathcal{N}(\mathbf{0},I_{D\times D})\)</span>, is passed through a vector-valued bijection, <span class="math notranslate nohighlight">\(g:\mathbb{R}^D\rightarrow\mathbb{R}^D\)</span>, to produce the more complex transformed variable
+<span class="math notranslate nohighlight">\(Y=g(X)\)</span>.</p>
+<p>Sampling <span class="math notranslate nohighlight">\(Y\)</span> is again trivial and involves evaluation of the forward pass of <span class="math notranslate nohighlight">\(g\)</span>. We can score <span class="math notranslate nohighlight">\(Y\)</span> using the multivariate substitution rule of integral calculus,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+     \mathbb{E}_{p_X(\cdot)}\left[f(X)\right] &amp;= \int_{\text{supp}(X)}f(\mathbf{x})p_X(\mathbf{x})d\mathbf{x}\\
+     &amp;= \int_{\text{supp}(Y)}f(g^{-1}(\mathbf{y}))p_X(g^{-1}(\mathbf{y}))\det\left|\frac{d\mathbf{x}}{d\mathbf{y}}\right|d\mathbf{y}\\
+     &amp;= \mathbb{E}_{p_Y(\cdot)}\left[f(g^{-1}(Y))\right],
+ \end{align}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(d\mathbf{x}/d\mathbf{y}\)</span> denotes the Jacobian matrix of <span class="math notranslate nohighlight">\(g^{-1}(\mathbf{y})\)</span>. Equating the last two lines we get,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+     \log(p_Y(y)) &amp;= \log(p_X(g^{-1}(y)))+\log\left(\det\left|\frac{d\mathbf{x}}{d\mathbf{y}}\right|\right)\\
+     &amp;= \log(p_X(g^{-1}(y)))-\log\left(\det\left|\frac{d\mathbf{y}}{d\mathbf{x}}\right|\right).
+\end{align}\end{split}\]</div>
+<p>Inituitively, this equation says that the density of <span class="math notranslate nohighlight">\(Y\)</span> is equal to the density at the corresponding point in <span class="math notranslate nohighlight">\(X\)</span> plus a term that corrects for the warp in volume around an infinitesimally small volume around <span class="math notranslate nohighlight">\(Y\)</span> caused by the transformation. For instance, in <span class="math notranslate nohighlight">\(2\)</span>-dimensions, the geometric interpretation of the absolute value of the determinant of a Jacobian is that it represents the area of a parallelogram with edges defined by the columns of the Jacobian. In
+<span class="math notranslate nohighlight">\(n\)</span>-dimensions, the geometric interpretation of the absolute value of the determinant Jacobian is that is represents the hyper-volume of a parallelepiped with <span class="math notranslate nohighlight">\(n\)</span> edges defined by the columns of the Jacobian (see a calculus reference such as [7] for more details).</p>
+<p>Similar to the univariate case, we can compose such bijective transformations to produce even more complex distributions. By an inductive argument, if we have <span class="math notranslate nohighlight">\(L\)</span> transforms <span class="math notranslate nohighlight">\(g_{(0)}, g_{(1)},\ldots,g_{(L-1)}\)</span>, then the log-density of the transformed variable <span class="math notranslate nohighlight">\(Y=(g_{(0)}\circ g_{(1)}\circ\cdots\circ g_{(L-1)})(X)\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+     \log(p_Y(y)) &amp;= \log\left(p_X\left(\left(g_{(L-1)}^{-1}\circ\cdots\circ g_{(0)}^{-1}\right)\left(y\right)\right)\right)+\sum^{L-1}_{l=0}\log\left(\left|\frac{dg^{-1}_{(l)}(y_{(l)})}{dy'}\right|\right),
+     %\left( g^{(l)}(y^{(l)})
+     %\right).
+\end{align}\]</div>
+<p>where we’ve defined <span class="math notranslate nohighlight">\(y_{(0)}=x\)</span>, <span class="math notranslate nohighlight">\(y_{(L-1)}=y\)</span> for convenience of notation.</p>
 <p>The main challenge is in designing parametrizable multivariate bijections that have closed form expressions for both <span class="math notranslate nohighlight">\(g\)</span> and <span class="math notranslate nohighlight">\(g^{-1}\)</span>, a tractable Jacobian whose calculation scales with <span class="math notranslate nohighlight">\(O(D)\)</span> rather than <span class="math notranslate nohighlight">\(O(D^3)\)</span>, and can express a flexible class of functions.</p>
-<p>### Multivariate Transforms in Pyro Up to this point we have used element-wise transforms in Pyro. These are indicated by having the property <code class="docutils literal notranslate"><span class="pre">transform.event_dim</span> <span class="pre">==</span> <span class="pre">0</span></code> set on the transform object. Such element-wise transforms can only be used to represent univariate distributions and multivariate distributions whose dimensions are independent (known in variational inference as the mean-field approximation).</p>
+</div>
+<div class="section" id="Multivariate-Transforms-in-Pyro">
+<h3>Multivariate Transforms in Pyro<a class="headerlink" href="#Multivariate-Transforms-in-Pyro" title="Permalink to this headline">¶</a></h3>
+<p>Up to this point we have used element-wise transforms in Pyro. These are indicated by having the property <code class="docutils literal notranslate"><span class="pre">transform.event_dim</span> <span class="pre">==</span> <span class="pre">0</span></code> set on the transform object. Such element-wise transforms can only be used to represent univariate distributions and multivariate distributions whose dimensions are independent (known in variational inference as the mean-field approximation).</p>
 <p>The power of Normalizing Flow, however, is most apparent in their ability to model complex high-dimensional distributions with neural networks and Pyro contains several such flows for accomplishing this. Transforms that operate on vectors have the property <code class="docutils literal notranslate"><span class="pre">transform.event_dim</span> <span class="pre">==</span> <span class="pre">1</span></code>, transforms on matrices with <code class="docutils literal notranslate"><span class="pre">transform.event_dim</span> <span class="pre">==</span> <span class="pre">2</span></code>, and so on. In general, the <code class="docutils literal notranslate"><span class="pre">event_dim</span></code> property of a transform indicates how many dependent dimensions there are in the output of a transform.</p>
 <p>In this section, we show how to use <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.transforms.SplineCoupling">SplineCoupling</a> to learn the bivariate toy distribution from our running example. A coupling transform [8, 9] divides the input variable into two parts and applies an element-wise bijection to the section half whose parameters are a function of the first. Optionally, an element-wise bijection is also applied to the first half. Dividing the inputs at <span class="math notranslate nohighlight">\(d\)</span>,
-the transform is, :nbsphinx-math:<a href="#id19"><span class="problematic" id="id20">`</span></a>begin{align}</p>
-<blockquote>
-<div><p>mathbf{y}_{1:d} &amp;= <a href="#id27"><span class="problematic" id="id28">g_</span></a>theta(mathbf{x}_{1:d})\
-mathbf{y}_{(d+1):D} &amp;= <a href="#id29"><span class="problematic" id="id30">h_</span></a>phi(mathbf{x}_{(d+1):D};mathbf{x}_{1:d}),
-end{align}` where <span class="math notranslate nohighlight">\(\mathbf{x}_{1:d}\)</span> represents the first <span class="math notranslate nohighlight">\(d\)</span> elements of the inputs, <span class="math notranslate nohighlight">\(g_\theta\)</span> is either the identity function or an elementwise bijection parameters <span class="math notranslate nohighlight">\(\theta\)</span>, and <span class="math notranslate nohighlight">\(h_\phi\)</span> is an element-wise bijection whose parameters are a function of <span class="math notranslate nohighlight">\(\mathbf{x}_{1:d}\)</span>.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>This type of transform is easily invertible. We invert the first half, <span class="math notranslate nohighlight">\(\mathbf{y}_{1:d}\)</span>, then use the resulting <span class="math notranslate nohighlight">\(\mathbf{x}_{1:d}\)</span> to evaluate <span class="math notranslate nohighlight">\(\phi\)</span> and invert the second half, :nbsphinx-math:<a href="#id21"><span class="problematic" id="id22">`</span></a>begin{align}</dt><dd><p>mathbf{x}_{1:d} &amp;= <a href="#id31"><span class="problematic" id="id32">g_</span></a>theta^{-1}(mathbf{y}_{1:d})\
-mathbf{x}_{(d+1):D} &amp;= <a href="#id33"><span class="problematic" id="id34">h_</span></a>phi^{-1}(mathbf{y}_{(d+1):D};mathbf{x}_{1:d}).
-end{align}` Difference choices for <span class="math notranslate nohighlight">\(g\)</span> and <span class="math notranslate nohighlight">\(h\)</span> form different types of coupling transforms. When both are monotonic rational splines, the transform is the spline coupling layer of Neural Spline Flow [5,6], which is represented in Pyro by the <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.transforms.SplineCoupling">SplineCoupling</a> class. As shown in the references, when we combine a sequence of coupling layers sandwiched between random permutations so we</p>
-</dd>
-</dl>
-<p>introduce dependencies between all dimensions, we can model complex multivariate distributions.</p>
+the transform is,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+ \mathbf{y}_{1:d} &amp;= g_\theta(\mathbf{x}_{1:d})\\
+ \mathbf{y}_{(d+1):D} &amp;= h_\phi(\mathbf{x}_{(d+1):D};\mathbf{x}_{1:d}),
+\end{align}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{x}_{1:d}\)</span> represents the first <span class="math notranslate nohighlight">\(d\)</span> elements of the inputs, <span class="math notranslate nohighlight">\(g_\theta\)</span> is either the identity function or an elementwise bijection parameters <span class="math notranslate nohighlight">\(\theta\)</span>, and <span class="math notranslate nohighlight">\(h_\phi\)</span> is an element-wise bijection whose parameters are a function of <span class="math notranslate nohighlight">\(\mathbf{x}_{1:d}\)</span>.</p>
+<p>This type of transform is easily invertible. We invert the first half, <span class="math notranslate nohighlight">\(\mathbf{y}_{1:d}\)</span>, then use the resulting <span class="math notranslate nohighlight">\(\mathbf{x}_{1:d}\)</span> to evaluate <span class="math notranslate nohighlight">\(\phi\)</span> and invert the second half,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+ \mathbf{x}_{1:d} &amp;= g_\theta^{-1}(\mathbf{y}_{1:d})\\
+ \mathbf{x}_{(d+1):D} &amp;= h_\phi^{-1}(\mathbf{y}_{(d+1):D};\mathbf{x}_{1:d}).
+\end{align}\end{split}\]</div>
+<p>Difference choices for <span class="math notranslate nohighlight">\(g\)</span> and <span class="math notranslate nohighlight">\(h\)</span> form different types of coupling transforms. When both are monotonic rational splines, the transform is the spline coupling layer of Neural Spline Flow [5,6], which is represented in Pyro by the <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.transforms.SplineCoupling">SplineCoupling</a> class. As shown in the references, when we combine a sequence of coupling layers sandwiched between random permutations so we introduce
+dependencies between all dimensions, we can model complex multivariate distributions.</p>
 <p>Most of the learnable transforms in Pyro have a corresponding helper function that takes care of constructing a neural network for the transform with the correct output shape. This neural network outputs the parameters of the transform and is known as a <a class="reference external" href="https://arxiv.org/abs/1609.09106">hypernetwork</a> [10]. The helper functions are represented by lower-case versions of the corresponding class name, and usually input at the very least the input-dimension or shape of the distribution to model.
 For instance, the helper function corresponding to <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.transforms.SplineCoupling">SplineCoupling</a> is <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#spline-coupling">spline_coupling</a>. We create a bivariate flow with a single spline coupling layer as follows:</p>
 <div class="nbinput nblast docutils container">
@@ -936,22 +973,32 @@ Wall time: 1min 39s
 </div>
 </div>
 <p>We see from the output that this normalizing flow has successfully learnt both the univariate marginals <em>and</em> the bivariate distribution.</p>
-<p>## Conditional versus Joint Distributions ### Background In many cases, we wish to represent conditional rather than joint distributions. For instance, in performing variational inference, the variational family is a class of conditional distributions, :nbsphinx-math:<a href="#id23"><span class="problematic" id="id24">`</span></a>begin{align}
-{<a href="#id35"><span class="problematic" id="id36">q_</span></a>psi(mathbf{z}midmathbf{x})midthetainTheta},</p>
-<blockquote>
-<div><p>end{align}` where <span class="math notranslate nohighlight">\(\mathbf{z}\)</span> is the latent variable and <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> the observed one, that hopefully contains a member close to the true posterior of the model, <span class="math notranslate nohighlight">\(p(\mathbf{z}\mid\mathbf{x})\)</span>. In other cases, we may wish to learn to generate an object <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> conditioned on some context <span class="math notranslate nohighlight">\(\mathbf{c}\)</span> using <span class="math notranslate nohighlight">\(p_\theta(\mathbf{x}\mid\mathbf{c})\)</span> and observations <span class="math notranslate nohighlight">\(\{(\mathbf{x}_n,\mathbf{c}_n)\}^N_{n=1}\)</span>. For instance, <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> may be a</p>
-</div></blockquote>
-<p>spoken sentence and <span class="math notranslate nohighlight">\(\mathbf{c}\)</span> a number of speech features.</p>
+</div>
+</div>
+<div class="section" id="Conditional-versus-Joint-Distributions">
+<h2>Conditional versus Joint Distributions<a class="headerlink" href="#Conditional-versus-Joint-Distributions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h3>Background<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>In many cases, we wish to represent conditional rather than joint distributions. For instance, in performing variational inference, the variational family is a class of conditional distributions,</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+\{q_\psi(\mathbf{z}\mid\mathbf{x})\mid\theta\in\Theta\},
+\end{align}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{z}\)</span> is the latent variable and <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> the observed one, that hopefully contains a member close to the true posterior of the model, <span class="math notranslate nohighlight">\(p(\mathbf{z}\mid\mathbf{x})\)</span>. In other cases, we may wish to learn to generate an object <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> conditioned on some context <span class="math notranslate nohighlight">\(\mathbf{c}\)</span> using <span class="math notranslate nohighlight">\(p_\theta(\mathbf{x}\mid\mathbf{c})\)</span> and observations <span class="math notranslate nohighlight">\(\{(\mathbf{x}_n,\mathbf{c}_n)\}^N_{n=1}\)</span>. For instance, <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> may be a spoken sentence
+and <span class="math notranslate nohighlight">\(\mathbf{c}\)</span> a number of speech features.</p>
 <p>The theory of Normalizing Flows is easily generalized to conditional distributions. We denote the variable to condition on by <span class="math notranslate nohighlight">\(C=\mathbf{c}\in\mathbb{R}^M\)</span>. A simple multivariate source of noise, for example a standard i.i.d. normal distribution, <span class="math notranslate nohighlight">\(X\sim\mathcal{N}(\mathbf{0},I_{D\times D})\)</span>, is passed through a vector-valued bijection that also conditions on C, <span class="math notranslate nohighlight">\(g:\mathbb{R}^D\times\mathbb{R}^M\rightarrow\mathbb{R}^D\)</span>, to produce the more complex transformed variable
 <span class="math notranslate nohighlight">\(Y=g(X;C=\mathbf{c})\)</span>. In practice, this is usually accomplished by making the parameters for a known normalizing flow bijection <span class="math notranslate nohighlight">\(g\)</span> the output of a hypernet neural network that inputs <span class="math notranslate nohighlight">\(\mathbf{c}\)</span>.</p>
 <p>Sampling of conditional transforms simply involves evaluating <span class="math notranslate nohighlight">\(Y=g(X; C=\mathbf{c})\)</span>. Conditioning the bijections on <span class="math notranslate nohighlight">\(\mathbf{c}\)</span>, the same formula holds for scoring as for the joint multivariate case.</p>
-<p>### Conditional Transforms in Pyro In Pyro, most learnable transforms have a corresponding conditional version that derives from <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#conditionaltransformmodule">ConditionalTransformModule</a>. For instance, the conditional version of the spline transform is <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#conditionalspline">ConditionalSpline</a> with helper function
-<a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#conditional-spline">conditional_spline</a>.</p>
-<p>In this section, we will show how we can learn our toy dataset as the decomposition of the product of a conditional and a univariate distribution, :nbsphinx-math:<a href="#id25"><span class="problematic" id="id26">`</span></a>begin{align}
-p(x_1,x_2) &amp;= p(x_2mid x_1)p(x_1).</p>
-<blockquote>
-<div><p>end{align}` First, we create the univariate distribution for <span class="math notranslate nohighlight">\(x_1\)</span> as shown previously,</p>
-</div></blockquote>
+</div>
+<div class="section" id="Conditional-Transforms-in-Pyro">
+<h3>Conditional Transforms in Pyro<a class="headerlink" href="#Conditional-Transforms-in-Pyro" title="Permalink to this headline">¶</a></h3>
+<p>In Pyro, most learnable transforms have a corresponding conditional version that derives from <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#conditionaltransformmodule">ConditionalTransformModule</a>. For instance, the conditional version of the spline transform is <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#conditionalspline">ConditionalSpline</a> with helper function <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#conditional-spline">conditional_spline</a>.</p>
+<p>In this section, we will show how we can learn our toy dataset as the decomposition of the product of a conditional and a univariate distribution,</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+p(x_1,x_2) &amp;= p(x_2\mid x_1)p(x_1).
+\end{align}\]</div>
+<p>First, we create the univariate distribution for <span class="math notranslate nohighlight">\(x_1\)</span> as shown previously,</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -1104,13 +1151,25 @@ Wall time: 1min 23s
 <img alt="_images/normalizing_flows_i_38_1.png" src="_images/normalizing_flows_i_38_1.png" />
 </div>
 </div>
+</div>
 <div class="section" id="Conclusions">
 <h3>Conclusions<a class="headerlink" href="#Conclusions" title="Permalink to this headline">¶</a></h3>
 <p>In this tutorial, we have explained the basic idea behind normalizing flows and the Pyro interface to create flows to represent univariate, multivariate, and conditional distributions. It is useful to think of flows as a powerful general-purpose tool in your probabilistic modelling toolkit, and you can replace any existing distribution in your model with one to increase its flexibility and performance. We hope you have fun exploring the power of normalizing flows!</p>
-<p>### References 1. E.G. Tabak, Christina Turner. <a class="reference external" href="https://www.math.nyu.edu/faculty/tabak/publications/Tabak-Turner.pdf">A Family of Nonparametric Density Estimation Algorithms</a>. Communications on Pure and Applied Mathematics, 66(2):145–164, 2013. 2. Danilo Jimenez Rezende, Shakir Mohamed. <a class="reference external" href="http://proceedings.mlr.press/v37/rezende15.pdf">Variational Inference with Normalizing Flows</a>. ICML 2015. 3. Ivan Kobyzev, Simon J.D. Prince, and Marcus A. Brubaker. <a class="reference external" href="https://arxiv.org/abs/1908.09257">Normalizing Flows: An Introduction
-and Review of Current Methods</a>. [arXiv:1908.09257] 2019. 4. George Papamakarios, Eric Nalisnick, Danilo Jimenez Rezende, Shakir Mohamed, Balaji Lakshminarayanan. <a class="reference external" href="https://arxiv.org/abs/1912.02762">Normalizing Flows for Probabilistic Modeling and Inference</a>. [arXiv:1912.02762] 2019. 5. Conor Durkan, Artur Bekasov, Iain Murray, George Papamakarios. <a class="reference external" href="https://arxiv.org/abs/1906.04032">Neural Spline Flows</a>. NeurIPS 2019. 6. Hadi M. Dolatabadi, Sarah Erfani,
-Christopher Leckie. <a class="reference external" href="https://arxiv.org/abs/2001.05168">Invertible Generative Modeling using Linear Rational Splines</a>. AISTATS 2020. 7. James Stewart. <a class="reference external" href="https://www.stewartcalculus.com/">Calculus</a>. Cengage Learning. 9th Edition 2020. 8. Laurent Dinh, David Krueger, Yoshua Bengio. <a class="reference external" href="https://arxiv.org/abs/1410.8516">NICE: Non-linear Independent Components Estimation</a>. Workshop contribution at ICLR 2015. 9. Laurent Dinh, Jascha Sohl-Dickstein, Samy Bengio. <a class="reference external" href="https://arxiv.org/abs/1605.08803">Density estimation using
-Real-NVP</a>. Conference paper at ICLR 2017. 10. David Ha, Andrew Dai, Quoc V. Le. <a class="reference external" href="https://arxiv.org/abs/1609.09106">HyperNetworks</a>. Workshop contribution at ICLR 2017.</p>
+</div>
+<div class="section" id="References">
+<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li><p>E.G. Tabak, Christina Turner. <a class="reference external" href="https://www.math.nyu.edu/faculty/tabak/publications/Tabak-Turner.pdf">A Family of Nonparametric Density Estimation Algorithms</a>. Communications on Pure and Applied Mathematics, 66(2):145–164, 2013.</p></li>
+<li><p>Danilo Jimenez Rezende, Shakir Mohamed. <a class="reference external" href="http://proceedings.mlr.press/v37/rezende15.pdf">Variational Inference with Normalizing Flows</a>. ICML 2015.</p></li>
+<li><p>Ivan Kobyzev, Simon J.D. Prince, and Marcus A. Brubaker. <a class="reference external" href="https://arxiv.org/abs/1908.09257">Normalizing Flows: An Introduction and Review of Current Methods</a>. [arXiv:1908.09257] 2019.</p></li>
+<li><p>George Papamakarios, Eric Nalisnick, Danilo Jimenez Rezende, Shakir Mohamed, Balaji Lakshminarayanan. <a class="reference external" href="https://arxiv.org/abs/1912.02762">Normalizing Flows for Probabilistic Modeling and Inference</a>. [arXiv:1912.02762] 2019.</p></li>
+<li><p>Conor Durkan, Artur Bekasov, Iain Murray, George Papamakarios. <a class="reference external" href="https://arxiv.org/abs/1906.04032">Neural Spline Flows</a>. NeurIPS 2019.</p></li>
+<li><p>Hadi M. Dolatabadi, Sarah Erfani, Christopher Leckie. <a class="reference external" href="https://arxiv.org/abs/2001.05168">Invertible Generative Modeling using Linear Rational Splines</a>. AISTATS 2020.</p></li>
+<li><p>James Stewart. <a class="reference external" href="https://www.stewartcalculus.com/">Calculus</a>. Cengage Learning. 9th Edition 2020.</p></li>
+<li><p>Laurent Dinh, David Krueger, Yoshua Bengio. <a class="reference external" href="https://arxiv.org/abs/1410.8516">NICE: Non-linear Independent Components Estimation</a>. Workshop contribution at ICLR 2015.</p></li>
+<li><p>Laurent Dinh, Jascha Sohl-Dickstein, Samy Bengio. <a class="reference external" href="https://arxiv.org/abs/1605.08803">Density estimation using Real-NVP</a>. Conference paper at ICLR 2017.</p></li>
+<li><p>David Ha, Andrew Dai, Quoc V. Le. <a class="reference external" href="https://arxiv.org/abs/1609.09106">HyperNetworks</a>. Workshop contribution at ICLR 2017.</p></li>
+</ol>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
