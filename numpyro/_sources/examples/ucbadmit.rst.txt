@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_examples_ucbadmit.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_examples_ucbadmit.py:
+        Click :ref:`here <sphx_glr_download_examples_ucbadmit.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_examples_ucbadmit.py:
 
 
 Generalized Linear Mixed Models
@@ -57,6 +59,7 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
 
 .. image:: /examples/images/sphx_glr_ucbadmit_001.png
+    :alt: Posterior Predictive Check with 90% CI
     :class: sphx-glr-single-img
 
 
@@ -66,8 +69,6 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
  .. code-block:: none
 
-    Downloading - https://d2hg8soec8ck9v.cloudfront.net/datasets/UCBadmit.csv.
-    Download complete.
 
      ==============================glmm - TRAIN============================== 
 
@@ -76,7 +77,7 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
              0          0       0.82       0.75       0.78       0.81 
 
-             1          1       0.63       0.61       0.63       0.64 
+             1          1       0.63       0.62       0.63       0.64 
 
              1          0       0.68       0.63       0.67       0.72 
 
@@ -84,15 +85,15 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
              2          0       0.34       0.33       0.34       0.36 
 
-             3          1       0.33       0.32       0.33       0.35 
+             3          1       0.33       0.31       0.33       0.34 
 
              3          0       0.35       0.33       0.35       0.37 
 
              4          1       0.28       0.25       0.27       0.29 
 
-             4          0       0.24       0.23       0.25       0.26 
+             4          0       0.24       0.23       0.24       0.26 
 
-             5          1       0.06       0.05       0.06       0.07 
+             5          1       0.06       0.06       0.06       0.07 
 
              5          0       0.07       0.06       0.07       0.08 
 
@@ -112,10 +113,9 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
     import os
 
     import matplotlib.pyplot as plt
-    import numpy as onp
 
     from jax import random
-    import jax.numpy as np
+    import jax.numpy as jnp
     from jax.scipy.special import expit
 
     import numpyro
@@ -125,15 +125,15 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
 
     def glmm(dept, male, applications, admit=None):
-        v_mu = numpyro.sample('v_mu', dist.Normal(0, np.array([4., 1.])))
+        v_mu = numpyro.sample('v_mu', dist.Normal(0, jnp.array([4., 1.])))
 
-        sigma = numpyro.sample('sigma', dist.HalfNormal(np.ones(2)))
+        sigma = numpyro.sample('sigma', dist.HalfNormal(jnp.ones(2)))
         L_Rho = numpyro.sample('L_Rho', dist.LKJCholesky(2, concentration=2))
-        scale_tril = sigma[..., np.newaxis] * L_Rho
+        scale_tril = sigma[..., jnp.newaxis] * L_Rho
         # non-centered parameterization
-        num_dept = len(onp.unique(dept))
-        z = numpyro.sample('z', dist.Normal(np.zeros((num_dept, 2)), 1))
-        v = np.dot(scale_tril, z.T).T
+        num_dept = len(jnp.unique(dept))
+        z = numpyro.sample('z', dist.Normal(jnp.zeros((num_dept, 2)), 1))
+        v = jnp.dot(scale_tril, z.T).T
 
         logits = v_mu[0] + v[dept, 0] + (v_mu[1] + v[dept, 1]) * male
         if admit is None:
@@ -155,7 +155,7 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
         columns = ['Dept', 'Male', 'ActualProb', 'Pred(p25)', 'Pred(p50)', 'Pred(p75)']
         header_format = '{:>10} {:>10} {:>10} {:>10} {:>10} {:>10}'
         row_format = '{:>10.0f} {:>10.0f} {:>10.2f} {:>10.2f} {:>10.2f} {:>10.2f}'
-        quantiles = onp.quantile(preds, [0.25, 0.5, 0.75], axis=0)
+        quantiles = jnp.quantile(preds, jnp.array([0.25, 0.5, 0.75]), axis=0)
         print('\n', header, '\n')
         print(header_format.format(*columns))
         for i in range(len(dept)):
@@ -175,10 +175,10 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
         fig, ax = plt.subplots(1, 1)
 
         ax.plot(range(1, 13), admit / applications, "o", ms=7, label="actual rate")
-        ax.errorbar(range(1, 13), np.mean(pred_probs, 0), np.std(pred_probs, 0),
+        ax.errorbar(range(1, 13), jnp.mean(pred_probs, 0), jnp.std(pred_probs, 0),
                     fmt="o", c="k", mfc="none", ms=7, elinewidth=1, label=r"mean $\pm$ std")
-        ax.plot(range(1, 13), np.percentile(pred_probs, 5, 0), "k+")
-        ax.plot(range(1, 13), np.percentile(pred_probs, 95, 0), "k+")
+        ax.plot(range(1, 13), jnp.percentile(pred_probs, 5, 0), "k+")
+        ax.plot(range(1, 13), jnp.percentile(pred_probs, 95, 0), "k+")
         ax.set(xlabel="cases", ylabel="admit rate", title="Posterior Predictive Check with 90% CI")
         ax.legend()
 
@@ -187,7 +187,7 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
 
     if __name__ == '__main__':
-        assert numpyro.__version__.startswith('0.2.4')
+        assert numpyro.__version__.startswith('0.3.0')
         parser = argparse.ArgumentParser(description='UCBadmit gender discrimination using HMC')
         parser.add_argument('-n', '--num-samples', nargs='?', default=2000, type=int)
         parser.add_argument('--num-warmup', nargs='?', default=500, type=int)
@@ -203,7 +203,7 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  27.789 seconds)
+   **Total running time of the script:** ( 0 minutes  10.348 seconds)
 
 
 .. _sphx_glr_download_examples_ucbadmit.py:
@@ -216,13 +216,13 @@ found in Chapter 10 (Counting and Classification) and Chapter 13 (Adventures in 
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: ucbadmit.py <ucbadmit.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: ucbadmit.ipynb <ucbadmit.ipynb>`
 
