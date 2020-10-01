@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Generalized Linear Mixed Models &mdash; NumPyro Tutorials 0.3.0 documentation</title>
+  <title>Generalized Linear Mixed Models &mdash; NumPyro Tutorials 0.4.0 documentation</title>
   
 
   
@@ -70,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -100,6 +100,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../bayesian_regression.html">Bayesian Regression Using NumPyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../time_series_forecasting.html">Time Series Forecasting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../bayesian_imputation.html">Bayesian Imputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ordinal_regression.html">Ordinal Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bayesian_hierarchical_linear_regression.html">Bayesian Hierarchical Linear Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bayesian_hierarchical_linear_regression.html#References">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../discrete_imputation.html">Bayesian imputation for missing values in discrete covariates with HMC</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul class="current">
@@ -325,21 +329,21 @@ Chapman and Hall/CRC.</p></li>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>==============================glmm - TRAIN==============================
 
      Dept       Male ActualProb  Pred(p25)  Pred(p50)  Pred(p75)
-        0          1       0.62       0.61       0.63       0.64
+        0          1       0.62       0.61       0.62       0.64
 
         0          0       0.82       0.75       0.78       0.81
 
         1          1       0.63       0.62       0.63       0.64
 
-        1          0       0.68       0.63       0.67       0.72
+        1          0       0.68       0.63       0.68       0.72
 
-        2          1       0.37       0.34       0.36       0.38
+        2          1       0.37       0.35       0.36       0.38
 
         2          0       0.34       0.33       0.34       0.36
 
-        3          1       0.33       0.31       0.33       0.34
+        3          1       0.33       0.32       0.33       0.34
 
-        3          0       0.35       0.33       0.35       0.37
+        3          0       0.35       0.34       0.35       0.37
 
         4          1       0.28       0.25       0.27       0.29
 
@@ -357,6 +361,7 @@ Chapman and Hall/CRC.</p></li>
 <span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">random</span>
 <span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
@@ -375,7 +380,7 @@ Chapman and Hall/CRC.</p></li>
     <span class="n">L_Rho</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;L_Rho&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LKJCholesky</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">concentration</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
     <span class="n">scale_tril</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">L_Rho</span>
     <span class="c1"># non-centered parameterization</span>
-    <span class="n">num_dept</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">dept</span><span class="p">))</span>
+    <span class="n">num_dept</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">dept</span><span class="p">))</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_dept</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span> <span class="mi">1</span><span class="p">))</span>
     <span class="n">v</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">scale_tril</span><span class="p">,</span> <span class="n">z</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
@@ -431,7 +436,7 @@ Chapman and Hall/CRC.</p></li>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.0&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.4.0&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;UCBadmit gender discrimination using HMC&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;--num-samples&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num-warmup&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -445,7 +450,7 @@ Chapman and Hall/CRC.</p></li>
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  10.348 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.367 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ucbadmit-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/c739f730a497f954bfffa88def9c53f8/ucbadmit.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ucbadmit.py</span></code></a></p>

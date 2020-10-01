@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Neural Transport &mdash; NumPyro Tutorials 0.3.0 documentation</title>
+  <title>Neural Transport &mdash; NumPyro Tutorials 0.4.0 documentation</title>
   
 
   
@@ -70,7 +70,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -100,6 +100,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../bayesian_regression.html">Bayesian Regression Using NumPyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../time_series_forecasting.html">Time Series Forecasting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../bayesian_imputation.html">Bayesian Imputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ordinal_regression.html">Ordinal Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bayesian_hierarchical_linear_regression.html">Bayesian Hierarchical Linear Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bayesian_hierarchical_linear_regression.html#References">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../discrete_imputation.html">Bayesian imputation for missing values in discrete covariates with HMC</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples:</span></p>
 <ul class="current">
@@ -231,8 +235,8 @@ Gaussian-like one. The transform will be used to get better mixing rate for NUTS
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Start vanilla HMC...
 
                 mean       std    median      5.0%     95.0%     n_eff     r_hat
-      x[0]      0.15      1.81      1.13     -2.27      2.29      7.08      1.00
-      x[1]      0.02      1.18      0.03     -1.88      1.84    707.65      1.00
+      x[0]      0.75      1.66      1.56     -2.09      2.43     12.31      1.00
+      x[1]      0.12      1.18      0.18     -1.76      1.97    906.82      1.00
 
 Number of divergences: 0
 Start training guide...
@@ -241,15 +245,15 @@ Finish training guide. Extract samples...
 Start NeuTra HMC...
 
                            mean       std    median      5.0%     95.0%     n_eff     r_hat
-auto_shared_latent[0]     -0.04      1.08      0.12     -1.92      1.40    662.44      1.00
-auto_shared_latent[1]     -0.06      1.24     -0.06     -1.77      1.72    537.48      1.00
+auto_shared_latent[0]     -0.12      1.11      0.02     -2.02      1.45    766.19      1.00
+auto_shared_latent[1]      0.03      1.09      0.05     -1.67      1.66    912.24      1.00
 
-Number of divergences: 6
+Number of divergences: 84
 Transform samples into unwarped space...
 
                 mean       std    median      5.0%     95.0%     n_eff     r_hat
-      x[0]      0.01      1.80      0.52     -2.31      2.22    486.94      1.00
-      x[1]     -0.04      1.19     -0.06     -1.91      1.82    659.24      1.00
+      x[0]     -0.11      1.83     -1.08     -2.35      2.22    680.94      1.00
+      x[1]      0.05      1.15      0.07     -1.77      1.86    830.42      1.00
 </pre></div>
 </div>
 <div class="line-block">
@@ -271,7 +275,7 @@ Transform samples into unwarped space...
 <span class="kn">from</span> <span class="nn">numpyro.diagnostics</span> <span class="kn">import</span> <span class="n">print_summary</span>
 <span class="kn">import</span> <span class="nn">numpyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
 <span class="kn">from</span> <span class="nn">numpyro.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">from</span> <span class="nn">numpyro.infer</span> <span class="kn">import</span> <span class="n">ELBO</span><span class="p">,</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span><span class="p">,</span> <span class="n">SVI</span>
+<span class="kn">from</span> <span class="nn">numpyro.infer</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span><span class="p">,</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
 <span class="kn">from</span> <span class="nn">numpyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoBNAFNormal</span>
 <span class="kn">from</span> <span class="nn">numpyro.infer.reparam</span> <span class="kn">import</span> <span class="n">NeuTraReparam</span>
 
@@ -307,7 +311,7 @@ Transform samples into unwarped space...
     <span class="n">vanilla_samples</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="n">guide</span> <span class="o">=</span> <span class="n">AutoBNAFNormal</span><span class="p">(</span><span class="n">dual_moon_model</span><span class="p">,</span> <span class="n">hidden_factors</span><span class="o">=</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">hidden_factor</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">hidden_factor</span><span class="p">])</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">dual_moon_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="mf">0.003</span><span class="p">),</span> <span class="n">ELBO</span><span class="p">())</span>
+    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">dual_moon_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="mf">0.003</span><span class="p">),</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
     <span class="n">svi_state</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start training guide...&quot;</span><span class="p">)</span>
@@ -386,7 +390,7 @@ Transform samples into unwarped space...
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.3.0&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;0.4.0&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;NeuTra HMC&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;--num-samples&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num-warmup&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -402,7 +406,7 @@ Transform samples into unwarped space...
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  20.121 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  19.249 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-neutra-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/177a79ac143e3f5df6fabf6604c28559/neutra.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">neutra.py</span></code></a></p>

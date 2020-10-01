@@ -1,0 +1,959 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Bayesian imputation for missing values in discrete covariates with HMC &mdash; NumPyro Tutorials 0.4.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery-dataframe.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Code Examples" href="examples/index.html" />
+    <link rel="prev" title="Bayesian Hierarchical Linear Regression" href="bayesian_hierarchical_linear_regression.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> NumPyro Tutorials
+          
+
+          
+            
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Tutorials:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression Using NumPyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="time_series_forecasting.html">Time Series Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_imputation.html">Bayesian Imputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ordinal_regression.html">Ordinal Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_hierarchical_linear_regression.html">Bayesian Hierarchical Linear Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_hierarchical_linear_regression.html#References">References</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bayesian imputation for missing values in discrete covariates with HMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#MAR-conditional-on-outcome">MAR conditional on outcome</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#MNAR-conditional-on-covariate">MNAR conditional on covariate</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Examples:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Code Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">NumPyro Tutorials</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Bayesian imputation for missing values in discrete covariates with HMC</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/discrete_imputation.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container,
+div.nbinput.container div.prompt,
+div.nbinput.container div.input_area,
+div.nbinput.container div[class*=highlight],
+div.nbinput.container div[class*=highlight] pre,
+div.nboutput.container,
+div.nboutput.container div.prompt,
+div.nboutput.container div.output_area,
+div.nboutput.container div[class*=highlight],
+div.nboutput.container div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Bayesian-imputation-for-missing-values-in-discrete-covariates-with-HMC">
+<h1>Bayesian imputation for missing values in discrete covariates with HMC<a class="headerlink" href="#Bayesian-imputation-for-missing-values-in-discrete-covariates-with-HMC" title="Permalink to this headline">¶</a></h1>
+<p>Missing data is a very widespread problem in practical applications, both in covariates (‘explanatory variables’) and outcomes. When performing bayesian inference with MCMC, imputing discrete missing values is not possible using Hamiltonian Monte Carlo techniques. One way around this problem is to create a new model that enumerates the discrete variables and does inference over the new model, which, for a single discrete variable, is a mixture model. (see e.g. <a class="reference external" href="https://mc-stan.org/docs/2_18/stan-users-guide/change-point-section.html">Stan’s user guide on Latent
+Discrete Parameters</a>) Enumerating the discrete latent sites requires some manual math work that can get tedious for complex models. Inference by automatic enumeration of discrete variables is implemented in numpyro and allows for a very convenient way of dealing with missing discrete data.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpyro</span>
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">jnp</span><span class="p">,</span> <span class="n">random</span><span class="p">,</span> <span class="n">ops</span>
+<span class="kn">from</span> <span class="nn">jax.scipy.special</span> <span class="kn">import</span> <span class="n">expit</span>
+<span class="kn">from</span> <span class="nn">numpyro</span> <span class="kn">import</span> <span class="n">distributions</span> <span class="k">as</span> <span class="n">dist</span><span class="p">,</span> <span class="n">sample</span>
+<span class="kn">from</span> <span class="nn">numpyro.infer.mcmc</span> <span class="kn">import</span> <span class="n">MCMC</span>
+<span class="kn">from</span> <span class="nn">numpyro.infer.hmc</span> <span class="kn">import</span> <span class="n">NUTS</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">inf</span>
+<span class="kn">from</span> <span class="nn">graphviz</span> <span class="kn">import</span> <span class="n">Digraph</span>
+
+<span class="n">simkeys</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">nsim</span>    <span class="o">=</span> <span class="mi">5000</span>
+<span class="n">mcmc_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>First we will simulate data with correlated binary covariates. The assumption is that we wish to estimate parameter for some parametric model without bias (e.g. for inferring a causal effect). For several different missing data patterns we will see how to impute the values to lead to unbiased models.</p>
+<p>The basic data structure is as follows. Z is a latent variable that gives rise to the marginal dependence between A and B, the observed covariates. We will consider different missing data mechanisms for variable A, where variable B and Y are fully observed. The effects of A and B on Y are the effects of interest</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">dot</span> <span class="o">=</span> <span class="n">Digraph</span><span class="p">()</span>
+<span class="n">dot</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+<span class="n">dot</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
+<span class="n">dot</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">)</span>
+<span class="n">dot</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+<span class="n">dot</span><span class="o">.</span><span class="n">edges</span><span class="p">([</span><span class="s1">&#39;ZA&#39;</span><span class="p">,</span> <span class="s1">&#39;ZB&#39;</span><span class="p">,</span> <span class="s1">&#39;AY&#39;</span><span class="p">,</span> <span class="s1">&#39;BY&#39;</span><span class="p">])</span>
+<span class="n">dot</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="_images/discrete_imputation_3_0.svg" src="_images/discrete_imputation_3_0.svg" /></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">b_A</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">b_B</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">s_Y</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">Z</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">simkeys</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">nsim</span><span class="p">,</span> <span class="p">))</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">(</span><span class="n">simkeys</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">expit</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">(</span><span class="n">simkeys</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">expit</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">b_A</span> <span class="o">+</span> <span class="n">B</span> <span class="o">*</span> <span class="n">b_B</span> <span class="o">+</span> <span class="n">s_Y</span> <span class="o">*</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">simkeys</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="p">(</span><span class="n">nsim</span><span class="p">,))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="MAR-conditional-on-outcome">
+<h2>MAR conditional on outcome<a class="headerlink" href="#MAR-conditional-on-outcome" title="Permalink to this headline">¶</a></h2>
+<p>According to Rubin’s classic definitions there are 3 distinct of missing data mechanisms: 1. missing completely at random (MCAR) 2. missing at random, conditional on observed data (MAR) 3. missing not at random, even after conditioning on observed data (MNAR)</p>
+<p>Missing data mechanisms 1. and 2. are ‘easy’ to handle as they depend on observed data only. Mechanism 3. (MNAR) is trickier as it depends on data that is not observed, but may still be relevant to the outcome you are modeling (see below for a concrete example).</p>
+<p>First we will generate missing values in A, conditional on the value of Y (thus it is a MAR mechanism).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">dot_mnar_y</span> <span class="o">=</span> <span class="n">Digraph</span><span class="p">()</span>
+<span class="k">with</span> <span class="n">dot_mnar_y</span><span class="o">.</span><span class="n">subgraph</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="n">rank</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_y</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_y</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_y</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_y</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_y</span><span class="o">.</span><span class="n">edges</span><span class="p">([</span><span class="s1">&#39;YM&#39;</span><span class="p">,</span> <span class="s1">&#39;ZA&#39;</span><span class="p">,</span> <span class="s1">&#39;ZB&#39;</span><span class="p">,</span> <span class="s1">&#39;AY&#39;</span><span class="p">,</span> <span class="s1">&#39;BY&#39;</span><span class="p">])</span>
+<span class="n">dot_mnar_y</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="_images/discrete_imputation_6_0.svg" src="_images/discrete_imputation_6_0.svg" /></div>
+</div>
+<p>This graph depicts the datagenerating mechanism, where Y is the only cause of missingness in A, denoted M. This means that the missingness in M is random, conditional on Y.</p>
+<p>As an example consider this simplified scenario: - A represents a history of heart illness - B represents the age of a patient - Y represents whether or not the patient will visit the general practitioner</p>
+<p>A general practitioner wants to find out why patients that are assigned to her clinic will visit the clinic or not. She thinks that having a history of heart illness and age are potential causes of doctor visits. Data on patient ages are available through their registration forms, but information on prior heart illness may be availalbe only after they have visited the clinic. This makes the missingness in A (history of heart disease), dependent on the outcome (visiting the clinic).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">A_isobs</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">(</span><span class="n">simkeys</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">expit</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="n">Y</span> <span class="o">-</span> <span class="n">Y</span><span class="o">.</span><span class="n">mean</span><span class="p">())))</span>
+<span class="n">Aobs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">A_isobs</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">A_obsidx</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">A_isobs</span><span class="p">)</span>
+
+<span class="c1"># generate complete case arrays</span>
+<span class="n">Acc</span> <span class="o">=</span> <span class="n">Aobs</span><span class="p">[</span><span class="n">A_obsidx</span><span class="p">]</span>
+<span class="n">Bcc</span> <span class="o">=</span> <span class="n">B</span><span class="p">[</span><span class="n">A_obsidx</span><span class="p">]</span>
+<span class="n">Ycc</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="n">A_obsidx</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>We will evaluate 2 approaches: 1. complete case analysis (which will lead to biased inferences) 2. with imputation (conditional on B)</p>
+<p>Note that explicitly including Y in the imputation model for A is unneccesary. The sampled imputations for A will condition on Y indirectly as the likelihood of Y is conditional on A. So values of A that give high likelihood to Y will be sampled more often than other values.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">ccmodel</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+    <span class="n">ntotal</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># get parameters of outcome model</span>
+    <span class="n">b_A</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;b_A&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">b_B</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;b_B&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">s_Y</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;s_Y&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfCauchy</span><span class="p">(</span><span class="mf">2.5</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">ntotal</span><span class="p">):</span>
+        <span class="c1">### outcome model</span>
+        <span class="n">eta_Y</span> <span class="o">=</span> <span class="n">b_A</span> <span class="o">*</span> <span class="n">A</span> <span class="o">+</span> <span class="n">b_B</span> <span class="o">*</span> <span class="n">B</span>
+        <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_Y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">eta_Y</span><span class="p">,</span> <span class="n">s_Y</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">cckernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">ccmodel</span><span class="p">)</span>
+<span class="n">ccmcmc</span>   <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">cckernel</span><span class="p">,</span> <span class="n">num_warmup</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">750</span><span class="p">)</span>
+<span class="n">ccmcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">mcmc_key</span><span class="p">,</span> <span class="n">Acc</span><span class="p">,</span> <span class="n">Bcc</span><span class="p">,</span> <span class="n">Ycc</span><span class="p">)</span>
+<span class="n">ccmcmc</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+sample: 100%|██████████| 1000/1000 [00:02&lt;00:00, 348.50it/s, 3 steps of size 4.27e-01. acc. prob=0.94]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+                mean       std    median      5.0%     95.0%     n_eff     r_hat
+       b_A      0.30      0.01      0.30      0.29      0.31    500.83      1.00
+       b_B      0.28      0.01      0.28      0.27      0.29    546.34      1.00
+       s_Y      0.25      0.00      0.25      0.24      0.25    559.55      1.00
+
+Number of divergences: 0
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">impmodel</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+    <span class="n">ntotal</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">A_isobs</span> <span class="o">=</span> <span class="n">A</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+
+    <span class="c1"># get parameters of imputation model</span>
+    <span class="n">mu_A</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;mu_A&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">b_B_A</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b_B_A&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+
+    <span class="c1"># get parameters of outcome model</span>
+    <span class="n">b_A</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;b_A&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">b_B</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;b_B&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">s_Y</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;s_Y&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfCauchy</span><span class="p">(</span><span class="mf">2.5</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">ntotal</span><span class="p">):</span>
+        <span class="c1">### imputation model</span>
+        <span class="c1"># get linear predictor for missing values</span>
+        <span class="n">eta_A</span> <span class="o">=</span> <span class="n">mu_A</span> <span class="o">+</span> <span class="n">B</span> <span class="o">*</span> <span class="n">b_B_A</span>
+
+        <span class="c1"># sample imputation values for A</span>
+        <span class="c1"># mask out to not add log_prob to total likelihood right now</span>
+        <span class="n">Aimp</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">eta_A</span><span class="p">)</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">))</span>
+
+        <span class="c1"># &#39;manually&#39; calculate the log_prob</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">eta_A</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">Aimp</span><span class="p">)</span>
+
+        <span class="c1"># cancel out enumerated values that are not equal to observed values</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">A_isobs</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Aimp</span> <span class="o">!=</span> <span class="n">A</span><span class="p">),</span> <span class="o">-</span><span class="n">inf</span><span class="p">,</span> <span class="n">log_prob</span><span class="p">)</span>
+
+        <span class="c1"># add to total likelihood for sampler</span>
+        <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s1">&#39;A_obs&#39;</span><span class="p">,</span> <span class="n">log_prob</span><span class="p">)</span>
+
+        <span class="c1">### outcome model</span>
+        <span class="n">eta_Y</span> <span class="o">=</span> <span class="n">b_A</span> <span class="o">*</span> <span class="n">Aimp</span> <span class="o">+</span> <span class="n">b_B</span> <span class="o">*</span> <span class="n">B</span>
+        <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_Y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">eta_Y</span><span class="p">,</span> <span class="n">s_Y</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">impkernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">impmodel</span><span class="p">)</span>
+<span class="n">impmcmc</span>   <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">impkernel</span><span class="p">,</span> <span class="n">num_warmup</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">750</span><span class="p">)</span>
+<span class="n">impmcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">mcmc_key</span><span class="p">,</span> <span class="n">Aobs</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">impmcmc</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+sample: 100%|██████████| 1000/1000 [00:05&lt;00:00, 174.83it/s, 7 steps of size 4.41e-01. acc. prob=0.91]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+                mean       std    median      5.0%     95.0%     n_eff     r_hat
+       b_A      0.25      0.01      0.25      0.24      0.27    447.79      1.01
+       b_B      0.25      0.01      0.25      0.24      0.26    570.66      1.01
+     b_B_A      0.74      0.08      0.74      0.60      0.86    316.36      1.00
+      mu_A     -0.39      0.06     -0.39     -0.48     -0.29    290.86      1.00
+       s_Y      0.25      0.00      0.25      0.25      0.25    527.97      1.00
+
+Number of divergences: 0
+</pre></div></div>
+</div>
+<p>As we can see, when data are missing conditionally on Y, imputation leads to consistent estimation of the parameter of interest (b_A and b_B)</p>
+</div>
+<div class="section" id="MNAR-conditional-on-covariate">
+<h2>MNAR conditional on covariate<a class="headerlink" href="#MNAR-conditional-on-covariate" title="Permalink to this headline">¶</a></h2>
+<p>When data are missing conditional on unobserved data, things get more tricky. Here we will generate missing values in A, conditional on the value of A itself (missing not at random (MNAR), but missing at random conditional on A).</p>
+<p>As an example consider patients who have cancer: - A represents weight loss - B represents age - Y represents overall survival time</p>
+<p>Both A and B can be related to survival time in cancer patients. For patients who have extreme weight loss, it is more likely that this will be noted by the doctor and registered in the electronic health record. For patients with no weight loss or little weight loss, it may be that the doctor forgets to ask about it and therefore does not register it in the records.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">dot_mnar_x</span> <span class="o">=</span> <span class="n">Digraph</span><span class="p">()</span>
+<span class="k">with</span> <span class="n">dot_mnar_y</span><span class="o">.</span><span class="n">subgraph</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">attr</span><span class="p">(</span><span class="n">rank</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_x</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_x</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_x</span><span class="o">.</span><span class="n">node</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+<span class="n">dot_mnar_x</span><span class="o">.</span><span class="n">edges</span><span class="p">([</span><span class="s1">&#39;AM&#39;</span><span class="p">,</span> <span class="s1">&#39;ZA&#39;</span><span class="p">,</span> <span class="s1">&#39;ZB&#39;</span><span class="p">,</span> <span class="s1">&#39;AY&#39;</span><span class="p">,</span> <span class="s1">&#39;BY&#39;</span><span class="p">])</span>
+<span class="n">dot_mnar_x</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="_images/discrete_imputation_16_0.svg" src="_images/discrete_imputation_16_0.svg" /></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">A_isobs</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">bernoulli</span><span class="p">(</span><span class="n">simkeys</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="mf">0.9</span> <span class="o">-</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">A</span><span class="p">)</span>
+<span class="n">Aobs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">A_isobs</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">A_obsidx</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">A_isobs</span><span class="p">)</span>
+
+<span class="c1"># generate complete case arrays</span>
+<span class="n">Acc</span> <span class="o">=</span> <span class="n">Aobs</span><span class="p">[</span><span class="n">A_obsidx</span><span class="p">]</span>
+<span class="n">Bcc</span> <span class="o">=</span> <span class="n">B</span><span class="p">[</span><span class="n">A_obsidx</span><span class="p">]</span>
+<span class="n">Ycc</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="n">A_obsidx</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">cckernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">ccmodel</span><span class="p">)</span>
+<span class="n">ccmcmc</span>   <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">cckernel</span><span class="p">,</span> <span class="n">num_warmup</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">750</span><span class="p">)</span>
+<span class="n">ccmcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">mcmc_key</span><span class="p">,</span> <span class="n">Acc</span><span class="p">,</span> <span class="n">Bcc</span><span class="p">,</span> <span class="n">Ycc</span><span class="p">)</span>
+<span class="n">ccmcmc</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+sample: 100%|██████████| 1000/1000 [00:02&lt;00:00, 342.07it/s, 3 steps of size 5.97e-01. acc. prob=0.92]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+                mean       std    median      5.0%     95.0%     n_eff     r_hat
+       b_A      0.27      0.02      0.26      0.24      0.29    667.08      1.01
+       b_B      0.25      0.01      0.25      0.24      0.26    811.49      1.00
+       s_Y      0.25      0.00      0.25      0.24      0.25    547.51      1.00
+
+Number of divergences: 0
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">impkernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">impmodel</span><span class="p">)</span>
+<span class="n">impmcmc</span>   <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">impkernel</span><span class="p">,</span> <span class="n">num_warmup</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">750</span><span class="p">)</span>
+<span class="n">impmcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">mcmc_key</span><span class="p">,</span> <span class="n">Aobs</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">impmcmc</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+sample: 100%|██████████| 1000/1000 [00:06&lt;00:00, 166.36it/s, 7 steps of size 4.10e-01. acc. prob=0.94]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+                mean       std    median      5.0%     95.0%     n_eff     r_hat
+       b_A      0.34      0.01      0.34      0.32      0.35    576.15      1.00
+       b_B      0.33      0.01      0.33      0.32      0.34    800.58      1.00
+     b_B_A      0.32      0.12      0.32      0.12      0.51    342.21      1.01
+      mu_A     -1.81      0.09     -1.81     -1.95     -1.67    288.57      1.00
+       s_Y      0.26      0.00      0.26      0.25      0.26    820.20      1.00
+
+Number of divergences: 0
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>Perhaps surprisingly, imputing missing values when the missingness mechanism depends on the variable itself will actually lead to bias, while complete case analysis is unbiased! See e.g. <a class="reference external" href="https://doi.org/10.1002/sim.3944">Bias and efficiency of multiple imputation compared with complete‐case analysis for missing covariate values</a>.</p>
+<p>However, complete case analysis may be undesirable as well. E.g. due to leading to lower precision in estimating the parameter from B to Y, or maybe when there is an expected difference interaction between the value of A and the parameter from A to Y. To deal with this situation, an explicit model for the reason of missingness (/observation) is required. We will add one below.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">impmissmodel</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+    <span class="n">ntotal</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">A_isobs</span> <span class="o">=</span> <span class="n">A</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+
+    <span class="c1"># get parameters of imputation model</span>
+    <span class="n">mu_A</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;mu_A&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">b_B_A</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b_B_A&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+
+    <span class="c1"># get parameters of outcome model</span>
+    <span class="n">b_A</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;b_A&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">b_B</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;b_B&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">))</span>
+    <span class="n">s_Y</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;s_Y&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfCauchy</span><span class="p">(</span><span class="mf">2.5</span><span class="p">))</span>
+
+    <span class="c1"># get parameter of model of missingness</span>
+    <span class="k">with</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;obsmodel&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">p_Aobs</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;p_Aobs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="n">numpyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">ntotal</span><span class="p">):</span>
+        <span class="c1">### imputation model</span>
+        <span class="c1"># get linear predictor for missing values</span>
+        <span class="n">eta_A</span> <span class="o">=</span> <span class="n">mu_A</span> <span class="o">+</span> <span class="n">B</span> <span class="o">*</span> <span class="n">b_B_A</span>
+
+        <span class="c1"># sample imputation values for A</span>
+        <span class="c1"># mask out to not add log_prob to total likelihood right now</span>
+        <span class="n">Aimp</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">eta_A</span><span class="p">)</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">))</span>
+
+        <span class="c1"># &#39;manually&#39; calculate the log_prob</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">eta_A</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">Aimp</span><span class="p">)</span>
+
+        <span class="c1"># cancel out enumerated values that are not equal to observed values</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">A_isobs</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Aimp</span> <span class="o">!=</span> <span class="n">A</span><span class="p">),</span> <span class="o">-</span><span class="n">inf</span><span class="p">,</span> <span class="n">log_prob</span><span class="p">)</span>
+
+        <span class="c1"># add to total likelihood for sampler</span>
+        <span class="n">numpyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s1">&#39;obs_A&#39;</span><span class="p">,</span> <span class="n">log_prob</span><span class="p">)</span>
+
+        <span class="c1">### outcome model</span>
+        <span class="n">eta_Y</span> <span class="o">=</span> <span class="n">b_A</span> <span class="o">*</span> <span class="n">Aimp</span> <span class="o">+</span> <span class="n">b_B</span> <span class="o">*</span> <span class="n">B</span>
+        <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_Y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">eta_Y</span><span class="p">,</span> <span class="n">s_Y</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+
+        <span class="c1">### missingness / observationmodel</span>
+        <span class="n">eta_Aobs</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Aimp</span><span class="p">,</span> <span class="n">p_Aobs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p_Aobs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs_Aobs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">eta_Aobs</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">A_isobs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">impmisskernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">impmissmodel</span><span class="p">)</span>
+<span class="n">impmissmcmc</span>   <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">impmisskernel</span><span class="p">,</span> <span class="n">num_warmup</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">750</span><span class="p">)</span>
+<span class="n">impmissmcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">mcmc_key</span><span class="p">,</span> <span class="n">Aobs</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">impmissmcmc</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+sample: 100%|██████████| 1000/1000 [00:09&lt;00:00, 106.81it/s, 7 steps of size 2.86e-01. acc. prob=0.91]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+                mean       std    median      5.0%     95.0%     n_eff     r_hat
+       b_A      0.26      0.01      0.26      0.24      0.27    267.57      1.00
+       b_B      0.25      0.01      0.25      0.24      0.26    537.10      1.00
+     b_B_A      0.74      0.07      0.74      0.62      0.84    421.54      1.00
+      mu_A     -0.45      0.08     -0.45     -0.58     -0.31    241.11      1.00
+ p_Aobs[0]      0.10      0.01      0.10      0.09      0.11    451.90      1.00
+ p_Aobs[1]      0.86      0.03      0.86      0.82      0.91    244.47      1.00
+       s_Y      0.25      0.00      0.25      0.24      0.25    375.51      1.00
+
+Number of divergences: 0
+</pre></div></div>
+</div>
+<p>We can now estimate the parameters b_A and b_B without bias, while still utilizing all observations. Obviously, modeling the missingness mechanism relies on assumptions that need either be substantiated with prior evidence, or possibly analyzed through sensitivity analysis.</p>
+<p>For more reading on missing data in bayesian inference, see: - <a class="reference external" href="https://www.bayes-pharma.org/Abstracts2013/slides/NickyBest_MissingData.pdf">Presentation Bayesian Methods for missing data (pdf)</a> - <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6936760/">Bayesian Approaches for Missing Not at Random Outcome Data: The Role of Identifying Restrictions (doi:10.1214/17-STS630)</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="examples/index.html" class="btn btn-neutral float-right" title="Code Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="bayesian_hierarchical_linear_regression.html" class="btn btn-neutral float-left" title="Bayesian Hierarchical Linear Regression" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2019, Uber Technologies, Inc
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
