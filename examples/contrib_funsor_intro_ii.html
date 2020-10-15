@@ -1,0 +1,993 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pyro.contrib.funsor, a new backend for Pyro - Building inference algorithms (Part 2) &mdash; Pyro Tutorials 1.5.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example: hidden Markov models with pyro.contrib.funsor and pyroapi" href="hmm_funsor.html" />
+    <link rel="prev" title="pyro.contrib.funsor, a new backend for Pyro - New primitives (Part 1)" href="contrib_funsor_intro_i.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.5.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Introductory Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">An Introduction to Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">An Introduction to Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Practical Pyro and PyTorch</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression_ii.html">Bayesian Regression - Inference Algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Deep Generative Models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanvi.html">Example: Single Cell RNA Sequencing Analysis with VAEs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Discrete Latent Variables</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enumeration.html">Inference with Discrete Latent Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html">Dirichlet Process Mixture Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toy_mixture_model_discrete_enumeration.html">Example: Toy Mixture Model With Discrete Enumeration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm.html">Example: Hidden Markov Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Example: Capture-Recapture Models (CJS Models)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mixed_hmm.html">Example: hierarchical mixed-effect hidden Markov models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="einsum.html">Example: Discrete Factor Graph Inference with Plated Einsum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lda.html">Example: Amortized Latent Dirichlet Allocation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Customizing Inference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoname_examples.html">Example: reducing boilerplate with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.autoname</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Time Series</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_i.html">Forecasting I: univariate, heavy tailed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_ii.html">Forecasting II: state space models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_iii.html">Forecasting III: hierarchical models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_dlm.html">Forecasting with Dynamic Linear Model (DLM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecast_simple.html">Multivariate Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Example: Gaussian Process Time Series Models</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Gaussian Processes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dkl.html">Example: Deep Kernel Learning</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Epidemiology</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="epi_intro.html">Epidemiological models: Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_sir.html">Example: Univariate epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Object Tracking</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Other Inference Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="baseball.html">Example: analyzing baseball stats with MCMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mcmc.html">Example: Inference with Markov Chain Monte Carlo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lkj.html">Example: MCMC with an LKJ prior over covariances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Example: Sequential Monte Carlo Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Understanding Pyro's Internals</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_i.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Enumerating-discrete-variables">Enumerating discrete variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Vectorizing-a-model-across-multiple-samples">Vectorizing a model across multiple samples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Computing-an-ELBO-with-variable-elimination">Computing an ELBO with variable elimination</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Putting-it-all-together">Putting it all together</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="hmm_funsor.html">Example: hidden Markov models with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code></a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyro Tutorials</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/contrib_funsor_intro_ii.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container,
+div.nbinput.container div.prompt,
+div.nbinput.container div.input_area,
+div.nbinput.container div[class*=highlight],
+div.nbinput.container div[class*=highlight] pre,
+div.nboutput.container,
+div.nboutput.container div.prompt,
+div.nboutput.container div.output_area,
+div.nboutput.container div[class*=highlight],
+div.nboutput.container div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="pyro.contrib.funsor,-a-new-backend-for-Pyro---Building-inference-algorithms-(Part-2)">
+<h1><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)<a class="headerlink" href="#pyro.contrib.funsor,-a-new-backend-for-Pyro---Building-inference-algorithms-(Part-2)" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+
+<span class="kn">import</span> <span class="nn">funsor</span>
+
+<span class="kn">from</span> <span class="nn">pyro</span> <span class="kn">import</span> <span class="n">set_rng_seed</span> <span class="k">as</span> <span class="n">pyro_set_rng_seed</span>
+<span class="kn">from</span> <span class="nn">pyro.ops.indexing</span> <span class="kn">import</span> <span class="n">Vindex</span>
+<span class="kn">from</span> <span class="nn">pyro.poutine.messenger</span> <span class="kn">import</span> <span class="n">Messenger</span>
+
+<span class="n">funsor</span><span class="o">.</span><span class="n">set_backend</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">pyro_set_rng_seed</span><span class="p">(</span><span class="mi">101</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="Introduction">
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<p>In part 1 of this tutorial, we were introduced to the new <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> backend for Pyro.</p>
+<p>Here we’ll look at how to use the components in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> to implement a variable elimination inference algorithm from scratch. This tutorial assumes readers are familiar with enumeration-based inference algorithms in Pyro. For background and motivation, readers should consult the <a class="reference external" href="http://pyro.ai/examples/enumeration.html">enumeration tutorial</a>.</p>
+<p>As before, we’ll use <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code> so that we can write our model with standard Pyro syntax.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pyro.contrib.funsor</span>
+<span class="kn">import</span> <span class="nn">pyroapi</span>
+<span class="kn">from</span> <span class="nn">pyroapi</span> <span class="kn">import</span> <span class="n">infer</span><span class="p">,</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">pyro</span>
+<span class="kn">from</span> <span class="nn">pyroapi</span> <span class="kn">import</span> <span class="n">distributions</span> <span class="k">as</span> <span class="n">dist</span>
+</pre></div>
+</div>
+</div>
+<p>We will be working with the following model throughout. It is a discrete-state continuous-observation hidden Markov model with learnable transition and emission distributions that depend on a global random variable.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">10</span>
+
+<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;probs&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">simplex</span><span class="p">)</span>
+    <span class="n">locs_mean</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;locs_mean&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,)))</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;locs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">locs_mean</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;locs.shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locs</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span> <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x</span><span class="si">{}</span><span class="s2">.shape = &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">Vindex</span><span class="p">(</span><span class="n">locs</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>We can run <code class="docutils literal notranslate"><span class="pre">model</span></code> under the default Pyro backend and the new <code class="docutils literal notranslate"><span class="pre">contrib.funsor</span></code> backend with <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># default backend: &quot;pyro&quot;</span>
+<span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;pyro&quot;</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># new backend: &quot;contrib.funsor&quot;</span>
+<span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+locs.shape = torch.Size([3])
+x0.shape =  torch.Size([])
+x1.shape =  torch.Size([])
+x2.shape =  torch.Size([])
+x3.shape =  torch.Size([])
+x4.shape =  torch.Size([])
+x5.shape =  torch.Size([])
+x6.shape =  torch.Size([])
+x7.shape =  torch.Size([])
+x8.shape =  torch.Size([])
+x9.shape =  torch.Size([])
+locs.shape = torch.Size([3])
+x0.shape =  torch.Size([])
+x1.shape =  torch.Size([])
+x2.shape =  torch.Size([])
+x3.shape =  torch.Size([])
+x4.shape =  torch.Size([])
+x5.shape =  torch.Size([])
+x6.shape =  torch.Size([])
+x7.shape =  torch.Size([])
+x8.shape =  torch.Size([])
+x9.shape =  torch.Size([])
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Enumerating-discrete-variables">
+<h2>Enumerating discrete variables<a class="headerlink" href="#Enumerating-discrete-variables" title="Permalink to this headline">¶</a></h2>
+<p>Our first step is to implement an effect handler that performs parallel enumeration of discrete latent variables. Here we will implement a stripped-down version of <code class="docutils literal notranslate"><span class="pre">pyro.poutine.enum</span></code>, the effect handler behind Pyro’s most powerful general-purpose inference algorithms <code class="docutils literal notranslate"><span class="pre">pyro.infer.TraceEnum_ELBO</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.infer.mcmc.HMC</span></code>.</p>
+<p>We’ll do that by constructing a <code class="docutils literal notranslate"><span class="pre">funsor.Tensor</span></code> representing the support of each discrete latent variable and using the new <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> primitive from part 1 to convert it to a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> with the appropriate shape.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pyro.contrib.funsor.handlers.named_messenger</span> <span class="kn">import</span> <span class="n">NamedMessenger</span>
+
+<span class="k">class</span> <span class="nc">EnumMessenger</span><span class="p">(</span><span class="n">NamedMessenger</span><span class="p">):</span>
+
+    <span class="nd">@pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">)</span>  <span class="c1"># necessary since we invoke pyro.to_data and pyro.to_funsor</span>
+    <span class="k">def</span> <span class="nf">_pyro_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;is_observed&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enumerate&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># We first compute a raw value using the standard enumerate_support method.</span>
+        <span class="c1"># enumerate_support returns a value of shape:</span>
+        <span class="c1">#     (support_size,) + (1,) * len(msg[&quot;fn&quot;].batch_shape).</span>
+        <span class="n">raw_value</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">(</span><span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Next we&#39;ll use pyro.to_funsor to indicate that this dimension is fresh.</span>
+        <span class="c1"># This is guaranteed because we use msg[&#39;name&#39;], the name of this pyro.sample site,</span>
+        <span class="c1"># as the name for this positional dimension, and sample site names must be unique.</span>
+        <span class="n">funsor_value</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span>
+            <span class="n">raw_value</span><span class="p">,</span>
+            <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="n">raw_value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="n">dim_to_name</span><span class="o">=</span><span class="p">{</span><span class="o">-</span><span class="n">raw_value</span><span class="o">.</span><span class="n">dim</span><span class="p">():</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]},</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Finally, we convert the value back to a PyTorch tensor with to_data,</span>
+        <span class="c1"># which has the effect of reshaping and possibly permuting dimensions of raw_value.</span>
+        <span class="c1"># Applying to_funsor and to_data in this way guarantees that</span>
+        <span class="c1"># each enumerated random variable gets a unique fresh positional dimension</span>
+        <span class="c1"># and that we can convert the model&#39;s log-probability tensors to funsor.Tensors</span>
+        <span class="c1"># in a globally consistent manner.</span>
+        <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_value</span><span class="p">)</span>
+        <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</div>
+<p>Because this is an introductory tutorial, this implementation of <code class="docutils literal notranslate"><span class="pre">EnumMessenger</span></code> works directly with the site’s PyTorch distribution since users familiar with PyTorch and Pyro may find it easier to understand. However, when using <code class="docutils literal notranslate"><span class="pre">contrib.funsor</span></code> to implement an inference algorithm in a more realistic setting, it is usually preferable to do as much computation as possible on funsors, as this tends to simplify complex indexing, broadcasting or shape manipulation logic.</p>
+<p>For example, in <code class="docutils literal notranslate"><span class="pre">EnumMessenger</span></code>, we might instead call <code class="docutils literal notranslate"><span class="pre">pyro.to_funsor</span></code> on <code class="docutils literal notranslate"><span class="pre">msg[&quot;fn&quot;]</span></code>:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">funsor_dist</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">],</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Real</span><span class="p">)(</span><span class="n">value</span><span class="o">=</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+<span class="c1"># enumerate_support defined whenever isinstance(funsor_dist, funsor.distribution.Distribution)</span>
+<span class="n">funsor_value</span> <span class="o">=</span> <span class="n">funsor_dist</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">(</span><span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">raw_value</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Most of the more complete inference algorithms implemented in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> follow this pattern, and we will see an example later in this tutorial. Before we continue, let’s see what effect <code class="docutils literal notranslate"><span class="pre">EnumMessenger</span></code> has on the shapes of random variables in our model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> \
+        <span class="n">EnumMessenger</span><span class="p">():</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+locs.shape = torch.Size([3])
+x0.shape =  torch.Size([3, 1, 1, 1, 1])
+x1.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x2.shape =  torch.Size([3, 1, 1, 1, 1])
+x3.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x4.shape =  torch.Size([3, 1, 1, 1, 1])
+x5.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x6.shape =  torch.Size([3, 1, 1, 1, 1])
+x7.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x8.shape =  torch.Size([3, 1, 1, 1, 1])
+x9.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Vectorizing-a-model-across-multiple-samples">
+<h2>Vectorizing a model across multiple samples<a class="headerlink" href="#Vectorizing-a-model-across-multiple-samples" title="Permalink to this headline">¶</a></h2>
+<p>Next, since our priors over global variables are continuous and cannot be enumerated exactly, we will implement an effect handler that uses a global dimension to draw multiple samples in parallel from the model. Our implementation will allocate a new particle dimension using <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> as in <code class="docutils literal notranslate"><span class="pre">EnumMessenger</span></code> above, but unlike the enumeration dimensions, we want the particle dimension to be shared across all sample sites, so we will mark it as a <code class="docutils literal notranslate"><span class="pre">DimType.GLOBAL</span></code> dimension when invoking
+<code class="docutils literal notranslate"><span class="pre">pyro.to_funsor</span></code>.</p>
+<p>Recall that in part 1 we saw that <code class="docutils literal notranslate"><span class="pre">DimType.GLOBAL</span></code> dimensions must be deallocated manually or they will persist until the final effect handler has exited. This low-level detail is taken care of automatically by the <code class="docutils literal notranslate"><span class="pre">GlobalNameMessenger</span></code> handler provided in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> as a base class for any effect handlers that allocate global dimensions. Our vectorization effect handler will inherit from this class.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pyro.contrib.funsor.handlers.named_messenger</span> <span class="kn">import</span> <span class="n">GlobalNamedMessenger</span>
+<span class="kn">from</span> <span class="nn">pyro.contrib.funsor.handlers.runtime</span> <span class="kn">import</span> <span class="n">DimRequest</span><span class="p">,</span> <span class="n">DimType</span>
+
+<span class="k">class</span> <span class="nc">VectorizeMessenger</span><span class="p">(</span><span class="n">GlobalNamedMessenger</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;_PARTICLES&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+
+    <span class="nd">@pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_pyro_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;is_observed&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enumerate&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># we&#39;ll first draw a raw batch of samples similarly to EnumMessenger.</span>
+        <span class="c1"># However, since we are drawing a single batch from the joint distribution,</span>
+        <span class="c1"># we don&#39;t need to take multiple samples if the site is already batched.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">],</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Real</span><span class="p">)</span><span class="o">.</span><span class="n">inputs</span><span class="p">:</span>
+            <span class="n">raw_value</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rsample</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">raw_value</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rsample</span><span class="p">(</span><span class="n">sample_shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span>
+
+        <span class="c1"># As before, we&#39;ll use pyro.to_funsor to register the new dimension.</span>
+        <span class="c1"># This time, we indicate that the particle dimension should be treated as a global dimension.</span>
+        <span class="n">fresh_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">event_shape</span><span class="p">)</span> <span class="o">-</span> <span class="n">raw_value</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span>
+        <span class="n">funsor_value</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span>
+            <span class="n">raw_value</span><span class="p">,</span>
+            <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Reals</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">event_shape</span><span class="p">)],</span>
+            <span class="n">dim_to_name</span><span class="o">=</span><span class="p">{</span><span class="n">fresh_dim</span><span class="p">:</span> <span class="n">DimRequest</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">GLOBAL</span><span class="p">)},</span>
+        <span class="p">)</span>
+
+        <span class="c1"># finally, convert the sample to a PyTorch tensor using to_data as before</span>
+        <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_value</span><span class="p">)</span>
+        <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s see what effect <code class="docutils literal notranslate"><span class="pre">VectorizeMessenger</span></code> has on the shapes of the values in <code class="docutils literal notranslate"><span class="pre">model</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> \
+        <span class="n">VectorizeMessenger</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+locs.shape = torch.Size([10, 1, 1, 1, 1, 3])
+x0.shape =  torch.Size([])
+x1.shape =  torch.Size([])
+x2.shape =  torch.Size([])
+x3.shape =  torch.Size([])
+x4.shape =  torch.Size([])
+x5.shape =  torch.Size([])
+x6.shape =  torch.Size([])
+x7.shape =  torch.Size([])
+x8.shape =  torch.Size([])
+x9.shape =  torch.Size([])
+</pre></div></div>
+</div>
+<p>And now in combination with <code class="docutils literal notranslate"><span class="pre">EnumMessenger</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> \
+        <span class="n">VectorizeMessenger</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span> <span class="n">EnumMessenger</span><span class="p">():</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+locs.shape = torch.Size([10, 1, 1, 1, 1, 3])
+x0.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x1.shape =  torch.Size([3, 1, 1, 1, 1, 1, 1])
+x2.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x3.shape =  torch.Size([3, 1, 1, 1, 1, 1, 1])
+x4.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x5.shape =  torch.Size([3, 1, 1, 1, 1, 1, 1])
+x6.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x7.shape =  torch.Size([3, 1, 1, 1, 1, 1, 1])
+x8.shape =  torch.Size([3, 1, 1, 1, 1, 1])
+x9.shape =  torch.Size([3, 1, 1, 1, 1, 1, 1])
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Computing-an-ELBO-with-variable-elimination">
+<h2>Computing an ELBO with variable elimination<a class="headerlink" href="#Computing-an-ELBO-with-variable-elimination" title="Permalink to this headline">¶</a></h2>
+<p>Now that we have tools for enumerating discrete variables and drawing batches of samples, we can use those to compute quantities of interest for inference algorithms.</p>
+<p>Most inference algorithms in Pyro work with <code class="docutils literal notranslate"><span class="pre">pyro.poutine.Trace</span></code>s, custom data structures that contain parameters and sample site distributions and values and all of the associated metadata needed for inference computations. Our third effect handler <code class="docutils literal notranslate"><span class="pre">LogJointMessenger</span></code> departs from this design pattern, eliminating a tremendous amount of boilerplate in the process. It will automatically build up a lazy Funsor expression for the logarithm of the joint probability density of a model; when
+working with <code class="docutils literal notranslate"><span class="pre">Trace</span></code>s, this process must be triggered manually by calling <code class="docutils literal notranslate"><span class="pre">Trace.compute_log_probs()</span></code> and eagerly computing an objective from the resulting individual log-probability tensors in the trace.</p>
+<p>In our implementation of <code class="docutils literal notranslate"><span class="pre">LogJointMessenger</span></code>, unlike the previous two effect handlers, we will call <code class="docutils literal notranslate"><span class="pre">pyro.to_funsor</span></code> on both the sample value and the distribution to show how nearly all inference operations including log-probability density evaluation can be performed on <code class="docutils literal notranslate"><span class="pre">funsor.Funsor</span></code>s directly.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">class</span> <span class="nc">LogJointMessenger</span><span class="p">(</span><span class="n">Messenger</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_joint</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+
+    <span class="nd">@pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_pyro_post_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+
+        <span class="c1"># for Monte Carlo-sampled variables, we don&#39;t include a log-density term:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;is_observed&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enumerate&quot;</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="k">with</span> <span class="n">funsor</span><span class="o">.</span><span class="n">interpreter</span><span class="o">.</span><span class="n">interpretation</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">terms</span><span class="o">.</span><span class="n">lazy</span><span class="p">):</span>
+            <span class="n">funsor_dist</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">],</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Real</span><span class="p">)</span>
+            <span class="n">funsor_value</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">],</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor_dist</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_joint</span> <span class="o">+=</span> <span class="n">funsor_dist</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">funsor_value</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>And finally the actual loss function, which applies our three effect handlers to compute an expression for the log-density, marginalizes over discrete variables with <code class="docutils literal notranslate"><span class="pre">funsor.ops.logaddexp</span></code>, averages over Monte Carlo samples with <code class="docutils literal notranslate"><span class="pre">funsor.ops.add</span></code>, and evaluates the final lazy expression using Funsor’s <code class="docutils literal notranslate"><span class="pre">optimize</span></code> interpretation for variable elimination.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">log_z</span></code> exactly collapses the model’s local discrete latent variables but is an ELBO wrt any continuous latent variables, and is thus equivalent to a simple version of <code class="docutils literal notranslate"><span class="pre">TraceEnum_ELBO</span></code> with an empty guide.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nd">@pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_z</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_args</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">LogJointMessenger</span><span class="p">()</span> <span class="k">as</span> <span class="n">tr</span><span class="p">,</span> \
+            <span class="n">VectorizeMessenger</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span> <span class="k">as</span> <span class="n">v</span><span class="p">,</span> \
+            <span class="n">EnumMessenger</span><span class="p">():</span>
+        <span class="n">model</span><span class="p">(</span><span class="o">*</span><span class="n">model_args</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">funsor</span><span class="o">.</span><span class="n">interpreter</span><span class="o">.</span><span class="n">interpretation</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">terms</span><span class="o">.</span><span class="n">lazy</span><span class="p">):</span>
+        <span class="n">prod_vars</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">v</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+        <span class="n">sum_vars</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">log_joint</span><span class="o">.</span><span class="n">inputs</span><span class="p">)</span> <span class="o">-</span> <span class="n">prod_vars</span>
+
+        <span class="c1"># sum over the discrete random variables we enumerated</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">log_joint</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">,</span> <span class="n">sum_vars</span><span class="p">)</span>
+
+        <span class="c1"># average over the sample dimension</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="n">prod_vars</span><span class="p">)</span> <span class="o">-</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">apply_optimizer</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Putting-it-all-together">
+<h2>Putting it all together<a class="headerlink" href="#Putting-it-all-together" title="Permalink to this headline">¶</a></h2>
+<p>Finally, with all this machinery implemented, we can compute stochastic gradients wrt the ELBO.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># initialize parameters</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;probs&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">(),</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;locs_mean&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()]</span>
+
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+    <span class="n">log_marginal</span> <span class="o">=</span> <span class="n">log_z</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+    <span class="p">(</span><span class="o">-</span><span class="n">log_marginal</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">log_marginal</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor(-133.6274, grad_fn=&lt;AddBackward0&gt;)
+tensor(-129.2379, grad_fn=&lt;AddBackward0&gt;)
+tensor(-125.9609, grad_fn=&lt;AddBackward0&gt;)
+tensor(-123.7484, grad_fn=&lt;AddBackward0&gt;)
+tensor(-122.3034, grad_fn=&lt;AddBackward0&gt;)
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="hmm_funsor.html" class="btn btn-neutral float-right" title="Example: hidden Markov models with pyro.contrib.funsor and pyroapi" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="contrib_funsor_intro_i.html" class="btn btn-neutral float-left" title="pyro.contrib.funsor, a new backend for Pyro - New primitives (Part 1)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2017-2018, Uber Technologies, Inc
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

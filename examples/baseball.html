@@ -1,0 +1,712 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Example: analyzing baseball stats with MCMC &mdash; Pyro Tutorials 1.5.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example: Inference with Markov Chain Monte Carlo" href="mcmc.html" />
+    <link rel="prev" title="Kalman Filter" href="ekf.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.5.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Introductory Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">An Introduction to Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">An Introduction to Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Practical Pyro and PyTorch</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression_ii.html">Bayesian Regression - Inference Algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Deep Generative Models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanvi.html">Example: Single Cell RNA Sequencing Analysis with VAEs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Discrete Latent Variables</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enumeration.html">Inference with Discrete Latent Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html">Dirichlet Process Mixture Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toy_mixture_model_discrete_enumeration.html">Example: Toy Mixture Model With Discrete Enumeration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm.html">Example: Hidden Markov Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Example: Capture-Recapture Models (CJS Models)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mixed_hmm.html">Example: hierarchical mixed-effect hidden Markov models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="einsum.html">Example: Discrete Factor Graph Inference with Plated Einsum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lda.html">Example: Amortized Latent Dirichlet Allocation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Customizing Inference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoname_examples.html">Example: reducing boilerplate with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.autoname</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Time Series</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_i.html">Forecasting I: univariate, heavy tailed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_ii.html">Forecasting II: state space models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_iii.html">Forecasting III: hierarchical models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_dlm.html">Forecasting with Dynamic Linear Model (DLM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecast_simple.html">Multivariate Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Example: Gaussian Process Time Series Models</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Gaussian Processes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dkl.html">Example: Deep Kernel Learning</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Epidemiology</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="epi_intro.html">Epidemiological models: Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_sir.html">Example: Univariate epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Application: Object Tracking</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Other Inference Algorithms</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example: analyzing baseball stats with MCMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mcmc.html">Example: Inference with Markov Chain Monte Carlo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lkj.html">Example: MCMC with an LKJ prior over covariances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Example: Sequential Monte Carlo Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Understanding Pyro's Internals</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_i.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_ii.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm_funsor.html">Example: hidden Markov models with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code></a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyro Tutorials</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Example: analyzing baseball stats with MCMC</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/baseball.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="example-analyzing-baseball-stats-with-mcmc">
+<h1>Example: analyzing baseball stats with MCMC<a class="headerlink" href="#example-analyzing-baseball-stats-with-mcmc" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/baseball.py">View baseball.py on github</a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copyright (c) 2017-2019 Uber Technologies, Inc.</span>
+<span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">Beta</span><span class="p">,</span> <span class="n">Binomial</span><span class="p">,</span> <span class="n">HalfCauchy</span><span class="p">,</span> <span class="n">Normal</span><span class="p">,</span> <span class="n">Pareto</span><span class="p">,</span> <span class="n">Uniform</span>
+<span class="kn">from</span> <span class="nn">pyro.distributions.util</span> <span class="kn">import</span> <span class="n">scalar_like</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span><span class="p">,</span> <span class="n">Predictive</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.mcmc.util</span> <span class="kn">import</span> <span class="n">initialize_model</span><span class="p">,</span> <span class="n">summary</span>
+<span class="kn">from</span> <span class="nn">pyro.util</span> <span class="kn">import</span> <span class="n">ignore_experimental_warning</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Example has been adapted from [1]. It demonstrates how to do Bayesian inference using</span>
+<span class="sd">NUTS (or, HMC) in Pyro, and use of some common inference utilities.</span>
+
+<span class="sd">As in the Stan tutorial, this uses the small baseball dataset of Efron and Morris [2]</span>
+<span class="sd">to estimate players&#39; batting average which is the fraction of times a player got a</span>
+<span class="sd">base hit out of the number of times they went up at bat.</span>
+
+<span class="sd">The dataset separates the initial 45 at-bats statistics from the remaining season.</span>
+<span class="sd">We use the hits data from the initial 45 at-bats to estimate the batting average</span>
+<span class="sd">for each player. We then use the remaining season&#39;s data to validate the predictions</span>
+<span class="sd">from our models.</span>
+
+<span class="sd">Three models are evaluated:</span>
+<span class="sd"> - Complete pooling model: The success probability of scoring a hit is shared</span>
+<span class="sd">     amongst all players.</span>
+<span class="sd"> - No pooling model: Each individual player&#39;s success probability is distinct and</span>
+<span class="sd">     there is no data sharing amongst players.</span>
+<span class="sd"> - Partial pooling model: A hierarchical model with partial data sharing.</span>
+
+
+<span class="sd">We recommend Radford Neal&#39;s tutorial on HMC ([3]) to users who would like to get a</span>
+<span class="sd">more comprehensive understanding of HMC and its variants, and to [4] for details on</span>
+<span class="sd">the No U-Turn Sampler, which provides an efficient and automated way (i.e. limited</span>
+<span class="sd">hyper-parameters) of running HMC on different problems.</span>
+
+<span class="sd">[1] Carpenter B. (2016), [&quot;Hierarchical Partial Pooling for Repeated Binary Trials&quot;]</span>
+<span class="sd">    (http://mc-stan.org/users/documentation/case-studies/pool-binary-trials.html).</span>
+<span class="sd">[2] Efron B., Morris C. (1975), &quot;Data analysis using Stein&#39;s estimator and its</span>
+<span class="sd">    generalizations&quot;, J. Amer. Statist. Assoc., 70, 311-319.</span>
+<span class="sd">[3] Neal, R. (2012), &quot;MCMC using Hamiltonian Dynamics&quot;,</span>
+<span class="sd">    (https://arxiv.org/pdf/1206.1901.pdf)</span>
+<span class="sd">[4] Hoffman, M. D. and Gelman, A. (2014), &quot;The No-U-turn sampler: Adaptively setting</span>
+<span class="sd">    path lengths in Hamiltonian Monte Carlo&quot;, (https://arxiv.org/abs/1111.4246)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">DATA_URL</span> <span class="o">=</span> <span class="s2">&quot;https://d2hg8soec8ck9v.cloudfront.net/datasets/EfronMorrisBB.txt&quot;</span>
+
+
+<span class="c1"># ===================================</span>
+<span class="c1">#               MODELS</span>
+<span class="c1"># ===================================</span>
+
+
+<span class="k">def</span> <span class="nf">fully_pooled</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Number of hits in $K$ at bats for each player has a Binomial</span>
+<span class="sd">    distribution with a common probability of success, $\phi$.</span>
+
+<span class="sd">    :param (torch.Tensor) at_bats: Number of at bats for each player.</span>
+<span class="sd">    :param (torch.Tensor) hits: Number of hits for the given at bats.</span>
+<span class="sd">    :return: Number of hits predicted by the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phi_prior</span> <span class="o">=</span> <span class="n">Uniform</span><span class="p">(</span><span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi&quot;</span><span class="p">,</span> <span class="n">phi_prior</span><span class="p">)</span>
+    <span class="n">num_players</span> <span class="o">=</span> <span class="n">at_bats</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;num_players&quot;</span><span class="p">,</span> <span class="n">num_players</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">Binomial</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">phi</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">hits</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">not_pooled</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Number of hits in $K$ at bats for each player has a Binomial</span>
+<span class="sd">    distribution with independent probability of success, $\phi_i$.</span>
+
+<span class="sd">    :param (torch.Tensor) at_bats: Number of at bats for each player.</span>
+<span class="sd">    :param (torch.Tensor) hits: Number of hits for the given at bats.</span>
+<span class="sd">    :return: Number of hits predicted by the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_players</span> <span class="o">=</span> <span class="n">at_bats</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;num_players&quot;</span><span class="p">,</span> <span class="n">num_players</span><span class="p">):</span>
+        <span class="n">phi_prior</span> <span class="o">=</span> <span class="n">Uniform</span><span class="p">(</span><span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi&quot;</span><span class="p">,</span> <span class="n">phi_prior</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">Binomial</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">phi</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">hits</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">partially_pooled</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Number of hits has a Binomial distribution with independent</span>
+<span class="sd">    probability of success, $\phi_i$. Each $\phi_i$ follows a Beta</span>
+<span class="sd">    distribution with concentration parameters $c_1$ and $c_2$, where</span>
+<span class="sd">    $c_1 = m * kappa$, $c_2 = (1 - m) * kappa$, $m ~ Uniform(0, 1)$,</span>
+<span class="sd">    and $kappa ~ Pareto(1, 1.5)$.</span>
+
+<span class="sd">    :param (torch.Tensor) at_bats: Number of at bats for each player.</span>
+<span class="sd">    :param (torch.Tensor) hits: Number of hits for the given at bats.</span>
+<span class="sd">    :return: Number of hits predicted by the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_players</span> <span class="o">=</span> <span class="n">at_bats</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="n">Uniform</span><span class="p">(</span><span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="n">Pareto</span><span class="p">(</span><span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;num_players&quot;</span><span class="p">,</span> <span class="n">num_players</span><span class="p">):</span>
+        <span class="n">phi_prior</span> <span class="o">=</span> <span class="n">Beta</span><span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="n">kappa</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m</span><span class="p">)</span> <span class="o">*</span> <span class="n">kappa</span><span class="p">)</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi&quot;</span><span class="p">,</span> <span class="n">phi_prior</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">Binomial</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">phi</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">hits</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">partially_pooled_with_logit</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Number of hits has a Binomial distribution with a logit link function.</span>
+<span class="sd">    The logits $\alpha$ for each player is normally distributed with the</span>
+<span class="sd">    mean and scale parameters sharing a common prior.</span>
+
+<span class="sd">    :param (torch.Tensor) at_bats: Number of at bats for each player.</span>
+<span class="sd">    :param (torch.Tensor) hits: Number of hits for the given at bats.</span>
+<span class="sd">    :return: Number of hits predicted by the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_players</span> <span class="o">=</span> <span class="n">at_bats</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">HalfCauchy</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">scalar_like</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;num_players&quot;</span><span class="p">,</span> <span class="n">num_players</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">Binomial</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="n">alpha</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">hits</span><span class="p">)</span>
+
+
+<span class="c1"># ===================================</span>
+<span class="c1">#        DATA SUMMARIZE UTILS</span>
+<span class="c1"># ===================================</span>
+
+
+<span class="k">def</span> <span class="nf">get_summary_table</span><span class="p">(</span><span class="n">posterior</span><span class="p">,</span> <span class="n">sites</span><span class="p">,</span> <span class="n">player_names</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="p">{},</span> <span class="n">diagnostics</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">group_by_chain</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return summarized statistics for each of the ``sites`` in the</span>
+<span class="sd">    traces corresponding to the approximate posterior.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">site_stats</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">:</span>
+        <span class="n">marginal_site</span> <span class="o">=</span> <span class="n">posterior</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">transforms</span><span class="p">:</span>
+            <span class="n">marginal_site</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">[</span><span class="n">site_name</span><span class="p">](</span><span class="n">marginal_site</span><span class="p">)</span>
+
+        <span class="n">site_summary</span> <span class="o">=</span> <span class="n">summary</span><span class="p">({</span><span class="n">site_name</span><span class="p">:</span> <span class="n">marginal_site</span><span class="p">},</span> <span class="n">prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">group_by_chain</span><span class="o">=</span><span class="n">group_by_chain</span><span class="p">)[</span><span class="n">site_name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">site_summary</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">site_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">site_summary</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">player_names</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">site_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">site_summary</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">diagnostics</span><span class="p">:</span>
+            <span class="n">site_df</span> <span class="o">=</span> <span class="n">site_df</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s2">&quot;n_eff&quot;</span><span class="p">,</span> <span class="s2">&quot;r_hat&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">site_stats</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">site_df</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">site_stats</span>
+
+
+<span class="k">def</span> <span class="nf">train_test_split</span><span class="p">(</span><span class="n">pd_dataframe</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Training data - 45 initial at-bats and hits for each player.</span>
+<span class="sd">    Validation data - Full season at-bats and hits for each player.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">()</span><span class="o">.</span><span class="n">device</span>
+    <span class="n">train_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">pd_dataframe</span><span class="p">[[</span><span class="s2">&quot;At-Bats&quot;</span><span class="p">,</span> <span class="s2">&quot;Hits&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">test_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">pd_dataframe</span><span class="p">[[</span><span class="s2">&quot;SeasonAt-Bats&quot;</span><span class="p">,</span> <span class="s2">&quot;SeasonHits&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">pd_dataframe</span><span class="p">[</span><span class="s2">&quot;FirstName&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">last_name</span> <span class="o">=</span> <span class="n">pd_dataframe</span><span class="p">[</span><span class="s2">&quot;LastName&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">player_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">])</span> <span class="k">for</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">first_name</span><span class="p">,</span> <span class="n">last_name</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">train_data</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span> <span class="n">player_names</span>
+
+
+<span class="c1"># ===================================</span>
+<span class="c1">#       MODEL EVALUATION UTILS</span>
+<span class="c1"># ===================================</span>
+
+
+<span class="k">def</span> <span class="nf">sample_posterior_predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">posterior_samples</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate samples from posterior predictive distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">player_names</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">baseball_dataset</span><span class="p">)</span>
+    <span class="n">at_bats</span> <span class="o">=</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">at_bats_season</span> <span class="o">=</span> <span class="n">test</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Posterior Predictive:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Hit Rate - Initial 45 At Bats&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-----------------------------&quot;</span><span class="p">)</span>
+    <span class="c1"># set hits=None to convert it from observation node to sample node</span>
+    <span class="n">train_predict</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">posterior_samples</span><span class="p">)(</span><span class="n">at_bats</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">train_summary</span> <span class="o">=</span> <span class="n">get_summary_table</span><span class="p">(</span><span class="n">train_predict</span><span class="p">,</span>
+                                      <span class="n">sites</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">],</span>
+                                      <span class="n">player_names</span><span class="o">=</span><span class="n">player_names</span><span class="p">)[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span>
+    <span class="n">train_summary</span> <span class="o">=</span> <span class="n">train_summary</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">ActualHits</span><span class="o">=</span><span class="n">baseball_dataset</span><span class="p">[[</span><span class="s2">&quot;Hits&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">train_summary</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Hit Rate - Season Predictions&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-----------------------------&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">ignore_experimental_warning</span><span class="p">():</span>
+        <span class="n">test_predict</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">posterior_samples</span><span class="p">)(</span><span class="n">at_bats_season</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">test_summary</span> <span class="o">=</span> <span class="n">get_summary_table</span><span class="p">(</span><span class="n">test_predict</span><span class="p">,</span>
+                                     <span class="n">sites</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">],</span>
+                                     <span class="n">player_names</span><span class="o">=</span><span class="n">player_names</span><span class="p">)[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span>
+    <span class="n">test_summary</span> <span class="o">=</span> <span class="n">test_summary</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">ActualHits</span><span class="o">=</span><span class="n">baseball_dataset</span><span class="p">[[</span><span class="s2">&quot;SeasonHits&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">test_summary</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">evaluate_pointwise_pred_density</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">posterior_samples</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the log probability density of observing the unseen data (season hits)</span>
+<span class="sd">    given a model and posterior distribution over the parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">player_names</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">baseball_dataset</span><span class="p">)</span>
+    <span class="n">at_bats_season</span><span class="p">,</span> <span class="n">hits_season</span> <span class="o">=</span> <span class="n">test</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">test</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">posterior_samples</span><span class="p">)</span><span class="o">.</span><span class="n">get_vectorized_trace</span><span class="p">(</span><span class="n">at_bats_season</span><span class="p">,</span> <span class="n">hits_season</span><span class="p">)</span>
+    <span class="c1"># Use LogSumExp trick to evaluate $log(1/num_samples \sum_i p(new_data | \theta^{i})) $,</span>
+    <span class="c1"># where $\theta^{i}$ are parameter samples from the model&#39;s posterior.</span>
+    <span class="n">trace</span><span class="o">.</span><span class="n">compute_log_prob</span><span class="p">()</span>
+    <span class="n">post_loglik</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">][</span><span class="s2">&quot;log_prob&quot;</span><span class="p">]</span>
+    <span class="c1"># computes expected log predictive density at each data point</span>
+    <span class="n">exp_log_density</span> <span class="o">=</span> <span class="p">(</span><span class="n">post_loglik</span><span class="o">.</span><span class="n">logsumexp</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">post_loglik</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Log pointwise predictive density&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;--------------------------------&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:.4f}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exp_log_density</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">baseball_dataset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">DATA_URL</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">train</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">player_names</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">baseball_dataset</span><span class="p">)</span>
+    <span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span> <span class="o">=</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">train</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Original Dataset:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">baseball_dataset</span><span class="p">)</span>
+
+    <span class="c1"># (1) Full Pooling Model</span>
+    <span class="c1"># In this model, we illustrate how to use MCMC with general potential_fn.</span>
+    <span class="n">init_params</span><span class="p">,</span> <span class="n">potential_fn</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">initialize_model</span><span class="p">(</span>
+        <span class="n">fully_pooled</span><span class="p">,</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">),</span> <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">,</span>
+        <span class="n">jit_compile</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jit</span><span class="p">,</span> <span class="n">skip_jit_warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">potential_fn</span><span class="o">=</span><span class="n">potential_fn</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                <span class="n">warmup_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
+                <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">,</span>
+                <span class="n">initial_params</span><span class="o">=</span><span class="n">init_params</span><span class="p">,</span>
+                <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">)</span>
+    <span class="n">samples_fully_pooled</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Model: Fully Pooled&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;===================&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">phi:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">get_summary_table</span><span class="p">(</span><span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">(</span><span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                                   <span class="n">sites</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;phi&quot;</span><span class="p">],</span>
+                                   <span class="n">player_names</span><span class="o">=</span><span class="n">player_names</span><span class="p">,</span>
+                                   <span class="n">diagnostics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;phi&quot;</span><span class="p">])</span>
+    <span class="n">num_divergences</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">()[</span><span class="s2">&quot;divergences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of divergent transitions: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_divergences</span><span class="p">))</span>
+    <span class="n">sample_posterior_predictive</span><span class="p">(</span><span class="n">fully_pooled</span><span class="p">,</span> <span class="n">samples_fully_pooled</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">)</span>
+    <span class="n">evaluate_pointwise_pred_density</span><span class="p">(</span><span class="n">fully_pooled</span><span class="p">,</span> <span class="n">samples_fully_pooled</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">)</span>
+
+    <span class="c1"># (2) No Pooling Model</span>
+    <span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">not_pooled</span><span class="p">,</span> <span class="n">jit_compile</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jit</span><span class="p">,</span> <span class="n">ignore_jit_warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                <span class="n">warmup_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
+                <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">)</span>
+    <span class="n">samples_not_pooled</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Model: Not Pooled&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=================&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">phi:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">get_summary_table</span><span class="p">(</span><span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">(</span><span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                                   <span class="n">sites</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;phi&quot;</span><span class="p">],</span>
+                                   <span class="n">player_names</span><span class="o">=</span><span class="n">player_names</span><span class="p">,</span>
+                                   <span class="n">diagnostics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;phi&quot;</span><span class="p">])</span>
+    <span class="n">num_divergences</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">()[</span><span class="s2">&quot;divergences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of divergent transitions: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_divergences</span><span class="p">))</span>
+    <span class="n">sample_posterior_predictive</span><span class="p">(</span><span class="n">not_pooled</span><span class="p">,</span> <span class="n">samples_not_pooled</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">)</span>
+    <span class="n">evaluate_pointwise_pred_density</span><span class="p">(</span><span class="n">not_pooled</span><span class="p">,</span> <span class="n">samples_not_pooled</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">)</span>
+
+    <span class="c1"># (3) Partially Pooled Model</span>
+    <span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">partially_pooled</span><span class="p">,</span> <span class="n">jit_compile</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jit</span><span class="p">,</span> <span class="n">ignore_jit_warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                <span class="n">warmup_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
+                <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">)</span>
+    <span class="n">samples_partially_pooled</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Model: Partially Pooled&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=======================&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">phi:&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">get_summary_table</span><span class="p">(</span><span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">(</span><span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                                   <span class="n">sites</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;phi&quot;</span><span class="p">],</span>
+                                   <span class="n">player_names</span><span class="o">=</span><span class="n">player_names</span><span class="p">,</span>
+                                   <span class="n">diagnostics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;phi&quot;</span><span class="p">])</span>
+    <span class="n">num_divergences</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">()[</span><span class="s2">&quot;divergences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of divergent transitions: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_divergences</span><span class="p">))</span>
+    <span class="n">sample_posterior_predictive</span><span class="p">(</span><span class="n">partially_pooled</span><span class="p">,</span> <span class="n">samples_partially_pooled</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">)</span>
+    <span class="n">evaluate_pointwise_pred_density</span><span class="p">(</span><span class="n">partially_pooled</span><span class="p">,</span> <span class="n">samples_partially_pooled</span><span class="p">,</span> <span class="n">baseball_dataset</span><span class="p">)</span>
+
+    <span class="c1"># (4) Partially Pooled with Logit Model</span>
+    <span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">partially_pooled_with_logit</span><span class="p">,</span> <span class="n">jit_compile</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jit</span><span class="p">,</span> <span class="n">ignore_jit_warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span>
+                <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                <span class="n">warmup_steps</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">,</span>
+                <span class="n">num_chains</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_chains</span><span class="p">)</span>
+    <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">at_bats</span><span class="p">,</span> <span class="n">hits</span><span class="p">)</span>
+    <span class="n">samples_partially_pooled_logit</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Model: Partially Pooled with Logit&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;==================================&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sigmoid(alpha):&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">get_summary_table</span><span class="p">(</span><span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">(</span><span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                                   <span class="n">sites</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;alpha&quot;</span><span class="p">],</span>
+                                   <span class="n">player_names</span><span class="o">=</span><span class="n">player_names</span><span class="p">,</span>
+                                   <span class="n">transforms</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">},</span>
+                                   <span class="n">diagnostics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">group_by_chain</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;alpha&quot;</span><span class="p">])</span>
+    <span class="n">num_divergences</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">()[</span><span class="s2">&quot;divergences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of divergent transitions: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_divergences</span><span class="p">))</span>
+    <span class="n">sample_posterior_predictive</span><span class="p">(</span><span class="n">partially_pooled_with_logit</span><span class="p">,</span> <span class="n">samples_partially_pooled_logit</span><span class="p">,</span>
+                                <span class="n">baseball_dataset</span><span class="p">)</span>
+    <span class="n">evaluate_pointwise_pred_density</span><span class="p">(</span><span class="n">partially_pooled_with_logit</span><span class="p">,</span> <span class="n">samples_partially_pooled_logit</span><span class="p">,</span>
+                                    <span class="n">baseball_dataset</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.5.0&#39;</span><span class="p">)</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Baseball batting average using HMC&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-samples&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num-chains&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--warmup-steps&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--rng_seed&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--jit&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;use PyTorch jit&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--cuda&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;run this example in GPU&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="c1"># work around the error &quot;CUDA error: initialization error&quot;</span>
+    <span class="c1"># see https://github.com/pytorch/pytorch/issues/2517</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">set_start_method</span><span class="p">(</span><span class="s2">&quot;spawn&quot;</span><span class="p">)</span>
+
+    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
+    <span class="c1"># Enable validation checks</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="n">__debug__</span><span class="p">)</span>
+
+    <span class="c1"># work around with the error &quot;RuntimeError: received 0 items of ancdata&quot;</span>
+    <span class="c1"># see https://discuss.pytorch.org/t/received-0-items-of-ancdata-pytorch-0-4-0/19823</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">set_sharing_strategy</span><span class="p">(</span><span class="s2">&quot;file_system&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span>
+
+    <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mcmc.html" class="btn btn-neutral float-right" title="Example: Inference with Markov Chain Monte Carlo" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ekf.html" class="btn btn-neutral float-left" title="Kalman Filter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2017-2018, Uber Technologies, Inc
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
