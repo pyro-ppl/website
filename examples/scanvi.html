@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Example: Single Cell RNA Sequencing Analysis with VAEs &mdash; Pyro Tutorials 1.5.2 documentation</title>
+  <title>Example: Single Cell RNA Sequencing Analysis with VAEs &mdash; Pyro Tutorials 1.6.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.5.2
+                1.6.0
               </div>
             
           
@@ -122,6 +122,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Example: Single Cell RNA Sequencing Analysis with VAEs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prodlda.html">Probabilistic Topic Modeling</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Discrete Latent Variables</span></p>
 <ul>
@@ -310,25 +311,22 @@
 
 <span class="kn">import</span> <span class="nn">argparse</span>
 
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">data</span> <span class="kn">import</span> <span class="n">get_data</span>
+<span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="kn">import</span> <span class="n">Patch</span>
 <span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">softplus</span><span class="p">,</span> <span class="n">softmax</span>
+<span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">softmax</span><span class="p">,</span> <span class="n">softplus</span>
 <span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
 <span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
 <span class="kn">from</span> <span class="nn">pyro.distributions.util</span> <span class="kn">import</span> <span class="n">broadcast_shape</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
 <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">MultiStepLR</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span>
-
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="kn">import</span> <span class="n">Patch</span>
-
-<span class="kn">from</span> <span class="nn">data</span> <span class="kn">import</span> <span class="n">get_data</span>
 
 
 <span class="c1"># Helper for making fully-connected neural networks</span>
@@ -541,7 +539,6 @@
     <span class="c1"># Fix random number seed</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
     <span class="c1"># Enable optional validation warnings</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># Load and pre-process data</span>
     <span class="n">dataloader</span><span class="p">,</span> <span class="n">num_genes</span><span class="p">,</span> <span class="n">l_mean</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">,</span> <span class="n">anndata</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
@@ -592,6 +589,7 @@
     <span class="c1"># Now that we&#39;re done training we&#39;ll inspect the latent representations we&#39;ve learned</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">plot</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset</span> <span class="o">==</span> <span class="s1">&#39;pbmc&#39;</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+
         <span class="c1"># Compute latent representation (z2_loc) for each cell in the dataset</span>
         <span class="n">latent_rep</span> <span class="o">=</span> <span class="n">scanvi</span><span class="o">.</span><span class="n">z2l_encoder</span><span class="p">(</span><span class="n">dataloader</span><span class="o">.</span><span class="n">data_x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -642,7 +640,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.5.2&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.6.0&#39;</span><span class="p">)</span>
     <span class="c1"># Parse command line arguments</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;single-cell ANnotation using Variational Inference&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="s1">&#39;--seed&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;rng seed&#39;</span><span class="p">)</span>

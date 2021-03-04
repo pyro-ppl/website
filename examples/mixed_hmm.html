@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Example: hierarchical mixed-effect hidden Markov models &mdash; Pyro Tutorials 1.5.2 documentation</title>
+  <title>Example: hierarchical mixed-effect hidden Markov models &mdash; Pyro Tutorials 1.6.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.5.2
+                1.6.0
               </div>
             
           
@@ -122,6 +122,7 @@
 <li class="toctree-l1"><a class="reference internal" href="scanvi.html">Example: Single Cell RNA Sequencing Analysis with VAEs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prodlda.html">Probabilistic Topic Modeling</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Discrete Latent Variables</span></p>
 <ul class="current">
@@ -447,9 +448,10 @@
 
                     <span class="c1"># zero-inflation with MaskedMixture</span>
                     <span class="n">step_zi</span> <span class="o">=</span> <span class="n">Vindex</span><span class="p">(</span><span class="n">step_zi_param</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">:]</span>
-                    <span class="n">step_zi_mask</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;step_zi_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                                               <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">step_zi</span><span class="p">),</span>
-                                               <span class="n">obs</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;observations&quot;</span><span class="p">][</span><span class="s2">&quot;step&quot;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">==</span> <span class="n">MISSING</span><span class="p">))</span>
+                    <span class="n">step_zi_mask</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;observations&quot;</span><span class="p">][</span><span class="s2">&quot;step&quot;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">==</span> <span class="n">MISSING</span>
+                    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;step_zi_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                                <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">step_zi</span><span class="p">),</span>
+                                <span class="n">obs</span><span class="o">=</span><span class="n">step_zi_mask</span><span class="o">.</span><span class="n">long</span><span class="p">())</span>
                     <span class="n">step_zi_zero_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">MISSING</span><span class="p">))</span>
                     <span class="n">step_zi_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">MaskedMixture</span><span class="p">(</span><span class="n">step_zi_mask</span><span class="p">,</span> <span class="n">step_dist</span><span class="p">,</span> <span class="n">step_zi_zero_dist</span><span class="p">)</span>
 
@@ -474,10 +476,10 @@
 
                     <span class="c1"># zero-inflation with MaskedMixture</span>
                     <span class="n">omega_zi</span> <span class="o">=</span> <span class="n">Vindex</span><span class="p">(</span><span class="n">omega_zi_param</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">:]</span>
-                    <span class="n">omega_zi_mask</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-                        <span class="s2">&quot;omega_zi_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                        <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">omega_zi</span><span class="p">),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;observations&quot;</span><span class="p">][</span><span class="s2">&quot;omega&quot;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">==</span> <span class="n">MISSING</span><span class="p">))</span>
+                    <span class="n">omega_zi_mask</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;observations&quot;</span><span class="p">][</span><span class="s2">&quot;omega&quot;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">==</span> <span class="n">MISSING</span>
+                    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;omega_zi_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                                <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">omega_zi</span><span class="p">),</span>
+                                <span class="n">obs</span><span class="o">=</span><span class="n">omega_zi_mask</span><span class="o">.</span><span class="n">long</span><span class="p">())</span>
 
                     <span class="n">omega_zi_zero_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">MISSING</span><span class="p">))</span>
                     <span class="n">omega_zi_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">MaskedMixture</span><span class="p">(</span><span class="n">omega_zi_mask</span><span class="p">,</span> <span class="n">omega_dist</span><span class="p">,</span> <span class="n">omega_zi_zero_dist</span><span class="p">)</span>

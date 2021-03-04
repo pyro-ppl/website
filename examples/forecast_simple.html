@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Multivariate Forecasting &mdash; Pyro Tutorials 1.5.2 documentation</title>
+  <title>Multivariate Forecasting &mdash; Pyro Tutorials 1.6.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.5.2
+                1.6.0
               </div>
             
           
@@ -122,6 +122,7 @@
 <li class="toctree-l1"><a class="reference internal" href="scanvi.html">Example: Single Cell RNA Sequencing Analysis with VAEs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prodlda.html">Probabilistic Topic Modeling</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Discrete Latent Variables</span></p>
 <ul>
@@ -357,14 +358,14 @@
         <span class="n">trans_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans_scale&quot;</span><span class="p">,</span>
                                   <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">trans_corr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans_corr&quot;</span><span class="p">,</span>
-                                 <span class="n">dist</span><span class="o">.</span><span class="n">LKJCorrCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
+                                 <span class="n">dist</span><span class="o">.</span><span class="n">LKJCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
         <span class="n">trans_scale_tril</span> <span class="o">=</span> <span class="n">trans_scale</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">trans_corr</span>
         <span class="k">assert</span> <span class="n">trans_scale_tril</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
         <span class="n">obs_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_scale&quot;</span><span class="p">,</span>
                                 <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">obs_corr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_corr&quot;</span><span class="p">,</span>
-                               <span class="n">dist</span><span class="o">.</span><span class="n">LKJCorrCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
+                               <span class="n">dist</span><span class="o">.</span><span class="n">LKJCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
         <span class="n">obs_scale_tril</span> <span class="o">=</span> <span class="n">obs_scale</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">obs_corr</span>
         <span class="k">assert</span> <span class="n">obs_scale_tril</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
@@ -407,7 +408,6 @@
 
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="n">__debug__</span><span class="p">)</span>
     <span class="n">data</span><span class="p">,</span> <span class="n">covariates</span> <span class="o">=</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 
     <span class="c1"># We will model positive count data by log1p-transforming it into real</span>
@@ -447,7 +447,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.5.2&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.6.0&#39;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Bart Ridership Forecasting Example&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--train-window&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2160</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--test-window&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">336</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
