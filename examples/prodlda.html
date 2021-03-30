@@ -183,6 +183,11 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Application: Biological sequences</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
@@ -625,7 +630,8 @@ p(\mathcal{D} | \theta) = \prod_{i}^{6} \theta_{k}^{N_k}
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
     <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;theta&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)))</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;counts&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">),</span> <span class="n">theta</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="p">)</span>
+    <span class="n">total_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;counts&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">total_count</span><span class="p">,</span> <span class="n">theta</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="p">)</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> \
                      <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
@@ -645,7 +651,7 @@ p(\mathcal{D} | \theta) = \prod_{i}^{6} \theta_{k}^{N_k}
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Sample: 100%|██████████| 1200/1200 [00:09, 125.28it/s, step size=6.69e-01, acc. prob=0.914]
+Sample: 100%|██████████| 1200/1200 [00:09, 127.59it/s, step size=7.89e-01, acc. prob=0.900]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -669,7 +675,7 @@ Sample: 100%|██████████| 1200/1200 [00:09, 125.28it/s, step 
 Inferred dice probabilities from the data (68% confidence intervals):
 1: 0.08 ± 0.05
 2: 0.05 ± 0.04
-3: 0.28 ± 0.07
+3: 0.29 ± 0.07
 4: 0.05 ± 0.04
 5: 0.41 ± 0.08
 6: 0.11 ± 0.05
@@ -702,7 +708,7 @@ of the multinomial with <span class="math notranslate nohighlight">\(n = 1\)</sp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Sample: 100%|██████████| 1200/1200 [00:16, 72.56it/s, step size=5.73e-01, acc. prob=0.924]
+Sample: 100%|██████████| 1200/1200 [00:10, 112.07it/s, step size=6.78e-01, acc. prob=0.922]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -724,9 +730,9 @@ Sample: 100%|██████████| 1200/1200 [00:16, 72.56it/s, step s
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Inferred dice probabilities from the data (68% confidence intervals):
-1: 0.08 ± 0.04
-2: 0.05 ± 0.04
-3: 0.28 ± 0.07
+1: 0.08 ± 0.05
+2: 0.06 ± 0.04
+3: 0.28 ± 0.08
 4: 0.06 ± 0.04
 5: 0.42 ± 0.08
 6: 0.11 ± 0.05
@@ -778,7 +784,7 @@ model and see how to implement it using Pyro.</p>
 <h2>Pre-processing Data and Vectorizing Documents<a class="headerlink" href="#Pre-processing-Data-and-Vectorizing-Documents" title="Permalink to this headline">¶</a></h2>
 <p>So let’s get started. The first thing we need to do is to <strong>prepare the data</strong>. We will use the <strong>20 newsgroups text dataset</strong>, one of the datasets used by the authors. The 20 newsgroups dataset comprises around 18000 newsgroups posts on 20 topics. Let’s fetch the data:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -797,12 +803,12 @@ model and see how to implement it using Pyro.</p>
 </ol>
 <p>The final data <code class="docutils literal notranslate"><span class="pre">docs</span></code> is a M x N array, where M is the number of documents, N is the number of words in the vocabulary, and the data is the total count of words. Our vocabulary is stored in the <code class="docutils literal notranslate"><span class="pre">vocab</span></code> dataframe.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">news</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
-<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">(</span><span class="n">max_df</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">(</span><span class="n">max_df</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">min_df</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">stop_words</span><span class="o">=</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
 <span class="n">docs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">vectorizer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">news</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">toarray</span><span class="p">())</span>
 
 <span class="n">vocab</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="s1">&#39;index&#39;</span><span class="p">])</span>
@@ -812,7 +818,7 @@ model and see how to implement it using Pyro.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -826,16 +832,16 @@ model and see how to implement it using Pyro.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Dictionary size: 12999
-Corpus size: torch.Size([18846, 12999])
+Dictionary size: 12722
+Corpus size: torch.Size([18846, 12722])
 </pre></div></div>
 </div>
-<p>There we go! We have a dictionary of 12,999 unique words and indices for each of them! And our corpus is comprised of almost 19,000 documents, where each row represents a document, and each column represents a word in the vocabulary. The data is the count of how many times each word occurs in that specific document. Now we are ready to move to the model.</p>
+<p>There we go! We have a dictionary of 12,722 unique words and indices for each of them! And our corpus is comprised of almost 19,000 documents, where each row represents a document, and each column represents a word in the vocabulary. The data is the count of how many times each word occurs in that specific document. Now we are ready to move to the model.</p>
 </div>
 <div class="section" id="ProdLDA:-Latent-Dirichlet-Allocation-with-Product-of-Experts">
 <h2>ProdLDA: Latent Dirichlet Allocation with Product of Experts<a class="headerlink" href="#ProdLDA:-Latent-Dirichlet-Allocation-with-Product-of-Experts" title="Permalink to this headline">¶</a></h2>
 <p>To successfuly apply AEVB to LDA, here’s how the paper’s authors addressed the two challenges mentioned earlier.</p>
-<p><strong>Challenge #1: Dirichlet prior is not a location scale family.</strong> To address this issue, they used an encoder network that approximates the Dirichlet prior <span class="math notranslate nohighlight">\(p(\theta | \alpha)\)</span> with a log-normal distribution. In other words, they use</p>
+<p><strong>Challenge #1: Dirichlet prior is not a location scale family.</strong> To address this issue, they used an encoder network that approximates the Dirichlet prior <span class="math notranslate nohighlight">\(p(\theta | \alpha)\)</span> with a logistic-normal distribution (more precisely, this is softmax-normal distribution). In other words, they use</p>
 <div class="math notranslate nohighlight">
 \[p(\theta | \alpha) \approx p(\theta | \mu, \Sigma) = \mathcal{LN}(\theta | \mu, \Sigma)\]</div>
 <p>where <span class="math notranslate nohighlight">\(\mu\)</span> and <span class="math notranslate nohighlight">\(\Sigma\)</span> are the encoder network outputs.</p>
@@ -843,7 +849,7 @@ Corpus size: torch.Size([18846, 12999])
 <p><strong>ProdLDA vs LDA.</strong> Finally, the only remaining difference between ProdLDA and regular LDA is that: i) <span class="math notranslate nohighlight">\(\beta\)</span> is unnormalized; and ii) the conditional distribution of <span class="math notranslate nohighlight">\(w_n\)</span> is defined as <span class="math notranslate nohighlight">\(w_n | \beta, \theta \sim \text{Categorical}(\sigma(\beta \theta))\)</span>.</p>
 <p>That’s it. For further details about these particular modeling and inference choices, please see the paper. Now, let’s implement this model in Pyro:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -856,7 +862,7 @@ Corpus size: torch.Size([18846, 12999])
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -869,26 +875,29 @@ Corpus size: torch.Size([18846, 12999])
         <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fcmu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">num_topics</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fclv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">num_topics</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bnmu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">num_topics</span><span class="p">)</span>  <span class="c1"># to avoid component collapse</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bnlv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">num_topics</span><span class="p">)</span>  <span class="c1"># to avoid component collapse</span>
+        <span class="c1"># NB: here we set `affine=False` to reduce the number of learning parameters</span>
+        <span class="c1"># See https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html</span>
+        <span class="c1"># for the effect of this flag in BatchNorm1d</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bnmu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">num_topics</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># to avoid component collapse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bnlv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">num_topics</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># to avoid component collapse</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">inputs</span><span class="p">))</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
         <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
         <span class="c1"># μ and Σ are the outputs</span>
-        <span class="n">theta_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bnmu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fcmu</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
-        <span class="n">theta_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bnlv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fclv</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
-        <span class="n">theta_scale</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">theta_scale</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>  <span class="c1"># Enforces positivity</span>
-        <span class="k">return</span> <span class="n">theta_loc</span><span class="p">,</span> <span class="n">theta_scale</span>
+        <span class="n">logtheta_loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bnmu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fcmu</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
+        <span class="n">logtheta_logvar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bnlv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fclv</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
+        <span class="n">logtheta_scale</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">logtheta_logvar</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>  <span class="c1"># Enforces positivity</span>
+        <span class="k">return</span> <span class="n">logtheta_loc</span><span class="p">,</span> <span class="n">logtheta_scale</span>
 
 
 <span class="k">class</span> <span class="nc">Decoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="c1"># Base class for the decoder net, used in the model</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">num_topics</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">num_topics</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">num_topics</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">drop</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
@@ -905,33 +914,39 @@ Corpus size: torch.Size([18846, 12999])
         <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">num_topics</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">Decoder</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">num_topics</span><span class="p">,</span> <span class="n">dropout</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;decoder&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;documents&quot;</span><span class="p">,</span> <span class="n">docs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="c1"># Dirichlet prior  𝑝(𝜃|𝛼) is replaced by a log-normal distribution</span>
-            <span class="n">theta_loc</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">((</span><span class="n">docs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_topics</span><span class="p">))</span>
-            <span class="n">theta_scale</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">new_ones</span><span class="p">((</span><span class="n">docs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_topics</span><span class="p">))</span>
-            <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-                <span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">theta_loc</span><span class="p">,</span> <span class="n">theta_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">/</span> <span class="n">theta</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># Dirichlet prior 𝑝(𝜃|𝛼) is replaced by a logistic-normal distribution</span>
+            <span class="n">logtheta_loc</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">((</span><span class="n">docs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_topics</span><span class="p">))</span>
+            <span class="n">logtheta_scale</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">new_ones</span><span class="p">((</span><span class="n">docs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_topics</span><span class="p">))</span>
+            <span class="n">logtheta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;logtheta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">logtheta_loc</span><span class="p">,</span> <span class="n">logtheta_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logtheta</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># conditional distribution of 𝑤𝑛 is defined as</span>
             <span class="c1"># 𝑤𝑛|𝛽,𝜃 ~ Categorical(𝜎(𝛽𝜃))</span>
             <span class="n">count_param</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+            <span class="c1"># Currently, PyTorch Multinomial requires `total_count` to be homogeneous.</span>
+            <span class="c1"># Because the numbers of words across documents can vary,</span>
+            <span class="c1"># we will use the maximum count accross documents here.</span>
+            <span class="c1"># This does not affect the result because Multinomial.log_prob does</span>
+            <span class="c1"># not require `total_count` to evaluate the log probability.</span>
+            <span class="n">total_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">docs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
             <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
                 <span class="s1">&#39;obs&#39;</span><span class="p">,</span>
-                <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">docs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">count_param</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">total_count</span><span class="p">,</span> <span class="n">count_param</span><span class="p">),</span>
                 <span class="n">obs</span><span class="o">=</span><span class="n">docs</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">):</span>
         <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;documents&quot;</span><span class="p">,</span> <span class="n">docs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="c1"># Dirichlet prior  𝑝(𝜃|𝛼) is replaced by a log-normal distribution,</span>
+            <span class="c1"># Dirichlet prior 𝑝(𝜃|𝛼) is replaced by a logistic-normal distribution,</span>
             <span class="c1"># where μ and Σ are the encoder network outputs</span>
-            <span class="n">theta_loc</span><span class="p">,</span> <span class="n">theta_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
-            <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-                <span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">theta_loc</span><span class="p">,</span> <span class="n">theta_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">logtheta_loc</span><span class="p">,</span> <span class="n">logtheta_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+            <span class="n">logtheta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;logtheta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">logtheta_loc</span><span class="p">,</span> <span class="n">logtheta_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">beta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># beta matrix elements are the weights of the FC layer on the decoder</span>
@@ -948,7 +963,7 @@ Corpus size: torch.Size([18846, 12999])
 </ul>
 <p>Important: the training takes ~5 min using the above hyperparameters on a GPU system, but might take a couple of hours or more on a CPU system.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -962,7 +977,7 @@ Corpus size: torch.Size([18846, 12999])
 <span class="n">docs</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
 <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">1e-3</span>
-<span class="n">num_epochs</span>  <span class="o">=</span> <span class="mi">50</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">1</span>
+<span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">50</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">1</span>
 </pre></div>
 </div>
 </div>
@@ -1003,7 +1018,7 @@ Corpus size: torch.Size([18846, 12999])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-100%|██████████| 50/50 [04:45&lt;00:00,  5.71s/it, epoch_loss=1.12e+07]
+100%|██████████| 50/50 [04:37&lt;00:00,  5.55s/it, epoch_loss=3.72e+05]
 </pre></div></div>
 </div>
 <p>And that’s it! Now, let’s visualize the results.</p>
@@ -1012,13 +1027,11 @@ Corpus size: torch.Size([18846, 12999])
 <h2>WordClouds<a class="headerlink" href="#WordClouds" title="Permalink to this headline">¶</a></h2>
 <p>Let’s check the word clouds for each of the 20 topics. We will use a Python package called <code class="docutils literal notranslate"><span class="pre">wordcloud</span></code>. We will visualize the top 100 words per topic, where the font size of each is proportional to its beta (i.e. the larger the word, the more important it is to the corresponding topic):</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">plot_word_cloud</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">wordcloud</span> <span class="kn">import</span> <span class="n">WordCloud</span>
-    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
     <span class="n">sorted_</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">indices</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">])</span>
     <span class="n">words</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">vocab</span><span class="p">[[</span><span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;word&#39;</span><span class="p">]],</span>
@@ -1032,6 +1045,9 @@ Corpus size: torch.Size([18846, 12999])
     <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">from</span> <span class="nn">wordcloud</span> <span class="kn">import</span> <span class="n">WordCloud</span>
+
     <span class="n">beta</span> <span class="o">=</span> <span class="n">prodLDA</span><span class="o">.</span><span class="n">beta</span><span class="p">()</span>
     <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">beta</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
@@ -1052,15 +1068,19 @@ Corpus size: torch.Size([18846, 12999])
 </div>
 <p>As can be observed from the 20 word clouds above, the model successfully found several coherent topics. Highlights include:</p>
 <ul class="simple">
-<li><p>Topic 1 domain: hardware</p></li>
-<li><p>Topic 3 domain: religion</p></li>
-<li><p>Topic 6 domain: publishing</p></li>
-<li><p>Topic 9 domain: science</p></li>
-<li><p>Topic 11 domain: geopolitics</p></li>
-<li><p>Topic 12 domain: space</p></li>
-<li><p>Topic 13 domain: computer graphics</p></li>
-<li><p>Topic 14 domain: numbers &amp; acronyms</p></li>
-<li><p>Topic 20 domain: diseases</p></li>
+<li><p>Topic 1 domain: computer graphics</p></li>
+<li><p>Topic 3 domain: health</p></li>
+<li><p>Topic 5 domain: sport</p></li>
+<li><p>Topic 6 domain: transportation</p></li>
+<li><p>Topic 7 domain: sale</p></li>
+<li><p>Topic 8 domain: religion</p></li>
+<li><p>Topic 10 domain: hardware</p></li>
+<li><p>Topic 11 domain: numbers</p></li>
+<li><p>Topic 12 domain: middle east</p></li>
+<li><p>Topic 13 domain: electronic communication</p></li>
+<li><p>Topic 15 domain: space</p></li>
+<li><p>Topic 18 domain: medical</p></li>
+<li><p>Topic 20 domain: atheism</p></li>
 </ul>
 </div>
 <div class="section" id="Conclusion">
