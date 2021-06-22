@@ -42,7 +42,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Poutine: A Guide to Programming with Effect Handlers in Pyro" href="effect_handlers.html" />
-    <link rel="prev" title="Understanding Hyperbole using RSA" href="RSA-hyperbole.html" /> 
+    <link rel="prev" title="Example: Utilizing Predictive and Deterministic with MCMC and SVI" href="predictive_deterministic.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -171,6 +171,8 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<ul>
+</ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
@@ -191,6 +193,7 @@
 <li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Understanding Pyro's Internals</span></p>
 <ul class="current">
@@ -315,6 +318,7 @@
 <span class="kn">import</span> <span class="nn">weakref</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">validation_enabled</span>
@@ -415,15 +419,12 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;torch&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_rng_state</span><span class="p">(),</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">getstate</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;torch&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_rng_state</span><span class="p">(),</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">getstate</span><span class="p">(),</span> <span class="s1">&#39;numpy&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="p">}</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
         <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s1">&#39;numpy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-            <span class="k">pass</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">set_rng_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s1">&#39;torch&#39;</span><span class="p">])</span>
@@ -778,7 +779,7 @@
         <a href="effect_handlers.html" class="btn btn-neutral float-right" title="Poutine: A Guide to Programming with Effect Handlers in Pyro" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="RSA-hyperbole.html" class="btn btn-neutral float-left" title="Understanding Hyperbole using RSA" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="predictive_deterministic.html" class="btn btn-neutral float-left" title="Example: Utilizing Predictive and Deterministic with MCMC and SVI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

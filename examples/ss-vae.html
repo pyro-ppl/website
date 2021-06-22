@@ -191,6 +191,8 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<ul>
+</ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
@@ -211,6 +213,7 @@
 <li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Understanding Pyro's Internals</span></p>
 <ul>
@@ -289,21 +292,35 @@
 /* CSS for nbsphinx extension */
 
 /* remove conflicting styling from Sphinx themes */
-div.nbinput.container,
-div.nbinput.container div.prompt,
-div.nbinput.container div.input_area,
-div.nbinput.container div[class*=highlight],
-div.nbinput.container div[class*=highlight] pre,
-div.nboutput.container,
-div.nboutput.container div.prompt,
-div.nboutput.container div.output_area,
-div.nboutput.container div[class*=highlight],
-div.nboutput.container div[class*=highlight] pre {
-    background: none;
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
     border: none;
-    padding: 0 0;
+    padding: 0;
     margin: 0;
     box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
 }
 
 /* avoid gaps between output lines */
@@ -404,7 +421,7 @@ div.nboutput.container div.output_area {
 div.nbinput.container div.input_area {
     border: 1px solid #e0e0e0;
     border-radius: 2px;
-    background: #f5f5f5;
+    /*background: #f5f5f5;*/
 }
 
 /* override MathJax center alignment in output cells */
@@ -470,6 +487,7 @@ div.nboutput.container div.output_area.rendered_html,
 div.nboutput.container div.output_area > div.output_javascript,
 div.nboutput.container div.output_area:not(.rendered_html) > img{
     padding: 5px;
+    margin: 0;
 }
 
 /* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
@@ -731,12 +749,11 @@ that the items in a minibatch are indeed independent by wrapping our vectorized 
 <div class="section" id="Third-Variant:-Adding-a-Term-to-the-Objective">
 <h2>Third Variant: Adding a Term to the Objective<a class="headerlink" href="#Third-Variant:-Adding-a-Term-to-the-Objective" title="Permalink to this headline">¶</a></h2>
 <p>For the two variants we’ve explored so far, the classifier <span class="math notranslate nohighlight">\(q_{\phi}({\bf y}~|~ {\bf x})\)</span> doesn’t learn directly from labeled data. As we discussed in the introduction, this seems like a potential problem. One approach to addressing this problem is to add an extra term to the objective so that the classifier learns directly from labeled data. Note that this is exactly the approach adopted in reference [1] (see their Eqn. 9). The modified objective function is given by:</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}\begin{align}
-    \mathcal{J}^{\alpha} &amp;= \mathcal{J} + \alpha \mathop{\mathbb{E}}_{\tilde{p_l}({\bf x,y})} \big[-\log\big(q_{\phi}({\bf y}~|~ {\bf x})\big)\big] \\
-    &amp;= \mathcal{J} + \alpha' \sum_{({\bf x,y}) \in \mathcal{D}_{supervised}}  \big[-\log\big(q_{\phi}({\bf y}~|~ {\bf x})\big)\big]
-\end{align}\end{split}\]</div>
-<p>where <span class="math notranslate nohighlight">\(\tilde{p_l}({\bf x,y})\)</span> is the empirical distribution over the labeled (or supervised) data and <span class="math notranslate nohighlight">\(\alpha' \equiv \frac{\alpha}{|\mathcal{D}_{supervised}|}\)</span>. Note that we’ve introduced an arbitrary hyperparameter <span class="math notranslate nohighlight">\(\alpha\)</span> that modulates the importance of the new term.</p>
+<p><span class="math">\begin{align}
+\mathcal{J}^{\alpha} &= \mathcal{J} + \alpha \mathop{\mathbb{E}}_{\tilde{p_l}({\bf x,y})} \big[-\log\big(q_{\phi}({\bf y}~|~ {\bf x})\big)\big] \\
+&= \mathcal{J} + \alpha' \sum_{({\bf x,y}) \in \mathcal{D}_{\text{supervised}}}  \big[-\log\big(q_{\phi}({\bf y}~|~ {\bf x})\big)\big]
+\end{align}</span></p>
+<p>where <span class="math notranslate nohighlight">\(\tilde{p_l}({\bf x,y})\)</span> is the empirical distribution over the labeled (or supervised) data and <span class="math notranslate nohighlight">\(\alpha' \equiv \frac{\alpha}{|\mathcal{D}_{\text{supervised}}|}\)</span>. Note that we’ve introduced an arbitrary hyperparameter <span class="math notranslate nohighlight">\(\alpha\)</span> that modulates the importance of the new term.</p>
 <p>To learn using this modified objective in Pyro we do the following:</p>
 <ul class="simple">
 <li><p>We use a new model and guide pair (see the code snippet below) that corresponds to scoring the observed label <span class="math notranslate nohighlight">\({\bf y}\)</span> for a given image <span class="math notranslate nohighlight">\({\bf x}\)</span> against the predictive distribution <span class="math notranslate nohighlight">\(q_{\phi}({\bf y}~|~ {\bf x})\)</span></p></li>

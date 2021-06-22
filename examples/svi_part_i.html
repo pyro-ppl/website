@@ -184,6 +184,8 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<ul>
+</ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
@@ -204,6 +206,7 @@
 <li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Understanding Pyro's Internals</span></p>
 <ul>
@@ -282,21 +285,35 @@
 /* CSS for nbsphinx extension */
 
 /* remove conflicting styling from Sphinx themes */
-div.nbinput.container,
-div.nbinput.container div.prompt,
-div.nbinput.container div.input_area,
-div.nbinput.container div[class*=highlight],
-div.nbinput.container div[class*=highlight] pre,
-div.nboutput.container,
-div.nboutput.container div.prompt,
-div.nboutput.container div.output_area,
-div.nboutput.container div[class*=highlight],
-div.nboutput.container div[class*=highlight] pre {
-    background: none;
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
     border: none;
-    padding: 0 0;
+    padding: 0;
     margin: 0;
     box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
 }
 
 /* avoid gaps between output lines */
@@ -397,7 +414,7 @@ div.nboutput.container div.output_area {
 div.nbinput.container div.input_area {
     border: 1px solid #e0e0e0;
     border-radius: 2px;
-    background: #f5f5f5;
+    /*background: #f5f5f5;*/
 }
 
 /* override MathJax center alignment in output cells */
@@ -463,6 +480,7 @@ div.nboutput.container div.output_area.rendered_html,
 div.nboutput.container div.output_area > div.output_javascript,
 div.nboutput.container div.output_area:not(.rendered_html) > img{
     padding: 5px;
+    margin: 0;
 }
 
 /* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
@@ -645,7 +663,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 <p>This gives the user the ability to, for example, customize learning rates for different parameters. For an example where this sort of level of control is useful, see the <a class="reference internal" href="svi_part_iii.html"><span class="doc">discussion of baselines</span></a>. Here’s a simple example to illustrate the API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
-<span class="k">def</span> <span class="nf">per_param_callable</span><span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">param_name</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">per_param_callable</span><span class="p">(</span><span class="n">param_name</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">param_name</span> <span class="o">==</span> <span class="s1">&#39;my_special_parameter&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.010</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
@@ -803,7 +821,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 </div>
 <div class="section" id="Sample-output:">
 <h3>Sample output:<a class="headerlink" href="#Sample-output:" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">our</span> <span class="n">prior</span> <span class="n">belief</span><span class="p">,</span> <span class="n">the</span> <span class="n">fairness</span> <span class="n">of</span> <span class="n">the</span> <span class="n">coin</span> <span class="ow">is</span> <span class="mf">0.532</span> <span class="o">+-</span> <span class="mf">0.090</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>based on the data and our prior belief, the fairness of the coin is 0.532 +- 0.090
 </pre></div>
 </div>
 <p>This estimate is to be compared to the exact posterior mean, which in this case is given by <span class="math notranslate nohighlight">\(16/30 = 0.5\bar{3}\)</span>. Note that the final estimate of the fairness of the coin is in between the the fairness preferred by the prior (namely <span class="math notranslate nohighlight">\(0.50\)</span>) and the fairness suggested by the raw empirical frequencies (<span class="math notranslate nohighlight">\(6/10 = 0.60\)</span>).</p>

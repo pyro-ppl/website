@@ -190,6 +190,8 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<ul>
+</ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
@@ -210,6 +212,7 @@
 <li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Understanding Pyro's Internals</span></p>
 <ul>
@@ -288,21 +291,35 @@
 /* CSS for nbsphinx extension */
 
 /* remove conflicting styling from Sphinx themes */
-div.nbinput.container,
-div.nbinput.container div.prompt,
-div.nbinput.container div.input_area,
-div.nbinput.container div[class*=highlight],
-div.nbinput.container div[class*=highlight] pre,
-div.nboutput.container,
-div.nboutput.container div.prompt,
-div.nboutput.container div.output_area,
-div.nboutput.container div[class*=highlight],
-div.nboutput.container div[class*=highlight] pre {
-    background: none;
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
     border: none;
-    padding: 0 0;
+    padding: 0;
     margin: 0;
     box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
 }
 
 /* avoid gaps between output lines */
@@ -403,7 +420,7 @@ div.nboutput.container div.output_area {
 div.nbinput.container div.input_area {
     border: 1px solid #e0e0e0;
     border-radius: 2px;
-    background: #f5f5f5;
+    /*background: #f5f5f5;*/
 }
 
 /* override MathJax center alignment in output cells */
@@ -469,6 +486,7 @@ div.nboutput.container div.output_area.rendered_html,
 div.nboutput.container div.output_area > div.output_javascript,
 div.nboutput.container div.output_area:not(.rendered_html) > img{
     padding: 5px;
+    margin: 0;
 }
 
 /* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
@@ -622,9 +640,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <p>In summary</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>      <span class="o">|</span>      <span class="n">iid</span>     <span class="o">|</span> <span class="n">independent</span> <span class="o">|</span> <span class="n">dependent</span>
-<span class="o">------+--------------+-------------+------------</span>
-<span class="n">shape</span> <span class="o">=</span> <span class="n">sample_shape</span> <span class="o">+</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="n">event_shape</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      |      iid     | independent | dependent
+------+--------------+-------------+------------
+shape = sample_shape + batch_shape + event_shape
 </pre></div>
 </div>
 <p>For example univariate distributions have empty event shape (because each number is an independent event). Distributions over vectors like <code class="docutils literal notranslate"><span class="pre">MultivariateNormal</span></code> have <code class="docutils literal notranslate"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">1</span></code>. Distributions over matrices like <code class="docutils literal notranslate"><span class="pre">InverseWishart</span></code> have <code class="docutils literal notranslate"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">2</span></code>.</p>
@@ -796,27 +814,27 @@ independence when variables are actually dependent (i.e. narrowing the model cl
 </div>
 </div>
 <p>It is helpful to visualize the <code class="docutils literal notranslate"><span class="pre">.shape</span></code>s of each sample site by aligning them at the boundary between <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">event_shape</span></code>: dimensions to the right will be summed out in <code class="docutils literal notranslate"><span class="pre">.log_prob()</span></code> and dimensions to the left will remain.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">batch</span> <span class="n">dims</span> <span class="o">|</span> <span class="n">event</span> <span class="n">dims</span>
-<span class="o">-----------+-----------</span>
-           <span class="o">|</span>        <span class="n">a</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span><span class="mi">2</span>       <span class="n">b</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-           <span class="o">|</span>                        <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>        <span class="k">with</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-          <span class="mi">2</span><span class="o">|</span>            <span class="n">c</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>        <span class="k">with</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
-          <span class="mi">3</span><span class="o">|</span><span class="mi">4</span> <span class="mi">5</span>         <span class="n">d</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-           <span class="o">|</span>                       <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-           <span class="o">|</span>
-           <span class="o">|</span>        <span class="n">x_axis</span> <span class="o">=</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
-           <span class="o">|</span>        <span class="n">y_axis</span> <span class="o">=</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
-           <span class="o">|</span>        <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
-        <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>            <span class="n">x</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>        <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
-      <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>            <span class="n">y</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>        <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
-      <span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>            <span class="n">xy</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;xy&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-      <span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span>           <span class="n">z</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="mi">5</span><span class="p">])</span>
-           <span class="o">|</span>                       <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>batch dims | event dims
+-----------+-----------
+           |        a = sample(&quot;a&quot;, Normal(0, 1))
+           |2       b = sample(&quot;b&quot;, Normal(zeros(2), 1)
+           |                        .to_event(1))
+           |        with plate(&quot;c&quot;, 2):
+          2|            c = sample(&quot;c&quot;, Normal(zeros(2), 1))
+           |        with plate(&quot;d&quot;, 3):
+          3|4 5         d = sample(&quot;d&quot;, Normal(zeros(3,4,5), 1)
+           |                       .to_event(2))
+           |
+           |        x_axis = plate(&quot;x&quot;, 3, dim=-2)
+           |        y_axis = plate(&quot;y&quot;, 2, dim=-3)
+           |        with x_axis:
+        3 1|            x = sample(&quot;x&quot;, Normal(0, 1))
+           |        with y_axis:
+      2 1 1|            y = sample(&quot;y&quot;, Normal(0, 1))
+           |        with x_axis, y_axis:
+      2 3 1|            xy = sample(&quot;xy&quot;, Normal(0, 1))
+      2 3 1|5           z = sample(&quot;z&quot;, Normal(0, 1).expand([5])
+           |                       .to_event(1))
 </pre></div>
 </div>
 <p>To examine the shapes of sample sites in a program automatically, you can trace the program and use the <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">Trace.format_shapes()</a> method, which prints three shapes for each sample site: the distribution shape (both <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].event_shape</span></code>), the value shape (<code class="docutils literal notranslate"><span class="pre">site[&quot;value&quot;].shape</span></code>), and if log probability has been computed also the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> shape (<code class="docutils literal notranslate"><span class="pre">site[&quot;log_prob&quot;].shape</span></code>):</p>
@@ -910,29 +928,29 @@ Sample Sites:
 <p>To use parallel enumeration, Pyro needs to allocate tensor dimension that it can use for enumeration. To avoid conflicting with other dimensions that we want to use for <code class="docutils literal notranslate"><span class="pre">plate</span></code>s, we need to declare a budget of the maximum number of tensor dimensions we’ll use. This budget is called <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> and is an argument to <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html">SVI</a> (the argument is simply passed through to
 <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a>). Usually Pyro can determine this budget on its own (it runs the <code class="docutils literal notranslate"><span class="pre">(model,guide)</span></code> pair once and record what happens), but in case of dynamic model structure you may need to declare <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> manually.</p>
 <p>To understand <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> and how Pyro allocates dimensions for enumeration, let’s revisit <code class="docutils literal notranslate"><span class="pre">model1()</span></code> from above. This time we’ll map out three types of dimensions: enumeration dimensions on the left (Pyro takes control of these), batch dimensions in the middle, and event dimensions on the right.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>      <span class="n">max_plate_nesting</span> <span class="o">=</span> <span class="mi">3</span>
-           <span class="o">|&lt;---&gt;|</span>
-<span class="n">enumeration</span><span class="o">|</span><span class="n">batch</span><span class="o">|</span><span class="n">event</span>
-<span class="o">-----------+-----+-----</span>
-           <span class="o">|.</span> <span class="o">.</span> <span class="o">.|</span>      <span class="n">a</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|.</span> <span class="o">.</span> <span class="o">.|</span><span class="mi">2</span>     <span class="n">b</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-           <span class="o">|</span>     <span class="o">|</span>                      <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-           <span class="o">|.</span> <span class="o">.</span> <span class="mi">2</span><span class="o">|</span>          <span class="n">c</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
-           <span class="o">|.</span> <span class="o">.</span> <span class="mi">3</span><span class="o">|</span><span class="mi">4</span> <span class="mi">5</span>       <span class="n">d</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-           <span class="o">|</span>     <span class="o">|</span>                     <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-           <span class="o">|</span>     <span class="o">|</span>
-           <span class="o">|</span>     <span class="o">|</span>      <span class="n">x_axis</span> <span class="o">=</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
-           <span class="o">|</span>     <span class="o">|</span>      <span class="n">y_axis</span> <span class="o">=</span> <span class="n">plate</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
-           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
-           <span class="o">|.</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>          <span class="n">x</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
-           <span class="o">|</span><span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>          <span class="n">y</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span>     <span class="o">|</span>      <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
-           <span class="o">|</span><span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span>          <span class="n">xy</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;xy&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-           <span class="o">|</span><span class="mi">2</span> <span class="mi">3</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span>         <span class="n">z</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="mi">5</span><span class="p">]))</span>
-           <span class="o">|</span>     <span class="o">|</span>                     <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      max_plate_nesting = 3
+           |&lt;---&gt;|
+enumeration|batch|event
+-----------+-----+-----
+           |. . .|      a = sample(&quot;a&quot;, Normal(0, 1))
+           |. . .|2     b = sample(&quot;b&quot;, Normal(zeros(2), 1)
+           |     |                      .to_event(1))
+           |     |      with plate(&quot;c&quot;, 2):
+           |. . 2|          c = sample(&quot;c&quot;, Normal(zeros(2), 1))
+           |     |      with plate(&quot;d&quot;, 3):
+           |. . 3|4 5       d = sample(&quot;d&quot;, Normal(zeros(3,4,5), 1)
+           |     |                     .to_event(2))
+           |     |
+           |     |      x_axis = plate(&quot;x&quot;, 3, dim=-2)
+           |     |      y_axis = plate(&quot;y&quot;, 2, dim=-3)
+           |     |      with x_axis:
+           |. 3 1|          x = sample(&quot;x&quot;, Normal(0, 1))
+           |     |      with y_axis:
+           |2 1 1|          y = sample(&quot;y&quot;, Normal(0, 1))
+           |     |      with x_axis, y_axis:
+           |2 3 1|          xy = sample(&quot;xy&quot;, Normal(0, 1))
+           |2 3 1|5         z = sample(&quot;z&quot;, Normal(0, 1).expand([5]))
+           |     |                     .to_event(1))
 </pre></div>
 </div>
 <p>Note that it is safe to overprovision <code class="docutils literal notranslate"><span class="pre">max_plate_nesting=4</span></code> but we cannot underprovision <code class="docutils literal notranslate"><span class="pre">max_plate_nesting=2</span></code> (or Pyro will error). Let’s see how this works in practice.</p>
@@ -974,20 +992,20 @@ Sample Sites:
 <p>Let’s take a closer look at those dimensions. First note that Pyro allocates enumeration dims starting from the right at <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code>: Pyro allocates dim -3 to enumerate <code class="docutils literal notranslate"><span class="pre">a</span></code>, then dim -4 to enumerate <code class="docutils literal notranslate"><span class="pre">b</span></code>, then dim -5 to enumerate <code class="docutils literal notranslate"><span class="pre">c</span></code>, and finally dim -6 to enumerate <code class="docutils literal notranslate"><span class="pre">d</span></code>. Next note that samples only have extent (size &gt; 1) in the new enumeration dimension. This helps keep tensors small and computation cheap. (Note that the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> shape will be broadcast up to contain both
 enumeratin shape and batch shape, so e.g. <code class="docutils literal notranslate"><span class="pre">trace.nodes['d']['log_prob'].shape</span> <span class="pre">==</span> <span class="pre">(2,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">5,</span> <span class="pre">4)</span></code>.)</p>
 <p>We can draw a similar map of the tensor dimensions:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>     <span class="n">max_plate_nesting</span> <span class="o">=</span> <span class="mi">2</span>
-            <span class="o">|&lt;-&gt;|</span>
-<span class="n">enumeration</span> <span class="n">batch</span> <span class="n">event</span>
-<span class="o">------------|---|-----</span>
-           <span class="mi">6</span><span class="o">|</span><span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>     <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span><span class="p">))</span>
-         <span class="mi">2</span> <span class="mi">1</span><span class="o">|</span><span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>     <span class="n">b</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">a</span><span class="p">]))</span>
-            <span class="o">|</span>   <span class="o">|</span>     <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;c_plate&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
-       <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>         <span class="n">c</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.3</span><span class="p">))</span>
-            <span class="o">|</span>   <span class="o">|</span>         <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;d_plate&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
-     <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">1</span> <span class="mi">1</span><span class="o">|</span>             <span class="n">d</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.4</span><span class="p">))</span>
-     <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">1</span>            <span class="n">e_loc</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">long</span><span class="p">()]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="o">|</span>   <span class="o">|</span><span class="mi">7</span>            <span class="n">e_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">8.</span><span class="p">)</span>
-     <span class="mi">2</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="o">|</span><span class="mi">5</span> <span class="mi">4</span><span class="o">|</span><span class="mi">7</span>            <span class="n">e</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">e_loc</span><span class="p">,</span> <span class="n">e_scale</span><span class="p">)</span>
-            <span class="o">|</span>   <span class="o">|</span>                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>     max_plate_nesting = 2
+            |&lt;-&gt;|
+enumeration batch event
+------------|---|-----
+           6|1 1|     a = pyro.sample(&quot;a&quot;, Categorical(torch.ones(6) / 6))
+         2 1|1 1|     b = pyro.sample(&quot;b&quot;, Bernoulli(p[a]))
+            |   |     with pyro.plate(&quot;c_plate&quot;, 4):
+       2 1 1|1 1|         c = pyro.sample(&quot;c&quot;, Bernoulli(0.3))
+            |   |         with pyro.plate(&quot;d_plate&quot;, 5):
+     2 1 1 1|1 1|             d = pyro.sample(&quot;d&quot;, Bernoulli(0.4))
+     2 1 1 1|1 1|1            e_loc = locs[d.long()].unsqueeze(-1)
+            |   |7            e_scale = torch.arange(1., 8.)
+     2 1 1 1|5 4|7            e = pyro.sample(&quot;e&quot;, Normal(e_loc, e_scale)
+            |   |                             .to_event(1))
 </pre></div>
 </div>
 <p>To automatically examine this model with enumeration semantics, we can create an enumerated trace and then use <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">Trace.format_shapes()</a>:</p>

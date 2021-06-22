@@ -178,6 +178,8 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<ul>
+</ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
@@ -198,6 +200,7 @@
 <li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Understanding Pyro's Internals</span></p>
 <ul>
@@ -276,21 +279,35 @@
 /* CSS for nbsphinx extension */
 
 /* remove conflicting styling from Sphinx themes */
-div.nbinput.container,
-div.nbinput.container div.prompt,
-div.nbinput.container div.input_area,
-div.nbinput.container div[class*=highlight],
-div.nbinput.container div[class*=highlight] pre,
-div.nboutput.container,
-div.nboutput.container div.prompt,
-div.nboutput.container div.output_area,
-div.nboutput.container div[class*=highlight],
-div.nboutput.container div[class*=highlight] pre {
-    background: none;
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
     border: none;
-    padding: 0 0;
+    padding: 0;
     margin: 0;
     box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
 }
 
 /* avoid gaps between output lines */
@@ -391,7 +408,7 @@ div.nboutput.container div.output_area {
 div.nbinput.container div.input_area {
     border: 1px solid #e0e0e0;
     border-radius: 2px;
-    background: #f5f5f5;
+    /*background: #f5f5f5;*/
 }
 
 /* override MathJax center alignment in output cells */
@@ -457,6 +474,7 @@ div.nboutput.container div.output_area.rendered_html,
 div.nboutput.container div.output_area > div.output_javascript,
 div.nboutput.container div.output_area:not(.rendered_html) > img{
     padding: 5px;
+    margin: 0;
 }
 
 /* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
@@ -579,7 +597,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">conditioned_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;measurement&quot;</span><span class="p">:</span> <span class="mf">9.5</span><span class="p">})</span>
+<span></span><span class="n">conditioned_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;measurement&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">9.5</span><span class="p">)})</span>
 </pre></div>
 </div>
 </div>
@@ -602,8 +620,8 @@ div.rendered_html tbody tr:hover {
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">scale_obs</span><span class="p">(</span><span class="n">guess</span><span class="p">):</span>  <span class="c1"># equivalent to conditioned_scale above</span>
     <span class="n">weight</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guess</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
-     <span class="c1"># here we condition on measurement == 9.5</span>
-    <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;measurement&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="mf">9.5</span><span class="p">)</span>
+    <span class="c1"># here we condition on measurement == 9.5</span>
+    <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;measurement&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">9.5</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -615,15 +633,15 @@ div.rendered_html tbody tr:hover {
 <p>Inference algorithms in Pyro, such as <code class="docutils literal notranslate"><span class="pre">pyro.infer.SVI</span></code>, allow us to use arbitrary stochastic functions, which we will call <em>guide functions</em> or <em>guides</em>, as approximate posterior distributions. Guide functions must satisfy these two criteria to be valid approximations for a particular model: 1. all unobserved (i.e., not conditioned) sample statements that appear in the model appear in the guide. 2. the guide has the same input signature as the model (i.e., takes the same arguments)</p>
 <p>Guide functions can serve as programmable, data-dependent proposal distributions for importance sampling, rejection sampling, sequential Monte Carlo, MCMC, and independent Metropolis-Hastings, and as variational distributions or inference networks for stochastic variational inference. Currently, importance sampling, MCMC, and stochastic variational inference are implemented in Pyro, and we plan to add other algorithms in the future.</p>
 <p>Although the precise meaning of the guide is different across different inference algorithms, the guide function should generally be chosen so that, in principle, it is flexible enough to closely approximate the distribution over all unobserved <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements in the model.</p>
-<p>In the case of <code class="docutils literal notranslate"><span class="pre">scale</span></code>, it turns out that the true posterior distribution over <code class="docutils literal notranslate"><span class="pre">weight</span></code> given <code class="docutils literal notranslate"><span class="pre">guess</span></code> and <code class="docutils literal notranslate"><span class="pre">measurement</span></code> is actually <span class="math notranslate nohighlight">\({\sf Normal}(9.14, 0.6)\)</span>. As the model is quite simple, we are able to determine our posterior distribution of interest analytically (for derivation, see for example Section 3.4 of <a class="reference external" href="http://www.stat.cmu.edu/~brian/463-663/week09/Chapter%2003.pdf">http://www.stat.cmu.edu/~brian/463-663/week09/Chapter%2003.pdf</a> ).</p>
+<p>In the case of <code class="docutils literal notranslate"><span class="pre">scale</span></code>, it turns out that the true posterior distribution over <code class="docutils literal notranslate"><span class="pre">weight</span></code> given <code class="docutils literal notranslate"><span class="pre">guess</span></code> and <code class="docutils literal notranslate"><span class="pre">measurement</span></code> is actually <span class="math notranslate nohighlight">\({\sf Normal}(9.14, 0.6)\)</span>. As the model is quite simple, we are able to determine our posterior distribution of interest analytically (for derivation, see for example Section 3.4 of <a class="reference external" href="http://www.stat.cmu.edu/~brian/463-663/week09/Chapter%2003.pdf">these notes</a>).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">perfect_guide</span><span class="p">(</span><span class="n">guess</span><span class="p">):</span>
-    <span class="n">loc</span> <span class="o">=</span><span class="p">(</span><span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">guess</span> <span class="o">+</span> <span class="mf">9.5</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># 9.14</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="c1"># 0.6</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">guess</span> <span class="o">+</span> <span class="mf">9.5</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># 9.14</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.75</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>  <span class="c1"># 0.6</span>
     <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -697,11 +715,11 @@ to Pyro parameters is as easy as passing the relevant <code class="docutils lite
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
 <span class="n">svi</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">conditioned_scale</span><span class="p">,</span>
                      <span class="n">guide</span><span class="o">=</span><span class="n">scale_parametrized_guide</span><span class="p">,</span>
-                     <span class="n">optim</span><span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span> <span class="s2">&quot;momentum&quot;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">}),</span>
+                     <span class="n">optim</span><span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.003</span><span class="p">}),</span>
                      <span class="n">loss</span><span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">())</span>
 
 
-<span class="n">losses</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span>  <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+<span class="n">losses</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
 <span class="n">num_steps</span> <span class="o">=</span> <span class="mi">2500</span>
 <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
     <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">guess</span><span class="p">))</span>
@@ -722,8 +740,8 @@ to Pyro parameters is as easy as passing the relevant <code class="docutils lite
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-a =  9.107474327087402
-b =  0.6285384893417358
+a =  9.11483097076416
+b =  0.6279532313346863
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
