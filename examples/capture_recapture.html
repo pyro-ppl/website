@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Example: Capture-Recapture Models (CJS Models) &mdash; Pyro Tutorials 1.6.0 documentation</title>
+  <title>Example: Capture-Recapture Models (CJS Models) &mdash; Pyro Tutorials 1.7.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.7.0
               </div>
             
           
@@ -171,7 +171,10 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
@@ -359,14 +362,20 @@
         <span class="n">first_capture_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">)):</span>
             <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">first_capture_mask</span><span class="p">):</span>
-                <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+                <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span>
+                    <span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                <span class="p">)</span>
                 <span class="c1"># we use parallel enumeration to exactly sum out</span>
                 <span class="c1"># the discrete states z_t.</span>
-                <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
-                                <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                    <span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
+                    <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">},</span>
+                <span class="p">)</span>
                 <span class="n">mu_y_t</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z</span>
-                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span>
-                            <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">])</span>
+                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                    <span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span>
+                <span class="p">)</span>
             <span class="n">first_capture_mask</span> <span class="o">|=</span> <span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
 
 
@@ -387,17 +396,24 @@
     <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">)):</span>
         <span class="c1"># note that phi_t needs to be outside the plate, since</span>
         <span class="c1"># phi_t is shared across all N individuals</span>
-        <span class="n">phi_t</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span> \
-                <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="n">phi_t</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="p">)</span>
         <span class="k">with</span> <span class="n">animals_plate</span><span class="p">,</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">first_capture_mask</span><span class="p">):</span>
-            <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+            <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="p">)</span>
             <span class="c1"># we use parallel enumeration to exactly sum out</span>
             <span class="c1"># the discrete states z_t.</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
-                            <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
+                <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">},</span>
+            <span class="p">)</span>
             <span class="n">mu_y_t</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">])</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="n">first_capture_mask</span> <span class="o">|=</span> <span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
 
 
@@ -411,8 +427,11 @@
 <span class="k">def</span> <span class="nf">model_3</span><span class="p">(</span><span class="n">capture_history</span><span class="p">,</span> <span class="n">sex</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">logit</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="o">-</span><span class="n">p</span><span class="p">)</span>
+
     <span class="n">N</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">capture_history</span><span class="o">.</span><span class="n">shape</span>
-    <span class="n">phi_mean</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi_mean&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>  <span class="c1"># mean survival probability</span>
+    <span class="n">phi_mean</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="s2">&quot;phi_mean&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="p">)</span>  <span class="c1"># mean survival probability</span>
     <span class="n">phi_logit_mean</span> <span class="o">=</span> <span class="n">logit</span><span class="p">(</span><span class="n">phi_mean</span><span class="p">)</span>
     <span class="c1"># controls temporal variability of survival probability</span>
     <span class="n">phi_sigma</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi_sigma&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
@@ -423,19 +442,29 @@
     <span class="c1"># we create the plate once, outside of the loop over t</span>
     <span class="n">animals_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;animals&quot;</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">)):</span>
-        <span class="n">phi_logit_t</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi_logit_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                                  <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">phi_logit_mean</span><span class="p">,</span> <span class="n">phi_sigma</span><span class="p">))</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span> \
-                      <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">phi_logit_t</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;phi_logit_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">phi_logit_mean</span><span class="p">,</span> <span class="n">phi_sigma</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">phi_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">phi_logit_t</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">animals_plate</span><span class="p">,</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">first_capture_mask</span><span class="p">):</span>
-            <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+            <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="p">)</span>
             <span class="c1"># we use parallel enumeration to exactly sum out</span>
             <span class="c1"># the discrete states z_t.</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
-                            <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
+                <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">},</span>
+            <span class="p">)</span>
             <span class="n">mu_y_t</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">])</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="n">first_capture_mask</span> <span class="o">|=</span> <span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
 
 
@@ -462,14 +491,20 @@
         <span class="n">first_capture_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">)):</span>
             <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">first_capture_mask</span><span class="p">):</span>
-                <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+                <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span>
+                    <span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                <span class="p">)</span>
                 <span class="c1"># we use parallel enumeration to exactly sum out</span>
                 <span class="c1"># the discrete states z_t.</span>
-                <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
-                                <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                    <span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                    <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
+                    <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">},</span>
+                <span class="p">)</span>
                 <span class="n">mu_y_t</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z</span>
-                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span>
-                            <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">])</span>
+                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                    <span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span>
+                <span class="p">)</span>
             <span class="n">first_capture_mask</span> <span class="o">|=</span> <span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
 
 
@@ -499,24 +534,35 @@
     <span class="c1"># we create the plate once, outside of the loop over t</span>
     <span class="n">animals_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;animals&quot;</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">)):</span>
-        <span class="n">phi_gamma_t</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi_gamma_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span> \
-                      <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">phi_gamma_t</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;phi_gamma_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="p">)</span>
         <span class="n">phi_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">phi_beta</span> <span class="o">+</span> <span class="n">phi_gamma_t</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">animals_plate</span><span class="p">,</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">first_capture_mask</span><span class="p">):</span>
-            <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+            <span class="n">mu_z_t</span> <span class="o">=</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">*</span> <span class="n">phi_t</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="mi">1</span> <span class="o">-</span> <span class="n">first_capture_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="p">)</span>
             <span class="c1"># we use parallel enumeration to exactly sum out</span>
             <span class="c1"># the discrete states z_t.</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
-                            <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_z_t</span><span class="p">),</span>
+                <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">},</span>
+            <span class="p">)</span>
             <span class="n">mu_y_t</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">])</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mu_y_t</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="n">first_capture_mask</span> <span class="o">|=</span> <span class="n">capture_history</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
 
 
-<span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="s1">&#39;model_&#39;</span><span class="p">):]:</span> <span class="n">model</span>
-          <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-          <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;model_&#39;</span><span class="p">)}</span>
+<span class="n">models</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="s2">&quot;model_&quot;</span><span class="p">)</span> <span class="p">:]:</span> <span class="n">model</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;model_&quot;</span><span class="p">)</span>
+<span class="p">}</span>
 
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
@@ -525,24 +571,36 @@
 
     <span class="c1"># load data</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;dipper&quot;</span><span class="p">:</span>
-        <span class="n">capture_history_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;/dipper_capture_history.csv&#39;</span>
+        <span class="n">capture_history_file</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;/dipper_capture_history.csv&quot;</span>
+        <span class="p">)</span>
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;vole&quot;</span><span class="p">:</span>
-        <span class="n">capture_history_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;/meadow_voles_capture_history.csv&#39;</span>
+        <span class="n">capture_history_file</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+            <span class="o">+</span> <span class="s2">&quot;/meadow_voles_capture_history.csv&quot;</span>
+        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Available datasets are </span><span class="se">\&#39;</span><span class="s2">dipper</span><span class="se">\&#39;</span><span class="s2"> and </span><span class="se">\&#39;</span><span class="s2">vole</span><span class="se">\&#39;</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Available datasets are &#39;dipper&#39; and &#39;vole&#39;.&quot;</span><span class="p">)</span>
 
-    <span class="n">capture_history</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">capture_history_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">float</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">:]</span>
+    <span class="n">capture_history</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">capture_history_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">:]</span>
     <span class="n">N</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">capture_history</span><span class="o">.</span><span class="n">shape</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loaded </span><span class="si">{}</span><span class="s2"> capture history for </span><span class="si">{}</span><span class="s2"> individuals collected over </span><span class="si">{}</span><span class="s2"> time periods.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-          <span class="n">args</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;Loaded </span><span class="si">{}</span><span class="s2"> capture history for </span><span class="si">{}</span><span class="s2"> individuals collected over </span><span class="si">{}</span><span class="s2"> time periods.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">T</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;dipper&quot;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;4&quot;</span><span class="p">,</span> <span class="s2">&quot;5&quot;</span><span class="p">]:</span>
-        <span class="n">sex_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;/dipper_sex.csv&#39;</span>
-        <span class="n">sex</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">sex_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">float</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">sex_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;/dipper_sex.csv&quot;</span>
+        <span class="n">sex</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">sex_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">float</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loaded dipper sex data.&quot;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;vole&quot;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;4&quot;</span><span class="p">,</span> <span class="s2">&quot;5&quot;</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot run model_</span><span class="si">{}</span><span class="s2"> on meadow voles data, since we lack sex &quot;</span>
-                         <span class="s2">&quot;information for these animals.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Cannot run model_</span><span class="si">{}</span><span class="s2"> on meadow voles data, since we lack sex &quot;</span>
+            <span class="s2">&quot;information for these animals.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sex</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -552,7 +610,7 @@
     <span class="c1"># in the models to AutoDiagonalNormal (all of which begin with &#39;phi&#39;</span>
     <span class="c1"># or &#39;rho&#39;)</span>
     <span class="k">def</span> <span class="nf">expose_fn</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;phi&#39;</span><span class="p">,</span> <span class="s1">&#39;rho&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;phi&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">]</span>
 
     <span class="c1"># we use a mean field diagonal normal variational distributions (i.e. guide)</span>
     <span class="c1"># for the continuous latent variables.</span>
@@ -560,20 +618,29 @@
 
     <span class="c1"># since we enumerate the discrete random variables,</span>
     <span class="c1"># we need to use TraceEnum_ELBO or TraceTMC_ELBO.</span>
-    <span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
+    <span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">tmc</span><span class="p">:</span>
         <span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceTMC_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">tmc_model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">infer_config</span><span class="p">(</span>
             <span class="n">model</span><span class="p">,</span>
-            <span class="k">lambda</span> <span class="n">msg</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;num_samples&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">tmc_num_samples</span><span class="p">,</span> <span class="s2">&quot;expand&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span> <span class="k">if</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enumerate&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span> <span class="k">else</span> <span class="p">{})</span>  <span class="c1"># noqa: E501</span>
+            <span class="k">lambda</span> <span class="n">msg</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;num_samples&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">tmc_num_samples</span><span class="p">,</span> <span class="s2">&quot;expand&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enumerate&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span>
+            <span class="k">else</span> <span class="p">{},</span>
+        <span class="p">)</span>  <span class="c1"># noqa: E501</span>
         <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">tmc_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">vectorize_particles</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span>
+            <span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">vectorize_particles</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
         <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
 
     <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Beginning training of model_</span><span class="si">{}</span><span class="s2"> with Stochastic Variational Inference.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;Beginning training of model_</span><span class="si">{}</span><span class="s2"> with Stochastic Variational Inference.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">model</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_steps</span><span class="p">):</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">capture_history</span><span class="p">,</span> <span class="n">sex</span><span class="p">)</span>
@@ -582,23 +649,35 @@
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[iteration </span><span class="si">%03d</span><span class="s2">] loss: </span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">losses</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:])))</span>
 
     <span class="c1"># evaluate final trained model</span>
-    <span class="n">elbo_eval</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">vectorize_particles</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">elbo_eval</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span>
+        <span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">vectorize_particles</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
     <span class="n">svi_eval</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">elbo_eval</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Final loss: </span><span class="si">%.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">svi_eval</span><span class="o">.</span><span class="n">evaluate_loss</span><span class="p">(</span><span class="n">capture_history</span><span class="p">,</span> <span class="n">sex</span><span class="p">))</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;CJS capture-recapture model for ecological data&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;one of: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">keys</span><span class="p">()))))</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CJS capture-recapture model for ecological data&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-m&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--model&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;one of: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">keys</span><span class="p">()))),</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="s2">&quot;--dataset&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;dipper&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-steps&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-lr&quot;</span><span class="p">,</span> <span class="s2">&quot;--learning-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.002</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--tmc&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use Tensor Monte Carlo instead of exact enumeration &quot;</span>
-                             <span class="s2">&quot;to estimate the marginal likelihood. You probably don&#39;t want to do this, &quot;</span>
-                             <span class="s2">&quot;except to see that TMC makes Monte Carlo gradient estimation feasible &quot;</span>
-                             <span class="s2">&quot;even with very large numbers of non-reparametrized variables.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--tmc&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use Tensor Monte Carlo instead of exact enumeration &quot;</span>
+        <span class="s2">&quot;to estimate the marginal likelihood. You probably don&#39;t want to do this, &quot;</span>
+        <span class="s2">&quot;except to see that TMC makes Monte Carlo gradient estimation feasible &quot;</span>
+        <span class="s2">&quot;even with very large numbers of non-reparametrized variables.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--tmc-num-samples&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>

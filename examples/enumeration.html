@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Inference with Discrete Latent Variables &mdash; Pyro Tutorials 1.6.0 documentation</title>
+  <title>Inference with Discrete Latent Variables &mdash; Pyro Tutorials 1.7.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.7.0
               </div>
             
           
@@ -197,7 +197,10 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
@@ -613,19 +616,20 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
 <span class="kn">from</span> <span class="nn">pyro</span> <span class="kn">import</span> <span class="n">poutine</span>
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">,</span> <span class="n">infer_discrete</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoDiagonalNormal</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoNormal</span>
 <span class="kn">from</span> <span class="nn">pyro.ops.indexing</span> <span class="kn">import</span> <span class="n">Vindex</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.6.0&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.7.0&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="Overview">
 <h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
-<p>Pyro’s enumeration strategy encompasses popular algorithms including variable elimination, exact message passing, forward-filter-backward-sample, inside-out, Baum-Welch, and many other special-case algorithms. Aside from enumeration, Pyro implements a number of inference strategies including variational inference (<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html">SVI</a>) and monte carlo (<a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.HMC">HMC</a> and
-<a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.NUTS">NUTS</a>). Enumeration can be used either as a stand-alone strategy via <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.discrete.infer_discrete">infer_discrete</a>, or as a component of other strategies. Thus enumeration allows Pyro to marginalize out discrete latent variables in HMC and SVI models, and to use variational enumeration of discrete variables in SVI guides.</p>
+<p>Pyro’s enumeration strategy (<a class="reference external" href="https://arxiv.org/abs/1902.03210">Obermeyer et al. 2019</a>) encompasses popular algorithms including variable elimination, exact message passing, forward-filter-backward-sample, inside-out, Baum-Welch, and many other special-case algorithms. Aside from enumeration, Pyro implements a number of inference strategies including variational inference (<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html">SVI</a>) and monte carlo
+(<a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.HMC">HMC</a> and <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.NUTS">NUTS</a>). Enumeration can be used either as a stand-alone strategy via <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.discrete.infer_discrete">infer_discrete</a>, or as a component of other strategies. Thus enumeration allows Pyro to marginalize out discrete latent variables in HMC and SVI models, and to use variational enumeration of discrete
+variables in SVI guides.</p>
 </div>
 <div class="section" id="Mechanics-of-enumeration">
 <h3>Mechanics of enumeration<a class="headerlink" href="#Mechanics-of-enumeration" title="Permalink to this headline">¶</a></h3>
@@ -637,11 +641,11 @@ div.rendered_html tbody tr:hover {
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">5</span><span class="p">)))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;model z = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;model z = </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">5</span><span class="p">)))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;guide z = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;guide z = </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="n">elbo</span> <span class="o">=</span> <span class="n">Trace_ELBO</span><span class="p">()</span>
 <span class="n">elbo</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">);</span>
@@ -722,15 +726,18 @@ Tutorial</a>). This allows Pyro to determine the dependency graph among variable
     <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">y</span><span class="p">]))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;model x.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;model y.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;model z.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  model x.shape = </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  model y.shape = </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  model z.shape = </span><span class="si">{</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span>
 
 <span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
     <span class="k">pass</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sampling:&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enumerated Inference:&quot;</span><span class="p">)</span>
 <span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">elbo</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">);</span>
 </pre></div>
@@ -741,9 +748,14 @@ Tutorial</a>). This allows Pyro to determine the dependency graph among variable
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-model x.shape = torch.Size([3])
-model y.shape = torch.Size([3, 1])
-model z.shape = torch.Size([3, 1, 1])
+Sampling:
+  model x.shape = torch.Size([])
+  model y.shape = torch.Size([])
+  model z.shape = torch.Size([])
+Enumerated Inference:
+  model x.shape = torch.Size([3])
+  model y.shape = torch.Size([3, 1])
+  model z.shape = torch.Size([3, 1, 1])
 </pre></div></div>
 </div>
 </div>
@@ -761,9 +773,9 @@ which dimensions are available for enumeration; this is related to the <code cla
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">serving_model</span> <span class="o">=</span> <span class="n">infer_discrete</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">first_available_dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">serving_model</span><span class="p">()</span>  <span class="c1"># takes the same args as model(), here no args</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;y = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;z = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x = </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y = </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;z = </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -772,22 +784,22 @@ which dimensions are available for enumeration; this is related to the <code cla
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-model x.shape = torch.Size([3])
-model y.shape = torch.Size([3, 1])
-model z.shape = torch.Size([3, 1, 1])
-model x.shape = torch.Size([])
-model y.shape = torch.Size([])
-model z.shape = torch.Size([])
-x = 0
-y = 2
-z = 1
+  model x.shape = torch.Size([3])
+  model y.shape = torch.Size([3, 1])
+  model z.shape = torch.Size([3, 1, 1])
+  model x.shape = torch.Size([])
+  model y.shape = torch.Size([])
+  model z.shape = torch.Size([])
+x = 2
+y = 1
+z = 0
 </pre></div></div>
 </div>
 <p>Notice that under the hood <code class="docutils literal notranslate"><span class="pre">infer_discrete</span></code> runs the model twice: first in forward-filter mode where sites are enumerated, then in replay-backward-sample model where sites are sampled. <code class="docutils literal notranslate"><span class="pre">infer_discrete</span></code> can also perform MAP inference by passing <code class="docutils literal notranslate"><span class="pre">temperature=0</span></code>. Note that while <code class="docutils literal notranslate"><span class="pre">infer_discrete</span></code> produces correct posterior samples, it does not currently produce correct logprobs, and should not be used in other gradient-based inference algorthms.</p>
 </div>
 <div class="section" id="Indexing-with-enumerated-variables">
 <h4>Indexing with enumerated variables<a class="headerlink" href="#Indexing-with-enumerated-variables" title="Permalink to this headline">¶</a></h4>
-<p>It can be tricky to use <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html">advanced indexing</a> to select an element of a tensor using one or more enumerated variables. For example, suppose a plated random variable <code class="docutils literal notranslate"><span class="pre">z</span></code> depends on two different random variables:</p>
+<p>It can be tricky to use <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html">advanced indexing</a> to select an element of a tensor using one or more enumerated variables. This is especially true in Pyro models where your model’s indexing operations need to work in multiple interpretations: both sampling from the model (to generate data) and during enumerated inference. For example, suppose a plated random variable <code class="docutils literal notranslate"><span class="pre">z</span></code> depends on two different random variables:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">(),</span>
                <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">simplex</span><span class="p">)</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
@@ -805,7 +817,8 @@ z = 1
          <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">device</span><span class="p">)]</span>
 </pre></div>
 </div>
-<p>Pyro provides a helper <a class="reference external" href="http://docs.pyro.ai/en/dev/ops.html#pyro.ops.indexing.Vindex">Vindex()[]</a> to use enumeration-compatible advanced indexing semantics rather than PyTorch/NumPy semantics. <code class="docutils literal notranslate"><span class="pre">Vindex()[]</span></code> makes the <code class="docutils literal notranslate"><span class="pre">.__getitem__()</span></code> operator broadcast like other familiar operators <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code> etc. Using <code class="docutils literal notranslate"><span class="pre">Vindex()[]</span></code> we can write the same expression as if <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> were numbers (i.e. not enumerated):</p>
+<p>Pyro provides a helper <a class="reference external" href="http://docs.pyro.ai/en/dev/ops.html#pyro.ops.indexing.Vindex">Vindex()[]</a> to use enumeration-compatible advanced indexing semantics rather than standard PyTorch/NumPy semantics. (Note the <code class="docutils literal notranslate"><span class="pre">Vindex</span></code> name and semantics follow the Numpy Enhancement Proposal <a class="reference external" href="https://numpy.org/neps/nep-0021-advanced-indexing.html">NEP 21</a>). <code class="docutils literal notranslate"><span class="pre">Vindex()[]</span></code> makes the <code class="docutils literal notranslate"><span class="pre">.__getitem__()</span></code> operator broadcast like other familiar operators <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">*</span></code> etc. Using <code class="docutils literal notranslate"><span class="pre">Vindex()[]</span></code> we can write
+the same expression as if <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> were numbers (i.e. not enumerated):</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="c1"># Recommended syntax compatible with enumeration:</span>
 <span class="n">p_xy</span> <span class="o">=</span> <span class="n">Vindex</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">:]</span>
 </pre></div>
@@ -824,17 +837,20 @@ z = 1
     <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;z_plate&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
         <span class="n">p_xy</span> <span class="o">=</span> <span class="n">Vindex</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">p_xy</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;   p.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;   x.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;   y.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;p_xy.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p_xy</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;   z.shape = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;     p.shape = </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;     x.shape = </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;     y.shape = </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  p_xy.shape = </span><span class="si">{</span><span class="n">p_xy</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;     z.shape = </span><span class="si">{</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span>
 
 <span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
     <span class="k">pass</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sampling:&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enumerated Inference:&quot;</span><span class="p">)</span>
 <span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">elbo</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">);</span>
 </pre></div>
@@ -845,11 +861,78 @@ z = 1
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-   p.shape = torch.Size([5, 4, 3, 2])
-   x.shape = torch.Size([4, 1])
-   y.shape = torch.Size([3, 1, 1])
-p_xy.shape = torch.Size([3, 4, 5, 2])
-   z.shape = torch.Size([2, 1, 1, 1])
+Sampling:
+     p.shape = torch.Size([5, 4, 3, 2])
+     x.shape = torch.Size([])
+     y.shape = torch.Size([])
+  p_xy.shape = torch.Size([5, 2])
+     z.shape = torch.Size([5])
+Enumerated Inference:
+     p.shape = torch.Size([5, 4, 3, 2])
+     x.shape = torch.Size([4, 1])
+     y.shape = torch.Size([3, 1, 1])
+  p_xy.shape = torch.Size([3, 4, 5, 2])
+     z.shape = torch.Size([2, 1, 1, 1])
+</pre></div></div>
+</div>
+<p>When enumering within a plate (as described in the next section) <code class="docutils literal notranslate"><span class="pre">Vindex</span></code> can also be used together with capturing the plate index via <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">pyro.plate(...)</span> <span class="pre">as</span> <span class="pre">i</span></code> to index into batch dimensions. Here’s an example with nontrivial event dimensions due to the <code class="docutils literal notranslate"><span class="pre">Dirichlet</span></code> distribution.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nd">@config_enumerate</span>
+<span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
+    <span class="n">data_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data_plate&quot;</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">feature_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;feature_plate&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">component_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;component_plate&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">feature_plate</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">component_plate</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)))</span>
+    <span class="k">with</span> <span class="n">data_plate</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+        <span class="k">with</span> <span class="n">feature_plate</span> <span class="k">as</span> <span class="n">vdx</span><span class="p">:</span>                <span class="c1"># Capture plate index.</span>
+            <span class="n">pc</span> <span class="o">=</span> <span class="n">Vindex</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="n">vdx</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">c</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># Reshape it and use in Vindex.</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">pc</span><span class="p">),</span>
+                            <span class="n">obs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    p.shape = </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    c.shape = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  vdx.shape = </span><span class="si">{</span><span class="n">vdx</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    pc.shape = </span><span class="si">{</span><span class="n">pc</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    x.shape = </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
+    <span class="n">feature_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;feature_plate&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">component_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;component_plate&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">feature_plate</span><span class="p">,</span> <span class="n">component_plate</span><span class="p">:</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)))</span>
+
+<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sampling:&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enumerated Inference:&quot;</span><span class="p">)</span>
+<span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">elbo</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Sampling:
+    p.shape = torch.Size([5, 4, 3])
+    c.shape = torch.Size([6])
+  vdx.shape = torch.Size([5])
+    pc.shape = torch.Size([5, 6, 3])
+    x.shape = torch.Size([5, 6])
+Enumerated Inference:
+    p.shape = torch.Size([5, 4, 3])
+    c.shape = torch.Size([4, 1, 1])
+  vdx.shape = torch.Size([5])
+    pc.shape = torch.Size([4, 5, 1, 3])
+    x.shape = torch.Size([5, 6])
 </pre></div></div>
 </div>
 </div>
@@ -859,29 +942,32 @@ p_xy.shape = torch.Size([3, 4, 5, 2])
 <p>Pyro <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">plates</a> express conditional independence among random variables. Pyro’s enumeration strategy can take advantage of plates to reduce the high cost (exponential in the size of the plate) of enumerating a cartesian product down to a low cost (linear in the size of the plate) of enumerating conditionally independent random variables in lock-step. This is especially important for e.g. minibatched data.</p>
 <p>To illustrate, consider a gaussian mixture model with shared variance and different mean.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="nd">@config_enumerate</span>
 <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">num_components</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running model with </span><span class="si">{}</span><span class="s1"> data points&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Running model with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> data points&quot;</span><span class="p">)</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_components</span><span class="p">)))</span>
     <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_components</span><span class="p">))</span>
     <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;components&quot;</span><span class="p">,</span> <span class="n">num_components</span><span class="p">):</span>
         <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
     <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x.shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    x.shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;dist.Normal(loc[x], scale).batch_shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    dist.Normal(loc[x], scale).batch_shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">batch_shape</span><span class="p">))</span>
 
-<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoDiagonalNormal</span><span class="p">(</span><span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">hide</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">]))</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">hide</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">]))</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sampling:&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enumerated Inference:&quot;</span><span class="p">)</span>
 <span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">elbo</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
 </pre></div>
@@ -892,20 +978,26 @@ p_xy.shape = torch.Size([3, 4, 5, 2])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Running model with 10 data points
-x.shape = torch.Size([10])
-dist.Normal(loc[x], scale).batch_shape = torch.Size([10])
-Running model with 10 data points
-x.shape = torch.Size([3, 1])
-dist.Normal(loc[x], scale).batch_shape = torch.Size([3, 1])
+Sampling:
+  Running model with 10 data points
+    x.shape = torch.Size([10])
+    dist.Normal(loc[x], scale).batch_shape = torch.Size([10])
+Enumerated Inference:
+  Running model with 10 data points
+    x.shape = torch.Size([10])
+    dist.Normal(loc[x], scale).batch_shape = torch.Size([10])
+  Running model with 10 data points
+    x.shape = torch.Size([3, 1])
+    dist.Normal(loc[x], scale).batch_shape = torch.Size([3, 1])
 </pre></div></div>
 </div>
-<p>Observe that the model is run twice, first by the <code class="docutils literal notranslate"><span class="pre">AutoDiagonalNormal</span></code> to trace sample sites, and second by <code class="docutils literal notranslate"><span class="pre">elbo</span></code> to compute loss. In the first run, <code class="docutils literal notranslate"><span class="pre">x</span></code> has the standard interpretation of one sample per datum, hence shape <code class="docutils literal notranslate"><span class="pre">(10,)</span></code>. In the second run enumeration can use the same three values <code class="docutils literal notranslate"><span class="pre">(3,1)</span></code> for all data points, and relies on broadcasting for any dependent sample or observe sites that depend on data. For example, in the <code class="docutils literal notranslate"><span class="pre">pyro.sample(&quot;obs&quot;,...)</span></code> statement, the distribution has
-shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span></code>, the data has shape<code class="docutils literal notranslate"><span class="pre">(10,)</span></code>, and the broadcasted log probability tensor has shape <code class="docutils literal notranslate"><span class="pre">(3,10)</span></code>.</p>
+<p>Observe that during inference the model is run twice, first by the <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> to trace sample sites, and second by <code class="docutils literal notranslate"><span class="pre">elbo</span></code> to compute loss. In the first run, <code class="docutils literal notranslate"><span class="pre">x</span></code> has the standard interpretation of one sample per datum, hence shape <code class="docutils literal notranslate"><span class="pre">(10,)</span></code>. In the second run enumeration can use the same three values <code class="docutils literal notranslate"><span class="pre">(3,1)</span></code> for all data points, and relies on broadcasting for any dependent sample or observe sites that depend on data. For example, in the <code class="docutils literal notranslate"><span class="pre">pyro.sample(&quot;obs&quot;,...)</span></code> statement, the
+distribution has shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span></code>, the data has shape<code class="docutils literal notranslate"><span class="pre">(10,)</span></code>, and the broadcasted log probability tensor has shape <code class="docutils literal notranslate"><span class="pre">(3,10)</span></code>.</p>
 <p>For a more in-depth treatment of enumeration in mixture models, see the <a class="reference external" href="http://pyro.ai/examples/gmm.html">Gaussian Mixture Model Tutorial</a> and the <a class="reference external" href="http://pyro.ai/examples/hmm.html">HMM Example</a>.</p>
 <div class="section" id="Dependencies-among-plates">
 <h4>Dependencies among plates<a class="headerlink" href="#Dependencies-among-plates" title="Permalink to this headline">¶</a></h4>
-<p>The computational savings of enumerating in vectorized plates comes with restrictions on the dependency structure of models. These restrictions are in addition to the usual restrictions of conditional independence. The enumeration restrictions are checked by <code class="docutils literal notranslate"><span class="pre">TraceEnum_ELBO</span></code> and will result in an error if violated (however the usual conditional independence restriction cannot be generally verified by Pyro). For completeness we list all three restrictions:</p>
+<p>The computational savings of enumerating in vectorized plates comes with restrictions on the dependency structure of models (as described in (<a class="reference external" href="https://arxiv.org/abs/1902.03210">Obermeyer et al. 2019</a>)). These restrictions are in addition to the usual restrictions of conditional independence. The enumeration restrictions are checked by <code class="docutils literal notranslate"><span class="pre">TraceEnum_ELBO</span></code> and will result in an error if violated (however the usual conditional independence restriction cannot be generally verified by Pyro). For
+completeness we list all three restrictions:</p>
 </div>
 </div>
 </div>
@@ -915,7 +1007,7 @@ shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span><
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">invalid_model</span><span class="p">():</span>
     <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;invalid&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -935,7 +1027,7 @@ shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span><
 <span class="k">def</span> <span class="nf">valid_model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;plate&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>  <span class="c1"># &lt;--- valid sequential plate</span>
-        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)))</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)))</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
@@ -970,9 +1062,9 @@ shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span><
     <span class="k">with</span> <span class="n">plate_1</span><span class="p">:</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">plate_2</span><span class="p">:</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
         <span class="k">with</span> <span class="n">plate_1</span><span class="p">:</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">((</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.</span><span class="p">))</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;z_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">((</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.</span><span class="p">))</span>
             <span class="o">...</span>
 </pre></div>
 </div>
@@ -981,7 +1073,7 @@ shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span><
 <h3>Time series example<a class="headerlink" href="#Time-series-example" title="Permalink to this headline">¶</a></h3>
 <p>Consider a discrete HMM with latent states <span class="math notranslate nohighlight">\(x_t\)</span> and observations <span class="math notranslate nohighlight">\(y_t\)</span>. Suppose we want to learn the transition and emission probabilities.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -990,7 +1082,7 @@ shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span><
 <span class="n">data</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_steps</span><span class="p">,</span> <span class="n">data_dim</span><span class="p">))</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
 
 <span class="k">def</span> <span class="nf">hmm_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">data_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running for </span><span class="si">{}</span><span class="s1"> time steps&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> time steps&quot;</span><span class="p">)</span>
     <span class="c1"># Sample global matrices wrt a Jeffreys prior.</span>
     <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;hidden_state&quot;</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">):</span>
         <span class="n">transition</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;transition&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">)))</span>
@@ -998,20 +1090,20 @@ shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span><
 
     <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># initial state</span>
     <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">transition</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">transition</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span>
                         <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">emission</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span> <span class="n">obs</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">.shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  y_</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">emission</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span> <span class="n">obs</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  x_</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.shape = </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>We can learn the global parameters using SVI with an autoguide.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">hmm_guide</span> <span class="o">=</span> <span class="n">AutoDiagonalNormal</span><span class="p">(</span><span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">hmm_model</span><span class="p">,</span> <span class="n">expose</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;transition&quot;</span><span class="p">,</span> <span class="s2">&quot;emission&quot;</span><span class="p">]))</span>
+<span></span><span class="n">hmm_guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">hmm_model</span><span class="p">,</span> <span class="n">expose</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;transition&quot;</span><span class="p">,</span> <span class="s2">&quot;emission&quot;</span><span class="p">]))</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
 <span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -1025,30 +1117,30 @@ shape <code class="docutils literal notranslate"><span class="pre">(3,1)</span><
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Running for 10 time steps
-x_0.shape = torch.Size([])
-x_1.shape = torch.Size([])
-x_2.shape = torch.Size([])
-x_3.shape = torch.Size([])
-x_4.shape = torch.Size([])
-x_5.shape = torch.Size([])
-x_6.shape = torch.Size([])
-x_7.shape = torch.Size([])
-x_8.shape = torch.Size([])
-x_9.shape = torch.Size([])
+  x_0.shape = torch.Size([])
+  x_1.shape = torch.Size([])
+  x_2.shape = torch.Size([])
+  x_3.shape = torch.Size([])
+  x_4.shape = torch.Size([])
+  x_5.shape = torch.Size([])
+  x_6.shape = torch.Size([])
+  x_7.shape = torch.Size([])
+  x_8.shape = torch.Size([])
+  x_9.shape = torch.Size([])
 Running for 10 time steps
-x_0.shape = torch.Size([10, 1])
-x_1.shape = torch.Size([10, 1, 1])
-x_2.shape = torch.Size([10, 1, 1, 1])
-x_3.shape = torch.Size([10, 1, 1, 1, 1])
-x_4.shape = torch.Size([10, 1, 1, 1, 1, 1])
-x_5.shape = torch.Size([10, 1, 1, 1, 1, 1, 1])
-x_6.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1])
-x_7.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1, 1])
-x_8.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1, 1, 1])
-x_9.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+  x_0.shape = torch.Size([10, 1])
+  x_1.shape = torch.Size([10, 1, 1])
+  x_2.shape = torch.Size([10, 1, 1, 1])
+  x_3.shape = torch.Size([10, 1, 1, 1, 1])
+  x_4.shape = torch.Size([10, 1, 1, 1, 1, 1])
+  x_5.shape = torch.Size([10, 1, 1, 1, 1, 1, 1])
+  x_6.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1])
+  x_7.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1, 1])
+  x_8.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+  x_9.shape = torch.Size([10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
 </pre></div></div>
 </div>
-<p>Notice that the model was run twice here: first it was run without enumeration by <code class="docutils literal notranslate"><span class="pre">AutoDiagonalNormal</span></code>, so that the autoguide can record all sample sites; then second it is run by <code class="docutils literal notranslate"><span class="pre">TraceEnum_ELBO</span></code> with enumeration enabled. We see in the first run that samples have the standard interpretation, whereas in the second run samples have the enumeration interpretation.</p>
+<p>Notice that the model was run twice here: first it was run without enumeration by <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code>, so that the autoguide can record all sample sites; then second it is run by <code class="docutils literal notranslate"><span class="pre">TraceEnum_ELBO</span></code> with enumeration enabled. We see in the first run that samples have the standard interpretation, whereas in the second run samples have the enumeration interpretation.</p>
 <p>For more complex examples, including minibatching and multiple plates, see the <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/hmm.py">HMM tutorial</a>.</p>
 <div class="section" id="How-to-enumerate-more-than-25-variables">
 <h4>How to enumerate more than 25 variables<a class="headerlink" href="#How-to-enumerate-more-than-25-variables" title="Permalink to this headline">¶</a></h4>
@@ -1059,7 +1151,7 @@ each step of the loop depend only on variables outside of the loop and variables
 </pre></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1070,10 +1162,10 @@ each step of the loop depend only on variables outside of the loop and variables
 
     <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># initial state</span>
     <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">transition</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">transition</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span>
                         <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">emission</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span> <span class="n">obs</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">.shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y_</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">emission</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span> <span class="n">obs</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.shape = </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="c1"># We&#39;ll reuse the same guide and elbo.</span>
 <span class="n">elbo</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">hmm_model</span><span class="p">,</span> <span class="n">hmm_guide</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_dim</span><span class="o">=</span><span class="n">data_dim</span><span class="p">);</span>

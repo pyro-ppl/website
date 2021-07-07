@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Example: Discrete Factor Graph Inference with Plated Einsum &mdash; Pyro Tutorials 1.6.0 documentation</title>
+  <title>Example: Discrete Factor Graph Inference with Plated Einsum &mdash; Pyro Tutorials 1.7.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.7.0
               </div>
             
           
@@ -171,7 +171,10 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
@@ -337,7 +340,7 @@
 
 <span class="sd">    This is cheap but less numerically stable than using the torch_log backend.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;prob&#39;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plates&#39;</span><span class="p">]</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;prob&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
 
         <span class="c1"># This simply wraps einsum for jit compilation.</span>
@@ -355,12 +358,14 @@
 
 <span class="sd">    This simulates evaluating an undirected graphical model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;logprob&#39;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plates&#39;</span><span class="p">]</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;logprob&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
 
         <span class="c1"># This simply wraps einsum for jit compilation.</span>
         <span class="k">def</span> <span class="nf">_einsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">einsum</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;pyro.ops.einsum.torch_log&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">einsum</span><span class="p">(</span>
+                <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pyro.ops.einsum.torch_log&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
 
         <span class="n">_CACHE</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">_einsum</span><span class="p">,</span> <span class="n">operands</span><span class="p">,</span> <span class="n">check_trace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -373,12 +378,14 @@
 
 <span class="sd">    This is simulates training an undirected graphical model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;gradient&#39;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plates&#39;</span><span class="p">]</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;gradient&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
 
         <span class="c1"># This wraps einsum for jit compilation, but we will call backward on the result.</span>
         <span class="k">def</span> <span class="nf">_einsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">einsum</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;pyro.ops.einsum.torch_log&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">einsum</span><span class="p">(</span>
+                <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pyro.ops.einsum.torch_log&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
 
         <span class="n">_CACHE</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">_einsum</span><span class="p">,</span> <span class="n">operands</span><span class="p">,</span> <span class="n">check_trace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -391,8 +398,9 @@
         <span class="n">losses</span> <span class="o">=</span> <span class="p">(</span><span class="n">losses</span><span class="p">,)</span>
 
     <span class="c1"># Run backward pass.</span>
-    <span class="n">grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">operands</span><span class="p">,</span> <span class="n">retain_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_unused</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                  <span class="k">for</span> <span class="n">loss</span> <span class="ow">in</span> <span class="n">losses</span><span class="p">)</span>
+    <span class="n">grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">grad</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">operands</span><span class="p">,</span> <span class="n">retain_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_unused</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">loss</span> <span class="ow">in</span> <span class="n">losses</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">grads</span>
 
 
@@ -402,8 +410,8 @@
 
 <span class="sd">    This simulates serving predictions from an undirected graphical model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">backend</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;backend&#39;</span><span class="p">,</span> <span class="s1">&#39;pyro.ops.einsum.torch_sample&#39;</span><span class="p">)</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="n">backend</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">),</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plates&#39;</span><span class="p">]</span>
+    <span class="n">backend</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;backend&quot;</span><span class="p">,</span> <span class="s2">&quot;pyro.ops.einsum.torch_sample&quot;</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">backend</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">),</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
 
         <span class="c1"># This wraps a complete adjoint algorithm call.</span>
@@ -437,19 +445,25 @@
 
 
 <span class="k">def</span> <span class="nf">jit_map</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_jit_adjoint</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;pyro.ops.einsum.torch_map&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_jit_adjoint</span><span class="p">(</span>
+        <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pyro.ops.einsum.torch_map&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">jit_sample</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_jit_adjoint</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;pyro.ops.einsum.torch_sample&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_jit_adjoint</span><span class="p">(</span>
+        <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pyro.ops.einsum.torch_sample&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">jit_marginal</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_jit_adjoint</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;pyro.ops.einsum.torch_marginal&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_jit_adjoint</span><span class="p">(</span>
+        <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pyro.ops.einsum.torch_marginal&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">time_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">iters</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;iters&#39;</span><span class="p">)</span>
+    <span class="n">iters</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;iters&quot;</span><span class="p">)</span>
     <span class="n">_CACHE</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>  <span class="c1"># Avoid memory leaks.</span>
     <span class="n">fn</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -463,46 +477,56 @@
 
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s1">&#39;torch.cuda.FloatTensor&#39;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s1">&#39;torch.FloatTensor&#39;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.FloatTensor&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;prob&#39;</span><span class="p">,</span> <span class="s1">&#39;logprob&#39;</span><span class="p">,</span> <span class="s1">&#39;gradient&#39;</span><span class="p">,</span> <span class="s1">&#39;marginal&#39;</span><span class="p">,</span> <span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="s1">&#39;sample&#39;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;prob&quot;</span><span class="p">,</span> <span class="s2">&quot;logprob&quot;</span><span class="p">,</span> <span class="s2">&quot;gradient&quot;</span><span class="p">,</span> <span class="s2">&quot;marginal&quot;</span><span class="p">,</span> <span class="s2">&quot;map&quot;</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">]:</span>
             <span class="n">args</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
             <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plate size  Time per iteration of </span><span class="si">{}</span><span class="s1"> (ms)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">))</span>
-    <span class="n">fn</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;jit_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">)]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Plate size  Time per iteration of </span><span class="si">{}</span><span class="s2"> (ms)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">))</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="s2">&quot;jit_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">)]</span>
     <span class="n">equation</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">equation</span>
     <span class="n">plates</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">plates</span>
-    <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">equation</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&gt;&#39;</span><span class="p">)</span>
-    <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span> <span class="o">=</span> <span class="n">equation</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
 
     <span class="c1"># Vary all plate sizes at the same time.</span>
     <span class="k">for</span> <span class="n">plate_size</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">max_plate_size</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
         <span class="n">operands</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">dims</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
-            <span class="n">shape</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="n">plate_size</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">plates</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">dim_size</span>
-                                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">])</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">plate_size</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">plates</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">dim_size</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">]</span>
+            <span class="p">)</span>
             <span class="n">operands</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">()</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">())</span>
 
-        <span class="n">time</span> <span class="o">=</span> <span class="n">time_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">plates</span><span class="o">=</span><span class="n">plates</span><span class="p">,</span> <span class="n">modulo_total</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                       <span class="n">iters</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">iters</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{: &lt;11s}</span><span class="s1"> </span><span class="si">{:0.4g}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> ** </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">plate_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">plates</span><span class="p">)),</span> <span class="n">time</span> <span class="o">*</span> <span class="mf">1e3</span><span class="p">))</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">time_fn</span><span class="p">(</span>
+            <span class="n">fn</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">plates</span><span class="o">=</span><span class="n">plates</span><span class="p">,</span> <span class="n">modulo_total</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">iters</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">{: &lt;11s}</span><span class="s2"> </span><span class="si">{:0.4g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> ** </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">plate_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">plates</span><span class="p">)),</span> <span class="n">time</span> <span class="o">*</span> <span class="mf">1e3</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;plated einsum profiler&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-e&#39;</span><span class="p">,</span> <span class="s1">&#39;--equation&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;a,abi,bcij,adj,deij-&gt;&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--plates&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--dim-size&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="s1">&#39;--max-plate-size&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;--iters&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cuda&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--method&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;one of: prob, logprob, gradient, marginal, map, sample&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;plated einsum profiler&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="s2">&quot;--equation&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;a,abi,bcij,adj,deij-&gt;&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="s2">&quot;--plates&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ij&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="s2">&quot;--dim-size&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--max-plate-size&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--iters&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--cuda&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-m&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--method&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;one of: prob, logprob, gradient, marginal, map, sample&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </pre></div>

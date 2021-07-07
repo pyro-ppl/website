@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mini-Pyro &mdash; Pyro Tutorials 1.6.0 documentation</title>
+  <title>Mini-Pyro &mdash; Pyro Tutorials 1.7.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.7.0
               </div>
             
           
@@ -171,7 +171,10 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
@@ -375,8 +378,9 @@
     <span class="c1"># trace illustrates why we need postprocess_message in addition to process_message:</span>
     <span class="c1"># We only want to record a value after all other effects have been applied</span>
     <span class="k">def</span> <span class="nf">postprocess_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;sample&quot;</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="p">,</span> \
-            <span class="s2">&quot;sample sites must have unique names&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;sample&quot;</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trace</span>
+        <span class="p">),</span> <span class="s2">&quot;sample sites must have unique names&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="p">[</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">get_trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -420,18 +424,21 @@
 
     <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;torch&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_rng_state</span><span class="p">(),</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">getstate</span><span class="p">(),</span> <span class="s1">&#39;numpy&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+            <span class="s2">&quot;torch&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_rng_state</span><span class="p">(),</span>
+            <span class="s2">&quot;random&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">getstate</span><span class="p">(),</span>
+            <span class="s2">&quot;numpy&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">(),</span>
         <span class="p">}</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
         <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
         <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng_seed</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">set_rng_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s1">&#39;torch&#39;</span><span class="p">])</span>
-        <span class="n">random</span><span class="o">.</span><span class="n">setstate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s1">&#39;random&#39;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="s1">&#39;numpy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_rng_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s2">&quot;torch&quot;</span><span class="p">])</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">setstate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s2">&quot;random&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;numpy&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s1">&#39;numpy&#39;</span><span class="p">])</span>
+
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">[</span><span class="s2">&quot;numpy&quot;</span><span class="p">])</span>
 
 
 <span class="c1"># This limited implementation of PlateMessenger only implements broadcasting.</span>
@@ -469,7 +476,7 @@
     <span class="c1"># A Messenger that sets msg[&quot;stop&quot;] == True also prevents application</span>
     <span class="c1"># of postprocess_message by Messengers above it on the stack</span>
     <span class="c1"># via the pointer variable from the process_message loop</span>
-    <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="n">PYRO_STACK</span><span class="p">[</span><span class="o">-</span><span class="n">pointer</span><span class="o">-</span><span class="mi">1</span><span class="p">:]:</span>
+    <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="n">PYRO_STACK</span><span class="p">[</span><span class="o">-</span><span class="n">pointer</span> <span class="o">-</span> <span class="mi">1</span> <span class="p">:]:</span>
         <span class="n">handler</span><span class="o">.</span><span class="n">postprocess_message</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">msg</span>
 
@@ -477,7 +484,7 @@
 <span class="c1"># sample is an effectful version of Distribution.sample(...)</span>
 <span class="c1"># When any effect handlers are active, it constructs an initial message and calls apply_stack.</span>
 <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">obs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="c1"># if there are no active Messengers, we just draw a sample and return it as expected:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">PYRO_STACK</span><span class="p">:</span>
@@ -500,7 +507,12 @@
 
 <span class="c1"># param is an effectful version of PARAM_STORE.setdefault that also handles constraints.</span>
 <span class="c1"># When any effect handlers are active, it constructs an initial message and calls apply_stack.</span>
-<span class="k">def</span> <span class="nf">param</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">init_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">real</span><span class="p">,</span> <span class="n">event_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">param</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">,</span>
+    <span class="n">init_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">constraint</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">real</span><span class="p">,</span>
+    <span class="n">event_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
     <span class="k">if</span> <span class="n">event_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;minipyro.plate does not support the event_dim arg&quot;</span><span class="p">)</span>
 
@@ -512,12 +524,16 @@
             <span class="k">assert</span> <span class="n">init_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
                 <span class="n">constrained_value</span> <span class="o">=</span> <span class="n">init_value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
-                <span class="n">unconstrained_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">constrained_value</span><span class="p">)</span>
+                <span class="n">unconstrained_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span>
+                    <span class="n">constrained_value</span>
+                <span class="p">)</span>
             <span class="n">unconstrained_value</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
             <span class="n">PARAM_STORE</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">unconstrained_value</span><span class="p">,</span> <span class="n">constraint</span>
 
         <span class="c1"># Transform from unconstrained space to constrained space.</span>
-        <span class="n">constrained_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)(</span><span class="n">unconstrained_value</span><span class="p">)</span>
+        <span class="n">constrained_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)(</span>
+            <span class="n">unconstrained_value</span>
+        <span class="p">)</span>
         <span class="n">constrained_value</span><span class="o">.</span><span class="n">unconstrained</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">unconstrained_value</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">constrained_value</span>
 
@@ -594,8 +610,7 @@
         <span class="c1"># Differentiate the loss.</span>
         <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
         <span class="c1"># Grab all the parameters from the trace.</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span>
-                  <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">param_capture</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">param_capture</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
         <span class="c1"># Take a step w.r.t. each parameter in params.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optim</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="c1"># Zero out the gradients so that they don&#39;t accumulate.</span>
@@ -622,7 +637,7 @@
     <span class="c1"># distribution defined by the guide.</span>
     <span class="n">model_trace</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">replay</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide_trace</span><span class="p">))</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="c1"># We will accumulate the various terms of the ELBO in `elbo`.</span>
-    <span class="n">elbo</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">elbo</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="c1"># Loop over all the sample sites in the model and add the corresponding</span>
     <span class="c1"># log p(z) term to the ELBO. Note that this will also include any observed</span>
     <span class="c1"># data, i.e. sample sites with the keyword `obs=...`.</span>
@@ -661,17 +676,20 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span> <span class="o">=</span> <span class="n">tr</span>
 
         <span class="c1"># Augment args with reads from the global param store.</span>
-        <span class="n">unconstrained_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span>
-                                     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">)</span>
+        <span class="n">unconstrained_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span>
+        <span class="p">)</span>
         <span class="n">params_and_args</span> <span class="o">=</span> <span class="n">unconstrained_params</span> <span class="o">+</span> <span class="n">args</span>
 
         <span class="c1"># On first call, create a compiled elbo.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 
             <span class="k">def</span> <span class="nf">compiled</span><span class="p">(</span><span class="o">*</span><span class="n">params_and_args</span><span class="p">):</span>
-                <span class="n">unconstrained_params</span> <span class="o">=</span> <span class="n">params_and_args</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">)]</span>
-                <span class="n">args</span> <span class="o">=</span> <span class="n">params_and_args</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">):]</span>
-                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">unconstrained_param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">,</span> <span class="n">unconstrained_params</span><span class="p">):</span>
+                <span class="n">unconstrained_params</span> <span class="o">=</span> <span class="n">params_and_args</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">)]</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="n">params_and_args</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">)</span> <span class="p">:]</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">unconstrained_param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">,</span> <span class="n">unconstrained_params</span>
+                <span class="p">):</span>
                     <span class="n">constrained_param</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># assume param has been initialized</span>
                     <span class="k">assert</span> <span class="n">constrained_param</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span> <span class="ow">is</span> <span class="n">unconstrained_param</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_param_trace</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrained_param</span>
@@ -680,7 +698,9 @@
             <span class="k">with</span> <span class="n">validation_enabled</span><span class="p">(</span><span class="kc">False</span><span class="p">),</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_jit_warnings</span><span class="p">:</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">TracerWarning</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">compiled</span><span class="p">,</span> <span class="n">params_and_args</span><span class="p">,</span> <span class="n">check_trace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span>
+                    <span class="n">compiled</span><span class="p">,</span> <span class="n">params_and_args</span><span class="p">,</span> <span class="n">check_trace</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span><span class="p">(</span><span class="o">*</span><span class="n">params_and_args</span><span class="p">)</span>
 </pre></div>
@@ -710,15 +730,15 @@
     <span class="c1"># Define a basic model with a single Normal latent random variable `loc`</span>
     <span class="c1"># and a batch of Normally distributed observations.</span>
     <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-        <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
         <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 
     <span class="c1"># Define a guide (i.e. variational distribution) with a Normal</span>
     <span class="c1"># distribution over the latent random variable `loc`.</span>
     <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-        <span class="n">guide_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_loc&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.</span><span class="p">))</span>
-        <span class="n">guide_scale</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_scale_log&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.</span><span class="p">)))</span>
+        <span class="n">guide_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_loc&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+        <span class="n">guide_scale</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;guide_scale_log&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)))</span>
         <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">guide_loc</span><span class="p">,</span> <span class="n">guide_scale</span><span class="p">))</span>
 
     <span class="c1"># Generate some data.</span>
@@ -755,7 +775,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.6.0&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;1.7.0&quot;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Mini Pyro demo&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--backend&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;minipyro&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-steps&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1001</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>

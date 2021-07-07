@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Tensor shapes in Pyro &mdash; Pyro Tutorials 1.6.0 documentation</title>
+  <title>Tensor shapes in Pyro &mdash; Pyro Tutorials 1.7.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.7.0
               </div>
             
           
@@ -190,7 +190,10 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
@@ -558,7 +561,7 @@ div.rendered_html tbody tr:hover {
 </style>
 <div class="section" id="Tensor-shapes-in-Pyro">
 <h1>Tensor shapes in Pyro<a class="headerlink" href="#Tensor-shapes-in-Pyro" title="Permalink to this headline">¶</a></h1>
-<p>This tutorial introduces Pyro’s organization of tensor dimensions. Before starting, you should familiarize yourself with <a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">PyTorch broadcasting semantics</a>.</p>
+<p>This tutorial introduces Pyro’s organization of tensor dimensions. Before starting, you should familiarize yourself with <a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">PyTorch broadcasting semantics</a>. After this tutorial, you may want to also read about <a class="reference external" href="http://pyro.ai/examples/enumeration.html">enumeration</a>.</p>
 <div class="section" id="Summary:">
 <h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -574,6 +577,12 @@ div.rendered_html tbody tr:hover {
 <li><p>use negative indices like <code class="docutils literal notranslate"><span class="pre">x.sum(-1)</span></code> rather than <code class="docutils literal notranslate"><span class="pre">x.sum(2)</span></code></p></li>
 <li><p>use ellipsis notation like <code class="docutils literal notranslate"><span class="pre">pixel</span> <span class="pre">=</span> <span class="pre">image[...,</span> <span class="pre">i,</span> <span class="pre">j]</span></code></p></li>
 <li><p>use <a class="reference external" href="http://docs.pyro.ai/en/dev/ops.html#pyro.ops.indexing.Vindex">Vindex</a> if <code class="docutils literal notranslate"><span class="pre">i,j</span></code> are enumerated, <code class="docutils literal notranslate"><span class="pre">pixel</span> <span class="pre">=</span> <span class="pre">Vindex(image)[...,</span> <span class="pre">i,</span> <span class="pre">j]</span></code></p></li>
+</ul>
+</li>
+<li><p>When using <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>’s automatic subsampling, be sure to subsample your data:</p>
+<ul>
+<li><p>Either manually subample by capturing the index <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">pyro.plate(...)</span> <span class="pre">as</span> <span class="pre">i:</span> <span class="pre">...</span></code></p></li>
+<li><p>or automatically subsample via <code class="docutils literal notranslate"><span class="pre">batch</span> <span class="pre">=</span> <span class="pre">pyro.subsample(data,</span> <span class="pre">event_dim=...)</span></code>.</p></li>
 </ul>
 </li>
 <li><p>When debugging, examine all shapes in a trace using <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">Trace.format_shapes()</a>.</p></li>
@@ -614,7 +623,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.6.0&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.7.0&#39;</span><span class="p">)</span>
 
 <span class="c1"># We&#39;ll ue this helper to check our models are correct.</span>
 <span class="k">def</span> <span class="nf">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>

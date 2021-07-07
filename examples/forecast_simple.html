@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Multivariate Forecasting &mdash; Pyro Tutorials 1.6.0 documentation</title>
+  <title>Multivariate Forecasting &mdash; Pyro Tutorials 1.7.0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.7.0
               </div>
             
           
@@ -171,7 +171,10 @@
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Application: Experimental Design</span></p>
 <ul>
@@ -349,50 +352,55 @@
         <span class="k">assert</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span>  <span class="c1"># Data is bivariate: (arrivals, departures).</span>
 
         <span class="c1"># Sample global parameters.</span>
-        <span class="n">noise_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;noise_scale&quot;</span><span class="p">,</span>
-                                  <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">dim</span><span class="p">,),</span> <span class="o">-</span><span class="mf">3.</span><span class="p">),</span> <span class="mf">1.</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">noise_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;noise_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">dim</span><span class="p">,),</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">assert</span> <span class="n">noise_scale</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)</span>
-        <span class="n">trans_timescale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans_timescale&quot;</span><span class="p">,</span>
-                                      <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">trans_timescale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;trans_timescale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">assert</span> <span class="n">trans_timescale</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)</span>
 
         <span class="n">trans_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans_loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Cauchy</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">period</span><span class="p">))</span>
         <span class="n">trans_loc</span> <span class="o">=</span> <span class="n">trans_loc</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">trans_loc</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">dim</span><span class="p">,))</span>
         <span class="k">assert</span> <span class="n">trans_loc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)</span>
-        <span class="n">trans_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans_scale&quot;</span><span class="p">,</span>
-                                  <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-        <span class="n">trans_corr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans_corr&quot;</span><span class="p">,</span>
-                                 <span class="n">dist</span><span class="o">.</span><span class="n">LKJCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
+        <span class="n">trans_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;trans_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">trans_corr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans_corr&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LKJCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
         <span class="n">trans_scale_tril</span> <span class="o">=</span> <span class="n">trans_scale</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">trans_corr</span>
         <span class="k">assert</span> <span class="n">trans_scale_tril</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
-        <span class="n">obs_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_scale&quot;</span><span class="p">,</span>
-                                <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-        <span class="n">obs_corr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_corr&quot;</span><span class="p">,</span>
-                               <span class="n">dist</span><span class="o">.</span><span class="n">LKJCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
+        <span class="n">obs_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;obs_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">obs_corr</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_corr&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LKJCholesky</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(())))</span>
         <span class="n">obs_scale_tril</span> <span class="o">=</span> <span class="n">obs_scale</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">obs_corr</span>
         <span class="k">assert</span> <span class="n">obs_scale_tril</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
         <span class="c1"># Note the initial seasonality should be sampled in a plate with the</span>
         <span class="c1"># same dim as the time_plate, dim=-1. That way we can repeat the dim</span>
         <span class="c1"># below using periodic_repeat().</span>
-        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;season_plate&quot;</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span>  <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="n">season_init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;season_init&quot;</span><span class="p">,</span>
-                                      <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;season_plate&quot;</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">season_init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;season_init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">assert</span> <span class="n">season_init</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">period</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
         <span class="c1"># Sample independent noise at each time step.</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_plate</span><span class="p">:</span>
-            <span class="n">season_noise</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;season_noise&quot;</span><span class="p">,</span>
-                                       <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">season_noise</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="s2">&quot;season_noise&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">assert</span> <span class="n">season_noise</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
         <span class="c1"># Construct a prediction. This prediction has an exactly repeated</span>
         <span class="c1"># seasonal part plus slow seasonal drift. We use two deterministic,</span>
         <span class="c1"># linear functions to transform our diagonal Normal noise to nontrivial</span>
         <span class="c1"># samples from a Gaussian process.</span>
-        <span class="n">prediction</span> <span class="o">=</span> <span class="p">(</span><span class="n">periodic_repeat</span><span class="p">(</span><span class="n">season_init</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span>
-                      <span class="n">periodic_cumsum</span><span class="p">(</span><span class="n">season_noise</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">prediction</span> <span class="o">=</span> <span class="n">periodic_repeat</span><span class="p">(</span><span class="n">season_init</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">periodic_cumsum</span><span class="p">(</span>
+            <span class="n">season_noise</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span>
+        <span class="p">)</span>
         <span class="k">assert</span> <span class="n">prediction</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
         <span class="c1"># Construct a joint noise model. This model is a GaussianHMM, whose</span>
@@ -403,8 +411,9 @@
         <span class="n">trans_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">trans_loc</span><span class="p">,</span> <span class="n">scale_tril</span><span class="o">=</span><span class="n">trans_scale_tril</span><span class="p">)</span>
         <span class="n">obs_mat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
         <span class="n">obs_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="n">scale_tril</span><span class="o">=</span><span class="n">obs_scale_tril</span><span class="p">)</span>
-        <span class="n">noise_model</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">GaussianHMM</span><span class="p">(</span><span class="n">init_dist</span><span class="p">,</span> <span class="n">trans_mat</span><span class="p">,</span> <span class="n">trans_dist</span><span class="p">,</span> <span class="n">obs_mat</span><span class="p">,</span> <span class="n">obs_dist</span><span class="p">,</span>
-                                       <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="n">noise_model</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">GaussianHMM</span><span class="p">(</span>
+            <span class="n">init_dist</span><span class="p">,</span> <span class="n">trans_mat</span><span class="p">,</span> <span class="n">trans_dist</span><span class="p">,</span> <span class="n">obs_mat</span><span class="p">,</span> <span class="n">obs_dist</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span>
+        <span class="p">)</span>
         <span class="k">assert</span> <span class="n">noise_model</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
 
         <span class="c1"># The final statement registers our noise model and prediction.</span>
@@ -435,12 +444,16 @@
         <span class="s2">&quot;log_every&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">log_every</span><span class="p">,</span>
         <span class="s2">&quot;dct_gradients&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">dct</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="n">metrics</span> <span class="o">=</span> <span class="n">backtest</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">covariates</span><span class="p">,</span> <span class="n">Model</span><span class="p">,</span>
-                       <span class="n">train_window</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">train_window</span><span class="p">,</span>
-                       <span class="n">test_window</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">test_window</span><span class="p">,</span>
-                       <span class="n">stride</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
-                       <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
-                       <span class="n">forecaster_options</span><span class="o">=</span><span class="n">forecaster_options</span><span class="p">)</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="n">backtest</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">covariates</span><span class="p">,</span>
+        <span class="n">Model</span><span class="p">,</span>
+        <span class="n">train_window</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">train_window</span><span class="p">,</span>
+        <span class="n">test_window</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">test_window</span><span class="p">,</span>
+        <span class="n">stride</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
+        <span class="n">num_samples</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+        <span class="n">forecaster_options</span><span class="o">=</span><span class="n">forecaster_options</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;crps&quot;</span><span class="p">]:</span>
         <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">]</span>
@@ -451,7 +464,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.6.0&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;1.7.0&quot;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Bart Ridership Forecasting Example&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--train-window&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2160</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--test-window&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">336</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
