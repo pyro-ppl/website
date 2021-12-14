@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logistic growth models of SARS-CoV-2 lineage proportions &mdash; Pyro Tutorials 1.7.0+fe8ec3b1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example: Constant + MuE (Profile HMM)" href="mue_profile.html" />
+    <link rel="prev" title="Example: Epidemiological inference via HMC" href="sir_hmc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html">
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.7.0+fe8ec3b1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introductory Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_long.html">Introduction to Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_rendering.html">Automatic rendering of Pyro models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iv.html">SVI Part IV: Tips and Tricks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Practical Pyro and PyTorch</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression_ii.html">Bayesian Regression - Inference Algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prodlda.html">Probabilistic Topic Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanvi.html"><em>scANVI: Deep Generative Modeling for Single Cell Data with Pyro</em></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Discrete Latent Variables</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enumeration.html">Inference with Discrete Latent Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html">Dirichlet Process Mixture Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toy_mixture_model_discrete_enumeration.html">Example: Toy Mixture Model With Discrete Enumeration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm.html">Example: Hidden Markov Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Example: Capture-Recapture Models (CJS Models)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mixed_hmm.html">Example: hierarchical mixed-effect hidden Markov models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="einsum.html">Example: Discrete Factor Graph Inference with Plated Einsum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lda.html">Example: Amortized Latent Dirichlet Allocation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Customizing Inference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoname_examples.html">Example: reducing boilerplate with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.autoname</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Time Series</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_i.html">Forecasting I: univariate, heavy tailed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_ii.html">Forecasting II: state space models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_iii.html">Forecasting III: hierarchical models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_dlm.html">Forecasting with Dynamic Linear Model (DLM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecast_simple.html">Multivariate Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Example: Gaussian Process Time Series Models</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Gaussian Processes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dkl.html">Example: Deep Kernel Learning</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Epidemiology</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="epi_intro.html">Epidemiological models: Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_sir.html">Example: Univariate epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Logistic growth models of SARS-CoV-2 lineage proportions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Table-of-contents">Table of contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Loading-data">Loading data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Helpers-for-manipulating-data">Helpers for manipulating data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#A-first-model">A first model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Model-definition">Model definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Define-a-helper-for-fitting-models">Define a helper for fitting models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Let’s-fit-basic_model-and-inspect-the-results">Let’s fit <code class="docutils literal notranslate"><span class="pre">basic_model</span></code> and inspect the results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Let’s-inspect-the-posterior-means-of-our-latent-parameters:">Let’s inspect the posterior means of our latent parameters:</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#A-regional-model">A regional model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#An-alternative-regional-model">An alternative regional model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Generalizations">Generalizations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Biological sequences</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Experimental Design</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Object Tracking</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Other Inference Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="baseball.html">Example: analyzing baseball stats with MCMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mcmc.html">Example: Inference with Markov Chain Monte Carlo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lkj.html">Example: MCMC with an LKJ prior over covariances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Example: Sequential Monte Carlo Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding Pyro's Internals</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_i.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_ii.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm_funsor.html">Example: hidden Markov models with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Deprecated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">(DEPRECATED) An Introduction to Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">(DEPRECATED) An Introduction to Inference in Pyro</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyro Tutorials</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Logistic growth models of SARS-CoV-2 lineage proportions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/logistic-growth.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Logistic-growth-models-of-SARS-CoV-2-lineage-proportions">
+<h1>Logistic growth models of SARS-CoV-2 lineage proportions<a class="headerlink" href="#Logistic-growth-models-of-SARS-CoV-2-lineage-proportions" title="Permalink to this headline">¶</a></h1>
+<p>This notebook explores logistic growth models, with the goal of inferring the differential growth rates of different SARS-CoV-2 lineages over time. Before this tutorial you may want to familiarize yourself with <a class="reference external" href="http://pyro.ai/examples/intro_long.html">Pyro modeling basics</a> and <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a> in Pyro and PyTorch.</p>
+<p><strong>WARNING</strong>: The purpose of this tutorial is to demonstrate Pyro’s modeling and inference syntax. Making reliable inferences about SARS-CoV-2 <strong>is not</strong> the purpose of this tutorial.</p>
+<section id="Table-of-contents">
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="#Overview">Overview</a></p></li>
+<li><p><a class="reference external" href="#Loading-data">Loading data</a></p></li>
+<li><p><a class="reference external" href="#A-first-model">A First Model</a></p></li>
+<li><p><a class="reference external" href="#A-regional-model">A regional model</a></p></li>
+<li><p><a class="reference external" href="#An-alternative-regional-model">An alternative regional model</a></p></li>
+<li><p><a class="reference external" href="#Generalizations">Generalizations</a></p></li>
+</ul>
+<section id="Overview">
+<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
+<p>When different strains/lineages/variants of a virus like SARS-CoV-2 circulate in a population, those lineages that have the largest fitness will tend to dominate, and those lineages that are least fit will tend to be outcompeted by the fittest lineages. In this tutorial we set out to infer (differential) growth rates for different SARS-CoV-2 lineages using a spatio-temporal dataset of SARS-CoV-2 genetic sequences. We’ll start with the simplest possible model and then move on to more complex
+models with hierarchical structure.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoNormal</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">ClippedAdam</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using GPU&quot;</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using CPU&quot;</span><span class="p">)</span>
+
+<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>  <span class="c1"># for use in continuous integration testing</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Using CPU
+</pre></div></div>
+</div>
+</section>
+<section id="Loading-data">
+<h3>Loading data<a class="headerlink" href="#Loading-data" title="Permalink to this headline">¶</a></h3>
+<p>Our data consist of a few million genetic sequences of SARS-CoV-2 viruses, clustered into <a class="reference external" href="https://cov-lineages.org">PANGO lineages</a>, and aggregated into a few hundred regions globally and into 28-day time bins. Preprocessing was performed by Nextstrain’s <a class="reference external" href="https://docs.nextstrain.org/projects/ncov/en/latest/reference/remote_inputs.html">ncov</a> tool, and aggregation was performed by the Broad Institute’s
+<a class="reference external" href="https://github.com/broadinstitute/pyro-cov/blob/master/scripts/preprocess_nextstrain.py">pyro-cov</a> tool.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pyro.contrib.examples.nextstrain</span> <span class="kn">import</span> <span class="n">load_nextstrain_counts</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_nextstrain_counts</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">summarize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">summarize</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> of shape </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> of length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">summarize</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+counts: Tensor of shape (27, 202, 1316) on cpu
+features: Tensor of shape (1316, 2634) on cpu
+lineages: list of length 1316
+locations: list of length 202
+mutations: list of length 2634
+sparse_counts.index: Tensor of shape (3, 57129) on cpu
+sparse_counts.total: Tensor of shape (27, 202) on cpu
+sparse_counts.value: Tensor of shape (57129,) on cpu
+start_date: datetime
+time_step_days: int
+</pre></div></div>
+</div>
+<p>In this tutorial our interest is in the 3-dimensional tensor of counts <code class="docutils literal notranslate"><span class="pre">dataset[&quot;counts&quot;]</span></code>, which has shape (T, R, L) where <code class="docutils literal notranslate"><span class="pre">T</span></code> is the number of time bins, <code class="docutils literal notranslate"><span class="pre">R</span></code> is the number of regions, and <code class="docutils literal notranslate"><span class="pre">L</span></code> is the number of strains or PANGO lineages, and <code class="docutils literal notranslate"><span class="pre">dataset[&quot;counts&quot;][t,r,l]</span></code> is the number of samples in the corresponding time-region-location bin. The count data are heavily skewed towards a few large regions and dominant lineages like <code class="docutils literal notranslate"><span class="pre">B.1.1.7</span></code> and <code class="docutils literal notranslate"><span class="pre">B.1.617.2</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="s2">&quot;time bin&quot;</span><span class="p">,</span> <span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;lineage&quot;</span><span class="p">]):</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">list</span><span class="p">({</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="n">i</span><span class="p">}))</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;# samples&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">wspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_6_0.png" src="_images/logistic-growth_6_0.png" />
+</div>
+</div>
+<section id="Helpers-for-manipulating-data">
+<h4>Helpers for manipulating data<a class="headerlink" href="#Helpers-for-manipulating-data" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">get_lineage_id</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get lineage id from string name&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="p">])</span> <span class="o">==</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;lineages&#39;</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">get_location_id</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get location id from string name&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="p">])</span> <span class="o">==</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;locations&#39;</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">get_aggregated_counts_from_locations</span><span class="p">(</span><span class="n">locations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get aggregated counts from a list of locations&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:,</span> <span class="n">get_location_id</span><span class="p">(</span><span class="n">loc</span><span class="p">)]</span> <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">locations</span><span class="p">])</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span>
+<span class="n">step</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">])</span>
+<span class="n">date_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]))])</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="A-first-model">
+<h3>A first model<a class="headerlink" href="#A-first-model" title="Permalink to this headline">¶</a></h3>
+<p>First let’s zoom-in on Massachusetts and a few surrounding states:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">northeast_states</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;USA / Massachusetts&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / New York&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / Connecticut&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / New Hampshire&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / Vermont&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / New Jersey&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / Maine&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / Rhode Island&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;USA / Pennsylvania&#39;</span><span class="p">]</span>
+
+<span class="n">northeast_counts</span> <span class="o">=</span> <span class="n">get_aggregated_counts_from_locations</span><span class="p">(</span><span class="n">northeast_states</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Next let’s extract sublineages corresponding to two of the <a class="reference external" href="https://www.who.int/en/activities/tracking-SARS-CoV-2-variants/">WHO variants of concern</a>, Alpha and Delta:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># The Alpha and Delta variants include many PANGO lineages, which we need to aggregate.</span>
+<span class="n">Q_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="n">lin</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;lineages&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">lin</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Q.&#39;</span><span class="p">]</span>
+<span class="n">AY_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="n">lin</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;lineages&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">lin</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;AY.&#39;</span><span class="p">]</span>
+
+<span class="n">alpha_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;B.1.1.7&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">Q_lineages</span>
+<span class="n">delta_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;B.1.617.2&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">AY_lineages</span>
+
+<span class="n">alpha_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_lineage_id</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">alpha_lineages</span><span class="p">]</span>
+<span class="n">delta_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_lineage_id</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">delta_lineages</span><span class="p">]</span>
+
+<span class="n">alpha_counts</span> <span class="o">=</span> <span class="n">northeast_counts</span><span class="p">[:,</span> <span class="n">alpha_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">delta_counts</span> <span class="o">=</span> <span class="n">northeast_counts</span><span class="p">[:,</span> <span class="n">delta_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Let&#39;s combine the counts into a single tensor</span>
+<span class="n">alpha_delta_counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">alpha_counts</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">alpha_delta_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+torch.Size([27, 2])
+</pre></div></div>
+</div>
+<p>Next let’s plot the time series of count proportions (Alpha vs. Delta):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># We skip the first year or so of the pandemic when Alpha and Delta are not present</span>
+<span class="n">start_time</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="n">total_counts</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_counts</span> <span class="o">+</span> <span class="n">delta_counts</span><span class="p">)[</span><span class="n">start_time</span><span class="p">:]</span>
+<span class="n">dates</span> <span class="o">=</span> <span class="n">date_range</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">alpha_counts</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span> <span class="o">/</span> <span class="n">total_counts</span><span class="p">,</span>
+         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Alpha&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span> <span class="o">/</span> <span class="n">total_counts</span><span class="p">,</span>
+         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Delta&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">dates</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">dates</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Proportion&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MonthLocator</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s2">&quot;%b %Y&quot;</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_15_0.png" src="_images/logistic-growth_15_0.png" />
+</div>
+</div>
+<p>We see that at first Alpha was dominant, but then Delta started outcompeting it until Delta became dominant.</p>
+<section id="Model-definition">
+<h4>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this headline">¶</a></h4>
+<p>Instead of attempting to model how the total number of observed sequences varies as a function of time (which depends on complex human behavior), we instead model the <em>proportion</em> of sequences at each time step that are Alpha versus Delta. In other words if we observed 8 Alpha lineages and 2 Delta lineages at a given time step, we model the proportions 80% and 20% instead of the raw counts 8 and 2. To do this we use a <a class="reference external" href="https://en.wikipedia.org/wiki/Logistic_function">Logistic Growth</a> model
+with a <a class="reference external" href="https://pytorch.org/docs/stable/distributions.html#multinomial">Multinomial</a> distribution as the likelihood.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">basic_model</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># Define plates over lineage and time</span>
+    <span class="n">lineage_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;lineages&quot;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">time_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Define a growth rate (i.e. slope) and an init (i.e. intercept) for each lineage</span>
+    <span class="k">with</span> <span class="n">lineage_plate</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># We measure time in units of the SARS-CoV-2 generation time of 5.5 days</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">5.5</span>
+
+    <span class="c1"># Assume lineages grow linearly in logit space</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="c1"># We use the softmax function (the multivariate generalization of the</span>
+    <span class="c1"># sigmoid function) to define normalized probabilities from the logits</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">probs</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+
+    <span class="c1"># Observe counts via a multinomial likelihood.</span>
+    <span class="k">with</span> <span class="n">time_plate</span><span class="p">:</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">probs</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">validate_args</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s look at the graphical structure of our model</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">basic_model</span><span class="p">,</span> <span class="n">alpha_delta_counts</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_19_0.svg" src="_images/logistic-growth_19_0.svg" /></div>
+</div>
+</section>
+<section id="Define-a-helper-for-fitting-models">
+<h4>Define a helper for fitting models<a class="headerlink" href="#Define-a-helper-for-fitting-models" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">fit_svi</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1001</span><span class="p">,</span> <span class="n">log_every</span><span class="o">=</span><span class="mi">250</span><span class="p">):</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>  <span class="c1"># clear parameters from previous runs</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20211214</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">smoke_test</span><span class="p">:</span>
+        <span class="n">num_steps</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="c1"># Define a mean field guide (i.e. variational distribution)</span>
+    <span class="n">guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="n">optim</span> <span class="o">=</span> <span class="n">ClippedAdam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">lr</span><span class="p">,</span> <span class="s2">&quot;lrd&quot;</span><span class="p">:</span> <span class="mf">0.1</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">num_steps</span><span class="p">)})</span>
+    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
+
+    <span class="c1"># Train (i.e. do ELBO optimization) for num_steps iterations</span>
+    <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="n">log_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;step </span><span class="si">{</span><span class="n">step</span><span class="si">:</span><span class="s2"> &gt;4d</span><span class="si">}</span><span class="s2"> loss = </span><span class="si">{</span><span class="n">loss</span><span class="si">:</span><span class="s2">0.6g</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Plot to assess convergence.</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;SVI step&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;ELBO loss&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">guide</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Let’s-fit-basic_model-and-inspect-the-results">
+<h4>Let’s fit <code class="docutils literal notranslate"><span class="pre">basic_model</span></code> and inspect the results<a class="headerlink" href="#Let’s-fit-basic_model-and-inspect-the-results" title="Permalink to this headline">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="c1"># We truncate the data to the period with non-zero counts</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">fit_svi</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">basic_model</span><span class="p">,</span> <span class="n">alpha_delta_counts</span><span class="p">[</span><span class="mi">13</span><span class="p">:]),</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1501</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+step    0 loss = 103782
+step  250 loss = 3373.05
+step  500 loss = 1299.14
+step  750 loss = 524.81
+step 1000 loss = 304.319
+step 1250 loss = 278.005
+step 1500 loss = 261.731
+CPU times: user 4.69 s, sys: 29.6 ms, total: 4.72 s
+Wall time: 4.73 s
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_23_1.png" src="_images/logistic-growth_23_1.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="Let’s-inspect-the-posterior-means-of-our-latent-parameters:">
+<h2>Let’s inspect the posterior means of our latent parameters:<a class="headerlink" href="#Let’s-inspect-the-posterior-means-of-our-latent-parameters:" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+rate [-0.27021623  0.27021623]
+init [ 8.870546 -8.870401]
+</pre></div></div>
+</div>
+<p>As expected the Delta lineage (corresponding to index <code class="docutils literal notranslate"><span class="pre">1</span></code>) has a differential growth rate advantage with respect to the Alpha lineage (corresponding to index <code class="docutils literal notranslate"><span class="pre">0</span></code>) :</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiplicative advantage: </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+      <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Multiplicative advantage: 1.72
+</pre></div></div>
+</div>
+<p>This seems like it might be an overestimate. Can we get better estimates by modeling each spatial region individually?</p>
+<section id="A-regional-model">
+<h3>A regional model<a class="headerlink" href="#A-regional-model" title="Permalink to this headline">¶</a></h3>
+<p>Instead of focusing on northeastern US states we now consider the entire global dataset and do not aggregate across regions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># First extract the data we want to use</span>
+<span class="n">alpha_counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">alpha_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">delta_counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">delta_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">alpha_counts</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;counts.shape: &quot;</span><span class="p">,</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;number of regions: </span><span class="si">{</span><span class="n">counts</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+counts.shape:  torch.Size([27, 202, 2])
+number of regions: 202
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># We skip the first year or so of the pandemic when Alpha and Delta are not present</span>
+<span class="n">start_time</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="n">total_counts</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_counts</span> <span class="o">+</span> <span class="n">delta_counts</span><span class="p">)[</span><span class="n">start_time</span><span class="p">:]</span>
+<span class="n">dates</span> <span class="o">=</span> <span class="n">date_range</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span> <span class="o">/</span> <span class="n">total_counts</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C1&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">dates</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">dates</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Proportion&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MonthLocator</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s2">&quot;%b %Y&quot;</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Delta/(Alpha+Delta) in </span><span class="si">{</span><span class="n">counts</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> regions&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_31_0.png" src="_images/logistic-growth_31_0.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Model lineage proportions in each region as multivariate logistic growth</span>
+<span class="k">def</span> <span class="nf">regional_model</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># Now we also define a region plate in addition to the time/lineage plates</span>
+    <span class="n">lineage_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;lineages&quot;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">region_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">time_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># We use the same growth rate (i.e. slope) for each region</span>
+    <span class="k">with</span> <span class="n">lineage_plate</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># We allow the init to vary from region to region</span>
+    <span class="n">init_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">region_plate</span><span class="p">,</span> <span class="n">lineage_plate</span><span class="p">:</span>
+        <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">))</span>
+
+    <span class="c1"># We measure time in units of the SARS-CoV-2 generation time of 5.5 days</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">5.5</span>
+
+    <span class="c1"># Instead of using the softmax function we directly use the</span>
+    <span class="c1"># logits parameterization of the Multinomial distribution</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="c1"># Observe sequences via a multinomial likelihood.</span>
+    <span class="k">with</span> <span class="n">time_plate</span><span class="p">,</span> <span class="n">region_plate</span><span class="p">:</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">validate_args</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model</span><span class="p">,</span> <span class="n">counts</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_33_0.svg" src="_images/logistic-growth_33_0.svg" /></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">fit_svi</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model</span><span class="p">,</span> <span class="n">counts</span><span class="p">),</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">3001</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+step    0 loss = 909278
+step  250 loss = 509502
+step  500 loss = 630927
+step  750 loss = 501493
+step 1000 loss = 1.04533e+06
+step 1250 loss = 1.98151e+06
+step 1500 loss = 328504
+step 1750 loss = 279016
+step 2000 loss = 310281
+step 2250 loss = 217622
+step 2500 loss = 204381
+step 2750 loss = 176877
+step 3000 loss = 152123
+CPU times: user 17.3 s, sys: 965 ms, total: 18.3 s
+Wall time: 17.3 s
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_34_1.png" src="_images/logistic-growth_34_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiplicative advantage: </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+      <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Multiplicative advantage: 1.17
+</pre></div></div>
+</div>
+<p>Notice this is a lower estimate than the previous global estimate.</p>
+</section>
+<section id="An-alternative-regional-model">
+<h3>An alternative regional model<a class="headerlink" href="#An-alternative-regional-model" title="Permalink to this headline">¶</a></h3>
+<p>The regional model we defined above assumed that the <code class="docutils literal notranslate"><span class="pre">rate</span></code> for each lineage did not vary between regions. Here we add additional hierarchical structure and allow the rate to vary from region to region.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">regional_model2</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">lineage_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;lineages&quot;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">region_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">time_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># We assume the init can vary a lot from region to region but</span>
+    <span class="c1"># that the rate varies considerably less.</span>
+    <span class="n">rate_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">init_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># As before each lineage has a latent growth rate</span>
+    <span class="k">with</span> <span class="n">lineage_plate</span><span class="p">:</span>
+        <span class="n">rate_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate_loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># We allow the rate and init to vary from region to region</span>
+    <span class="k">with</span> <span class="n">region_plate</span><span class="p">,</span> <span class="n">lineage_plate</span><span class="p">:</span>
+        <span class="c1"># The per-region per-lineage rate is governed by a hierarchical prior</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span>  <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">rate_loc</span><span class="p">,</span> <span class="n">rate_scale</span><span class="p">))</span>
+        <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">))</span>
+
+    <span class="c1"># We measure time in units of the SARS-CoV-2 generation time of 5.5 days</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">5.5</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="c1"># Observe sequences via a multinomial likelihood.</span>
+    <span class="k">with</span> <span class="n">time_plate</span><span class="p">,</span> <span class="n">region_plate</span><span class="p">:</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">validate_args</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model2</span><span class="p">,</span> <span class="n">counts</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_39_0.svg" src="_images/logistic-growth_39_0.svg" /></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">fit_svi</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model2</span><span class="p">,</span> <span class="n">counts</span><span class="p">),</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">3001</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+step    0 loss = 2.14938e+06
+step  250 loss = 1.44698e+06
+step  500 loss = 1.24936e+06
+step  750 loss = 701128
+step 1000 loss = 602609
+step 1250 loss = 530833
+step 1500 loss = 454014
+step 1750 loss = 450981
+step 2000 loss = 384790
+step 2250 loss = 340659
+step 2500 loss = 305373
+step 2750 loss = 279524
+step 3000 loss = 262679
+CPU times: user 25 s, sys: 1.05 s, total: 26 s
+Wall time: 25.1 s
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/logistic-growth_40_1.png" src="_images/logistic-growth_40_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiplicative advantage: </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+      <span class="p">(</span><span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate_loc&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate_loc&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">exp</span><span class="p">()))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Multiplicative advantage: 1.14
+</pre></div></div>
+</div>
+</section>
+<section id="Generalizations">
+<h3>Generalizations<a class="headerlink" href="#Generalizations" title="Permalink to this headline">¶</a></h3>
+<p>So far we’ve seen how to model two variants at a time either globally or split across multiple regions, and how to use <a class="reference external" href="https://docs.pyro.ai/en/stable/primitives.html#pyro.primitives.plate">pyro.plate</a> to model multiple variants or regions or times.</p>
+<p>What other models can you think of that might make epidemiological sense? Here are some ideas:</p>
+<ul class="simple">
+<li><p>Can you create a model over more than two variants, or even over all PANGO lineages?</p></li>
+<li><p>What variables should be shared across lineages, across regions, or over time?</p></li>
+<li><p>How might you deal with changes of behavior over time, e.g. pandemic waves or vaccination?</p></li>
+</ul>
+<p>For an example of a larger Pyro model using SARS-CoV-2 lineage data like this, see our paper “Analysis of 2.1 million SARS-CoV-2 genomes identifies mutations associated with transmissibility” (<a class="reference external" href="https://www.medrxiv.org/content/10.1101/2021.09.07.21263228v1">preprint</a> | <a class="reference external" href="https://github.com/broadinstitute/pyro-cov">code</a>).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sir_hmc.html" class="btn btn-neutral float-left" title="Example: Epidemiological inference via HMC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mue_profile.html" class="btn btn-neutral float-right" title="Example: Constant + MuE (Profile HMM)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Pyro Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

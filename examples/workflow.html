@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains &mdash; Pyro Tutorials 1.7.0+e5ec0b70 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Using the PyTorch JIT Compiler with Pyro" href="jit.html" />
+    <link rel="prev" title="Modules in Pyro" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html">
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.7.0+e5ec0b70
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introductory Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">An Introduction to Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">An Introduction to Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_rendering.html">Automatic rendering of Pyro models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iv.html">SVI Part IV: Tips and Tricks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Practical Pyro and PyTorch</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression_ii.html">Bayesian Regression - Inference Algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Summary">Summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Table-of-contents">Table of contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Running-example:-SARS-CoV-2-strain-prediction">Running example: SARS-CoV-2 strain prediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Clean-the-data">Clean the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Create-a-generative-model">Create a generative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Sanity-check-using-mean-field-inference">Sanity check using mean field inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Create-an-initialization-heuristic">Create an initialization heuristic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Reparametrize-the-model">Reparametrize the model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Customize-the-variational-family">Customize the variational family</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanvi.html">Example: Single Cell RNA Sequencing Analysis with VAEs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prodlda.html">Probabilistic Topic Modeling</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Discrete Latent Variables</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enumeration.html">Inference with Discrete Latent Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html">Dirichlet Process Mixture Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toy_mixture_model_discrete_enumeration.html">Example: Toy Mixture Model With Discrete Enumeration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm.html">Example: Hidden Markov Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Example: Capture-Recapture Models (CJS Models)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mixed_hmm.html">Example: hierarchical mixed-effect hidden Markov models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="einsum.html">Example: Discrete Factor Graph Inference with Plated Einsum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lda.html">Example: Amortized Latent Dirichlet Allocation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Customizing Inference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoname_examples.html">Example: reducing boilerplate with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.autoname</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Time Series</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_i.html">Forecasting I: univariate, heavy tailed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_ii.html">Forecasting II: state space models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_iii.html">Forecasting III: hierarchical models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_dlm.html">Forecasting with Dynamic Linear Model (DLM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecast_simple.html">Multivariate Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="timeseries.html">Example: Gaussian Process Time Series Models</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Gaussian Processes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dkl.html">Example: Deep Kernel Learning</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Epidemiology</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="epi_intro.html">Epidemiological models: Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_sir.html">Example: Univariate epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Biological sequences</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Experimental Design</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Object Tracking</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Other Inference Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="baseball.html">Example: analyzing baseball stats with MCMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mcmc.html">Example: Inference with Markov Chain Monte Carlo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lkj.html">Example: MCMC with an LKJ prior over covariances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Example: Sequential Monte Carlo Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding Pyro's Internals</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_i.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_ii.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hmm_funsor.html">Example: hidden Markov models with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pyro Tutorials</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/workflow.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># TODO remove this before merging</span>
+<span class="o">![[</span> -v COLAB_GPU <span class="o">]]</span> <span class="o">&amp;&amp;</span>  !pip install -q https://github.com/pyro-ppl/pyro/archive/workflow-tutorial.zip
+<span class="c1">#![[ -v COLAB_GPU ]] &amp;&amp; pip install -q git+https://github.com/pyro-ppl/pyro.git@workflow-tutorial</span>
+</pre></div>
+</div>
+</div>
+<section id="High-dimensional-Bayesian-workflow,-with-applications-to-SARS-CoV-2-strains">
+<h1>High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains<a class="headerlink" href="#High-dimensional-Bayesian-workflow,-with-applications-to-SARS-CoV-2-strains" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial describes a workflow for incrementally building pipelines to analyze high-dimensional data in Pyro. This workflow has evolved over a few years of applying Pyro to models with <span class="math notranslate nohighlight">\(10^5\)</span> or more latent variables. We build on <a class="reference external" href="https://arxiv.org/abs/2011.01808">Gelman et al. (2020)</a>’s concept of <em>Bayesian workflow</em>, and focus on aspects particular to high-dimensional models: approximate inference and numerical stability. While the individual components of the pipeline deserve
+their own tutorials, this tutorial focuses on incrementally combining those components.</p>
+<p>The fastest way to find a good model of your data is to quickly discard many bad models, i.e. to iterate. In statistics we call this iterative workflow <a class="reference external" href="http://www.cs.columbia.edu/~blei/papers/Blei2014b.pdf">Box’s loop</a>. An efficient workflow allows us to discard bad models as fast as possible. Workflow efficiency demands that code changes to upstream components don’t break previous coding effort on downstream components. Pyro’s approaches to this challenge include strategies for variational
+approximations (<a class="reference external" href="https://docs.pyro.ai/en/stable/infer.autoguide.html">pyro.infer.autoguide</a>) and strategies for transforming model coordinate systems to improve geometry (<a class="reference external" href="https://docs.pyro.ai/en/stable/infer.reparam.html">pyro.infer.reparam</a>).</p>
+<section id="Summary">
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Great models can only be achieved by iterative development.</p></li>
+<li><p>Iterate quickly by building a pipeline that is robust to code changes.</p></li>
+<li><p>Start with a simple model and <a class="reference external" href="https://docs.pyro.ai/en/dev/infer.autoguide.html#autonormal">mean-field inference</a>.</p></li>
+<li><p>Avoid NANs by intellitently <a class="reference external" href="https://docs.pyro.ai/en/dev/infer.autoguide.html#module-pyro.infer.autoguide.initialization">initializing</a> and <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.clamp.html">.clamp()</a>ing.</p></li>
+<li><p><a class="reference external" href="https://docs.pyro.ai/en/dev/infer.reparam.html">Reparametrize</a> the model to improve geometry.</p></li>
+<li><p>Create a custom variational family by combining <a class="reference external" href="https://docs.pyro.ai/en/dev/infer.autoguide.html">AutoGuides</a> or <a class="reference external" href="https://docs.pyro.ai/en/dev/contrib.easyguide.html">EasyGuides</a>.</p></li>
+</ul>
+</section>
+<section id="Table-of-contents">
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="#Overview">Overview</a></p></li>
+<li><p><a class="reference external" href="#Running-example">Running example: SARS-CoV-2 strain prediction</a></p></li>
+</ul>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="#Clean-the-data">Clean the data</a></p></li>
+<li><p><a class="reference external" href="#Create-a-generative-model">Create a generative model</a></p></li>
+<li><p><a class="reference external" href="#Sanity-check">Sanity check using mean-field inference</a></p></li>
+<li><p><a class="reference external" href="#Create-an-initialization-heuristic">Create an initialization heuristic</a></p></li>
+<li><p><a class="reference external" href="#Reparametrize">Reparametrize the model</a></p></li>
+<li><p><a class="reference external" href="#Customize">Customize the variational family (autoguides, easyguides, custom guides</a></p></li>
+</ol>
+<section id="Overview">
+<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
+<p>Consider the problem of sampling from the posterior distribution of a probabilistic model with <span class="math notranslate nohighlight">\(10^5\)</span> or more continuous latent variables, but whose data fits entirely in memory. (For larger datasets, consider <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">amortized variational inference</a>.) Inference in such high-dimensional models can be challenging even when posteriors are known to be <a class="reference external" href="https://en.wikipedia.org/wiki/Unimodality">unimodal</a> or even
+<a class="reference external" href="https://arxiv.org/abs/1404.5886">log-concave</a>, due to correlations among latent variables.</p>
+<p>To perform inference in such high-dimensional models in Pyro, we have evolved a <a class="reference external" href="https://arxiv.org/abs/2011.01808">workflow</a> to incrementally build data analysis pipelines combining variational inference, MCMC, reparametrization effects, and ad-hoc initialization strategies. Our workflow is summarized as a sequence of steps, where validation after any step might suggest backtracking to change design decisions at a previous step.</p>
+<ol class="arabic simple">
+<li><p>Clean the data.</p></li>
+<li><p>Create a generative model.</p></li>
+<li><p>Sanity check using MAP or mean-field inference.</p></li>
+<li><p>Create an initialization heuristic.</p></li>
+<li><p>Reparameterize the model, evaluating results under mean field VI.</p></li>
+<li><p>Customize the variational family (autoguides, easyguides, custom guides).</p></li>
+</ol>
+<p>The crux of efficient workflow is to ensure changes don’t break your pipeline. That is, after you build a number of pipeline stages, validate results, and decide to change one component in the pipeline, you’d like to minimize code changes needed in other components. The remainder of this tutorial describes these steps individually, then describes nuances of interactions among stages, then provides an example.</p>
+</section>
+<section id="Running-example:-SARS-CoV-2-strain-prediction">
+<h3>Running example: SARS-CoV-2 strain prediction<a class="headerlink" href="#Running-example:-SARS-CoV-2-strain-prediction" title="Permalink to this headline">¶</a></h3>
+<p>The running example in this tutorial will be a model <a class="reference external" href="https://www.medrxiv.org/content/10.1101/2021.09.07.21263228v1">(Obermeyer et al. 2021)</a> of the relative growth rates of different strains of the SARS-CoV-2 virus, based on <a class="reference external" href="https://docs.nextstrain.org/projects/ncov/en/latest/reference/remote_inputs.html">open data</a> counting different <a class="reference external" href="https://cov-lineages.org/">PANGO lineages</a> of samples collected at different times around the world. There are about 2 million sequences in total.</p>
+<p>The model is a high-dimensional regression model with around 1000 coefficients, a multivariate logicstic growth function (using a simple <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html">torch.softmax()</a>) and a [Multinomial](<a class="reference external" href="https://pytorch.org/docs/stable/distributions.html#multinomial">https://pytorch.org/docs/stable/distributions.html#multinomial</a> likelihood. While the number of coefficients is relatively small, there are about 500,000 local latent variables to estimate, and plate structure in the model should lead to an
+approximately block diagonal covariance matrix.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
+<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AutoDelta</span><span class="p">,</span>
+    <span class="n">AutoNormal</span><span class="p">,</span>
+    <span class="n">AutoMultivariateNormal</span><span class="p">,</span>
+    <span class="n">AutoLowRankMultivariateNormal</span><span class="p">,</span>
+    <span class="n">AutoGuideList</span><span class="p">,</span>
+    <span class="n">init_to_feasible</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pyro.infer.reparam</span> <span class="kn">import</span> <span class="n">AutoReparam</span><span class="p">,</span> <span class="n">LocScaleReparam</span>
+<span class="kn">from</span> <span class="nn">pyro.nn.module</span> <span class="kn">import</span> <span class="n">PyroParam</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">ClippedAdam</span>
+<span class="kn">from</span> <span class="nn">pyro.ops.special</span> <span class="kn">import</span> <span class="n">sparse_multinomial_likelihood</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using GPU&quot;</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using CPU&quot;</span><span class="p">)</span>
+<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Clean-the-data">
+<h3>Clean the data<a class="headerlink" href="#Clean-the-data" title="Permalink to this headline">¶</a></h3>
+<p>While in principle you could be Bayesian about everything, it’s best to focus probabilistic inference on the truly uncertain parts of your problem.</p>
+<p>Our running example will use a pre-cleaned dataset. We started with Nextstrain’s <a class="reference external" href="https://docs.nextstrain.org/projects/ncov/en/latest/reference/remote_inputs.html">ncov</a> tool for preprocessing, followed by the Broad Institute’s <a class="reference external" href="https://github.com/broadinstitute/pyro-cov/blob/master/scripts/preprocess_nextstrain.py">pyro-cov</a> tool for aggregation, resulting in a dataset of SARS-CoV-2 lineages observed around the world through time.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pyro.contrib.examples.nextstrain</span> <span class="kn">import</span> <span class="n">load_nextstrain_counts</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_nextstrain_counts</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">summarize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">summarize</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> of shape </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> of length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">summarize</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Create-a-generative-model">
+<h3>Create a generative model<a class="headerlink" href="#Create-a-generative-model" title="Permalink to this headline">¶</a></h3>
+<p>The first step to using Pyro is creating a generative model, either a python function or a <a class="reference external" href="https://docs.pyro.ai/en/dev/nn.html#pyro.nn.module.PyroModule">pyro.nn.Module</a>. Start simple. Start with a shallow hierarchy and later add latent variables to share statistical strength. Start with a slice of your data then add a <a href="#id1"><span class="problematic" id="id2">`plate &lt;&gt;`__</span></a> over multiple slices. Start with simple distributions like <a href="#id1"><span class="problematic" id="id3">`Normal &lt;&gt;`__</span></a>, <a href="#id1"><span class="problematic" id="id4">`LogNormal &lt;&gt;`__</span></a>, <a href="#id1"><span class="problematic" id="id5">`Poisson &lt;&gt;`__</span></a> and <a href="#id1"><span class="problematic" id="id6">`Multinomial &lt;&gt;`__</span></a>, then consider overdispersed
+versions like <a href="#id1"><span class="problematic" id="id7">`StudentT &lt;&gt;`__</span></a>, <a href="#id1"><span class="problematic" id="id8">`Gamma &lt;&gt;`__</span></a>, <a href="#id1"><span class="problematic" id="id9">`GammaPoisson &lt;&gt;`__</span></a>/<a href="#id1"><span class="problematic" id="id10">`NegativeBinomial &lt;&gt;`__</span></a>, and <a href="#id1"><span class="problematic" id="id11">`DirichletMultinomial &lt;&gt;`__</span></a>. Keep your model simple and readable so you can share it and get feedback from domain experts. Use <a class="reference external" href="http://www.stat.columbia.edu/~gelman/presentations/weakpriorstalk.pdf">weakly informative priors</a>.</p>
+<p>We’ll focus on a multivariate logistic growth model of competing SARS-CoV-2 strains, as described in <a class="reference external" href="https://www.medrxiv.org/content/10.1101/2021.09.07.21263228v1">Obermeyer et al. (2021)</a>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">]</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">S</span><span class="p">,</span> <span class="n">M</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">S</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="mf">5.5</span> <span class="o">/</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span>
+    <span class="n">time</span> <span class="o">-=</span> <span class="n">time</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">strain_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;strain&quot;</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">place_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;place&quot;</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">time_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># Model each region as multivariate logistic growth.</span>
+    <span class="n">rate_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">init_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;mutation&quot;</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">coef</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;coef&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Laplace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">strain_plate</span><span class="p">:</span>
+        <span class="n">rate_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;rate_loc&quot;</span><span class="p">,</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="n">coef</span> <span class="o">@</span> <span class="n">features</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">place_plate</span><span class="p">,</span> <span class="n">strain_plate</span><span class="p">:</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">rate_loc</span><span class="p">,</span> <span class="n">rate_scale</span><span class="p">))</span>
+        <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">))</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="c1"># Observe sequences via a multinomial likelihood.</span>
+    <span class="k">with</span> <span class="n">time_plate</span><span class="p">,</span> <span class="n">place_plate</span><span class="p">:</span>
+        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">validate_args</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The execution cost of this model is dominated by the multinomial likelihood over a large sparse count matrix.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;counts has </span><span class="si">{:d}</span><span class="s2"> / </span><span class="si">{}</span><span class="s2"> nonzero elements&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(),</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+<span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>To speed up inference (and model iteration!) we’ll replace the <code class="docutils literal notranslate"><span class="pre">pyro.sample(...,</span> <span class="pre">Multinomial)</span></code> likelihood with an equivalent but much cheaper <code class="docutils literal notranslate"><span class="pre">pyro.factor</span></code> statement using a helper <code class="docutils literal notranslate"><span class="pre">pyro.ops.sparse_multinomial_likelihood</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">predict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">]</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span>
+    <span class="n">sparse_counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;sparse_counts&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">S</span><span class="p">,</span> <span class="n">M</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">S</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="mf">5.5</span> <span class="o">/</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span>
+    <span class="n">time</span> <span class="o">-=</span> <span class="n">time</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="c1"># Model each region as multivariate logistic growth.</span>
+    <span class="n">rate_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">init_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;mutation&quot;</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">coef</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;coef&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Laplace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;strain&quot;</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">rate_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;rate_loc&quot;</span><span class="p">,</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="n">coef</span> <span class="o">@</span> <span class="n">features</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;place&quot;</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">rate_loc</span><span class="p">,</span> <span class="n">rate_scale</span><span class="p">))</span>
+            <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">predict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Exit early during evaluation.</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="p">(</span><span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[</span><span class="n">predict</span><span class="p">])</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">probs</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="p">(</span><span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Observe sequences via a cheap sparse multinomial likelihood.</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">sparse_counts</span><span class="p">[</span><span class="s2">&quot;index&quot;</span><span class="p">]</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span>
+        <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
+        <span class="n">sparse_multinomial_likelihood</span><span class="p">(</span>
+            <span class="n">sparse_counts</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">],</span> <span class="n">logits</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">s</span><span class="p">],</span> <span class="n">sparse_counts</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Sanity-check-using-mean-field-inference">
+<h3>Sanity check using mean field inference<a class="headerlink" href="#Sanity-check-using-mean-field-inference" title="Permalink to this headline">¶</a></h3>
+<p>Mean field Normal inference is cheap and robust, and is a good way to sanity check your posterior point estimate, even if the posterior uncertainty is implausibly narrow. We recommend starting with an <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autonormal">AutoNormal</a> guide, and possibly setting <code class="docutils literal notranslate"><span class="pre">init_scale</span></code> to a small value like <code class="docutils literal notranslate"><span class="pre">init_scale=0.01</span></code> or <code class="docutils literal notranslate"><span class="pre">init_scale=0.001</span></code>.</p>
+<p>Note that while MAP estimating via <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autodelta">AutoDelta</a> is even cheaper and more robust than mean-field <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code>, <code class="docutils literal notranslate"><span class="pre">AutoDelta</span></code> is coordinate-system dependent and is not invariant to reparametrization. Because in our experience most models benefit from some reparameterization, we recommend <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> over <code class="docutils literal notranslate"><span class="pre">AutoDelta</span></code> because <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> is less sensitive to reparametrization.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">fit_svi</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1001</span><span class="p">,</span> <span class="n">log_every</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20211205</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">smoke_test</span><span class="p">:</span>
+        <span class="n">num_steps</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="c1"># Measure model and guide complexity.</span>
+    <span class="n">num_latents</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+        <span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="o">.</span><span class="n">iter_stochastic_nodes</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_auxiliary&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">num_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">num_latents</span><span class="si">}</span><span class="s2"> latent variables and </span><span class="si">{</span><span class="n">num_params</span><span class="si">}</span><span class="s2"> learnable parameters&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Save gradient norms during inference.</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">hook</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">series</span><span class="p">):</span>
+        <span class="n">series</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+        <span class="n">value</span><span class="o">.</span><span class="n">register_hook</span><span class="p">(</span>
+            <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">hook</span><span class="p">,</span> <span class="n">series</span><span class="o">=</span><span class="n">series</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; grad&quot;</span><span class="p">])</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Train the guide.</span>
+    <span class="n">optim</span> <span class="o">=</span> <span class="n">ClippedAdam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">lr</span><span class="p">,</span> <span class="s2">&quot;lrd&quot;</span><span class="p">:</span> <span class="mf">0.1</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">num_steps</span><span class="p">)})</span>
+    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
+    <span class="n">num_obs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_obs</span>
+        <span class="n">series</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+        <span class="n">median</span> <span class="o">=</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>  <span class="c1"># cheap for autoguides</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">median</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">series</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="n">log_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;step </span><span class="si">{</span><span class="n">step</span><span class="si">:</span><span class="s2"> &gt;4d</span><span class="si">}</span><span class="s2"> loss = </span><span class="si">{</span><span class="n">loss</span><span class="si">:</span><span class="s2">0.6g</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Plot series to assess convergence.</span>
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">series</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;loss&quot;</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;k--&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot; mean&quot;</span><span class="p">):</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;SVI step&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;loss, scalar parameters, and gradient norms&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s2">&quot;symlog&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">fit_svi</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>After each change to the model or inference, you’ll validate model outputs, completing <a class="reference external" href="http://www.cs.columbia.edu/~blei/papers/Blei2014b.pdf">Box’s loop</a>. In our running example we’ll quantitiatively evaluate using the mean average error (MAE) over the last fully-observed time step.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">mae</span><span class="p">(</span><span class="n">true_counts</span><span class="p">,</span> <span class="n">pred_probs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Computes mean average error between counts and predicted probabilities.&quot;&quot;&quot;</span>
+    <span class="n">pred_counts</span> <span class="o">=</span> <span class="n">pred_probs</span> <span class="o">*</span> <span class="n">true_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="p">(</span><span class="n">true_counts</span> <span class="o">-</span> <span class="n">pred_counts</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">true_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">error</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;USA / Massachusetts&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">=-</span><span class="mi">2</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="n">smoke_test</span><span class="p">:</span>
+        <span class="n">num_particles</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="sd">&quot;&quot;&quot;Evaluate posterior predictive accuracy at the last fully observed time step.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">(),</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># makes computations cheaper</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;particle&quot;</span><span class="p">,</span> <span class="n">num_particles</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">):</span>  <span class="c1"># vectorizes</span>
+            <span class="n">guide_trace</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">replay</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide_trace</span><span class="p">)(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">predict</span><span class="o">=</span><span class="n">time</span><span class="p">)</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># average over Monte Carlo samples</span>
+        <span class="n">true_counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">][</span><span class="n">time</span><span class="p">]</span>
+        <span class="c1"># Compute global and local KL divergence.</span>
+        <span class="n">global_mae</span> <span class="o">=</span> <span class="n">mae</span><span class="p">(</span><span class="n">true_counts</span><span class="p">,</span> <span class="n">probs</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;locations&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+        <span class="n">local_mae</span> <span class="o">=</span> <span class="n">mae</span><span class="p">(</span><span class="n">true_counts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">probs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;MAE (global)&quot;</span><span class="p">:</span> <span class="n">global_mae</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;MAE (</span><span class="si">{</span><span class="n">location</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">:</span> <span class="n">local_mae</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pprint</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>We’ll also qualitatively evaluate using a volcano plot showing the effect size and statistical significance of each mutation’s coefficient, and labeling the mutation with the most significant positive effect. We expect: - most mutations have very little effect (1.0) - more mutations have positive effect than netagive effect - effect sizes are on the order of 1.1 or 0.9.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">plot_volcano</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="n">num_particles</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">smoke_test</span><span class="p">:</span>
+        <span class="n">num_particles</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">(),</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># makes computations cheaper</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;particle&quot;</span><span class="p">,</span> <span class="n">num_particles</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">):</span>  <span class="c1"># vectorizes</span>
+            <span class="n">trace</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+            <span class="n">trace</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">poutine</span><span class="o">.</span><span class="n">replay</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">trace</span><span class="p">))</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">coef</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="s2">&quot;coef&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="n">coef</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.01</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">coef</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">coef</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">z_score</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span> <span class="o">/</span> <span class="n">std</span>
+    <span class="n">effect_size</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">effect_size</span><span class="p">,</span> <span class="n">z_score</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;darkred&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s2">&quot;symlog&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$R_m/R_</span><span class="si">{wt}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;z-score&quot;</span><span class="p">)</span>
+    <span class="n">xticks</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">mean</span> <span class="o">/</span> <span class="n">std</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">effect_size</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">z_score</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">,</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mutations&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">xticks</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">xticks</span><span class="p">)))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Volcano plot of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span><span class="si">}</span><span class="s2"> mutations&quot;</span><span class="p">)</span>
+
+<span class="n">plot_volcano</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Create-an-initialization-heuristic">
+<h3>Create an initialization heuristic<a class="headerlink" href="#Create-an-initialization-heuristic" title="Permalink to this headline">¶</a></h3>
+<p>In high-dimensional models, convergence can be slow and NANs arise easily, even when sampling from <a class="reference external" href="http://www.stat.columbia.edu/~gelman/presentations/weakpriorstalk.pdf">weakly informative priors</a>. We recommend heuristically initializing a point estimate for each latent variable, aiming to initialize at something that is the right order of magnitude. Often you can initialize to a simple statistic of the data, e.g. a mean or standard deviation.</p>
+<p>Pyro’s autoguides provide a number of <a href="#id1"><span class="problematic" id="id12">`initialization strategies &lt;&gt;`__</span></a> for initialzing the location parameter of many variational families, specified as <code class="docutils literal notranslate"><span class="pre">init_loc_fn</span></code>. You can create a custom initializer by accepting a pyro sample site dict and generating a sample from <code class="docutils literal notranslate"><span class="pre">site[&quot;name&quot;]</span></code> and <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;]</span></code> using e.g. <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].shape()</span></code>, <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].support</span></code>, <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].mean</span></code>, or sampling via <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].sample()</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">init_loc_fn</span><span class="p">(</span><span class="n">site</span><span class="p">):</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;coef&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span>
+        <span class="c1"># Heuristically initialize based on data.</span>
+        <span class="k">return</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">init_to_feasible</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>  <span class="c1"># fallback</span>
+</pre></div>
+</div>
+</div>
+<p>As you evolve a model, you’ll add and remove and rename latent variables. We find it useful to require inits for all latent variables, add a message to remind yourself to udpate the <code class="docutils literal notranslate"><span class="pre">init_loc_fn</span></code> whenever the model changes.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">init_loc_fn</span><span class="p">(</span><span class="n">site</span><span class="p">):</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_scale&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;coef&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;rate&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TODO initialize latent variable </span><span class="si">{</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_loc_fn</span><span class="p">,</span> <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">fit_svi</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">))</span>
+<span class="n">plot_volcano</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Reparametrize-the-model">
+<h3>Reparametrize the model<a class="headerlink" href="#Reparametrize-the-model" title="Permalink to this headline">¶</a></h3>
+<p>Reparametrizing a model preserves its distribution while changing its geometry. Reparametrizing is simply a change of coordinates. When reparametrizing we aim to warp a model’s geometry to remove correlations and to lift inconvenient topological manifolds into simpler higher dimensional flat Euclidean space.</p>
+<p>Whereas many probabilistic programming langauges require users to rewrite models to change coordinates, Pyro implements a library of about 15 different reparametrization effects including decentering (Gorinova et al. 2020), Haar wavely transforms, and neural transport (Hoffman et al. 2019), as well as strategies to automatically apply effects and machinery to create custom reparametrization effects. Using these reparametrizers you can separate modeling from inference: first specify a model in a
+form that is natural to domain experts, then in inference code, reparametrize the model to have geometry that is more amenable to variational inference.</p>
+<p>In our SARS-CoV-2 model, the geometry might improve if we change</p>
+<div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- rate = pyro.sample(&quot;rate&quot;, dist.Normal(rate_loc, rate_scale))</span>
+<span class="gi">+ rate = pyro.sample(&quot;rate&quot;, dist.Normal(0, 1)) * rate_scale + rate_loc</span>
+</pre></div>
+</div>
+<p>but that would make the model less interpretable. Instead we can reparametrize the model</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">reparam_model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">reparam</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;rate&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">()})</span>
+</pre></div>
+</div>
+</div>
+<p>or even automatically apply a set of recommended reparameterizers</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">reparam_model</span> <span class="o">=</span> <span class="n">AutoReparam</span><span class="p">()(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s try reparametrizing both sites “rate” and “init”. Note we’ll create a fresh <code class="docutils literal notranslate"><span class="pre">reparam_model</span></code> each time we train a guide, since the parameters are stored in that <code class="docutils literal notranslate"><span class="pre">reparam_model</span></code> instance. Take care to use the <code class="docutils literal notranslate"><span class="pre">reparam_model</span></code> in downstream prediction tasks like running <code class="docutils literal notranslate"><span class="pre">evaluate(reparam_model,</span> <span class="pre">guide)</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">reparam_model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">reparam</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;rate&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">(),</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">()}</span>
+<span class="p">)</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_loc_fn</span><span class="p">,</span> <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">fit_svi</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">))</span>
+<span class="n">plot_volcano</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Customize-the-variational-family">
+<h3>Customize the variational family<a class="headerlink" href="#Customize-the-variational-family" title="Permalink to this headline">¶</a></h3>
+<p>When creating a new model, we recommend starting with mean field variational inference using an <a href="#id1"><span class="problematic" id="id13">`AutoNormal &lt;&gt;`__</span></a> guide. This mean field guide is good at finding the neighborhood of your model’s mode, but naively it ignores correlations between latent variables. A first step in capturing correlations is to reparametrize the model as above: using a <code class="docutils literal notranslate"><span class="pre">LocScaleReparam</span></code> or <code class="docutils literal notranslate"><span class="pre">HaarReparam</span></code> already allows the guide to capture some correlations among latent variables.</p>
+<p>The next step towards modeling uncertainty is to customize the variational family by trying other autoguides, building on <a href="#id1"><span class="problematic" id="id14">`EasyGuide &lt;&gt;`__</span></a>, or creating a custom guide using Pyro primitives. We recommend increasing guide complexity gradually via these steps: 1. Start with an <a href="#id1"><span class="problematic" id="id15">`AutoNormal &lt;&gt;`__</span></a> guide. 2. Try <a href="#id1"><span class="problematic" id="id16">`AutoLowRankMultivariateNormal &lt;&gt;`__</span></a>, which can model the principle components of correlated uncertainty. (For models with only ~100 latent variables you might also try
+<a href="#id1"><span class="problematic" id="id17">`AutoMultivariateNormal &lt;&gt;`__</span></a> or <a href="#id1"><span class="problematic" id="id18">`AutoGaussian &lt;&gt;`__</span></a>). 3. Try combining multiple guides <a href="#id1"><span class="problematic" id="id19">`AutoGuideList &lt;&gt;`__</span></a>. For example if <a href="#id1"><span class="problematic" id="id20">`AutoLowRankMultivariateNormal &lt;&gt;`__</span></a> is too expensive for all the latent variables, you can use <a href="#id1"><span class="problematic" id="id21">`AutoGuideList &lt;&gt;`__</span></a> to combine an <a href="#id1"><span class="problematic" id="id22">`AutoLowRankMultivariateNormal &lt;&gt;`__</span></a> guide over a few top-level global latent variables, together with a cheaper <a href="#id1"><span class="problematic" id="id23">`AutoNormal &lt;&gt;`__</span></a> guide over more numerous local latent variables. 4. Try using <a href="#id1"><span class="problematic" id="id24">`AutoGuideList &lt;&gt;`__</span></a> to combine a autoguide
+together with a custom guide function built using <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>, <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code>, and <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>. Given a <code class="docutils literal notranslate"><span class="pre">partial_guide()</span></code> function that covers just a few latent variables, you can <code class="docutils literal notranslate"><span class="pre">AutoGuideList.append(partial_guide)</span></code> just as you append autoguides. 5. Consider customizing one of Pyro’s autoguides that leverage model structure, e.g. <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autostructured">AutoStructured</a>,
+<a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autonormalmessenger">AutoNormalMessenger</a>, <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autohierarchicalnormalmessenger">AutoHierarchicalNormalMessenger</a> <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autoregressivemessenger">AutoRegressiveMessenger</a>. 6. For models with local correlations, consider building on <a class="reference external" href="https://docs.pyro.ai/en/latest/contrib.easyguide.html">EasyGuide</a>, a framework for building guides over
+groups of variables.</p>
+<p>While a fully-custom guides built from <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> primitives offer the most flexible variational family, they are also the most brittle guides because each code change to the model or reparametrizer requires changes in the guide. The author recommends avoiding completely low-level guides and instead using <code class="docutils literal notranslate"><span class="pre">AutoGuide</span></code> or <code class="docutils literal notranslate"><span class="pre">EasyGuide</span></code> for at least some parts of the model, thereby speeding up model iteration.</p>
+<p>Let’s first try a simple <code class="docutils literal notranslate"><span class="pre">AutoLowRankMultivariateNormal</span></code> guide.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">reparam_model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">reparam</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;rate&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">(),</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">()}</span>
+<span class="p">)</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoLowRankMultivariateNormal</span><span class="p">(</span>
+    <span class="n">reparam_model</span><span class="p">,</span> <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_loc_fn</span><span class="p">,</span> <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="mi">100</span>
+<span class="p">)</span>
+<span class="n">fit_svi</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">log_every</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># don&#39;t even bother to evaluate, since this is too slow.</span>
+</pre></div>
+</div>
+</div>
+<p>Yikes! This is quite slow and sometimes runs out of memory on GPU.</p>
+<p>Let’s make this cheaper by using <code class="docutils literal notranslate"><span class="pre">AutoGuideList</span></code> to combine an <code class="docutils literal notranslate"><span class="pre">AutoLowRankMultivariateNormal</span></code> guide over the most important variables <code class="docutils literal notranslate"><span class="pre">rate_scale</span></code>, <code class="docutils literal notranslate"><span class="pre">init_scale</span></code>, and <code class="docutils literal notranslate"><span class="pre">coef</span></code>, together with a simple cheap <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> guide on the rest of the model (the expensive <code class="docutils literal notranslate"><span class="pre">rate</span></code> and <code class="docutils literal notranslate"><span class="pre">init</span></code> variables). The typical pattern is to create two views of the model with <a class="reference external" href="https://docs.pyro.ai/en/stable/poutine.html#pyro.poutine.handlers.block">poutine.block</a>, one exposing the target variables and
+the other hiding them.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">reparam_model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">reparam</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;rate&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">(),</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">()}</span>
+<span class="p">)</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoGuideList</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">)</span>
+<span class="n">mvn_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;coef&quot;</span><span class="p">,</span> <span class="s2">&quot;rate_scale&quot;</span><span class="p">,</span> <span class="s2">&quot;coef_scale&quot;</span><span class="p">]</span>
+<span class="n">guide</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+    <span class="n">AutoLowRankMultivariateNormal</span><span class="p">(</span>
+        <span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">expose</span><span class="o">=</span><span class="n">mvn_vars</span><span class="p">),</span>
+        <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_loc_fn</span><span class="p">,</span>
+        <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">guide</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+    <span class="n">AutoNormal</span><span class="p">(</span>
+        <span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">hide</span><span class="o">=</span><span class="n">mvn_vars</span><span class="p">),</span>
+        <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_loc_fn</span><span class="p">,</span>
+        <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">fit_svi</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">))</span>
+<span class="n">plot_volcano</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Next let’s create a custom guide for part of the model, just the <code class="docutils literal notranslate"><span class="pre">rate</span></code> and <code class="docutils literal notranslate"><span class="pre">init</span></code> parts. Since we’ll want to use this with reparametrizers, we’ll make the guide use the auxiliary latent variables created by <code class="docutils literal notranslate"><span class="pre">poutine.reparam</span></code>, rather than the original <code class="docutils literal notranslate"><span class="pre">rate</span></code> and <code class="docutils literal notranslate"><span class="pre">init</span></code> variables. Let’s see what these variables are named:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">)</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span>
+    <span class="n">dataset</span>
+<span class="p">)</span><span class="o">.</span><span class="n">iter_stochastic_nodes</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>It looks like these new auxiliary variables are called <code class="docutils literal notranslate"><span class="pre">rate_decentered</span></code> and <code class="docutils literal notranslate"><span class="pre">init_decentered</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">local_guide</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+    <span class="c1"># Create learnable parameters.</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">S</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">r_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;rate_decentered_loc&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">))</span>
+    <span class="n">i_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;init_decentered_loc&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">))</span>
+    <span class="n">skew</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;skew&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">))</span>  <span class="c1"># allows correlation</span>
+    <span class="n">r_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;rate_decentered_scale&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">),</span>
+                          <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">softplus_positive</span><span class="p">)</span>
+    <span class="n">i_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;init_decentered_scale&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">),</span>
+                          <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">softplus_positive</span><span class="p">)</span>
+
+    <span class="c1"># Sample local variables inside plates.</span>
+    <span class="c1"># Note plates are already created by the main guide, so we&#39;ll</span>
+    <span class="c1"># use the existing plates rather than calling pyro.plate(...).</span>
+    <span class="k">with</span> <span class="n">guide</span><span class="o">.</span><span class="n">plates</span><span class="p">[</span><span class="s2">&quot;place&quot;</span><span class="p">],</span> <span class="n">guide</span><span class="o">.</span><span class="n">plates</span><span class="p">[</span><span class="s2">&quot;strain&quot;</span><span class="p">]:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;rate_decentered&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;rate_decentered&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">r_loc</span><span class="p">,</span> <span class="n">r_scale</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">i_loc</span> <span class="o">=</span> <span class="n">i_loc</span> <span class="o">+</span> <span class="n">skew</span> <span class="o">*</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;rate_decentered&quot;</span><span class="p">]</span>
+        <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;init_decentered&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="s2">&quot;init_decentered&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">i_loc</span><span class="p">,</span> <span class="n">i_scale</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">samples</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%%time</span>
+<span class="n">reparam_model</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">reparam</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;rate&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">(),</span> <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="n">LocScaleReparam</span><span class="p">()}</span>
+<span class="p">)</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoGuideList</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">)</span>
+<span class="n">local_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rate_decentered&quot;</span><span class="p">,</span> <span class="s2">&quot;init_decentered&quot;</span><span class="p">]</span>
+<span class="n">guide</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+    <span class="n">AutoLowRankMultivariateNormal</span><span class="p">(</span>
+        <span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">hide</span><span class="o">=</span><span class="n">local_vars</span><span class="p">),</span>
+        <span class="n">init_loc_fn</span><span class="o">=</span><span class="n">init_loc_fn</span><span class="p">,</span>
+        <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">guide</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">local_guide</span><span class="p">)</span>
+<span class="n">fit_svi</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">reparam_model</span><span class="p">,</span> <span class="n">guide</span><span class="p">))</span>
+<span class="n">plot_volcano</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="Modules in Pyro" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="jit.html" class="btn btn-neutral float-right" title="Using the PyTorch JIT Compiler with Pyro" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Pyro Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
