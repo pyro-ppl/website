@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>&lt;no title&gt; &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>SVI Part IV: Tips and Tricks &mdash; Pyro Tutorials 1.8.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -17,11 +17,13 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="bayesian_regression.html" />
-    <link rel="prev" title="&lt;no title&gt;" href="svi_part_iii.html" /> 
+    <link rel="next" title="Bayesian Regression - Introduction (Part 1)" href="bayesian_regression.html" />
+    <link rel="prev" title="SVI Part III: ELBO Gradient Estimators" href="svi_part_iii.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,17 +45,64 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Practical Pyro and PyTorch</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introductory Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro_long.html">Introduction to Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_rendering.html">Automatic rendering of Pyro models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">SVI Part IV: Tips and Tricks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Pyro-Forum">Pyro Forum</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#1.-Start-with-a-small-learning-rate">1. Start with a small learning rate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#2.-Use-Adam-or-ClippedAdam-by-default">2. Use Adam or ClippedAdam by default</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#3.-Consider-using-a-decaying-learning-rate">3. Consider using a decaying learning rate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#4.-Make-sure-your-model-and-guide-distributions-have-the-same-support">4. Make sure your model and guide distributions have the same support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#5.-Constrain-parameters-that-need-to-be-constrained">5. Constrain parameters that need to be constrained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#6.-If-you-are-having-trouble-constructing-a-custom-guide,-use-an-AutoGuide">6. If you are having trouble constructing a custom guide, use an AutoGuide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#7.-Parameter-initialization-matters:-initialize-guide-distributions-to-have-low-variance">7. Parameter initialization matters: initialize guide distributions to have low variance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#8.-Explore-trade-offs-controlled-by-num_particles,-mini-batch-size,-etc.">8. Explore trade-offs controlled by <code class="docutils literal notranslate"><span class="pre">num_particles</span></code>, mini-batch size, etc.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#9.-Use-TraceMeanField_ELBO-if-applicable">9. Use <code class="docutils literal notranslate"><span class="pre">TraceMeanField_ELBO</span></code> if applicable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#10.-Consider-normalizing-your-ELBO">10. Consider normalizing your ELBO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#11.-Pay-attention-to-scales">11. Pay attention to scales</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#12.-Keep-validation-enabled">12. Keep validation enabled</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#13.-Tensor-shape-errors">13. Tensor shape errors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#14.-Enumerate-discrete-latent-variables-if-possible">14. Enumerate discrete latent variables if possible</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#15.-Some-complex-models-can-benefit-from-KL-annealing">15. Some complex models can benefit from KL annealing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#16.-Consider-clipping-gradients-or-constraining-parameters-defensively">16. Consider clipping gradients or constraining parameters defensively</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Practical Pyro and PyTorch</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression_ii.html">Bayesian Regression - Inference Algorithms (Part 2)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prodlda.html">Probabilistic Topic Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanvi.html"><em>scANVI: Deep Generative Modeling for Single Cell Data with Pyro</em></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Discrete Latent Variables</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="enumeration.html">Inference with Discrete Latent Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html">Dirichlet Process Mixture Models in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="toy_mixture_model_discrete_enumeration.html">Example: Toy Mixture Model With Discrete Enumeration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Example: Hidden Markov Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Example: Capture-Recapture Models (CJS Models)</a></li>
@@ -63,42 +112,79 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Customizing Inference</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
 <li class="toctree-l1"><a class="reference internal" href="autoname_examples.html">Example: reducing boilerplate with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.autoname</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Time Series</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_i.html">Forecasting I: univariate, heavy tailed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_ii.html">Forecasting II: state space models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_iii.html">Forecasting III: hierarchical models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_dlm.html">Forecasting with Dynamic Linear Model (DLM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="forecast_simple.html">Multivariate Forecasting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="timeseries.html">Example: Gaussian Process Time Series Models</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Gaussian Processes</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dkl.html">Example: Deep Kernel Learning</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Epidemiology</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="epi_intro.html">Epidemiological models: Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="epi_sir.html">Example: Univariate epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logistic-growth.html">Logistic growth models of SARS-CoV-2 lineage proportions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Experimental Design</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Object Tracking</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
+</ul>
 <p class="caption" role="heading"><span class="caption-text">Other Inference Algorithms</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="baseball.html">Example: analyzing baseball stats with MCMC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcmc.html">Example: Inference with Markov Chain Monte Carlo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lkj.html">Example: MCMC with an LKJ prior over covariances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Example: Sequential Monte Carlo Filtering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Understanding Pyro's Internals</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_i.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_ii.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm_funsor.html">Example: hidden Markov models with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Deprecated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">(DEPRECATED) An Introduction to Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">(DEPRECATED) An Introduction to Inference in Pyro</a></li>
 </ul>
 
         </div>
@@ -115,7 +201,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>&lt;no title&gt;</li>
+      <li>SVI Part IV: Tips and Tricks</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/svi_part_iv.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -149,471 +235,200 @@
     text-align: unset;
 }
 </style>
-<dl>
-<dt>{</dt><dd><dl>
-<dt>“cells”: [</dt><dd><dl>
-<dt>{</dt><dd><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“# SVI Part IV: Tips and Tricksn”,
-“n”,
-“The three SVI tutorials leading up to this one ([Part I](<a class="reference external" href="http://pyro.ai/examples/svi_part_i.html">http://pyro.ai/examples/svi_part_i.html</a>), [Part II](<a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">http://pyro.ai/examples/svi_part_ii.html</a>), &amp; [Part III](<a class="reference external" href="http://pyro.ai/examples/svi_part_iii.html">http://pyro.ai/examples/svi_part_iii.html</a>)) go throughn”,
-“the various steps involved in using Pyro to do variationaln”,
-“inference.n”,
-“Along the way we defined models and guides (i.e. variational distributions),n”,
-“setup variational objectives (in particular [ELBOs](<a class="reference external" href="https://docs.pyro.ai/en/dev/inference_algos.html?highlight=elbo#module-pyro.infer.elbo">https://docs.pyro.ai/en/dev/inference_algos.html?highlight=elbo#module-pyro.infer.elbo</a>)), n”,
-“and constructed optimizers ([pyro.optim](<a class="reference external" href="http://docs.pyro.ai/en/dev/optimization.html">http://docs.pyro.ai/en/dev/optimization.html</a>)). n”,
-“The effect of all this machinery is to cast Bayesian inference as a <em>stochastic optimization problem</em>. n”,
-“n”,
-“This is all very useful, but in order to arrive at our ultimate goal—learning model parameters, inferring approximate posteriors, making predictions with the posterior predictive distribution, etc.—we need to successfully solve this optimization problem. n”,
-“Depending on the details of the particular problem—for example the dimensionality of the latent space, whether we have discrete latent variables, and so on—this can be easy or hard. n”,
-“In this tutorial we cover a few tips and tricks we expect to be generally useful for users doing variational inference in Pyro. <em>ELBO not converging!? Running into NaNs!?</em> Look below for possible solutions!  n”,
-“n”,
-“#### Pyro Forumn”,
-“n”,
-“If you’re still having trouble with optimization after reading this tutorial, please don’t hesitate to ask a question on our [forum](<a class="reference external" href="https://forum.pyro.ai/">https://forum.pyro.ai/</a>)!”</p>
-</div></blockquote>
-<p>]</p>
-</dd>
-</dl>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 1. Start with a small learning raten”,
-“n”,
-“While large learning rates might be appropriate for some problems, it’s usually good practice to start with small learning rates like $10^{-3}$n”,
-“or $10^{-4}$:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;optimizer</span> <span class="pre">=</span> <span class="pre">pyro.optim.Adam({\&quot;lr\&quot;:</span> <span class="pre">0.001})\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“This is because ELBO gradients are <em>stochastic</em>, and potentially high variance, so large learning rates can quickly lead to regions of model/guide parameter space that are numerically unstable or otherwise undesirable.n”,
-“n”,
-“You can try a larger learning rate once you have achieved stablen”,
-“ELBO optimization using a smaller learning rate. n”,
-“This is often a good idea because excessively small learning rates can lead to poor optimization. n”,
-“In particular small learning rates can lead to getting stuck in poor local optima of the ELBO.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 2. Use Adam or ClippedAdam by defaultn”,
-“n”,
-“Use [Adam](<a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.pytorch_optimizers.Adam)n">http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.pytorch_optimizers.Adam)n</a>”,
-“or [ClippedAdam](<a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.optim.ClippedAdam">http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.optim.ClippedAdam</a>) by default when doing Stochastic Variational Inference. Note that <cite>ClippedAdam</cite> is just a convenient extension of <cite>Adam</cite> that provides built-in support for learning rate decay and gradient clipping.n”,
-“n”,
-“The basic reason these optimization algorithms often do well in the context of variational inference is that the smoothing they provide via per-parameter momentum is often essential when the optimization problem is very stochastic. Note that in SVI stochasticity can come from sampling latent variables, from subsampling data, or from both. n”,
-“n”,
-“In addition to tuning the learning rate in some cases it may be necessary to also tune the pair of <cite>betas</cite> hyperparameters that controls the momentum used by <cite>Adam</cite>. In particular for very stochastic models it may make sense to use higher values of $\beta_1$:n”,
-“n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;betas</span> <span class="pre">=</span> <span class="pre">(0.95,</span> <span class="pre">0.999)\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“instead of n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;betas</span> <span class="pre">=</span> <span class="pre">(0.90,</span> <span class="pre">0.999)\n&quot;,</span>
-<span class="pre">&quot;`</span></code>”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 3. Consider using a decaying learning raten”,
-“n”,
-“While a moderately large learning rate can be useful at the beginning of optimization when you’re far from the optimum and want to take large gradient steps, it’s often useful to have a smaller learning rate later on so that you don’t bounce around the optimum excessively without converging. n”,
-“One way to do this is to use the learning rate schedulers [provided](<a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=scheduler#pyro.optim.lr_scheduler.PyroLRScheduler">http://docs.pyro.ai/en/stable/optimization.html?highlight=scheduler#pyro.optim.lr_scheduler.PyroLRScheduler</a>) by Pyro. For example usage see the code snippet [here](<a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/a106882e8ffbfe6ac96f19aef9a218026482ed51/examples/scanvi/scanvi.py#L265">https://github.com/pyro-ppl/pyro/blob/a106882e8ffbfe6ac96f19aef9a218026482ed51/examples/scanvi/scanvi.py#L265</a>). n”,
-“Another convenient way to do this is to use the [ClippedAdam](<a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.optim.ClippedAdam">http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.optim.ClippedAdam</a>) optimizer that has built-in support for learning rate decay via the <cite>lrd</cite> argument:n”,
-“n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;num_steps</span> <span class="pre">=</span> <span class="pre">1000\n&quot;,</span>
-<span class="pre">&quot;initial_lr</span> <span class="pre">=</span> <span class="pre">0.001\n&quot;,</span>
-<span class="pre">&quot;gamma</span> <span class="pre">=</span> <span class="pre">0.1</span>&#160; <span class="pre">#</span> <span class="pre">final</span> <span class="pre">learning</span> <span class="pre">rate</span> <span class="pre">will</span> <span class="pre">be</span> <span class="pre">gamma</span> <span class="pre">*</span> <span class="pre">initial_lr\n&quot;,</span>
-<span class="pre">&quot;lrd</span> <span class="pre">=</span> <span class="pre">gamma</span> <span class="pre">**</span> <span class="pre">(1</span> <span class="pre">/</span> <span class="pre">num_steps)\n&quot;,</span>
-<span class="pre">&quot;optim</span> <span class="pre">=</span> <span class="pre">pyro.optim.ClippedAdam({'lr':</span> <span class="pre">initial_lr,</span> <span class="pre">'lrd':</span> <span class="pre">lrd})\n&quot;,</span>
-<span class="pre">&quot;`</span></code>”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 4. Make sure your model and guide distributions have the same supportn”,
-“n”,
-“Suppose you have a distribution in your <cite>model</cite> with constrained support, e.g. a LogNormal distribution, which has support on the positive real axis:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;def</span> <span class="pre">model():\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">dist.LogNormal(0.0,</span> <span class="pre">1.0))\n&quot;,</span>
-<span class="pre">&quot;`</span></code> n”,
-“Then you need to ensure that the accompanying <cite>sample</cite> site in the <cite>guide</cite> has the same support:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;def</span> <span class="pre">good_guide():\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">loc</span> <span class="pre">=</span> <span class="pre">pyro.param(\&quot;loc\&quot;,</span> <span class="pre">torch.tensor(0.0))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">dist.LogNormal(loc,</span> <span class="pre">1.0))\n&quot;,</span>
-<span class="pre">&quot;`</span></code> n”,
-“If you fail to do this and use for example the following inadmissable guide:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;def</span> <span class="pre">bad_guide():\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">loc</span> <span class="pre">=</span> <span class="pre">pyro.param(\&quot;loc\&quot;,</span> <span class="pre">torch.tensor(0.0))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">Normal</span> <span class="pre">may</span> <span class="pre">sample</span> <span class="pre">x</span> <span class="pre">&lt;</span> <span class="pre">0\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">dist.Normal(loc,</span> <span class="pre">1.0))</span>&#160; <span class="pre">\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“you will likely run into NaNs very quickly. n”,
-“This is because the <cite>log_prob</cite> of a LogNormal distribution evaluated at a sample <cite>x</cite> that satisfies <cite>x&lt;0</cite> is undefined, and the <cite>bad_guide</cite> is likely to produce such samples.n”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 5. Constrain parameters that need to be constrainedn”,
-“In a similar vein, you need to make sure that the parameters used to instantiate distributions are valid; otherwise you will quickly run into NaNs. n”,
-“For example the <cite>scale</cite> parameter of a Normal distribution needs to be positive. Thus the following <cite>bad_guide</cite> is problematic:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;def</span> <span class="pre">bad_guide():\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">scale</span> <span class="pre">=</span> <span class="pre">pyro.param(\&quot;scale\&quot;,</span> <span class="pre">torch.tensor(1.0))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">dist.Normal(0.0,</span> <span class="pre">scale))\n&quot;,</span>
-<span class="pre">&quot;`</span></code> n”,
-“while the following <cite>good_guide</cite> correctly uses a constraint to ensure positivity:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;from</span> <span class="pre">pyro.distributions</span> <span class="pre">import</span> <span class="pre">constraints\n&quot;,</span>
-<span class="pre">&quot;\n&quot;,</span>
-<span class="pre">&quot;def</span> <span class="pre">good_guide():\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">scale</span> <span class="pre">=</span> <span class="pre">pyro.param(\&quot;scale\&quot;,</span> <span class="pre">torch.tensor(0.05),</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">constraint=constraints.positive)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">dist.Normal(0.0,</span> <span class="pre">scale))\n&quot;,</span>
-<span class="pre">&quot;`</span></code> “</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 6. If you are having trouble constructing a custom guide, use an AutoGuiden”,
-“n”,
-“In order for a model/guide pair to lead to stable optimization a number of conditions need to be satisfied, some of which we have covered above. n”,
-“Sometimes it can be difficult to diagnose the reason for numerical instability or poor convergence. n”,
-“Among other reasons this is because the fundamental issue could arise in a number of different places: in the model, in the guide, or in the choice of optimization algorithm or hyperparameters. n”,
-“n”,
-“Sometimes the problem is actually in your model even though you think it’s in the guide. n”,
-“Conversely, sometimes the problem is in your guide even though you think it’s in the model or somewhere else. n”,
-“For these reasons it can be helpful to reduce the number of moving parts while you try to identify the underyling issue.n”,
-“One convenient way to do this is to replace your custom guide with a [pyro.infer.AutoGuide](<a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide">http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide</a>). n”,
-“n”,
-“For example, if all the latent variables in your model are continuous, you can try a [pyro.infer.AutoNormal](<a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autonormal">http://docs.pyro.ai/en/stable/infer.autoguide.html#autonormal</a>) guide.n”,
-“Alternatively, you can use MAP inference instead of full-blown variational inference. See the [MLE/MAP](<a class="reference external" href="http://pyro.ai/examples/mle_map.html">http://pyro.ai/examples/mle_map.html</a>) tutorial for further details. Once you have MAP inference working, there’s good reason to believe that your model is setup correctly (at least as far as basic numerical stability is concerned). n”,
-“If you’re interested in obtaining approximate posterior distributions, you can now follow-up with full-blown SVI. Indeed a natural order of operations might use the following sequence of increasingly flexible autoguides:n”,
-“n”,
-“[AutoDelta](http://docs.pyro.ai/en/stable/infer.autoguide.html#autodelta)   →  [AutoNormal](http://docs.pyro.ai/en/stable/infer.autoguide.html#autonormal)  →  [AutoLowRankMultivariateNormal](http://docs.pyro.ai/en/stable/infer.autoguide.html#autolowrankmultivariatenormal)n”,
-“n”,
-“If you find that you want a more flexible guide or that you want to take more control over how exactly the guide is defined, at this juncture you can proceed to build a custom guide. n”,
-“One way to go about doing this is to leverage [easy guides](http://pyro.ai/examples/easyguide.html), which strike a balance between the control of a fully custom guide and the automation of an autoguide.n”,
-“n”,
-“Also note that autoguides offer several initialization strategies and it may be necessary in some cases to experiment with these in order to get good optimization performance. n”,
-“One way to control initialization behavior is using the <cite>init_loc_fn</cite>.n”,
-“For example usage of <cite>init_loc_fn</cite>, including example usage for the easy guide API, see [here](<a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/a106882e8ffbfe6ac96f19aef9a218026482ed51/examples/sparse_gamma_def.py#L202">https://github.com/pyro-ppl/pyro/blob/a106882e8ffbfe6ac96f19aef9a218026482ed51/examples/sparse_gamma_def.py#L202</a>).”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 7. Parameter initialization matters: initialize guide distributions to have low variancen”,
-“n”,
-“Initialization in optimization problems can make all the difference between finding a good solution and failing catastrophically.n”,
-“It is difficult to come up with a comprehensive set of good practices for initialization, as good initialization schemes are often very problem dependent. n”,
-“In the context of Stochastic Variational Inference it is generally a good idea to initialize your guide distributions so that they have <strong>low variance</strong>. n”,
-“This is because the ELBO gradients you use to optimize the ELBO are stochastic. n”,
-“If the ELBO gradients you get at the beginning of ELBO optimization exhibit high variance, you may be led into numerically unstable or otherwise undesirable regions of parameter space. n”,
-“One way to guard against this potential hazard is to pay close attention to parameters in your guide that control variance. n”,
-“For example we would generally expect this to be a reasonably initialized guide:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;from</span> <span class="pre">pyro.distributions</span> <span class="pre">import</span> <span class="pre">constraints\n&quot;,</span>
-<span class="pre">&quot;\n&quot;,</span>
-<span class="pre">&quot;def</span> <span class="pre">good_guide():\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">scale</span> <span class="pre">=</span> <span class="pre">pyro.param(\&quot;scale\&quot;,</span> <span class="pre">torch.tensor(0.05),</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">constraint=constraints.positive)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">dist.Normal(0.0,</span> <span class="pre">scale))\n&quot;,</span>
-<span class="pre">&quot;`</span></code> n”,
-“while the following high-variance guide is very likely to lead to problems:n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;def</span> <span class="pre">bad_guide():\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">scale</span> <span class="pre">=</span> <span class="pre">pyro.param(\&quot;scale\&quot;,</span> <span class="pre">torch.tensor(12345.6),</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">constraint=constraints.positive)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">dist.Normal(0.0,</span> <span class="pre">scale))\n&quot;,</span>
-<span class="pre">&quot;`</span></code> n”,
-“n”,
-“Note that the initial variance of autoguides can be controlled with the <cite>init_scale</cite> argument, see e.g. [here](<a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html?highlight=init_scale#autonormal">http://docs.pyro.ai/en/stable/infer.autoguide.html?highlight=init_scale#autonormal</a>) for <cite>AutoNormal</cite>.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 8. Explore trade-offs controlled by <cite>num_particles</cite>, mini-batch size, etc.n”,
-“n”,
-“Optimization can be difficult if your ELBO exhibits large variance. n”,
-“One way you can try to mitigate this issue is to increase the number of particles used to compute each stochastic ELBO estimate:n”,
-“n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;elbo</span> <span class="pre">=</span> <span class="pre">pyro.infer.Trace_ELBO(num_particles=10,</span> <span class="pre">\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">vectorize_particles=True)\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“(Note that to use <cite>vectorized_particles=True</cite> you need to ensure your model and guide are properly vectorized; see the [tensor shapes tutorial](<a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">http://pyro.ai/examples/tensor_shapes.html</a>) for best practices.)n”,
-“This results in lower variance gradients at the cost of more compute. n”,
-“If you are doing data subsampling, the mini-batch size offers a similar trade-off: larger mini-batch sizes reduce the variance at the cost of more compute. n”,
-“Although what’s best is problem dependent, it’s usually worth taking more gradient steps with fewer particles than fewer gradient steps with more particles. n”,
-“An important caveat to this is when you’re running on a GPU, in which case (at least for some models) the cost of increasing <cite>num_particles</cite> or your mini-batch size may be sublinear, in which case increasing <cite>num_particles</cite> is likely more attractive.n”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 9. Use <cite>TraceMeanField_ELBO</cite> if applicablen”,
-“n”,
-“The basic <cite>ELBO</cite> implementation in Pyro, [Trace_ELBO](<a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO">http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO</a>), uses stochastic samples to estimate the KL divergence term. n”,
-“When analytic KL diverences are available, you may be able to lower ELBO variance by using analytic KL divergences instead. This functionality is provided by [TraceMeanField_ELBO](<a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO">http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO</a>).”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 10. Consider normalizing your ELBOn”,
-“n”,
-“By default Pyro computes a un-normalized ELBO, i.e. it computes the quantity that is a lower bound to the log evidence computed on the full set of data that is being conditioned on. n”,
-“For large datasets this can be a number of large magnitude. n”,
-“Since computers use finite precision (e.g. 32-bit floats) to do arithmetic, large numbers can be problematic for numerical stability, since they can lead to loss of precision, under/overflow, etc.n”,
-“For this reason it can be helpful in many cases to normalize your ELBO so that it is roughly order one. n”,
-“This can also be helpful for getting a rough feeling for how good your ELBO numbers are. n”,
-“For example if we have $N$ datapoints of dimension $D$ (e.g. $N$ real-valued vectors of dimension $D$) then we generally expect a reasonably well optimized ELBO to be order $N \times D$. n”,
-“Thus if we renormalize our ELBO by a factor of $N \times D$ we expect an ELBO of order one. n”,
-“While this is just a rough rule-of-thumb, if we use this kind of normalization and obtain ELBO values like $-123.4$ or $1234.5$ then something is probably wrong: perhaps our model is terribly mis-specified; perhaps our initialization is catastrophically bad, etc. n”,
-“For details on how you can scale your ELBO by a normalization constant see [this tutorial](<a class="reference external" href="http://pyro.ai/examples/custom_objectives.html#Example:-Scaling-the-Loss">http://pyro.ai/examples/custom_objectives.html#Example:-Scaling-the-Loss</a>).”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 11. Pay attention to scalesn”,
-“n”,
-“Scales of numbers matter. n”,
-“They matter for at least two important reasons: n”,
-“i) scales can make or break a particular initialization scheme; n”,
-“ii) as discussed in the previous section, scales can have an impact on numerical precision and stability.n”,
-“n”,
-“To make this concrete suppose you are doing linear regression, i.e.n”,
-“you’re learning a linear map of the form $Y = W &#64; X$. Often the data comes with particular units. n”,
-“For example some of the components of the covariate $X$ may be in units of dollars (e.g. house prices), while others may be in units of density (e.g. residents per square mile). n”,
-“Perhaps the the first covariate has typical values like $10^5$, while the second covariate has typical values like $10^2$. n”,
-“You should always pay attention when you encounter numbers that range across many orders of magnitude. n”,
-“In many cases it makes sense to normalize things so that they are order unity. n”,
-“For example you might measure house prices in units of $100,000.n”,
-“n”,
-“These sorts of data transformations can have a number of benefits for downstream modeling and inference. n”,
-“For example if you’ve normalized all of your covariates appropriately, it may be reasonable to set a simple n”,
-“isotropic prior on your weightsn”,
-“n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;pyro.sample(\&quot;W\&quot;,</span> <span class="pre">dist.Normal(torch.zeros(2),</span> <span class="pre">torch.ones(2)))\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“instead of having to specify different prior covariances for different covariatesn”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;prior_scale</span> <span class="pre">=</span> <span class="pre">torch.tensor([1.0e-5,</span> <span class="pre">1.0e-2])\n&quot;,</span>
-<span class="pre">&quot;pyro.sample(\&quot;W\&quot;,</span> <span class="pre">dist.Normal(torch.zeros(2),</span> <span class="pre">prior_scale))\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“There are other benefits too. n”,
-“It now becomes easier to initialize appropriate parameters for your guide. n”,
-“It is also now much more likely that the default initializations used by a [pyro.infer.AutoGuide](<a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide">http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide</a>) will work for your problem.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 12. Keep validation enabledn”,
-“n”,
-“By default Pyro enables validation logic that can be helpful in debugging models and guides. n”,
-“For example, validation logic will inform you when distribution parameters become invalid.n”,
-“Unless you have good reason to do otherwise, keep the validation logic enabled. n”,
-“Once you’re satisfied with a model and inference procedure, you may wish to disable validation using [pyro.enable_validation](<a class="reference external" href="http://docs.pyro.ai/en/stable/primitives.html?highlight=enable_validation#pyro.primitives.enable_validation).n">http://docs.pyro.ai/en/stable/primitives.html?highlight=enable_validation#pyro.primitives.enable_validation).n</a>”,
-“n”,
-“Similarly in the context of <cite>ELBOs</cite> it is a good idea to set n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;strict_enumeration_warning=True\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“when you are enumerating discrete latent variables.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 13. Tensor shape errorsn”,
-“n”,
-“If you’re running into tensor shape errors please make sure you have carefully read the [corresponding tutorial](<a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">http://pyro.ai/examples/tensor_shapes.html</a>).”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 14. Enumerate discrete latent variables if possiblen”,
-“n”,
-“If your model contains discrete latent variables it may make sense to enumerate them out exactly, since this can significantly reduce ELBO variance. n”,
-“For more discussion see the [corresponding tutorial](<a class="reference external" href="http://pyro.ai/examples/enumeration.html">http://pyro.ai/examples/enumeration.html</a>).”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 15. Some complex models can benefit from KL annealingn”,
-“n”,
-“The particular form of the ELBO encodes a trade-off between model fit via the expected log likelihood term and a prior regularization term via the KL divergence. n”,
-“In some cases the KL divergence can act as a barrier that makes it difficult to find good optima. n”,
-“In these cases it can help to anneal the relevant strength of the KL divergence term during optimization. For further discussion see the [deep markov model tutorial](<a class="reference external" href="http://pyro.ai/examples/dmm.html#The-Black-Magic-of-Optimization).n">http://pyro.ai/examples/dmm.html#The-Black-Magic-of-Optimization).n</a>”,
-“n”,
-“n”,
-“n”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### 16. Consider clipping gradients or constraining parameters defensivelyn”,
-“n”,
-“Certain parameters in your model or guide may control distribution parameters that can be sensitive to numerical issues. n”,
-“For example, the <cite>concentration</cite> and <cite>rate</cite> parameters that defines a [Gamma](<a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#gamma">http://docs.pyro.ai/en/stable/distributions.html#gamma</a>) distribution may exhibit such sensitivity. n”,
-“In these cases it may make sense to clip gradients or constrain parameters defensively. n”,
-“See [this code snippet](<a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/sparse_gamma_def.py#L135">https://github.com/pyro-ppl/pyro/blob/dev/examples/sparse_gamma_def.py#L135</a>) for an example of gradient clipping. n”,
-“For a simple example of &quot;defensive&quot; parameter constraints consider the <cite>concentration</cite> parameter of a <cite>Gamma</cite> distribution. n”,
-“This parameter must be positive: <cite>concentration</cite> &gt; 0.n”,
-“If we want to ensure that <cite>concentration</cite> stays away from zero we can use a <cite>param</cite> statement with an appropriate constraint:n”,
-“n”,
-“<code class="docutils literal notranslate"><span class="pre">`python\n&quot;,</span>
-<span class="pre">&quot;from</span> <span class="pre">pyro.distributions</span> <span class="pre">import</span> <span class="pre">constraints\n&quot;,</span>
-<span class="pre">&quot;\n&quot;,</span>
-<span class="pre">&quot;concentration</span> <span class="pre">=</span> <span class="pre">pyro.param(\&quot;concentration\&quot;,</span> <span class="pre">torch.tensor(0.5),\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">constraints.greater_than(0.001))\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“These kinds of tricks can help ensure that your models and guides stay away from numerically dangerous parts of parameter space.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>}</p>
-</dd>
-</dl>
-<p>],
-“metadata”: {</p>
-<blockquote>
-<div><p>“celltoolbar”: “Raw Cell Format”,
-“kernelspec”: {</p>
-<blockquote>
-<div><p>“display_name”: “Python 3”,
-“language”: “python”,
-“name”: “python3”</p>
-</div></blockquote>
-<p>},
-“language_info”: {</p>
-<blockquote>
-<div><dl class="simple">
-<dt>“codemirror_mode”: {</dt><dd><p>“name”: “ipython”,
-“version”: 3</p>
-</dd>
-</dl>
-<p>},
-“file_extension”: “.py”,
-“mimetype”: “text/x-python”,
-“name”: “python”,
-“nbconvert_exporter”: “python”,
-“pygments_lexer”: “ipython3”,
-“version”: “3.8.2”</p>
-</div></blockquote>
-<p>}</p>
-</div></blockquote>
-<p>},
-“nbformat”: 4,
-“nbformat_minor”: 2</p>
-</dd>
-</dl>
-<p>}</p>
+<section id="SVI-Part-IV:-Tips-and-Tricks">
+<h1>SVI Part IV: Tips and Tricks<a class="headerlink" href="#SVI-Part-IV:-Tips-and-Tricks" title="Permalink to this headline">¶</a></h1>
+<p>The three SVI tutorials leading up to this one (<a class="reference external" href="http://pyro.ai/examples/svi_part_i.html">Part I</a>, <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">Part II</a>, &amp; <a class="reference external" href="http://pyro.ai/examples/svi_part_iii.html">Part III</a>) go through the various steps involved in using Pyro to do variational inference. Along the way we defined models and guides (i.e. variational distributions), setup variational objectives (in particular
+<a class="reference external" href="https://docs.pyro.ai/en/dev/inference_algos.html?highlight=elbo#module-pyro.infer.elbo">ELBOs</a>), and constructed optimizers (<a class="reference external" href="http://docs.pyro.ai/en/dev/optimization.html">pyro.optim</a>). The effect of all this machinery is to cast Bayesian inference as a <em>stochastic optimization problem</em>.</p>
+<p>This is all very useful, but in order to arrive at our ultimate goal—learning model parameters, inferring approximate posteriors, making predictions with the posterior predictive distribution, etc.—we need to successfully solve this optimization problem. Depending on the details of the particular problem—for example the dimensionality of the latent space, whether we have discrete latent variables, and so on—this can be easy or hard. In this tutorial we cover a few tips and tricks we expect to be
+generally useful for users doing variational inference in Pyro. <em>ELBO not converging!? Running into NaNs!?</em> Look below for possible solutions!</p>
+<section id="Pyro-Forum">
+<h2>Pyro Forum<a class="headerlink" href="#Pyro-Forum" title="Permalink to this headline">¶</a></h2>
+<p>If you’re still having trouble with optimization after reading this tutorial, please don’t hesitate to ask a question on our <a class="reference external" href="https://forum.pyro.ai/">forum</a>!</p>
+<section id="1.-Start-with-a-small-learning-rate">
+<h3>1. Start with a small learning rate<a class="headerlink" href="#1.-Start-with-a-small-learning-rate" title="Permalink to this headline">¶</a></h3>
+<p>While large learning rates might be appropriate for some problems, it’s usually good practice to start with small learning rates like <span class="math notranslate nohighlight">\(10^{-3}\)</span> or <span class="math notranslate nohighlight">\(10^{-4}\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>This is because ELBO gradients are <em>stochastic</em>, and potentially high variance, so large learning rates can quickly lead to regions of model/guide parameter space that are numerically unstable or otherwise undesirable.</p>
+<p>You can try a larger learning rate once you have achieved stable ELBO optimization using a smaller learning rate. This is often a good idea because excessively small learning rates can lead to poor optimization. In particular small learning rates can lead to getting stuck in poor local optima of the ELBO.</p>
+</section>
+<section id="2.-Use-Adam-or-ClippedAdam-by-default">
+<h3>2. Use Adam or ClippedAdam by default<a class="headerlink" href="#2.-Use-Adam-or-ClippedAdam-by-default" title="Permalink to this headline">¶</a></h3>
+<p>Use <a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.pytorch_optimizers.Adam">Adam</a> or <a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.optim.ClippedAdam">ClippedAdam</a> by default when doing Stochastic Variational Inference. Note that <code class="docutils literal notranslate"><span class="pre">ClippedAdam</span></code> is just a convenient extension of <code class="docutils literal notranslate"><span class="pre">Adam</span></code> that provides built-in support for learning rate decay and gradient clipping.</p>
+<p>The basic reason these optimization algorithms often do well in the context of variational inference is that the smoothing they provide via per-parameter momentum is often essential when the optimization problem is very stochastic. Note that in SVI stochasticity can come from sampling latent variables, from subsampling data, or from both.</p>
+<p>In addition to tuning the learning rate in some cases it may be necessary to also tune the pair of <code class="docutils literal notranslate"><span class="pre">betas</span></code> hyperparameters that controls the momentum used by <code class="docutils literal notranslate"><span class="pre">Adam</span></code>. In particular for very stochastic models it may make sense to use higher values of <span class="math notranslate nohighlight">\(\beta_1\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">betas</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>instead of</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">betas</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="3.-Consider-using-a-decaying-learning-rate">
+<h3>3. Consider using a decaying learning rate<a class="headerlink" href="#3.-Consider-using-a-decaying-learning-rate" title="Permalink to this headline">¶</a></h3>
+<p>While a moderately large learning rate can be useful at the beginning of optimization when you’re far from the optimum and want to take large gradient steps, it’s often useful to have a smaller learning rate later on so that you don’t bounce around the optimum excessively without converging. One way to do this is to use the learning rate schedulers <a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=scheduler#pyro.optim.lr_scheduler.PyroLRScheduler">provided</a> by Pyro. For example usage
+see the code snippet <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/a106882e8ffbfe6ac96f19aef9a218026482ed51/examples/scanvi/scanvi.py#L265">here</a>. Another convenient way to do this is to use the <a class="reference external" href="http://docs.pyro.ai/en/stable/optimization.html?highlight=clippedadam#pyro.optim.optim.ClippedAdam">ClippedAdam</a> optimizer that has built-in support for learning rate decay via the <code class="docutils literal notranslate"><span class="pre">lrd</span></code> argument:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">num_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">initial_lr</span> <span class="o">=</span> <span class="mf">0.001</span>
+<span class="n">gamma</span> <span class="o">=</span> <span class="mf">0.1</span>  <span class="c1"># final learning rate will be gamma * initial_lr</span>
+<span class="n">lrd</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">num_steps</span><span class="p">)</span>
+<span class="n">optim</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">ClippedAdam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">initial_lr</span><span class="p">,</span> <span class="s1">&#39;lrd&#39;</span><span class="p">:</span> <span class="n">lrd</span><span class="p">})</span>
+</pre></div>
+</div>
+</section>
+<section id="4.-Make-sure-your-model-and-guide-distributions-have-the-same-support">
+<h3>4. Make sure your model and guide distributions have the same support<a class="headerlink" href="#4.-Make-sure-your-model-and-guide-distributions-have-the-same-support" title="Permalink to this headline">¶</a></h3>
+<p>Suppose you have a distribution in your <code class="docutils literal notranslate"><span class="pre">model</span></code> with constrained support, e.g. a LogNormal distribution, which has support on the positive real axis:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Then you need to ensure that the accompanying <code class="docutils literal notranslate"><span class="pre">sample</span></code> site in the <code class="docutils literal notranslate"><span class="pre">guide</span></code> has the same support:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">good_guide</span><span class="p">():</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>If you fail to do this and use for example the following inadmissable guide:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">bad_guide</span><span class="p">():</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+    <span class="c1"># Normal may sample x &lt; 0</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>you will likely run into NaNs very quickly. This is because the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> of a LogNormal distribution evaluated at a sample <code class="docutils literal notranslate"><span class="pre">x</span></code> that satisfies <code class="docutils literal notranslate"><span class="pre">x&lt;0</span></code> is undefined, and the <code class="docutils literal notranslate"><span class="pre">bad_guide</span></code> is likely to produce such samples.</p>
+</section>
+<section id="5.-Constrain-parameters-that-need-to-be-constrained">
+<h3>5. Constrain parameters that need to be constrained<a class="headerlink" href="#5.-Constrain-parameters-that-need-to-be-constrained" title="Permalink to this headline">¶</a></h3>
+<p>In a similar vein, you need to make sure that the parameters used to instantiate distributions are valid; otherwise you will quickly run into NaNs. For example the <code class="docutils literal notranslate"><span class="pre">scale</span></code> parameter of a Normal distribution needs to be positive. Thus the following <code class="docutils literal notranslate"><span class="pre">bad_guide</span></code> is problematic:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">bad_guide</span><span class="p">():</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>while the following <code class="docutils literal notranslate"><span class="pre">good_guide</span></code> correctly uses a constraint to ensure positivity:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+
+<span class="k">def</span> <span class="nf">good_guide</span><span class="p">():</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.05</span><span class="p">),</span>
+                        <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="6.-If-you-are-having-trouble-constructing-a-custom-guide,-use-an-AutoGuide">
+<h3>6. If you are having trouble constructing a custom guide, use an AutoGuide<a class="headerlink" href="#6.-If-you-are-having-trouble-constructing-a-custom-guide,-use-an-AutoGuide" title="Permalink to this headline">¶</a></h3>
+<p>In order for a model/guide pair to lead to stable optimization a number of conditions need to be satisfied, some of which we have covered above. Sometimes it can be difficult to diagnose the reason for numerical instability or poor convergence. Among other reasons this is because the fundamental issue could arise in a number of different places: in the model, in the guide, or in the choice of optimization algorithm or hyperparameters.</p>
+<p>Sometimes the problem is actually in your model even though you think it’s in the guide. Conversely, sometimes the problem is in your guide even though you think it’s in the model or somewhere else. For these reasons it can be helpful to reduce the number of moving parts while you try to identify the underyling issue. One convenient way to do this is to replace your custom guide with a <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide">pyro.infer.AutoGuide</a>.</p>
+<p>For example, if all the latent variables in your model are continuous, you can try a <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autonormal">pyro.infer.AutoNormal</a> guide. Alternatively, you can use MAP inference instead of full-blown variational inference. See the <a class="reference external" href="http://pyro.ai/examples/mle_map.html">MLE/MAP</a> tutorial for further details. Once you have MAP inference working, there’s good reason to believe that your model is setup correctly (at least as far as basic numerical
+stability is concerned). If you’re interested in obtaining approximate posterior distributions, you can now follow-up with full-blown SVI. Indeed a natural order of operations might use the following sequence of increasingly flexible autoguides:</p>
+<p><a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autodelta">AutoDelta</a> → <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autonormal">AutoNormal</a> → <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autolowrankmultivariatenormal">AutoLowRankMultivariateNormal</a></p>
+<p>If you find that you want a more flexible guide or that you want to take more control over how exactly the guide is defined, at this juncture you can proceed to build a custom guide. One way to go about doing this is to leverage <a class="reference external" href="http://pyro.ai/examples/easyguide.html">easy guides</a>, which strike a balance between the control of a fully custom guide and the automation of an autoguide.</p>
+<p>Also note that autoguides offer several initialization strategies and it may be necessary in some cases to experiment with these in order to get good optimization performance. One way to control initialization behavior is using the <code class="docutils literal notranslate"><span class="pre">init_loc_fn</span></code>. For example usage of <code class="docutils literal notranslate"><span class="pre">init_loc_fn</span></code>, including example usage for the easy guide API, see <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/a106882e8ffbfe6ac96f19aef9a218026482ed51/examples/sparse_gamma_def.py#L202">here</a>.</p>
+</section>
+<section id="7.-Parameter-initialization-matters:-initialize-guide-distributions-to-have-low-variance">
+<h3>7. Parameter initialization matters: initialize guide distributions to have low variance<a class="headerlink" href="#7.-Parameter-initialization-matters:-initialize-guide-distributions-to-have-low-variance" title="Permalink to this headline">¶</a></h3>
+<p>Initialization in optimization problems can make all the difference between finding a good solution and failing catastrophically. It is difficult to come up with a comprehensive set of good practices for initialization, as good initialization schemes are often very problem dependent. In the context of Stochastic Variational Inference it is generally a good idea to initialize your guide distributions so that they have <strong>low variance</strong>. This is because the ELBO gradients you use to optimize the
+ELBO are stochastic. If the ELBO gradients you get at the beginning of ELBO optimization exhibit high variance, you may be led into numerically unstable or otherwise undesirable regions of parameter space. One way to guard against this potential hazard is to pay close attention to parameters in your guide that control variance. For example we would generally expect this to be a reasonably initialized guide:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+
+<span class="k">def</span> <span class="nf">good_guide</span><span class="p">():</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.05</span><span class="p">),</span>
+                       <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>while the following high-variance guide is very likely to lead to problems:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">bad_guide</span><span class="p">():</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">12345.6</span><span class="p">),</span>
+                       <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Note that the initial variance of autoguides can be controlled with the <code class="docutils literal notranslate"><span class="pre">init_scale</span></code> argument, see e.g. <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html?highlight=init_scale#autonormal">here</a> for <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code>.</p>
+</section>
+<section id="8.-Explore-trade-offs-controlled-by-num_particles,-mini-batch-size,-etc.">
+<h3>8. Explore trade-offs controlled by <code class="docutils literal notranslate"><span class="pre">num_particles</span></code>, mini-batch size, etc.<a class="headerlink" href="#8.-Explore-trade-offs-controlled-by-num_particles,-mini-batch-size,-etc." title="Permalink to this headline">¶</a></h3>
+<p>Optimization can be difficult if your ELBO exhibits large variance. One way you can try to mitigate this issue is to increase the number of particles used to compute each stochastic ELBO estimate:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">elbo</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">(</span><span class="n">num_particles</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                             <span class="n">vectorize_particles</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>(Note that to use <code class="docutils literal notranslate"><span class="pre">vectorized_particles=True</span></code> you need to ensure your model and guide are properly vectorized; see the <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes tutorial</a> for best practices.) This results in lower variance gradients at the cost of more compute. If you are doing data subsampling, the mini-batch size offers a similar trade-off: larger mini-batch sizes reduce the variance at the cost of more compute. Although what’s best is problem dependent, it’s usually
+worth taking more gradient steps with fewer particles than fewer gradient steps with more particles. An important caveat to this is when you’re running on a GPU, in which case (at least for some models) the cost of increasing <code class="docutils literal notranslate"><span class="pre">num_particles</span></code> or your mini-batch size may be sublinear, in which case increasing <code class="docutils literal notranslate"><span class="pre">num_particles</span></code> is likely more attractive.</p>
+</section>
+<section id="9.-Use-TraceMeanField_ELBO-if-applicable">
+<h3>9. Use <code class="docutils literal notranslate"><span class="pre">TraceMeanField_ELBO</span></code> if applicable<a class="headerlink" href="#9.-Use-TraceMeanField_ELBO-if-applicable" title="Permalink to this headline">¶</a></h3>
+<p>The basic <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> implementation in Pyro, <a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO">Trace_ELBO</a>, uses stochastic samples to estimate the KL divergence term. When analytic KL diverences are available, you may be able to lower ELBO variance by using analytic KL divergences instead. This functionality is provided by
+<a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO">TraceMeanField_ELBO</a>.</p>
+</section>
+<section id="10.-Consider-normalizing-your-ELBO">
+<h3>10. Consider normalizing your ELBO<a class="headerlink" href="#10.-Consider-normalizing-your-ELBO" title="Permalink to this headline">¶</a></h3>
+<p>By default Pyro computes a un-normalized ELBO, i.e. it computes the quantity that is a lower bound to the log evidence computed on the full set of data that is being conditioned on. For large datasets this can be a number of large magnitude. Since computers use finite precision (e.g. 32-bit floats) to do arithmetic, large numbers can be problematic for numerical stability, since they can lead to loss of precision, under/overflow, etc. For this reason it can be helpful in many cases to normalize
+your ELBO so that it is roughly order one. This can also be helpful for getting a rough feeling for how good your ELBO numbers are. For example if we have <span class="math notranslate nohighlight">\(N\)</span> datapoints of dimension <span class="math notranslate nohighlight">\(D\)</span> (e.g. <span class="math notranslate nohighlight">\(N\)</span> real-valued vectors of dimension <span class="math notranslate nohighlight">\(D\)</span>) then we generally expect a reasonably well optimized ELBO to be order <span class="math notranslate nohighlight">\(N \times D\)</span>. Thus if we renormalize our ELBO by a factor of <span class="math notranslate nohighlight">\(N \times D\)</span> we expect an ELBO of order one. While this is just a rough rule-of-thumb, if we use
+this kind of normalization and obtain ELBO values like <span class="math notranslate nohighlight">\(-123.4\)</span> or <span class="math notranslate nohighlight">\(1234.5\)</span> then something is probably wrong: perhaps our model is terribly mis-specified; perhaps our initialization is catastrophically bad, etc. For details on how you can scale your ELBO by a normalization constant see <a class="reference external" href="http://pyro.ai/examples/custom_objectives.html#Example:-Scaling-the-Loss">this tutorial</a>.</p>
+</section>
+<section id="11.-Pay-attention-to-scales">
+<h3>11. Pay attention to scales<a class="headerlink" href="#11.-Pay-attention-to-scales" title="Permalink to this headline">¶</a></h3>
+<p>Scales of numbers matter. They matter for at least two important reasons: i) scales can make or break a particular initialization scheme; ii) as discussed in the previous section, scales can have an impact on numerical precision and stability.</p>
+<p>To make this concrete suppose you are doing linear regression, i.e. you’re learning a linear map of the form <span class="math notranslate nohighlight">\(Y = W &#64; X\)</span>. Often the data comes with particular units. For example some of the components of the covariate <span class="math notranslate nohighlight">\(X\)</span> may be in units of dollars (e.g. house prices), while others may be in units of density (e.g. residents per square mile). Perhaps the the first covariate has typical values like <span class="math notranslate nohighlight">\(10^5\)</span>, while the second covariate has typical values like <span class="math notranslate nohighlight">\(10^2\)</span>. You
+should always pay attention when you encounter numbers that range across many orders of magnitude. In many cases it makes sense to normalize things so that they are order unity. For example you might measure house prices in units of $100,000.</p>
+<p>These sorts of data transformations can have a number of benefits for downstream modeling and inference. For example if you’ve normalized all of your covariates appropriately, it may be reasonable to set a simple isotropic prior on your weights</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>instead of having to specify different prior covariances for different covariates</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prior_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0e-5</span><span class="p">,</span> <span class="mf">1.0e-2</span><span class="p">])</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">prior_scale</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>There are other benefits too. It now becomes easier to initialize appropriate parameters for your guide. It is also now much more likely that the default initializations used by a <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide">pyro.infer.AutoGuide</a> will work for your problem.</p>
+</section>
+<section id="12.-Keep-validation-enabled">
+<h3>12. Keep validation enabled<a class="headerlink" href="#12.-Keep-validation-enabled" title="Permalink to this headline">¶</a></h3>
+<p>By default Pyro enables validation logic that can be helpful in debugging models and guides. For example, validation logic will inform you when distribution parameters become invalid. Unless you have good reason to do otherwise, keep the validation logic enabled. Once you’re satisfied with a model and inference procedure, you may wish to disable validation using
+<a class="reference external" href="http://docs.pyro.ai/en/stable/primitives.html?highlight=enable_validation#pyro.primitives.enable_validation">pyro.enable_validation</a>.</p>
+<p>Similarly in the context of <code class="docutils literal notranslate"><span class="pre">ELBOs</span></code> it is a good idea to set</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">strict_enumeration_warning</span><span class="o">=</span><span class="kc">True</span>
+</pre></div>
+</div>
+<p>when you are enumerating discrete latent variables.</p>
+</section>
+<section id="13.-Tensor-shape-errors">
+<h3>13. Tensor shape errors<a class="headerlink" href="#13.-Tensor-shape-errors" title="Permalink to this headline">¶</a></h3>
+<p>If you’re running into tensor shape errors please make sure you have carefully read the <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">corresponding tutorial</a>.</p>
+</section>
+<section id="14.-Enumerate-discrete-latent-variables-if-possible">
+<h3>14. Enumerate discrete latent variables if possible<a class="headerlink" href="#14.-Enumerate-discrete-latent-variables-if-possible" title="Permalink to this headline">¶</a></h3>
+<p>If your model contains discrete latent variables it may make sense to enumerate them out exactly, since this can significantly reduce ELBO variance. For more discussion see the <a class="reference external" href="http://pyro.ai/examples/enumeration.html">corresponding tutorial</a>.</p>
+</section>
+<section id="15.-Some-complex-models-can-benefit-from-KL-annealing">
+<h3>15. Some complex models can benefit from KL annealing<a class="headerlink" href="#15.-Some-complex-models-can-benefit-from-KL-annealing" title="Permalink to this headline">¶</a></h3>
+<p>The particular form of the ELBO encodes a trade-off between model fit via the expected log likelihood term and a prior regularization term via the KL divergence. In some cases the KL divergence can act as a barrier that makes it difficult to find good optima. In these cases it can help to anneal the relevant strength of the KL divergence term during optimization. For further discussion see the <a class="reference external" href="http://pyro.ai/examples/dmm.html#The-Black-Magic-of-Optimization">deep markov model tutorial</a>.</p>
+</section>
+<section id="16.-Consider-clipping-gradients-or-constraining-parameters-defensively">
+<h3>16. Consider clipping gradients or constraining parameters defensively<a class="headerlink" href="#16.-Consider-clipping-gradients-or-constraining-parameters-defensively" title="Permalink to this headline">¶</a></h3>
+<p>Certain parameters in your model or guide may control distribution parameters that can be sensitive to numerical issues. For example, the <code class="docutils literal notranslate"><span class="pre">concentration</span></code> and <code class="docutils literal notranslate"><span class="pre">rate</span></code> parameters that defines a <a class="reference external" href="http://docs.pyro.ai/en/stable/distributions.html#gamma">Gamma</a> distribution may exhibit such sensitivity. In these cases it may make sense to clip gradients or constrain parameters defensively. See <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/sparse_gamma_def.py#L135">this code snippet</a> for
+an example of gradient clipping. For a simple example of “defensive” parameter constraints consider the <code class="docutils literal notranslate"><span class="pre">concentration</span></code> parameter of a <code class="docutils literal notranslate"><span class="pre">Gamma</span></code> distribution. This parameter must be positive: <code class="docutils literal notranslate"><span class="pre">concentration</span></code> &gt; 0. If we want to ensure that <code class="docutils literal notranslate"><span class="pre">concentration</span></code> stays away from zero we can use a <code class="docutils literal notranslate"><span class="pre">param</span></code> statement with an appropriate constraint:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+
+<span class="n">concentration</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;concentration&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
+                           <span class="n">constraints</span><span class="o">.</span><span class="n">greater_than</span><span class="p">(</span><span class="mf">0.001</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>These kinds of tricks can help ensure that your models and guides stay away from numerically dangerous parts of parameter space.</p>
+</section>
+</section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="svi_part_iii.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="bayesian_regression.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="svi_part_iii.html" class="btn btn-neutral float-left" title="SVI Part III: ELBO Gradient Estimators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bayesian_regression.html" class="btn btn-neutral float-right" title="Bayesian Regression - Introduction (Part 1)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

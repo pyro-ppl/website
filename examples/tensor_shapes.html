@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>&lt;no title&gt; &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Tensor shapes in Pyro &mdash; Pyro Tutorials 1.8.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -17,11 +17,13 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="modules.html" />
-    <link rel="prev" title="&lt;no title&gt;" href="bayesian_regression_ii.html" /> 
+    <link rel="next" title="Modules in Pyro" href="modules.html" />
+    <link rel="prev" title="Bayesian Regression - Inference Algorithms (Part 2)" href="bayesian_regression_ii.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,17 +45,62 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Practical Pyro and PyTorch</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introductory Tutorials</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_long.html">Introduction to Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_rendering.html">Automatic rendering of Pyro models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_part_iv.html">SVI Part IV: Tips and Tricks</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Practical Pyro and PyTorch</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression.html">Bayesian Regression - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_regression_ii.html">Bayesian Regression - Inference Algorithms (Part 2)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tensor shapes in Pyro</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Summary:">Summary:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Table-of-Contents">Table of Contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Distributions-shapes:-batch_shape-and-event_shape">Distributions shapes: <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">event_shape</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Examples">Examples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Reshaping-distributions">Reshaping distributions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#It-is-always-safe-to-assume-dependence">It is always safe to assume dependence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Declaring-independent-dims-with-plate">Declaring independent dims with <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Subsampling-tensors-inside-a-plate">Subsampling tensors inside a <code class="docutils literal notranslate"><span class="pre">plate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Broadcasting-to-allow-parallel-enumeration">Broadcasting to allow parallel enumeration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Writing-parallelizable-code">Writing parallelizable code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Automatic-broadcasting-inside-pyro.plate">Automatic broadcasting inside pyro.plate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_gamma.html">Example: Sparse Gamma Deep Exponential Family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prodlda.html">Probabilistic Topic Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scanvi.html"><em>scANVI: Deep Generative Modeling for Single Cell Data with Pyro</em></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Discrete Latent Variables</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="enumeration.html">Inference with Discrete Latent Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gmm.html">Gaussian Mixture Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dirichlet_process_mixture.html">Dirichlet Process Mixture Models in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="toy_mixture_model_discrete_enumeration.html">Example: Toy Mixture Model With Discrete Enumeration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm.html">Example: Hidden Markov Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="capture_recapture.html">Example: Capture-Recapture Models (CJS Models)</a></li>
@@ -63,42 +110,79 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Customizing Inference</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
 <li class="toctree-l1"><a class="reference internal" href="autoname_examples.html">Example: reducing boilerplate with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.autoname</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Time Series</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_i.html">Forecasting I: univariate, heavy tailed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_ii.html">Forecasting II: state space models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_iii.html">Forecasting III: hierarchical models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecasting_dlm.html">Forecasting with Dynamic Linear Model (DLM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stable.html">Levy Stable models of Stochastic Volatility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="forecast_simple.html">Multivariate Forecasting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="timeseries.html">Example: Gaussian Process Time Series Models</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Gaussian Processes</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="gp.html">Gaussian Processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gplvm.html">Gaussian Process Latent Variable Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dkl.html">Example: Deep Kernel Learning</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Epidemiology</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="epi_intro.html">Epidemiological models: Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="epi_sir.html">Example: Univariate epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="epi_regional.html">Example: Regional epidemiological models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sir_hmc.html">Example: Epidemiological inference via HMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logistic-growth.html">Logistic growth models of SARS-CoV-2 lineage proportions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application: Biological sequences</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="mue_profile.html">Example: Constant + MuE (Profile HMM)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mue_factor.html">Example: Probabilistic PCA + MuE (FactorMuE)</a></li>
 </ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Experimental Design</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="working_memory.html">Designing Adaptive Experiments to Study Working Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="elections.html">Predicting the outcome of a US presidential election using Bayesian optimal experimental design</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application: Object Tracking</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tracking_1d.html">Tracking an Unknown Number of Objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ekf.html">Kalman Filter</a></li>
+</ul>
 <p class="caption" role="heading"><span class="caption-text">Other Inference Algorithms</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="baseball.html">Example: analyzing baseball stats with MCMC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcmc.html">Example: Inference with Markov Chain Monte Carlo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lkj.html">Example: MCMC with an LKJ prior over covariances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="csis.html">Compiled Sequential Importance Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="smcfilter.html">Example: Sequential Monte Carlo Filtering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inclined_plane.html">Example: importance sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-implicature.html">The Rational Speech Act framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RSA-hyperbole.html">Understanding Hyperbole using RSA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="predictive_deterministic.html">Example: Utilizing Predictive and Deterministic with MCMC and SVI</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Understanding Pyro's Internals</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="minipyro.html">Mini-Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="effect_handlers.html">Poutine: A Guide to Programming with Effect Handlers in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_i.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib_funsor_intro_ii.html"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hmm_funsor.html">Example: hidden Markov models with <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Deprecated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_i.html">(DEPRECATED) An Introduction to Models in Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_part_ii.html">(DEPRECATED) An Introduction to Inference in Pyro</a></li>
 </ul>
 
         </div>
@@ -115,7 +199,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>&lt;no title&gt;</li>
+      <li>Tensor shapes in Pyro</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/tensor_shapes.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -127,6 +211,252 @@
              
   
 <style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
@@ -149,930 +479,675 @@
     text-align: unset;
 }
 </style>
-<dl>
-<dt>{</dt><dd><dl>
-<dt>“cells”: [</dt><dd><dl>
-<dt>{</dt><dd><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“# Tensor shapes in Pyron”,
-“n”,
-“This tutorial introduces Pyro’s organization of tensor dimensions. n”,
-“Before starting, you should familiarize yourself with [PyTorch broadcasting semantics](<a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">http://pytorch.org/docs/master/notes/broadcasting.html</a>).  n”,
-“After this tutorial, you may want to also read about [enumeration](<a class="reference external" href="http://pyro.ai/examples/enumeration.html).n">http://pyro.ai/examples/enumeration.html).n</a>”,
-“n”,
-“You may also find it useful to read Eric J. Ma’s post [Reasoning about Shapes and Probability Distributions](<a class="reference external" href="https://ericmjl.github.io/blog/2019/5/29/reasoning-about-shapes-and-probability-distributions/">https://ericmjl.github.io/blog/2019/5/29/reasoning-about-shapes-and-probability-distributions/</a>). n”,
-“While this post is specifically about TensorFlow Probability, many of the same concepts apply.n”,
-“n”,
-“#### Summary:n”,
-“- Tensors broadcast by aligning on the right: <cite>torch.ones(3,4,5) + torch.ones(5)</cite>.n”,
-“- Distribution <cite>.sample().shape == batch_shape + event_shape</cite>.n”,
-“- Distribution <cite>.log_prob(x).shape == batch_shape</cite> (but not <cite>event_shape</cite>!).n”,
-“- Use <cite>.expand()</cite> to draw a batch of samples, or rely on <cite>plate</cite> to expand automatically.n”,
-“- Use <cite>my_dist.to_event(1)</cite> to declare a dimension as dependent.n”,
-“- Use <cite>with pyro.plate(‘name’, size):</cite> to declare a dimension as conditionally independent.n”,
-“- All dimensions must be declared either dependent or conditionally independent.n”,
-“- Try to support batching on the left. This lets Pyro auto-parallelize.n”,
-”  - use negative indices like <cite>x.sum(-1)</cite> rather than <cite>x.sum(2)</cite>n”,
-”  - use ellipsis notation like <cite>pixel = image[…, i, j]</cite>n”,
-”  - use [Vindex](<a class="reference external" href="http://docs.pyro.ai/en/dev/ops.html#pyro.ops.indexing.Vindex">http://docs.pyro.ai/en/dev/ops.html#pyro.ops.indexing.Vindex</a>) if <cite>i,j</cite> are enumerated, <cite>pixel = Vindex(image)[…, i, j]</cite>n”,
-“- When using <cite>pyro.plate</cite>’s automatic subsampling, be sure to subsample your <a class="reference external" href="data:n">data:n</a>”,
-”  - Either manually subample by capturing the index <cite>with pyro.plate(…) as i: …</cite>n”,
-”  - or automatically subsample via <cite>batch = pyro.subsample(data, event_dim=…)</cite>.n”,
-“- When debugging, examine all shapes in a trace using [Trace.format_shapes()](<a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes).n">http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes).n</a>”,
-”  n”,
-“#### Table of Contentsn”,
-“- [Distribution shapes](#Distributions-shapes:-batch_shape-and-event_shape)n”,
-”  - [Examples](#Examples)n”,
-”  - [Reshaping distributions](#Reshaping-distributions)n”,
-”  - [It is always safe to assume dependence](#It-is-always-safe-to-assume-dependence)n”,
-“- [Declaring independence with plate](#Declaring-independent-dims-with-plate)n”,
-“- [Subsampling inside plate](#Subsampling-tensors-inside-a-plate)n”,
-“- [Broadcasting to allow Parallel Enumeration](#Broadcasting-to-allow-parallel-enumeration)n”,
-”  - [Writing parallelizable code](#Writing-parallelizable-code)n”,
-”  - [Automatic broadcasting inside pyro.plate](#Automatic-broadcasting-inside-pyro-plate)n”</p>
-</div></blockquote>
-<p>]</p>
-</dd>
-</dl>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 1,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“import osn”,
-“import torchn”,
-“import pyron”,
-“from torch.distributions import constraintsn”,
-“from pyro.distributions import Bernoulli, Categorical, MultivariateNormal, Normaln”,
-“from pyro.distributions.util import broadcast_shapen”,
-“from pyro.infer import Trace_ELBO, TraceEnum_ELBO, config_enumeraten”,
-“import pyro.poutine as poutinen”,
-“from pyro.optim import Adamn”,
-“n”,
-“smoke_test = (‘CI’ in os.environ)n”,
-“assert pyro.__version__.startswith(‘1.8.1’)n”,
-“n”,
-“# We’ll ue this helper to check our models are correct.n”,
-“def test_model(model, guide, loss):n”,
-”    pyro.clear_param_store()n”,
-”    loss.loss(model, guide)”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“## Distributions shapes: <cite>batch_shape</cite> and <cite>event_shape</cite> &lt;a class=&quot;anchor&quot; id=&quot;Distributions-shapes:-batch_shape-and-event_shape&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“PyTorch <cite>Tensor`s have a single `.shape</cite> attribute, but <cite>Distribution`s have two shape attributions with special meaning: `.batch_shape</cite> and <cite>.event_shape</cite>. These two combine to define the total shape of a samplen”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;x</span> <span class="pre">=</span> <span class="pre">d.sample()\n&quot;,</span>
-<span class="pre">&quot;assert</span> <span class="pre">x.shape</span> <span class="pre">==</span> <span class="pre">d.batch_shape</span> <span class="pre">+</span> <span class="pre">d.event_shape\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“Indices over <cite>.batch_shape</cite> denote conditionally independent random variables, whereas indices over <cite>.event_shape</cite> denote dependent random variables (ie one draw from a distribution). Because the dependent random variables define probability together, the <cite>.log_prob()</cite> method only produces a single number for each event of shape <cite>.event_shape</cite>. Thus the total shape of <cite>.log_prob()</cite> is <cite>.batch_shape</cite>:n”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;assert</span> <span class="pre">d.log_prob(x).shape</span> <span class="pre">==</span> <span class="pre">d.batch_shape\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“Note that the <cite>Distribution.sample()</cite> method also takes a <cite>sample_shape</cite> parameter that indexes over independent identically distributed (iid) random varables, so thatn”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;x2</span> <span class="pre">=</span> <span class="pre">d.sample(sample_shape)\n&quot;,</span>
-<span class="pre">&quot;assert</span> <span class="pre">x2.shape</span> <span class="pre">==</span> <span class="pre">sample_shape</span> <span class="pre">+</span> <span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“In summaryn”,
-“<code class="docutils literal notranslate"><span class="pre">`\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">iid</span>&#160;&#160;&#160;&#160; <span class="pre">|</span> <span class="pre">independent</span> <span class="pre">|</span> <span class="pre">dependent\n&quot;,</span>
-<span class="pre">&quot;------+--------------+-------------+------------\n&quot;,</span>
-<span class="pre">&quot;shape</span> <span class="pre">=</span> <span class="pre">sample_shape</span> <span class="pre">+</span> <span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“For example univariate distributions have empty event shape (because each number is an independent event). Distributions over vectors like <cite>MultivariateNormal</cite> have <cite>len(event_shape) == 1</cite>. Distributions over matrices like <cite>InverseWishart</cite> have <cite>len(event_shape) == 2</cite>.n”,
-“n”,
-“### Examples &lt;a class=&quot;anchor&quot; id=&quot;Examples&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“The simplest distribution shape is a single univariate distribution.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 2,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“d = Bernoulli(0.5)n”,
-“assert d.batch_shape == ()n”,
-“assert d.event_shape == ()n”,
-“x = d.sample()n”,
-“assert x.shape == ()n”,
-“assert d.log_prob(x).shape == ()”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“Distributions can be batched by passing in batched parameters.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 3,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“d = Bernoulli(0.5 * torch.ones(3,4))n”,
-“assert d.batch_shape == (3, 4)n”,
-“assert d.event_shape == ()n”,
-“x = d.sample()n”,
-“assert x.shape == (3, 4)n”,
-“assert d.log_prob(x).shape == (3, 4)”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“Another way to batch distributions is via the <cite>.expand()</cite> method. This only works if n”,
-“parameters are identical along the leftmost dimensions.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 4,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“d = Bernoulli(torch.tensor([0.1, 0.2, 0.3, 0.4])).expand([3, 4])n”,
-“assert d.batch_shape == (3, 4)n”,
-“assert d.event_shape == ()n”,
-“x = d.sample()n”,
-“assert x.shape == (3, 4)n”,
-“assert d.log_prob(x).shape == (3, 4)”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“Multivariate distributions have nonempty <cite>.event_shape</cite>. For these distributions, the shapes of <cite>.sample()</cite> and <cite>.log_prob(x)</cite> differ:”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 5,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“d = MultivariateNormal(torch.zeros(3), torch.eye(3, 3))n”,
-“assert d.batch_shape == ()n”,
-“assert d.event_shape == (3,)n”,
-“x = d.sample()n”,
-“assert x.shape == (3,)            # == batch_shape + event_shapen”,
-“assert d.log_prob(x).shape == ()  # == batch_shape”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### Reshaping distributions &lt;a class=&quot;anchor&quot; id=&quot;Reshaping-distributions&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“In Pyro you can treat a univariate distribution as multivariate by calling the [.to_event(n)](<a class="reference external" href="http://docs.pyro.ai/en/dev/distributions.html#pyro.distributions.torch_distribution.TorchDistributionMixin.to_event">http://docs.pyro.ai/en/dev/distributions.html#pyro.distributions.torch_distribution.TorchDistributionMixin.to_event</a>) property where <cite>n</cite> is the number of batch dimensions (from the right) to declare as <em>dependent</em>.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 6,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“d = Bernoulli(0.5 * torch.ones(3,4)).to_event(1)n”,
-“assert d.batch_shape == (3,)n”,
-“assert d.event_shape == (4,)n”,
-“x = d.sample()n”,
-“assert x.shape == (3, 4)n”,
-“assert d.log_prob(x).shape == (3,)”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“While you work with Pyro programs, keep in mind that samples have shape <cite>batch_shape + event_shape</cite>, whereas <cite>.log_prob(x)</cite> values have shape <cite>batch_shape</cite>. You’ll need to ensure that <cite>batch_shape</cite> is carefully controlled by either trimming it down with <cite>.to_event(n)</cite> or by declaring dimensions as independent via <cite>pyro.plate</cite>.n”,
-“n”,
-“### It is always safe to assume dependence &lt;a class=&quot;anchor&quot; id=&quot;It-is-always-safe-to-assume-dependence&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“Often in Pyro we’ll declare some dimensions as dependent even though they are in fact independent, e.g.n”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;x</span> <span class="pre">=</span> <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1).expand([10]).to_event(1))\n&quot;,</span>
-<span class="pre">&quot;assert</span> <span class="pre">x.shape</span> <span class="pre">==</span> <span class="pre">(10,)\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“This is useful for two reasons: First it allows us to easily swap in a <cite>MultivariateNormal</cite> distribution later. Second it simplifies the code a bit since we don’t need a <cite>plate</cite> (see below) as inn”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;with</span> <span class="pre">pyro.plate(\&quot;x_plate\&quot;,</span> <span class="pre">10):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">x</span> <span class="pre">=</span> <span class="pre">pyro.sample(\&quot;x\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))</span>&#160; <span class="pre">#</span> <span class="pre">.expand([10])</span> <span class="pre">is</span> <span class="pre">automatic\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">assert</span> <span class="pre">x.shape</span> <span class="pre">==</span> <span class="pre">(10,)\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“The difference between these two versions is that the second version with <cite>plate</cite> informs Pyro that it can make use of conditional independence information when estimating gradients, whereas in the first version Pyro must assume they are dependent (even though the normals are in fact conditionally independent). This is analogous to d-separation in graphical models: it is always safe to add edges and assume variables <em>may</em> be dependent (i.e. to widen the model class), but it is unsafe to assume independence when variables are actually dependent (i.e. narrowing the model class so the true model lies outside of the class, as in mean field). In practice Pyro’s SVI inference algorithm uses reparameterized gradient estimators for <cite>Normal</cite> distributions so both gradient estimators have the same performance.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“## Declaring independent dims with <cite>plate</cite> &lt;a class=&quot;anchor&quot; id=&quot;Declaring-independent-dims-with-plate&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“Pyro models can use the context manager [pyro.plate](<a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">http://docs.pyro.ai/en/dev/primitives.html#pyro.plate</a>) to declare that certain batch dimensions are independent. Inference algorithms can then take advantage of this independence to e.g. construct lower variance gradient estimators or to enumerate in linear space rather than exponential space. An example of an independent dimension is the index over data in a minibatch: each datum should be independent of all others.n”,
-“n”,
-“The simplest way to declare a dimension as independent is to declare the rightmost batch dimension as independent via a simplen”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;with</span> <span class="pre">pyro.plate(\&quot;my_plate\&quot;):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">within</span> <span class="pre">this</span> <span class="pre">context,</span> <span class="pre">batch</span> <span class="pre">dimension</span> <span class="pre">-1</span> <span class="pre">is</span> <span class="pre">independent\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“We recommend always providing an optional size argument to aid in debugging shapesn”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;with</span> <span class="pre">pyro.plate(\&quot;my_plate\&quot;,</span> <span class="pre">len(my_data)):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">within</span> <span class="pre">this</span> <span class="pre">context,</span> <span class="pre">batch</span> <span class="pre">dimension</span> <span class="pre">-1</span> <span class="pre">is</span> <span class="pre">independent\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“Starting with Pyro 0.2 you can additionally nest <cite>plates</cite>, e.g. if you have per-pixel independence:n”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;with</span> <span class="pre">pyro.plate(\&quot;x_axis\&quot;,</span> <span class="pre">320):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">within</span> <span class="pre">this</span> <span class="pre">context,</span> <span class="pre">batch</span> <span class="pre">dimension</span> <span class="pre">-1</span> <span class="pre">is</span> <span class="pre">independent\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">pyro.plate(\&quot;y_axis\&quot;,</span> <span class="pre">200):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">within</span> <span class="pre">this</span> <span class="pre">context,</span> <span class="pre">batch</span> <span class="pre">dimensions</span> <span class="pre">-2</span> <span class="pre">and</span> <span class="pre">-1</span> <span class="pre">are</span> <span class="pre">independent\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“Note that we always count from the right by using negative indices like -2, -1.n”,
-“n”,
-“Finally if you want to mix and match <cite>plate`s for e.g. noise that depends only on `x</cite>, some noise that depends only on <cite>y</cite>, and some noise that depends on both, you can declare multiple <cite>plates</cite> and use them as reusable context managers. In this case Pyro cannot automatically allocate a dimension, so you need to provide a <cite>dim</cite> argument (again counting from the right):n”,
-“<code class="docutils literal notranslate"><span class="pre">`py\n&quot;,</span>
-<span class="pre">&quot;x_axis</span> <span class="pre">=</span> <span class="pre">pyro.plate(\&quot;x_axis\&quot;,</span> <span class="pre">3,</span> <span class="pre">dim=-2)\n&quot;,</span>
-<span class="pre">&quot;y_axis</span> <span class="pre">=</span> <span class="pre">pyro.plate(\&quot;y_axis\&quot;,</span> <span class="pre">2,</span> <span class="pre">dim=-3)\n&quot;,</span>
-<span class="pre">&quot;with</span> <span class="pre">x_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">within</span> <span class="pre">this</span> <span class="pre">context,</span> <span class="pre">batch</span> <span class="pre">dimension</span> <span class="pre">-2</span> <span class="pre">is</span> <span class="pre">independent\n&quot;,</span>
-<span class="pre">&quot;with</span> <span class="pre">y_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">within</span> <span class="pre">this</span> <span class="pre">context,</span> <span class="pre">batch</span> <span class="pre">dimension</span> <span class="pre">-3</span> <span class="pre">is</span> <span class="pre">independent\n&quot;,</span>
-<span class="pre">&quot;with</span> <span class="pre">x_axis,</span> <span class="pre">y_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160; <span class="pre">#</span> <span class="pre">within</span> <span class="pre">this</span> <span class="pre">context,</span> <span class="pre">batch</span> <span class="pre">dimensions</span> <span class="pre">-3</span> <span class="pre">and</span> <span class="pre">-2</span> <span class="pre">are</span> <span class="pre">independent\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“Let’s take a closer look at batch sizes within <a href="#id1"><span class="problematic" id="id2">`</span></a>plate`s.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 7,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“def model1():n”,
-”    a = pyro.sample(&quot;a&quot;, Normal(0, 1))n”,
-”    b = pyro.sample(&quot;b&quot;, Normal(torch.zeros(2), 1).to_event(1))n”,
-”    with pyro.plate(&quot;c_plate&quot;, 2):n”,
-”        c = pyro.sample(&quot;c&quot;, Normal(torch.zeros(2), 1))n”,
-”    with pyro.plate(&quot;d_plate&quot;, 3):n”,
-”        d = pyro.sample(&quot;d&quot;, Normal(torch.zeros(3,4,5), 1).to_event(2))n”,
-”    assert a.shape == ()       # batch_shape == ()     event_shape == ()n”,
-”    assert b.shape == (2,)     # batch_shape == ()     event_shape == (2,)n”,
-”    assert c.shape == (2,)     # batch_shape == (2,)   event_shape == ()n”,
-”    assert d.shape == (3,4,5)  # batch_shape == (3,)   event_shape == (4,5) n”,
-“n”,
-”    x_axis = pyro.plate(&quot;x_axis&quot;, 3, dim=-2)n”,
-”    y_axis = pyro.plate(&quot;y_axis&quot;, 2, dim=-3)n”,
-”    with x_axis:n”,
-”        x = pyro.sample(&quot;x&quot;, Normal(0, 1))n”,
-”    with y_axis:n”,
-”        y = pyro.sample(&quot;y&quot;, Normal(0, 1))n”,
-”    with x_axis, y_axis:n”,
-”        xy = pyro.sample(&quot;xy&quot;, Normal(0, 1))n”,
-”        z = pyro.sample(&quot;z&quot;, Normal(0, 1).expand([5]).to_event(1))n”,
-”    assert x.shape == (3, 1)        # batch_shape == (3,1)     event_shape == ()n”,
-”    assert y.shape == (2, 1, 1)     # batch_shape == (2,1,1)   event_shape == ()n”,
-”    assert xy.shape == (2, 3, 1)    # batch_shape == (2,3,1)   event_shape == ()n”,
-”    assert z.shape == (2, 3, 1, 5)  # batch_shape == (2,3,1)   event_shape == (5,)n”,
-”    n”,
-“test_model(model1, model1, Trace_ELBO())”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“It is helpful to visualize the <cite>.shape`s of each sample site by aligning them at the boundary between `batch_shape</cite> and <cite>event_shape</cite>: dimensions to the right will be summed out in <cite>.log_prob()</cite> and dimensions to the left will remain. n”,
-“<code class="docutils literal notranslate"><span class="pre">`\n&quot;,</span>
-<span class="pre">&quot;batch</span> <span class="pre">dims</span> <span class="pre">|</span> <span class="pre">event</span> <span class="pre">dims\n&quot;,</span>
-<span class="pre">&quot;-----------+-----------\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">a</span> <span class="pre">=</span> <span class="pre">sample(\&quot;a\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|2</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">b</span> <span class="pre">=</span> <span class="pre">sample(\&quot;b\&quot;,</span> <span class="pre">Normal(zeros(2),</span> <span class="pre">1)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">.to_event(1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">plate(\&quot;c\&quot;,</span> <span class="pre">2):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">2|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">c</span> <span class="pre">=</span> <span class="pre">sample(\&quot;c\&quot;,</span> <span class="pre">Normal(zeros(2),</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">plate(\&quot;d\&quot;,</span> <span class="pre">3):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">3|4</span> <span class="pre">5</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">d</span> <span class="pre">=</span> <span class="pre">sample(\&quot;d\&quot;,</span> <span class="pre">Normal(zeros(3,4,5),</span> <span class="pre">1)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">.to_event(2))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">x_axis</span> <span class="pre">=</span> <span class="pre">plate(\&quot;x\&quot;,</span> <span class="pre">3,</span> <span class="pre">dim=-2)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">y_axis</span> <span class="pre">=</span> <span class="pre">plate(\&quot;y\&quot;,</span> <span class="pre">2,</span> <span class="pre">dim=-3)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">x_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">3</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">x</span> <span class="pre">=</span> <span class="pre">sample(\&quot;x\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">y_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">1</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">y</span> <span class="pre">=</span> <span class="pre">sample(\&quot;y\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">x_axis,</span> <span class="pre">y_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">3</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">xy</span> <span class="pre">=</span> <span class="pre">sample(\&quot;xy\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">3</span> <span class="pre">1|5</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">z</span> <span class="pre">=</span> <span class="pre">sample(\&quot;z\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1).expand([5])\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">.to_event(1))\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“To examine the shapes of sample sites in a program automatically, you can trace the program and use the [Trace.format_shapes()](<a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes</a>) method, which prints three shapes for each sample site: the distribution shape (both <cite>site[&quot;fn&quot;].batch_shape</cite> and <cite>site[&quot;fn&quot;].event_shape</cite>), the value shape (<cite>site[&quot;value&quot;].shape</cite>), and if log probability has been computed also the <cite>log_prob</cite> shape (<cite>site[&quot;log_prob&quot;].shape</cite>):”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 8,
-“metadata”: {},
-“outputs”: [</p>
-<blockquote>
-<div><dl>
-<dt>{</dt><dd><p>“name”: “stdout”,
-“output_type”: “stream”,
-“text”: [</p>
-<blockquote>
-<div><p>“Trace Shapes:            n”,
-” Param Sites:            n”,
-“Sample Sites:            n”,
-”       a dist       |    n”,
-”        value       |    n”,
-”     log_prob       |    n”,
-”       b dist       | 2  n”,
-”        value       | 2  n”,
-”     log_prob       |    n”,
-” c_plate dist       |    n”,
-”        value     2 |    n”,
-”     log_prob       |    n”,
-”       c dist     2 |    n”,
-”        value     2 |    n”,
-”     log_prob     2 |    n”,
-” d_plate dist       |    n”,
-”        value     3 |    n”,
-”     log_prob       |    n”,
-”       d dist     3 | 4 5n”,
-”        value     3 | 4 5n”,
-”     log_prob     3 |    n”,
-”  x_axis dist       |    n”,
-”        value     3 |    n”,
-”     log_prob       |    n”,
-”  y_axis dist       |    n”,
-”        value     2 |    n”,
-”     log_prob       |    n”,
-”       x dist   3 1 |    n”,
-”        value   3 1 |    n”,
-”     log_prob   3 1 |    n”,
-”       y dist 2 1 1 |    n”,
-”        value 2 1 1 |    n”,
-”     log_prob 2 1 1 |    n”,
-”      xy dist 2 3 1 |    n”,
-”        value 2 3 1 |    n”,
-”     log_prob 2 3 1 |    n”,
-”       z dist 2 3 1 | 5  n”,
-”        value 2 3 1 | 5  n”,
-”     log_prob 2 3 1 |    n”</p>
-</div></blockquote>
-<p>]</p>
-</dd>
-</dl>
-<p>}</p>
-</div></blockquote>
-<p>],
-“source”: [</p>
-<blockquote>
-<div><p>“trace = poutine.trace(model1).get_trace()n”,
-“trace.compute_log_prob()  # optional, but allows printing of log_prob shapesn”,
-“print(trace.format_shapes())”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“## Subsampling tensors inside a <cite>plate</cite> &lt;a class=&quot;anchor&quot; id=&quot;Subsampling-tensors-inside-a-plate&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“One of the main uses of [plate](<a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">http://docs.pyro.ai/en/dev/primitives.html#pyro.plate</a>) is to subsample data. This is possible within a <cite>plate</cite> because data are conditionally independent, so the expected value of the loss on, say, half the data should be half the expected loss on the full data.n”,
-“n”,
-“To subsample data, you need to inform Pyro of both the original data size and the subsample size; Pyro will then choose a random subset of data and yield the set of indices.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 9,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“data = torch.arange(100.)n”,
-“n”,
-“def model2():n”,
-”    mean = pyro.param(&quot;mean&quot;, torch.zeros(len(data)))n”,
-”    with pyro.plate(&quot;data&quot;, len(data), subsample_size=10) as ind:n”,
-”        assert len(ind) == 10    # ind is a LongTensor that indexes the subsample.n”,
-”        batch = data[ind]        # Select a minibatch of data.n”,
-”        mean_batch = mean[ind]   # Take care to select the relevant per-datum parameters.n”,
-”        # Do stuff with batch:n”,
-”        x = pyro.sample(&quot;x&quot;, Normal(mean_batch, 1), obs=batch)n”,
-”        assert len(x) == 10n”,
-”        n”,
-“test_model(model2, guide=lambda: None, loss=Trace_ELBO())”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“## Broadcasting to allow parallel enumeration &lt;a class=&quot;anchor&quot; id=&quot;Broadcasting-to-allow-parallel-enumeration&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“Pyro 0.2 introduces the ability to enumerate discrete latent variables in parallel. This can significantly reduce the variance of gradient estimators when learning a posterior via [SVI](<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.svi.SVI).n">http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.svi.SVI).n</a>”,
-“n”,
-“To use parallel enumeration, Pyro needs to allocate tensor dimension that it can use for enumeration. To avoid conflicting with other dimensions that we want to use for <cite>plate`s, we need to declare a budget of the maximum number of tensor dimensions we’ll use. This budget is called `max_plate_nesting</cite> and is an argument to [SVI](<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html">http://docs.pyro.ai/en/dev/inference_algos.html</a>) (the argument is simply passed through to [TraceEnum_ELBO](<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO</a>)). Usually Pyro can determine this budget on its own (it runs the <cite>(model,guide)</cite> pair once and record what happens), but in case of dynamic model structure you may need to declare <cite>max_plate_nesting</cite> manually.n”,
-“n”,
-“To understand <cite>max_plate_nesting</cite> and how Pyro allocates dimensions for enumeration, let’s revisit <cite>model1()</cite> from above. This time we’ll map out three types of dimensions:n”,
-“enumeration dimensions on the left (Pyro takes control of these), batch dimensions in the middle, and event dimensions on the right.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“<code class="docutils literal notranslate"><span class="pre">`\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">max_plate_nesting</span> <span class="pre">=</span> <span class="pre">3\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|&lt;---&gt;|\n&quot;,</span>
-<span class="pre">&quot;enumeration|batch|event\n&quot;,</span>
-<span class="pre">&quot;-----------+-----+-----\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|.</span> <span class="pre">.</span> <span class="pre">.|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">a</span> <span class="pre">=</span> <span class="pre">sample(\&quot;a\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|.</span> <span class="pre">.</span> <span class="pre">.|2</span>&#160;&#160;&#160;&#160; <span class="pre">b</span> <span class="pre">=</span> <span class="pre">sample(\&quot;b\&quot;,</span> <span class="pre">Normal(zeros(2),</span> <span class="pre">1)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">.to_event(1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">plate(\&quot;c\&quot;,</span> <span class="pre">2):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|.</span> <span class="pre">.</span> <span class="pre">2|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">c</span> <span class="pre">=</span> <span class="pre">sample(\&quot;c\&quot;,</span> <span class="pre">Normal(zeros(2),</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">plate(\&quot;d\&quot;,</span> <span class="pre">3):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|.</span> <span class="pre">.</span> <span class="pre">3|4</span> <span class="pre">5</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">d</span> <span class="pre">=</span> <span class="pre">sample(\&quot;d\&quot;,</span> <span class="pre">Normal(zeros(3,4,5),</span> <span class="pre">1)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">.to_event(2))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">x_axis</span> <span class="pre">=</span> <span class="pre">plate(\&quot;x\&quot;,</span> <span class="pre">3,</span> <span class="pre">dim=-2)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">y_axis</span> <span class="pre">=</span> <span class="pre">plate(\&quot;y\&quot;,</span> <span class="pre">2,</span> <span class="pre">dim=-3)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">x_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|.</span> <span class="pre">3</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">x</span> <span class="pre">=</span> <span class="pre">sample(\&quot;x\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">y_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|2</span> <span class="pre">1</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">y</span> <span class="pre">=</span> <span class="pre">sample(\&quot;y\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">x_axis,</span> <span class="pre">y_axis:\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|2</span> <span class="pre">3</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">xy</span> <span class="pre">=</span> <span class="pre">sample(\&quot;xy\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|2</span> <span class="pre">3</span> <span class="pre">1|5</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">z</span> <span class="pre">=</span> <span class="pre">sample(\&quot;z\&quot;,</span> <span class="pre">Normal(0,</span> <span class="pre">1).expand([5]))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">.to_event(1))\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“Note that it is safe to overprovision <cite>max_plate_nesting=4</cite> but we cannot underprovision <cite>max_plate_nesting=2</cite> (or Pyro will error). Let’s see how this works in practice.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 10,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“&#64;config_enumeraten”,
-“def model3():n”,
-”    p = pyro.param(&quot;p&quot;, torch.arange(6.) / 6)n”,
-”    locs = pyro.param(&quot;locs&quot;, torch.tensor([-1., 1.]))n”,
-“n”,
-”    a = pyro.sample(&quot;a&quot;, Categorical(torch.ones(6) / 6))n”,
-”    b = pyro.sample(&quot;b&quot;, Bernoulli(p[a]))  # Note this depends on a.n”,
-”    with pyro.plate(&quot;c_plate&quot;, 4):n”,
-”        c = pyro.sample(&quot;c&quot;, Bernoulli(0.3))n”,
-”        with pyro.plate(&quot;d_plate&quot;, 5):n”,
-”            d = pyro.sample(&quot;d&quot;, Bernoulli(0.4))n”,
-”            e_loc = locs[d.long()].unsqueeze(-1)n”,
-”            e_scale = torch.arange(1., 8.)n”,
-”            e = pyro.sample(&quot;e&quot;, Normal(e_loc, e_scale)n”,
-”                            .to_event(1))  # Note this depends on d.n”,
-“n”,
-”    #                   enumerated|batch|event dimsn”,
-”    assert a.shape == (         6, 1, 1   )  # Six enumerated values of the Categorical.n”,
-”    assert b.shape == (      2, 1, 1, 1   )  # Two enumerated Bernoullis, unexpanded.n”,
-”    assert c.shape == (   2, 1, 1, 1, 1   )  # Only two Bernoullis, unexpanded.n”,
-”    assert d.shape == (2, 1, 1, 1, 1, 1   )  # Only two Bernoullis, unexpanded.n”,
-”    assert e.shape == (2, 1, 1, 1, 5, 4, 7)  # This is sampled and depends on d.n”,
-“n”,
-”    assert e_loc.shape   == (2, 1, 1, 1, 1, 1, 1,)n”,
-”    assert e_scale.shape == (                  7,)n”,
-”            n”,
-“test_model(model3, model3, TraceEnum_ELBO(max_plate_nesting=2))”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“Let’s take a closer look at those dimensions. First note that Pyro allocates enumeration dims starting from the right at <cite>max_plate_nesting</cite>: Pyro allocates dim -3 to enumerate <cite>a</cite>, then dim -4 to enumerate <cite>b</cite>, then dim -5 to enumerate <cite>c</cite>, and finally dim -6 to enumerate <cite>d</cite>. Next note that samples only have extent (size &gt; 1) in the new enumeration dimension. This helps keep tensors small and computation cheap. (Note that the <cite>log_prob</cite> shape will be broadcast up to contain both enumeratin shape and batch shape, so e.g. <cite>trace.nodes[‘d’][‘log_prob’].shape == (2, 1, 1, 1, 5, 4)</cite>.)n”,
-“n”,
-“We can draw a similar map of the tensor dimensions:n”,
-“<code class="docutils literal notranslate"><span class="pre">`\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160; <span class="pre">max_plate_nesting</span> <span class="pre">=</span> <span class="pre">2\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|&lt;-&gt;|\n&quot;,</span>
-<span class="pre">&quot;enumeration</span> <span class="pre">batch</span> <span class="pre">event\n&quot;,</span>
-<span class="pre">&quot;------------|---|-----\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">6|1</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160; <span class="pre">a</span> <span class="pre">=</span> <span class="pre">pyro.sample(\&quot;a\&quot;,</span> <span class="pre">Categorical(torch.ones(6)</span> <span class="pre">/</span> <span class="pre">6))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">1|1</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160; <span class="pre">b</span> <span class="pre">=</span> <span class="pre">pyro.sample(\&quot;b\&quot;,</span> <span class="pre">Bernoulli(p[a]))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">pyro.plate(\&quot;c_plate\&quot;,</span> <span class="pre">4):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">1</span> <span class="pre">1|1</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">c</span> <span class="pre">=</span> <span class="pre">pyro.sample(\&quot;c\&quot;,</span> <span class="pre">Bernoulli(0.3))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">with</span> <span class="pre">pyro.plate(\&quot;d_plate\&quot;,</span> <span class="pre">5):\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">1</span> <span class="pre">1</span> <span class="pre">1|1</span> <span class="pre">1|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">d</span> <span class="pre">=</span> <span class="pre">pyro.sample(\&quot;d\&quot;,</span> <span class="pre">Bernoulli(0.4))\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">1</span> <span class="pre">1</span> <span class="pre">1|1</span> <span class="pre">1|1</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">e_loc</span> <span class="pre">=</span> <span class="pre">locs[d.long()].unsqueeze(-1)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160; <span class="pre">|7</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">e_scale</span> <span class="pre">=</span> <span class="pre">torch.arange(1.,</span> <span class="pre">8.)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">1</span> <span class="pre">1</span> <span class="pre">1|5</span> <span class="pre">4|7</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">e</span> <span class="pre">=</span> <span class="pre">pyro.sample(\&quot;e\&quot;,</span> <span class="pre">Normal(e_loc,</span> <span class="pre">e_scale)\n&quot;,</span>
-<span class="pre">&quot;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">|</span>&#160;&#160; <span class="pre">|</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">.to_event(1))\n&quot;,</span>
-<span class="pre">&quot;`</span></code>n”,
-“To automatically examine this model with enumeration semantics, we can create an enumerated trace and then use [Trace.format_shapes()](<a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes</a>):”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 11,
-“metadata”: {},
-“outputs”: [</p>
-<blockquote>
-<div><dl>
-<dt>{</dt><dd><p>“name”: “stdout”,
-“output_type”: “stream”,
-“text”: [</p>
-<blockquote>
-<div><p>“Trace Shapes:                n”,
-” Param Sites:                n”,
-”            p             6  n”,
-”         locs             2  n”,
-“Sample Sites:                n”,
-”       a dist             |  n”,
-”        value       6 1 1 |  n”,
-”     log_prob       6 1 1 |  n”,
-”       b dist       6 1 1 |  n”,
-”        value     2 1 1 1 |  n”,
-”     log_prob     2 6 1 1 |  n”,
-” c_plate dist             |  n”,
-”        value           4 |  n”,
-”     log_prob             |  n”,
-”       c dist           4 |  n”,
-”        value   2 1 1 1 1 |  n”,
-”     log_prob   2 1 1 1 4 |  n”,
-” d_plate dist             |  n”,
-”        value           5 |  n”,
-”     log_prob             |  n”,
-”       d dist         5 4 |  n”,
-”        value 2 1 1 1 1 1 |  n”,
-”     log_prob 2 1 1 1 5 4 |  n”,
-”       e dist 2 1 1 1 5 4 | 7n”,
-”        value 2 1 1 1 5 4 | 7n”,
-”     log_prob 2 1 1 1 5 4 |  n”</p>
-</div></blockquote>
-<p>]</p>
-</dd>
-</dl>
-<p>}</p>
-</div></blockquote>
-<p>],
-“source”: [</p>
-<blockquote>
-<div><p>“trace = poutine.trace(poutine.enum(model3, first_available_dim=-3)).get_trace()n”,
-“trace.compute_log_prob()  # optional, but allows printing of log_prob shapesn”,
-“print(trace.format_shapes())”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### Writing parallelizable code &lt;a class=&quot;anchor&quot; id=&quot;Writing-parallelizable-code&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“It can be tricky to write Pyro models that correctly handle parallelized sample sites. Two tricks help: [broadcasting](<a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">http://pytorch.org/docs/master/notes/broadcasting.html</a>) and [ellipsis slicing](<a class="reference external" href="http://python-reference.readthedocs.io/en/dev/docs/brackets/ellipsis.html">http://python-reference.readthedocs.io/en/dev/docs/brackets/ellipsis.html</a>). Let’s look at a contrived model to see how these work in practice. Our aim is to write a model that works both with and without enumeration.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 12,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“width = 8n”,
-“height = 10n”,
-“sparse_pixels = torch.LongTensor([[3, 2], [3, 5], [3, 9], [7, 1]])n”,
-“enumerated = None  # set to either True or False belown”,
-“n”,
-“def fun(observe):n”,
-”    p_x = pyro.param(&quot;p_x&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)n”,
-”    p_y = pyro.param(&quot;p_y&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)n”,
-”    x_axis = pyro.plate(‘x_axis’, width, dim=-2)n”,
-”    y_axis = pyro.plate(‘y_axis’, height, dim=-1)n”,
-“n”,
-”    # Note that the shapes of these sites depend on whether Pyro is enumerating.n”,
-”    with x_axis:n”,
-”        x_active = pyro.sample(&quot;x_active&quot;, Bernoulli(p_x))n”,
-”    with y_axis:n”,
-”        y_active = pyro.sample(&quot;y_active&quot;, Bernoulli(p_y))n”,
-”    if enumerated:n”,
-”        assert x_active.shape  == (2, 1, 1)n”,
-”        assert y_active.shape  == (2, 1, 1, 1)n”,
-”    else:n”,
-”        assert x_active.shape  == (width, 1)n”,
-”        assert y_active.shape  == (height,)n”,
-“n”,
-”    # The first trick is to broadcast. This works with or without enumeration.n”,
-”    p = 0.1 + 0.5 * x_active * y_activen”,
-”    if enumerated:n”,
-”        assert p.shape == (2, 2, 1, 1)n”,
-”    else:n”,
-”        assert p.shape == (width, height)n”,
-”    dense_pixels = p.new_zeros(broadcast_shape(p.shape, (width, height)))n”,
-“n”,
-”    # The second trick is to index using ellipsis slicing.n”,
-”    # This allows Pyro to add arbitrary dimensions on the left.n”,
-”    for x, y in sparse_pixels:n”,
-”        dense_pixels[…, x, y] = 1n”,
-”    if enumerated:n”,
-”        assert dense_pixels.shape == (2, 2, width, height)n”,
-”    else:n”,
-”        assert dense_pixels.shape == (width, height)n”,
-“n”,
-”    with x_axis, y_axis:    n”,
-”        if observe:n”,
-”            pyro.sample(&quot;pixels&quot;, Bernoulli(p), obs=dense_pixels)n”,
-“n”,
-“def model4():n”,
-”    fun(observe=True)n”,
-“n”,
-“def guide4():n”,
-”    fun(observe=False)n”,
-“n”,
-“# Test without enumeration.n”,
-“enumerated = Falsen”,
-“test_model(model4, guide4, Trace_ELBO())n”,
-“n”,
-“# Test with enumeration.n”,
-“enumerated = Truen”,
-“test_model(model4, config_enumerate(guide4, &quot;parallel&quot;),n”,
-”           TraceEnum_ELBO(max_plate_nesting=2))”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“### Automatic broadcasting inside pyro.plate&lt;a class=&quot;anchor&quot; id=&quot;Automatic-broadcasting-inside-pyro-plate&quot;&gt;&lt;/a&gt;n”,
-“n”,
-“Note that in all our model/guide specifications, we have relied on [pyro.plate](<a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">http://docs.pyro.ai/en/dev/primitives.html#pyro.plate</a>) to automatically expand sample shapes to satisfy the constraints on batch shape enforced by <cite>pyro.sample</cite> statements. However this broadcasting is equivalent to hand-annotated <cite>.expand()</cite> statements.n”,
-“n”,
-“We will demonstrate this using <cite>model4</cite> from the [previous section](#Writing-parallelizable-code). Note the following changes to the code from earlier:n”,
-“n”,
-” - For the purpose of this example, we will only consider &quot;parallel&quot; enumeration, but broadcasting should work as expected without enumeration or with &quot;sequential&quot; enumeration.n”,
-” - We have separated out the sampling function which returns the tensors corresponding to the active pixels. Modularizing the model code into components is a common practice, and helps with maintainability of large models.n”,
-” - We would also like to use the <cite>pyro.plate</cite> construct to parallelize the ELBO estimator over [num_particles](<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.elbo.ELBO">http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.elbo.ELBO</a>). This is done by wrapping the contents of model/guide inside an outermost <cite>pyro.plate</cite> context.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: 13,
-“metadata”: {},
-“outputs”: [],
-“source”: [</p>
-<blockquote>
-<div><p>“num_particles = 100  # Number of samples for the ELBO estimatorn”,
-“width = 8n”,
-“height = 10n”,
-“sparse_pixels = torch.LongTensor([[3, 2], [3, 5], [3, 9], [7, 1]])n”,
-“n”,
-“def sample_pixel_locations_no_broadcasting(p_x, p_y, x_axis, y_axis):n”,
-”    with x_axis:n”,
-”        x_active = pyro.sample(&quot;x_active&quot;, Bernoulli(p_x).expand([num_particles, width, 1]))n”,
-”    with y_axis:n”,
-”        y_active = pyro.sample(&quot;y_active&quot;, Bernoulli(p_y).expand([num_particles, 1, height]))n”,
-”    return x_active, y_activen”,
-“n”,
-“def sample_pixel_locations_full_broadcasting(p_x, p_y, x_axis, y_axis):n”,
-”    with x_axis:n”,
-”        x_active = pyro.sample(&quot;x_active&quot;, Bernoulli(p_x))n”,
-”    with y_axis:n”,
-”        y_active = pyro.sample(&quot;y_active&quot;, Bernoulli(p_y))n”,
-”    return x_active, y_active n”,
-“n”,
-“def sample_pixel_locations_partial_broadcasting(p_x, p_y, x_axis, y_axis):n”,
-”    with x_axis:n”,
-”        x_active = pyro.sample(&quot;x_active&quot;, Bernoulli(p_x).expand([width, 1]))n”,
-”    with y_axis:n”,
-”        y_active = pyro.sample(&quot;y_active&quot;, Bernoulli(p_y).expand([height]))n”,
-”    return x_active, y_active n”,
-“n”,
-“def fun(observe, sample_fn):n”,
-”    p_x = pyro.param(&quot;p_x&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)n”,
-”    p_y = pyro.param(&quot;p_y&quot;, torch.tensor(0.1), constraint=constraints.unit_interval)n”,
-”    x_axis = pyro.plate(‘x_axis’, width, dim=-2)n”,
-”    y_axis = pyro.plate(‘y_axis’, height, dim=-1)n”,
-“n”,
-”    with pyro.plate(&quot;num_particles&quot;, 100, dim=-3):n”,
-”        x_active, y_active = sample_fn(p_x, p_y, x_axis, y_axis)n”,
-”        # Indices corresponding to &quot;parallel&quot; enumeration are appended n”,
-”        # to the left of the &quot;num_particles&quot; plate dim.n”,
-”        assert x_active.shape  == (2, 1, 1, 1)n”,
-”        assert y_active.shape  == (2, 1, 1, 1, 1)n”,
-”        p = 0.1 + 0.5 * x_active * y_activen”,
-”        assert p.shape == (2, 2, 1, 1, 1)n”,
-“n”,
-”        dense_pixels = p.new_zeros(broadcast_shape(p.shape, (width, height)))n”,
-”        for x, y in sparse_pixels:n”,
-”            dense_pixels[…, x, y] = 1n”,
-”        assert dense_pixels.shape == (2, 2, 1, width, height)n”,
-“n”,
-”        with x_axis, y_axis:    n”,
-”            if observe:n”,
-”                pyro.sample(&quot;pixels&quot;, Bernoulli(p), obs=dense_pixels)n”,
-“n”,
-“def test_model_with_sample_fn(sample_fn):n”,
-”    def model():n”,
-”        fun(observe=True, sample_fn=sample_fn)n”,
-“n”,
-”    &#64;config_enumeraten”,
-”    def guide():n”,
-”        fun(observe=False, sample_fn=sample_fn)n”,
-“n”,
-”    test_model(model, guide, TraceEnum_ELBO(max_plate_nesting=3))n”,
-“n”,
-“test_model_with_sample_fn(sample_pixel_locations_no_broadcasting)n”,
-“test_model_with_sample_fn(sample_pixel_locations_full_broadcasting)n”,
-“test_model_with_sample_fn(sample_pixel_locations_partial_broadcasting)”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “markdown”,
-“metadata”: {},
-“source”: [</p>
-<blockquote>
-<div><p>“In the first sampling function, we had to do some manual book-keeping and expand the <cite>Bernoulli</cite> distribution’s batch shape to account for the conditionally independent dimensions added by the <cite>pyro.plate</cite> contexts. In particular, note how <cite>sample_pixel_locations</cite> needs knowledge of <cite>num_particles</cite>, <cite>width</cite> and <cite>height</cite> and is accessing these variables from the global scope, which is not ideal. n”,
-“n”,
-” - The second argument to <cite>pyro.plate</cite>, i.e. the optional <cite>size</cite> argument needs to be provided for implicit broadasting, so that it can infer the batch shape requirement for each of the sample sites. n”,
-” - The existing <cite>batch_shape</cite> of the sample site must be broadcastable with the size of the <cite>pyro.plate</cite> contexts. In our particular example, <cite>Bernoulli(p_x)</cite> has an empty batch shape which is universally broadcastable.n”,
-“n”,
-“Note how simple it is to achieve parallelization via tensorized operations using <cite>pyro.plate</cite>! <cite>pyro.plate</cite> also helps in code modularization because model components can be written agnostic of the <cite>plate</cite> contexts in which they may subsequently get embedded in.”</p>
-</div></blockquote>
-<p>]</p>
-</div></blockquote>
-<p>},
-{</p>
-<blockquote>
-<div><p>“cell_type”: “code”,
-“execution_count”: null,
-“metadata”: {},
-“outputs”: [],
-“source”: []</p>
-</div></blockquote>
-<p>}</p>
-</dd>
-</dl>
-<p>],
-“metadata”: {</p>
-<blockquote>
-<div><dl class="simple">
-<dt>“kernelspec”: {</dt><dd><p>“display_name”: “Python 3”,
-“language”: “python”,
-“name”: “python3”</p>
-</dd>
-</dl>
-<p>},
-“language_info”: {</p>
-<blockquote>
-<div><dl class="simple">
-<dt>“codemirror_mode”: {</dt><dd><p>“name”: “ipython”,
-“version”: 3</p>
-</dd>
-</dl>
-<p>},
-“file_extension”: “.py”,
-“mimetype”: “text/x-python”,
-“name”: “python”,
-“nbconvert_exporter”: “python”,
-“pygments_lexer”: “ipython3”,
-“version”: “3.8.2”</p>
-</div></blockquote>
-<p>}</p>
-</div></blockquote>
-<p>},
-“nbformat”: 4,
-“nbformat_minor”: 2</p>
-</dd>
-</dl>
-<p>}</p>
+<section id="Tensor-shapes-in-Pyro">
+<h1>Tensor shapes in Pyro<a class="headerlink" href="#Tensor-shapes-in-Pyro" title="Permalink to this headline">¶</a></h1>
+<div class="line-block">
+<div class="line">This tutorial introduces Pyro’s organization of tensor dimensions. Before starting, you should familiarize yourself with <a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">PyTorch broadcasting semantics</a>.</div>
+<div class="line">After this tutorial, you may want to also read about <a class="reference external" href="http://pyro.ai/examples/enumeration.html">enumeration</a>.</div>
+</div>
+<p>You may also find it useful to read Eric J. Ma’s post <a class="reference external" href="https://ericmjl.github.io/blog/2019/5/29/reasoning-about-shapes-and-probability-distributions/">Reasoning about Shapes and Probability Distributions</a>. While this post is specifically about TensorFlow Probability, many of the same concepts apply.</p>
+<section id="Summary:">
+<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Tensors broadcast by aligning on the right: <code class="docutils literal notranslate"><span class="pre">torch.ones(3,4,5)</span> <span class="pre">+</span> <span class="pre">torch.ones(5)</span></code>.</p></li>
+<li><p>Distribution <code class="docutils literal notranslate"><span class="pre">.sample().shape</span> <span class="pre">==</span> <span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape</span></code>.</p></li>
+<li><p>Distribution <code class="docutils literal notranslate"><span class="pre">.log_prob(x).shape</span> <span class="pre">==</span> <span class="pre">batch_shape</span></code> (but not <code class="docutils literal notranslate"><span class="pre">event_shape</span></code>!).</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">.expand()</span></code> to draw a batch of samples, or rely on <code class="docutils literal notranslate"><span class="pre">plate</span></code> to expand automatically.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">my_dist.to_event(1)</span></code> to declare a dimension as dependent.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">pyro.plate('name',</span> <span class="pre">size):</span></code> to declare a dimension as conditionally independent.</p></li>
+<li><p>All dimensions must be declared either dependent or conditionally independent.</p></li>
+<li><p>Try to support batching on the left. This lets Pyro auto-parallelize.</p>
+<ul>
+<li><p>use negative indices like <code class="docutils literal notranslate"><span class="pre">x.sum(-1)</span></code> rather than <code class="docutils literal notranslate"><span class="pre">x.sum(2)</span></code></p></li>
+<li><p>use ellipsis notation like <code class="docutils literal notranslate"><span class="pre">pixel</span> <span class="pre">=</span> <span class="pre">image[...,</span> <span class="pre">i,</span> <span class="pre">j]</span></code></p></li>
+<li><p>use <a class="reference external" href="http://docs.pyro.ai/en/dev/ops.html#pyro.ops.indexing.Vindex">Vindex</a> if <code class="docutils literal notranslate"><span class="pre">i,j</span></code> are enumerated, <code class="docutils literal notranslate"><span class="pre">pixel</span> <span class="pre">=</span> <span class="pre">Vindex(image)[...,</span> <span class="pre">i,</span> <span class="pre">j]</span></code></p></li>
+</ul>
+</li>
+<li><p>When using <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>’s automatic subsampling, be sure to subsample your data:</p>
+<ul>
+<li><p>Either manually subample by capturing the index <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">pyro.plate(...)</span> <span class="pre">as</span> <span class="pre">i:</span> <span class="pre">...</span></code></p></li>
+<li><p>or automatically subsample via <code class="docutils literal notranslate"><span class="pre">batch</span> <span class="pre">=</span> <span class="pre">pyro.subsample(data,</span> <span class="pre">event_dim=...)</span></code>.</p></li>
+</ul>
+</li>
+<li><p>When debugging, examine all shapes in a trace using <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">Trace.format_shapes()</a>.</p></li>
+</ul>
+</section>
+<section id="Table-of-Contents">
+<h2>Table of Contents<a class="headerlink" href="#Table-of-Contents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="#Distributions-shapes:-batch_shape-and-event_shape">Distribution shapes</a></p>
+<ul>
+<li><p><a class="reference external" href="#Examples">Examples</a></p></li>
+<li><p><a class="reference external" href="#Reshaping-distributions">Reshaping distributions</a></p></li>
+<li><p><a class="reference external" href="#It-is-always-safe-to-assume-dependence">It is always safe to assume dependence</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="#Declaring-independent-dims-with-plate">Declaring independence with plate</a></p></li>
+<li><p><a class="reference external" href="#Subsampling-tensors-inside-a-plate">Subsampling inside plate</a></p></li>
+<li><p><a class="reference external" href="#Broadcasting-to-allow-parallel-enumeration">Broadcasting to allow Parallel Enumeration</a></p>
+<ul>
+<li><p><a class="reference external" href="#Writing-parallelizable-code">Writing parallelizable code</a></p></li>
+<li><p><a class="reference external" href="#Automatic-broadcasting-inside-pyro-plate">Automatic broadcasting inside pyro.plate</a></p></li>
+</ul>
+</li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">Bernoulli</span><span class="p">,</span> <span class="n">Categorical</span><span class="p">,</span> <span class="n">MultivariateNormal</span><span class="p">,</span> <span class="n">Normal</span>
+<span class="kn">from</span> <span class="nn">pyro.distributions.util</span> <span class="kn">import</span> <span class="n">broadcast_shape</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">Trace_ELBO</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
+<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+
+<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+
+<span class="c1"># We&#39;ll ue this helper to check our models are correct.</span>
+<span class="k">def</span> <span class="nf">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Distributions-shapes:-batch_shape-and-event_shape">
+<h3>Distributions shapes: <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">event_shape</span></code><a class="headerlink" href="#Distributions-shapes:-batch_shape-and-event_shape" title="Permalink to this headline">¶</a></h3>
+<p>PyTorch <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>s have a single <code class="docutils literal notranslate"><span class="pre">.shape</span></code> attribute, but <code class="docutils literal notranslate"><span class="pre">Distribution</span></code>s have two shape attributions with special meaning: <code class="docutils literal notranslate"><span class="pre">.batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">.event_shape</span></code>. These two combine to define the total shape of a sample</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span>
+</pre></div>
+</div>
+<p>Indices over <code class="docutils literal notranslate"><span class="pre">.batch_shape</span></code> denote conditionally independent random variables, whereas indices over <code class="docutils literal notranslate"><span class="pre">.event_shape</span></code> denote dependent random variables (ie one draw from a distribution). Because the dependent random variables define probability together, the <code class="docutils literal notranslate"><span class="pre">.log_prob()</span></code> method only produces a single number for each event of shape <code class="docutils literal notranslate"><span class="pre">.event_shape</span></code>. Thus the total shape of <code class="docutils literal notranslate"><span class="pre">.log_prob()</span></code> is <code class="docutils literal notranslate"><span class="pre">.batch_shape</span></code>:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">Distribution.sample()</span></code> method also takes a <code class="docutils literal notranslate"><span class="pre">sample_shape</span></code> parameter that indexes over independent identically distributed (iid) random varables, so that</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x2</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_shape</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">x2</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">sample_shape</span> <span class="o">+</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="n">event_shape</span>
+</pre></div>
+</div>
+<p>In summary</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      |      iid     | independent | dependent
+------+--------------+-------------+------------
+shape = sample_shape + batch_shape + event_shape
+</pre></div>
+</div>
+<p>For example univariate distributions have empty event shape (because each number is an independent event). Distributions over vectors like <code class="docutils literal notranslate"><span class="pre">MultivariateNormal</span></code> have <code class="docutils literal notranslate"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">1</span></code>. Distributions over matrices like <code class="docutils literal notranslate"><span class="pre">InverseWishart</span></code> have <code class="docutils literal notranslate"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">2</span></code>.</p>
+<section id="Examples">
+<h4>Examples<a class="headerlink" href="#Examples" title="Permalink to this headline">¶</a></h4>
+<p>The simplest distribution shape is a single univariate distribution.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Distributions can be batched by passing in batched parameters.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Another way to batch distributions is via the <code class="docutils literal notranslate"><span class="pre">.expand()</span></code> method. This only works if parameters are identical along the leftmost dimensions.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]))</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Multivariate distributions have nonempty <code class="docutils literal notranslate"><span class="pre">.event_shape</span></code>. For these distributions, the shapes of <code class="docutils literal notranslate"><span class="pre">.sample()</span></code> and <code class="docutils literal notranslate"><span class="pre">.log_prob(x)</span></code> differ:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">()</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>            <span class="c1"># == batch_shape + event_shape</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>  <span class="c1"># == batch_shape</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Reshaping-distributions">
+<h4>Reshaping distributions<a class="headerlink" href="#Reshaping-distributions" title="Permalink to this headline">¶</a></h4>
+<p>In Pyro you can treat a univariate distribution as multivariate by calling the <a class="reference external" href="http://docs.pyro.ai/en/dev/distributions.html#pyro.distributions.torch_distribution.TorchDistributionMixin.to_event">.to_event(n)</a> property where <code class="docutils literal notranslate"><span class="pre">n</span></code> is the number of batch dimensions (from the right) to declare as <em>dependent</em>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)</span>
+</pre></div>
+</div>
+</div>
+<p>While you work with Pyro programs, keep in mind that samples have shape <code class="docutils literal notranslate"><span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape</span></code>, whereas <code class="docutils literal notranslate"><span class="pre">.log_prob(x)</span></code> values have shape <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code>. You’ll need to ensure that <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> is carefully controlled by either trimming it down with <code class="docutils literal notranslate"><span class="pre">.to_event(n)</span></code> or by declaring dimensions as independent via <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>.</p>
+</section>
+<section id="It-is-always-safe-to-assume-dependence">
+<h4>It is always safe to assume dependence<a class="headerlink" href="#It-is-always-safe-to-assume-dependence" title="Permalink to this headline">¶</a></h4>
+<p>Often in Pyro we’ll declare some dimensions as dependent even though they are in fact independent, e.g.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="mi">10</span><span class="p">])</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">10</span><span class="p">,)</span>
+</pre></div>
+</div>
+<p>This is useful for two reasons: First it allows us to easily swap in a <code class="docutils literal notranslate"><span class="pre">MultivariateNormal</span></code> distribution later. Second it simplifies the code a bit since we don’t need a <code class="docutils literal notranslate"><span class="pre">plate</span></code> (see below) as in</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;x_plate&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># .expand([10]) is automatic</span>
+    <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">10</span><span class="p">,)</span>
+</pre></div>
+</div>
+<p>The difference between these two versions is that the second version with <code class="docutils literal notranslate"><span class="pre">plate</span></code> informs Pyro that it can make use of conditional independence information when estimating gradients, whereas in the first version Pyro must assume they are dependent (even though the normals are in fact conditionally independent). This is analogous to d-separation in graphical models: it is always safe to add edges and assume variables <em>may</em> be dependent (i.e. to widen the model class), but it is unsafe to assume
+independence when variables are actually dependent (i.e. narrowing the model class so the true model lies outside of the class, as in mean field). In practice Pyro’s SVI inference algorithm uses reparameterized gradient estimators for <code class="docutils literal notranslate"><span class="pre">Normal</span></code> distributions so both gradient estimators have the same performance.</p>
+</section>
+</section>
+<section id="Declaring-independent-dims-with-plate">
+<h3>Declaring independent dims with <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Declaring-independent-dims-with-plate" title="Permalink to this headline">¶</a></h3>
+<p>Pyro models can use the context manager <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">pyro.plate</a> to declare that certain batch dimensions are independent. Inference algorithms can then take advantage of this independence to e.g. construct lower variance gradient estimators or to enumerate in linear space rather than exponential space. An example of an independent dimension is the index over data in a minibatch: each datum should be independent of all others.</p>
+<p>The simplest way to declare a dimension as independent is to declare the rightmost batch dimension as independent via a simple</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;my_plate&quot;</span><span class="p">):</span>
+    <span class="c1"># within this context, batch dimension -1 is independent</span>
+</pre></div>
+</div>
+<p>We recommend always providing an optional size argument to aid in debugging shapes</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;my_plate&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">my_data</span><span class="p">)):</span>
+    <span class="c1"># within this context, batch dimension -1 is independent</span>
+</pre></div>
+</div>
+<p>Starting with Pyro 0.2 you can additionally nest <code class="docutils literal notranslate"><span class="pre">plates</span></code>, e.g. if you have per-pixel independence:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;x_axis&quot;</span><span class="p">,</span> <span class="mi">320</span><span class="p">):</span>
+    <span class="c1"># within this context, batch dimension -1 is independent</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;y_axis&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">):</span>
+        <span class="c1"># within this context, batch dimensions -2 and -1 are independent</span>
+</pre></div>
+</div>
+<p>Note that we always count from the right by using negative indices like -2, -1.</p>
+<p>Finally if you want to mix and match <code class="docutils literal notranslate"><span class="pre">plate</span></code>s for e.g. noise that depends only on <code class="docutils literal notranslate"><span class="pre">x</span></code>, some noise that depends only on <code class="docutils literal notranslate"><span class="pre">y</span></code>, and some noise that depends on both, you can declare multiple <code class="docutils literal notranslate"><span class="pre">plates</span></code> and use them as reusable context managers. In this case Pyro cannot automatically allocate a dimension, so you need to provide a <code class="docutils literal notranslate"><span class="pre">dim</span></code> argument (again counting from the right):</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;x_axis&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;y_axis&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+    <span class="c1"># within this context, batch dimension -2 is independent</span>
+<span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+    <span class="c1"># within this context, batch dimension -3 is independent</span>
+<span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+    <span class="c1"># within this context, batch dimensions -3 and -2 are independent</span>
+</pre></div>
+</div>
+<p>Let’s take a closer look at batch sizes within <code class="docutils literal notranslate"><span class="pre">plate</span></code>s.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model1</span><span class="p">():</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;c_plate&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;d_plate&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">()</span>       <span class="c1"># batch_shape == ()     event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)</span>     <span class="c1"># batch_shape == ()     event_shape == (2,)</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)</span>     <span class="c1"># batch_shape == (2,)   event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># batch_shape == (3,)   event_shape == (4,5)</span>
+
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;x_axis&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;y_axis&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">xy</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;xy&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>        <span class="c1"># batch_shape == (3,1)     event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>     <span class="c1"># batch_shape == (2,1,1)   event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">xy</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>    <span class="c1"># batch_shape == (2,3,1)   event_shape == ()</span>
+    <span class="k">assert</span> <span class="n">z</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># batch_shape == (2,3,1)   event_shape == (5,)</span>
+
+<span class="n">test_model</span><span class="p">(</span><span class="n">model1</span><span class="p">,</span> <span class="n">model1</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<p>It is helpful to visualize the <code class="docutils literal notranslate"><span class="pre">.shape</span></code>s of each sample site by aligning them at the boundary between <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">event_shape</span></code>: dimensions to the right will be summed out in <code class="docutils literal notranslate"><span class="pre">.log_prob()</span></code> and dimensions to the left will remain.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>batch dims | event dims
+-----------+-----------
+           |        a = sample(&quot;a&quot;, Normal(0, 1))
+           |2       b = sample(&quot;b&quot;, Normal(zeros(2), 1)
+           |                        .to_event(1))
+           |        with plate(&quot;c&quot;, 2):
+          2|            c = sample(&quot;c&quot;, Normal(zeros(2), 1))
+           |        with plate(&quot;d&quot;, 3):
+          3|4 5         d = sample(&quot;d&quot;, Normal(zeros(3,4,5), 1)
+           |                       .to_event(2))
+           |
+           |        x_axis = plate(&quot;x&quot;, 3, dim=-2)
+           |        y_axis = plate(&quot;y&quot;, 2, dim=-3)
+           |        with x_axis:
+        3 1|            x = sample(&quot;x&quot;, Normal(0, 1))
+           |        with y_axis:
+      2 1 1|            y = sample(&quot;y&quot;, Normal(0, 1))
+           |        with x_axis, y_axis:
+      2 3 1|            xy = sample(&quot;xy&quot;, Normal(0, 1))
+      2 3 1|5           z = sample(&quot;z&quot;, Normal(0, 1).expand([5])
+           |                       .to_event(1))
+</pre></div>
+</div>
+<p>To examine the shapes of sample sites in a program automatically, you can trace the program and use the <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">Trace.format_shapes()</a> method, which prints three shapes for each sample site: the distribution shape (both <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].event_shape</span></code>), the value shape (<code class="docutils literal notranslate"><span class="pre">site[&quot;value&quot;].shape</span></code>), and if log probability has been computed also the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> shape (<code class="docutils literal notranslate"><span class="pre">site[&quot;log_prob&quot;].shape</span></code>):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">trace</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">model1</span><span class="p">)</span><span class="o">.</span><span class="n">get_trace</span><span class="p">()</span>
+<span class="n">trace</span><span class="o">.</span><span class="n">compute_log_prob</span><span class="p">()</span>  <span class="c1"># optional, but allows printing of log_prob shapes</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">trace</span><span class="o">.</span><span class="n">format_shapes</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Trace Shapes:
+ Param Sites:
+Sample Sites:
+       a dist       |
+        value       |
+     log_prob       |
+       b dist       | 2
+        value       | 2
+     log_prob       |
+ c_plate dist       |
+        value     2 |
+     log_prob       |
+       c dist     2 |
+        value     2 |
+     log_prob     2 |
+ d_plate dist       |
+        value     3 |
+     log_prob       |
+       d dist     3 | 4 5
+        value     3 | 4 5
+     log_prob     3 |
+  x_axis dist       |
+        value     3 |
+     log_prob       |
+  y_axis dist       |
+        value     2 |
+     log_prob       |
+       x dist   3 1 |
+        value   3 1 |
+     log_prob   3 1 |
+       y dist 2 1 1 |
+        value 2 1 1 |
+     log_prob 2 1 1 |
+      xy dist 2 3 1 |
+        value 2 3 1 |
+     log_prob 2 3 1 |
+       z dist 2 3 1 | 5
+        value 2 3 1 | 5
+     log_prob 2 3 1 |
+</pre></div></div>
+</div>
+</section>
+<section id="Subsampling-tensors-inside-a-plate">
+<h3>Subsampling tensors inside a <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Subsampling-tensors-inside-a-plate" title="Permalink to this headline">¶</a></h3>
+<p>One of the main uses of <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">plate</a> is to subsample data. This is possible within a <code class="docutils literal notranslate"><span class="pre">plate</span></code> because data are conditionally independent, so the expected value of the loss on, say, half the data should be half the expected loss on the full data.</p>
+<p>To subsample data, you need to inform Pyro of both the original data size and the subsample size; Pyro will then choose a random subset of data and yield the set of indices.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">100.</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">model2</span><span class="p">():</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="k">as</span> <span class="n">ind</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span>    <span class="c1"># ind is a LongTensor that indexes the subsample.</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>        <span class="c1"># Select a minibatch of data.</span>
+        <span class="n">mean_batch</span> <span class="o">=</span> <span class="n">mean</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>   <span class="c1"># Take care to select the relevant per-datum parameters.</span>
+        <span class="c1"># Do stuff with batch:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mean_batch</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span>
+
+<span class="n">test_model</span><span class="p">(</span><span class="n">model2</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Broadcasting-to-allow-parallel-enumeration">
+<h3>Broadcasting to allow parallel enumeration<a class="headerlink" href="#Broadcasting-to-allow-parallel-enumeration" title="Permalink to this headline">¶</a></h3>
+<p>Pyro 0.2 introduces the ability to enumerate discrete latent variables in parallel. This can significantly reduce the variance of gradient estimators when learning a posterior via <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.svi.SVI">SVI</a>.</p>
+<p>To use parallel enumeration, Pyro needs to allocate tensor dimension that it can use for enumeration. To avoid conflicting with other dimensions that we want to use for <code class="docutils literal notranslate"><span class="pre">plate</span></code>s, we need to declare a budget of the maximum number of tensor dimensions we’ll use. This budget is called <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> and is an argument to <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html">SVI</a> (the argument is simply passed through to
+<a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a>). Usually Pyro can determine this budget on its own (it runs the <code class="docutils literal notranslate"><span class="pre">(model,guide)</span></code> pair once and record what happens), but in case of dynamic model structure you may need to declare <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> manually.</p>
+<p>To understand <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> and how Pyro allocates dimensions for enumeration, let’s revisit <code class="docutils literal notranslate"><span class="pre">model1()</span></code> from above. This time we’ll map out three types of dimensions: enumeration dimensions on the left (Pyro takes control of these), batch dimensions in the middle, and event dimensions on the right.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>      max_plate_nesting = 3
+           |&lt;---&gt;|
+enumeration|batch|event
+-----------+-----+-----
+           |. . .|      a = sample(&quot;a&quot;, Normal(0, 1))
+           |. . .|2     b = sample(&quot;b&quot;, Normal(zeros(2), 1)
+           |     |                      .to_event(1))
+           |     |      with plate(&quot;c&quot;, 2):
+           |. . 2|          c = sample(&quot;c&quot;, Normal(zeros(2), 1))
+           |     |      with plate(&quot;d&quot;, 3):
+           |. . 3|4 5       d = sample(&quot;d&quot;, Normal(zeros(3,4,5), 1)
+           |     |                     .to_event(2))
+           |     |
+           |     |      x_axis = plate(&quot;x&quot;, 3, dim=-2)
+           |     |      y_axis = plate(&quot;y&quot;, 2, dim=-3)
+           |     |      with x_axis:
+           |. 3 1|          x = sample(&quot;x&quot;, Normal(0, 1))
+           |     |      with y_axis:
+           |2 1 1|          y = sample(&quot;y&quot;, Normal(0, 1))
+           |     |      with x_axis, y_axis:
+           |2 3 1|          xy = sample(&quot;xy&quot;, Normal(0, 1))
+           |2 3 1|5         z = sample(&quot;z&quot;, Normal(0, 1).expand([5]))
+           |     |                     .to_event(1))
+</pre></div>
+</div>
+<p>Note that it is safe to overprovision <code class="docutils literal notranslate"><span class="pre">max_plate_nesting=4</span></code> but we cannot underprovision <code class="docutils literal notranslate"><span class="pre">max_plate_nesting=2</span></code> (or Pyro will error). Let’s see how this works in practice.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@config_enumerate</span>
+<span class="k">def</span> <span class="nf">model3</span><span class="p">():</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">6.</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;locs&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]))</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">a</span><span class="p">]))</span>  <span class="c1"># Note this depends on a.</span>
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;c_plate&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.3</span><span class="p">))</span>
+        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;d_plate&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.4</span><span class="p">))</span>
+            <span class="n">e_loc</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">long</span><span class="p">()]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">e_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">8.</span><span class="p">)</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="n">e_loc</span><span class="p">,</span> <span class="n">e_scale</span><span class="p">)</span>
+                            <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># Note this depends on d.</span>
+
+    <span class="c1">#                   enumerated|batch|event dims</span>
+    <span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>         <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>   <span class="p">)</span>  <span class="c1"># Six enumerated values of the Categorical.</span>
+    <span class="k">assert</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>      <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>   <span class="p">)</span>  <span class="c1"># Two enumerated Bernoullis, unexpanded.</span>
+    <span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>   <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>   <span class="p">)</span>  <span class="c1"># Only two Bernoullis, unexpanded.</span>
+    <span class="k">assert</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>   <span class="p">)</span>  <span class="c1"># Only two Bernoullis, unexpanded.</span>
+    <span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>  <span class="c1"># This is sampled and depends on d.</span>
+
+    <span class="k">assert</span> <span class="n">e_loc</span><span class="o">.</span><span class="n">shape</span>   <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,)</span>
+    <span class="k">assert</span> <span class="n">e_scale</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span>                  <span class="mi">7</span><span class="p">,)</span>
+
+<span class="n">test_model</span><span class="p">(</span><span class="n">model3</span><span class="p">,</span> <span class="n">model3</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s take a closer look at those dimensions. First note that Pyro allocates enumeration dims starting from the right at <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code>: Pyro allocates dim -3 to enumerate <code class="docutils literal notranslate"><span class="pre">a</span></code>, then dim -4 to enumerate <code class="docutils literal notranslate"><span class="pre">b</span></code>, then dim -5 to enumerate <code class="docutils literal notranslate"><span class="pre">c</span></code>, and finally dim -6 to enumerate <code class="docutils literal notranslate"><span class="pre">d</span></code>. Next note that samples only have extent (size &gt; 1) in the new enumeration dimension. This helps keep tensors small and computation cheap. (Note that the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> shape will be broadcast up to contain both
+enumeratin shape and batch shape, so e.g. <code class="docutils literal notranslate"><span class="pre">trace.nodes['d']['log_prob'].shape</span> <span class="pre">==</span> <span class="pre">(2,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">5,</span> <span class="pre">4)</span></code>.)</p>
+<p>We can draw a similar map of the tensor dimensions:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>     max_plate_nesting = 2
+            |&lt;-&gt;|
+enumeration batch event
+------------|---|-----
+           6|1 1|     a = pyro.sample(&quot;a&quot;, Categorical(torch.ones(6) / 6))
+         2 1|1 1|     b = pyro.sample(&quot;b&quot;, Bernoulli(p[a]))
+            |   |     with pyro.plate(&quot;c_plate&quot;, 4):
+       2 1 1|1 1|         c = pyro.sample(&quot;c&quot;, Bernoulli(0.3))
+            |   |         with pyro.plate(&quot;d_plate&quot;, 5):
+     2 1 1 1|1 1|             d = pyro.sample(&quot;d&quot;, Bernoulli(0.4))
+     2 1 1 1|1 1|1            e_loc = locs[d.long()].unsqueeze(-1)
+            |   |7            e_scale = torch.arange(1., 8.)
+     2 1 1 1|5 4|7            e = pyro.sample(&quot;e&quot;, Normal(e_loc, e_scale)
+            |   |                             .to_event(1))
+</pre></div>
+</div>
+<p>To automatically examine this model with enumeration semantics, we can create an enumerated trace and then use <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.Trace.format_shapes">Trace.format_shapes()</a>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">trace</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">poutine</span><span class="o">.</span><span class="n">enum</span><span class="p">(</span><span class="n">model3</span><span class="p">,</span> <span class="n">first_available_dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">get_trace</span><span class="p">()</span>
+<span class="n">trace</span><span class="o">.</span><span class="n">compute_log_prob</span><span class="p">()</span>  <span class="c1"># optional, but allows printing of log_prob shapes</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">trace</span><span class="o">.</span><span class="n">format_shapes</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Trace Shapes:
+ Param Sites:
+            p             6
+         locs             2
+Sample Sites:
+       a dist             |
+        value       6 1 1 |
+     log_prob       6 1 1 |
+       b dist       6 1 1 |
+        value     2 1 1 1 |
+     log_prob     2 6 1 1 |
+ c_plate dist             |
+        value           4 |
+     log_prob             |
+       c dist           4 |
+        value   2 1 1 1 1 |
+     log_prob   2 1 1 1 4 |
+ d_plate dist             |
+        value           5 |
+     log_prob             |
+       d dist         5 4 |
+        value 2 1 1 1 1 1 |
+     log_prob 2 1 1 1 5 4 |
+       e dist 2 1 1 1 5 4 | 7
+        value 2 1 1 1 5 4 | 7
+     log_prob 2 1 1 1 5 4 |
+</pre></div></div>
+</div>
+<section id="Writing-parallelizable-code">
+<h4>Writing parallelizable code<a class="headerlink" href="#Writing-parallelizable-code" title="Permalink to this headline">¶</a></h4>
+<p>It can be tricky to write Pyro models that correctly handle parallelized sample sites. Two tricks help: <a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">broadcasting</a> and <a class="reference external" href="http://python-reference.readthedocs.io/en/dev/docs/brackets/ellipsis.html">ellipsis slicing</a>. Let’s look at a contrived model to see how these work in practice. Our aim is to write a model that works both with and without enumeration.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">width</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">sparse_pixels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="n">enumerated</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># set to either True or False below</span>
+
+<span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="n">observe</span><span class="p">):</span>
+    <span class="n">p_x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_x&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">p_y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_y&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;x_axis&#39;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;y_axis&#39;</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Note that the shapes of these sites depend on whether Pyro is enumerating.</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">enumerated</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">x_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">y_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">x_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">y_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="n">height</span><span class="p">,)</span>
+
+    <span class="c1"># The first trick is to broadcast. This works with or without enumeration.</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x_active</span> <span class="o">*</span> <span class="n">y_active</span>
+    <span class="k">if</span> <span class="n">enumerated</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="n">dense_pixels</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">broadcast_shape</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)))</span>
+
+    <span class="c1"># The second trick is to index using ellipsis slicing.</span>
+    <span class="c1"># This allows Pyro to add arbitrary dimensions on the left.</span>
+    <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">sparse_pixels</span><span class="p">:</span>
+        <span class="n">dense_pixels</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">enumerated</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">dense_pixels</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">dense_pixels</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">observe</span><span class="p">:</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;pixels&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">dense_pixels</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">model4</span><span class="p">():</span>
+    <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">guide4</span><span class="p">():</span>
+    <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Test without enumeration.</span>
+<span class="n">enumerated</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">test_model</span><span class="p">(</span><span class="n">model4</span><span class="p">,</span> <span class="n">guide4</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
+
+<span class="c1"># Test with enumeration.</span>
+<span class="n">enumerated</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">test_model</span><span class="p">(</span><span class="n">model4</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">(</span><span class="n">guide4</span><span class="p">,</span> <span class="s2">&quot;parallel&quot;</span><span class="p">),</span>
+           <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Automatic-broadcasting-inside-pyro.plate">
+<h4>Automatic broadcasting inside pyro.plate<a class="headerlink" href="#Automatic-broadcasting-inside-pyro.plate" title="Permalink to this headline">¶</a></h4>
+<p>Note that in all our model/guide specifications, we have relied on <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">pyro.plate</a> to automatically expand sample shapes to satisfy the constraints on batch shape enforced by <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements. However this broadcasting is equivalent to hand-annotated <code class="docutils literal notranslate"><span class="pre">.expand()</span></code> statements.</p>
+<p>We will demonstrate this using <code class="docutils literal notranslate"><span class="pre">model4</span></code> from the <a class="reference external" href="#Writing-parallelizable-code">previous section</a>. Note the following changes to the code from earlier:</p>
+<ul class="simple">
+<li><p>For the purpose of this example, we will only consider “parallel” enumeration, but broadcasting should work as expected without enumeration or with “sequential” enumeration.</p></li>
+<li><p>We have separated out the sampling function which returns the tensors corresponding to the active pixels. Modularizing the model code into components is a common practice, and helps with maintainability of large models.</p></li>
+<li><p>We would also like to use the <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> construct to parallelize the ELBO estimator over <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.elbo.ELBO">num_particles</a>. This is done by wrapping the contents of model/guide inside an outermost <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> context.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_particles</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># Number of samples for the ELBO estimator</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">sparse_pixels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+
+<span class="k">def</span> <span class="nf">sample_pixel_locations_no_broadcasting</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="n">num_particles</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="n">num_particles</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span>
+
+<span class="k">def</span> <span class="nf">sample_pixel_locations_full_broadcasting</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span>
+
+<span class="k">def</span> <span class="nf">sample_pixel_locations_partial_broadcasting</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">x_axis</span><span class="p">:</span>
+        <span class="n">x_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_x</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="n">y_axis</span><span class="p">:</span>
+        <span class="n">y_active</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_active&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p_y</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="n">height</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span>
+
+<span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="n">observe</span><span class="p">,</span> <span class="n">sample_fn</span><span class="p">):</span>
+    <span class="n">p_x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_x&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">p_y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;p_y&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;x_axis&#39;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;y_axis&#39;</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;num_particles&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">x_active</span><span class="p">,</span> <span class="n">y_active</span> <span class="o">=</span> <span class="n">sample_fn</span><span class="p">(</span><span class="n">p_x</span><span class="p">,</span> <span class="n">p_y</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">)</span>
+        <span class="c1"># Indices corresponding to &quot;parallel&quot; enumeration are appended</span>
+        <span class="c1"># to the left of the &quot;num_particles&quot; plate dim.</span>
+        <span class="k">assert</span> <span class="n">x_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">y_active</span><span class="o">.</span><span class="n">shape</span>  <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x_active</span> <span class="o">*</span> <span class="n">y_active</span>
+        <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">dense_pixels</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">broadcast_shape</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">sparse_pixels</span><span class="p">:</span>
+            <span class="n">dense_pixels</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">dense_pixels</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">observe</span><span class="p">:</span>
+                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;pixels&quot;</span><span class="p">,</span> <span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">dense_pixels</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_fn</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
+        <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_fn</span><span class="o">=</span><span class="n">sample_fn</span><span class="p">)</span>
+
+    <span class="nd">@config_enumerate</span>
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">():</span>
+        <span class="n">fun</span><span class="p">(</span><span class="n">observe</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sample_fn</span><span class="o">=</span><span class="n">sample_fn</span><span class="p">)</span>
+
+    <span class="n">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="n">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_pixel_locations_no_broadcasting</span><span class="p">)</span>
+<span class="n">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_pixel_locations_full_broadcasting</span><span class="p">)</span>
+<span class="n">test_model_with_sample_fn</span><span class="p">(</span><span class="n">sample_pixel_locations_partial_broadcasting</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In the first sampling function, we had to do some manual book-keeping and expand the <code class="docutils literal notranslate"><span class="pre">Bernoulli</span></code> distribution’s batch shape to account for the conditionally independent dimensions added by the <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> contexts. In particular, note how <code class="docutils literal notranslate"><span class="pre">sample_pixel_locations</span></code> needs knowledge of <code class="docutils literal notranslate"><span class="pre">num_particles</span></code>, <code class="docutils literal notranslate"><span class="pre">width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code> and is accessing these variables from the global scope, which is not ideal.</p>
+<ul class="simple">
+<li><p>The second argument to <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>, i.e. the optional <code class="docutils literal notranslate"><span class="pre">size</span></code> argument needs to be provided for implicit broadasting, so that it can infer the batch shape requirement for each of the sample sites.</p></li>
+<li><p>The existing <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> of the sample site must be broadcastable with the size of the <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> contexts. In our particular example, <code class="docutils literal notranslate"><span class="pre">Bernoulli(p_x)</span></code> has an empty batch shape which is universally broadcastable.</p></li>
+</ul>
+<p>Note how simple it is to achieve parallelization via tensorized operations using <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>! <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> also helps in code modularization because model components can be written agnostic of the <code class="docutils literal notranslate"><span class="pre">plate</span></code> contexts in which they may subsequently get embedded in.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="bayesian_regression_ii.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="modules.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="bayesian_regression_ii.html" class="btn btn-neutral float-left" title="Bayesian Regression - Inference Algorithms (Part 2)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modules.html" class="btn btn-neutral float-right" title="Modules in Pyro" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
