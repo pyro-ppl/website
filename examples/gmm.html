@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaussian Mixture Model &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Gaussian Mixture Model &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -107,7 +109,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -418,6 +419,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -426,10 +428,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -441,12 +447,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -474,10 +483,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Gaussian-Mixture-Model">
-<h1>Gaussian Mixture Model<a class="headerlink" href="#Gaussian-Mixture-Model" title="Permalink to this headline">¶</a></h1>
+<h1>Gaussian Mixture Model<a class="headerlink" href="#Gaussian-Mixture-Model" title="Permalink to this heading">¶</a></h1>
 <p>This is tutorial demonstrates how to marginalize out discrete latent variables in Pyro through the motivating example of a mixture model. We’ll focus on the mechanics of parallel enumeration, keeping the model simple by training a trivial 1-D Gaussian model on a tiny 5-point dataset. See also the <a class="reference external" href="http://pyro.ai/examples/enumeration.html">enumeration tutorial</a> for a broader introduction to parallel enumeration.</p>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Overview">Overview</a></p></li>
 <li><p><a class="reference external" href="#Training-a-MAP-estimator">Training a MAP estimator</a></p></li>
@@ -510,12 +519,12 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">,</span> <span class="n">infer_discrete</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <section id="Overview">
-<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
+<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">¶</a></h3>
 <p>Pyro’s <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a> can automatically marginalize out variables in both the guide and the model. When enumerating guide variables, Pyro can either enumerate sequentially (which is useful if the variables determine downstream control flow), or enumerate in parallel by allocating a new tensor dimension and using nonstandard evaluation to create a tensor of possible values at the variable’s sample site.
 These nonstandard values are then replayed in the model. When enumerating variables in the model, the variables must be enumerated in parallel and must not appear in the guide. Mathematically, guide-side enumeration simply reduces variance in a stochastic ELBO by enumerating all values, whereas model-side enumeration avoids an application of Jensen’s inequality by exactly marginalizing out a variable.</p>
 <p>Here is our tiny dataset. It has five points.</p>
@@ -529,7 +538,7 @@ These nonstandard values are then replayed in the model. When enumerating variab
 </div>
 </section>
 <section id="Training-a-MAP-estimator">
-<h3>Training a MAP estimator<a class="headerlink" href="#Training-a-MAP-estimator" title="Permalink to this headline">¶</a></h3>
+<h3>Training a MAP estimator<a class="headerlink" href="#Training-a-MAP-estimator" title="Permalink to this heading">¶</a></h3>
 <p>Let’s start by learning model parameters <code class="docutils literal notranslate"><span class="pre">weights</span></code>, <code class="docutils literal notranslate"><span class="pre">locs</span></code>, and <code class="docutils literal notranslate"><span class="pre">scale</span></code> given priors and data. We will learn point estimates of these using an <a class="reference external" href="http://docs.pyro.ai/en/dev/infer.autoguide.html#autodelta">AutoDelta</a> guide (named after its delta distributions). Our model will learn global mixture weights, the location of each mixture component, and a shared scale that is common to both components. During inference,
 <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a> will marginalize out the assignments of datapoints to clusters.</p>
 <div class="nbinput nblast docutils container">
@@ -727,11 +736,11 @@ scale = 0.6514337062835693
 <p>Finally note that optimization with mixture models is non-convex and can often get stuck in local optima. For example in this tutorial, we observed that the mixture model gets stuck in an everthing-in-one-cluster hypothesis if <code class="docutils literal notranslate"><span class="pre">scale</span></code> is initialized to be too large.</p>
 </section>
 <section id="Serving-the-model:-predicting-membership">
-<h3>Serving the model: predicting membership<a class="headerlink" href="#Serving-the-model:-predicting-membership" title="Permalink to this headline">¶</a></h3>
+<h3>Serving the model: predicting membership<a class="headerlink" href="#Serving-the-model:-predicting-membership" title="Permalink to this heading">¶</a></h3>
 <p>Now that we’ve trained a mixture model, we might want to use the model as a classifier. During training we marginalized out the assignment variables in the model. While this provides fast convergence, it prevents us from reading the cluster assignments from the guide. We’ll discuss two options for treating the model as a classifier: first using <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.discrete.infer_discrete">infer_discrete</a> (much faster) and second by training a secondary
 guide using enumeration inside SVI (slower but more general).</p>
 <section id="Predicting-membership-using-discrete-inference">
-<h4>Predicting membership using discrete inference<a class="headerlink" href="#Predicting-membership-using-discrete-inference" title="Permalink to this headline">¶</a></h4>
+<h4>Predicting membership using discrete inference<a class="headerlink" href="#Predicting-membership-using-discrete-inference" title="Permalink to this heading">¶</a></h4>
 <p>The fastest way to predict membership is to use the <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.discrete.infer_discrete">infer_discrete</a> handler, together with <code class="docutils literal notranslate"><span class="pre">trace</span></code> and <code class="docutils literal notranslate"><span class="pre">replay</span></code>. Let’s start out with a MAP classifier, setting <code class="docutils literal notranslate"><span class="pre">infer_discrete</span></code>’s temperature parameter to zero. For a deeper look at effect handlers like <code class="docutils literal notranslate"><span class="pre">trace</span></code>, <code class="docutils literal notranslate"><span class="pre">replay</span></code>, and <code class="docutils literal notranslate"><span class="pre">infer_discrete</span></code>, see the <a class="reference external" href="http://pyro.ai/examples/effect_handlers.html">effect handler tutorial</a>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -821,7 +830,7 @@ tensor([0, 0, 1, 1, 1])
 </div>
 </section>
 <section id="Predicting-membership-by-enumerating-in-the-guide">
-<h4>Predicting membership by enumerating in the guide<a class="headerlink" href="#Predicting-membership-by-enumerating-in-the-guide" title="Permalink to this headline">¶</a></h4>
+<h4>Predicting membership by enumerating in the guide<a class="headerlink" href="#Predicting-membership-by-enumerating-in-the-guide" title="Permalink to this heading">¶</a></h4>
 <p>A second way to predict class membership is to enumerate in the guide. This doesn’t work well for serving classifier models, since we need to run stochastic optimization for each new input data batch, but it is more general in that it can be embedded in larger variational models.</p>
 <p>To read cluster assignments from the guide, we’ll define a new <code class="docutils literal notranslate"><span class="pre">full_guide</span></code> that fits both global parameters (as above) and local parameters (which were previously marginalized out). Since we’ve already learned good values for the global variables, we will block SVI from updating those by using <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.block">poutine.block</a>.</p>
 <div class="nbinput nblast docutils container">
@@ -944,7 +953,7 @@ tensor([0, 0, 1, 1, 1])
 </section>
 </section>
 <section id="MCMC">
-<h3>MCMC<a class="headerlink" href="#MCMC" title="Permalink to this headline">¶</a></h3>
+<h3>MCMC<a class="headerlink" href="#MCMC" title="Permalink to this heading">¶</a></h3>
 <p>Next we’ll explore the full posterior over component parameters using collapsed NUTS, i.e. we’ll use NUTS and marginalize out all discrete latent variables.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:

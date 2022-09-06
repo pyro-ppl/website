@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Understanding Hyperbole using RSA &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Understanding Hyperbole using RSA &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -409,6 +410,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -417,10 +419,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -432,12 +438,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -465,7 +474,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Understanding-Hyperbole-using-RSA">
-<h1>Understanding Hyperbole using RSA<a class="headerlink" href="#Understanding-Hyperbole-using-RSA" title="Permalink to this headline">¶</a></h1>
+<h1>Understanding Hyperbole using RSA<a class="headerlink" href="#Understanding-Hyperbole-using-RSA" title="Permalink to this heading">¶</a></h1>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&quot;My new kettle cost a million dollars.&quot;
 </pre></div>
 </div>
@@ -668,7 +677,7 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 </div>
 </div>
 <section id="Pragmatic-Halo">
-<h2>Pragmatic Halo<a class="headerlink" href="#Pragmatic-Halo" title="Permalink to this headline">¶</a></h2>
+<h2>Pragmatic Halo<a class="headerlink" href="#Pragmatic-Halo" title="Permalink to this heading">¶</a></h2>
 <p>“It cost fifty dollars” is often interpretted as costing <em>around</em> 50 – plausibly 51; yet “it cost fiftyone dollars” is interpretted as 51 and definitely not 50. This assymetric imprecision is often called the pragmatic halo or pragmatic slack.</p>
 <p>We can extend the hyperole model to capture this additional non-literal use of numbers by including QUD functions that collapse nearby numbers and assuming that round numbers are slightly more likely (because they are less difficult to utter).</p>
 <div class="nbinput nblast docutils container">
@@ -779,7 +788,7 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 </div>
 </section>
 <section id="Irony-and-More-Complex-Affect">
-<h2>Irony and More Complex Affect<a class="headerlink" href="#Irony-and-More-Complex-Affect" title="Permalink to this headline">¶</a></h2>
+<h2>Irony and More Complex Affect<a class="headerlink" href="#Irony-and-More-Complex-Affect" title="Permalink to this heading">¶</a></h2>
 <p>In the above hyperbole model we assumed a very simple model of affect: a single dimension with two values (high and low arousal). Actual affect is best represented as a two-dimensional space corresponding to valence and arousal. Kao and Goodman (2015) showed that extending the affect space to these two dimensions immediately introduces a new usage of numbers: verbal irony in which an utterance corresponding to a high-arousal positive valence state is used to convey a high-arousal but negative
 valence (or vice versa).</p>
 </section>

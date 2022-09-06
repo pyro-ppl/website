@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Predicting the outcome of a US presidential election using Bayesian optimal experimental design &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Predicting the outcome of a US presidential election using Bayesian optimal experimental design &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -422,6 +423,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -430,10 +432,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -445,12 +451,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -478,11 +487,11 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Predicting-the-outcome-of-a-US-presidential-election-using-Bayesian-optimal-experimental-design">
-<h1>Predicting the outcome of a US presidential election using Bayesian optimal experimental design<a class="headerlink" href="#Predicting-the-outcome-of-a-US-presidential-election-using-Bayesian-optimal-experimental-design" title="Permalink to this headline">¶</a></h1>
+<h1>Predicting the outcome of a US presidential election using Bayesian optimal experimental design<a class="headerlink" href="#Predicting-the-outcome-of-a-US-presidential-election-using-Bayesian-optimal-experimental-design" title="Permalink to this heading">¶</a></h1>
 <p>In this tutorial, we explore the use of optimal experimental design techniques to create an optimal polling strategy to predict the outcome of a US presidential election. In a <a class="reference external" href="http://pyro.ai/examples/working_memory.html">previous tutorial</a>, we explored the use of Bayesian optimal experimental design to learn the working memory capacity of a single person. Here, we apply the same concepts to study a whole country.</p>
 <p>To begin, we need a Bayesian model of the winner of the election <code class="docutils literal notranslate"><span class="pre">w</span></code>, as well as the outcome <code class="docutils literal notranslate"><span class="pre">y</span></code> of any poll we may plan to conduct. The experimental design is the number of people <span class="math notranslate nohighlight">\(n_i\)</span> to poll in each state. To set up our exploratory model, we are going to make a number of simplifying assumptions. We will use historical election data 1976-2012 to construct a plausible prior and the 2016 election as our test set: we imagine that we are conducting polling just before the 2016 election.</p>
 <section id="Choosing-a-prior">
-<h2>Choosing a prior<a class="headerlink" href="#Choosing-a-prior" title="Permalink to this headline">¶</a></h2>
+<h2>Choosing a prior<a class="headerlink" href="#Choosing-a-prior" title="Permalink to this heading">¶</a></h2>
 <p>In our model, we include a 51 dimensional latent variabe <code class="docutils literal notranslate"><span class="pre">alpha</span></code>. For each of the 50 states plus DC we define</p>
 <div class="math notranslate nohighlight">
 \[\alpha_i = \text{logit }\mathbb{P}(\text{a random voter in state } i \text{ votes Democrat in the 2016 election})\]</div>
@@ -606,7 +615,7 @@ another.</p>
 </div>
 </section>
 <section id="Setting-up-the-model">
-<h2>Setting up the model<a class="headerlink" href="#Setting-up-the-model" title="Permalink to this headline">¶</a></h2>
+<h2>Setting up the model<a class="headerlink" href="#Setting-up-the-model" title="Permalink to this heading">¶</a></h2>
 <p>We are now in a position to define our model. At a high-level the model works as follows:</p>
 <ul class="simple">
 <li><p><span class="math notranslate nohighlight">\(\alpha\)</span> is multivariate Normal</p></li>
@@ -641,7 +650,7 @@ another.</p>
 </div>
 </div>
 <section id="Understanding-the-prior">
-<h3>Understanding the prior<a class="headerlink" href="#Understanding-the-prior" title="Permalink to this headline">¶</a></h3>
+<h3>Understanding the prior<a class="headerlink" href="#Understanding-the-prior" title="Permalink to this heading">¶</a></h3>
 <p>Before we go any further, we’re going to study the model to check it matches with our intuition about US presidential elections.</p>
 <p>First of all, let’s look at an upper and lower confidence limit for the proportion of voters who will vote Democrat in each state.</p>
 <div class="nbinput docutils container">
@@ -811,7 +820,7 @@ CT     0.139021  0.074646 -0.205797 -0.107684  0.125023
 </section>
 </section>
 <section id="Measuring-the-expected-information-gain-of-a-polling-strategy">
-<h2>Measuring the expected information gain of a polling strategy<a class="headerlink" href="#Measuring-the-expected-information-gain-of-a-polling-strategy" title="Permalink to this headline">¶</a></h2>
+<h2>Measuring the expected information gain of a polling strategy<a class="headerlink" href="#Measuring-the-expected-information-gain-of-a-polling-strategy" title="Permalink to this heading">¶</a></h2>
 <p>The prior we have set up appears to accord, at least approximately, with intuition. However, we now want to add a second source of information from polling. We aim to use our prior to select a polling strategy that will be most informative about our target <span class="math notranslate nohighlight">\(w\)</span>. A polling strategy, in this simplified set-up, is the number of people to poll in each state. (We ignore any other covariates such as regional variation inside states, demographics, etc.) We might imagine that polling 1000 people in
 Florida (the most marginal state), will be much more effective than polling 1000 people in DC (the least marginal state). That’s because the outcome in DC is already quite predictable, just based on our prior, whereas the outcome in Florida is really up for grabs.</p>
 <p>In fact, the information that our model will gain about <span class="math notranslate nohighlight">\(w\)</span> based on conducting a poll with design <span class="math notranslate nohighlight">\(d\)</span> and getting outcome <span class="math notranslate nohighlight">\(y\)</span> can be described mathematically as follows:</p>
@@ -821,7 +830,7 @@ Florida (the most marginal state), will be much more effective than polling 1000
 <div class="math notranslate nohighlight">
 \[\text{EIG}(d) = \mathbb{E}_{p(y|d)}[KL(p(w|y,d)||p(w))].\]</div>
 <section id="Variational-estimators-of-EIG">
-<h3>Variational estimators of EIG<a class="headerlink" href="#Variational-estimators-of-EIG" title="Permalink to this headline">¶</a></h3>
+<h3>Variational estimators of EIG<a class="headerlink" href="#Variational-estimators-of-EIG" title="Permalink to this heading">¶</a></h3>
 <p>In the <a class="reference external" href="http://pyro.ai/examples/working_memory.html">working memory tutorial</a>, we used the ‘marginal’ estimator to find the EIG. This involved estimating the marginal density <span class="math notranslate nohighlight">\(p(y|d)\)</span>. In this experiment, that would be relatively difficult: <span class="math notranslate nohighlight">\(y\)</span> is 51-dimensional with some rather tricky constraints that make modelling its density difficult. Furthermore, the marginal estimator requires us to know <span class="math notranslate nohighlight">\(p(y|w)\)</span> analytically, which we do not.</p>
 <p>Fortunately, other variational estimators of EIG exist: see [2] for more details. One such variational estimator is the ‘posterior’ estimator, based on the following representation</p>
 <div class="math notranslate nohighlight">
@@ -934,7 +943,7 @@ Swing 0.3254041075706482
 </section>
 </section>
 <section id="Running-the-experiment">
-<h2>Running the experiment<a class="headerlink" href="#Running-the-experiment" title="Permalink to this headline">¶</a></h2>
+<h2>Running the experiment<a class="headerlink" href="#Running-the-experiment" title="Permalink to this heading">¶</a></h2>
 <p>We have now scored our four candidate designs and can choose the best one to use to actually gather new data. In this notebook, we will simulate the new data using the results from the 2016 election. Specifically, we will assume that the outcome of the poll comes from our model, where we condition the value of <code class="docutils literal notranslate"><span class="pre">alpha</span></code> to correspond to the actual results in 2016.</p>
 <p>First, we retrain <span class="math notranslate nohighlight">\(q\)</span> with the chosen polling strategy.</p>
 <div class="nbinput docutils container">
@@ -1006,7 +1015,7 @@ VT                        35.0                                      22.0
 </pre></div></div>
 </div>
 <section id="Analysing-the-data">
-<h3>Analysing the data<a class="headerlink" href="#Analysing-the-data" title="Permalink to this headline">¶</a></h3>
+<h3>Analysing the data<a class="headerlink" href="#Analysing-the-data" title="Permalink to this heading">¶</a></h3>
 <p>Having collected our data, we can now perform inference under our model to obtain the posterior probability of a Democrat win. There are many ways to perform the inference: for instance we could use variational inference with Pyro’s <code class="docutils literal notranslate"><span class="pre">SVI</span></code> or MCMC such as Pyro’s <code class="docutils literal notranslate"><span class="pre">NUTS</span></code>. Using these methods, we would compute the posterior over <code class="docutils literal notranslate"><span class="pre">alpha</span></code>, and use this to obtain the posterior over <code class="docutils literal notranslate"><span class="pre">w</span></code>.</p>
 <p>However, a quick way to analyze the data is to use the neural network we have already trained. At convergence, we expect the network to give a good approximation to the true posterior, i.e. <span class="math notranslate nohighlight">\(q(w|y) \approx p(w|y)\)</span>.</p>
 <div class="nbinput nblast docutils container">
@@ -1039,7 +1048,7 @@ Posterior probability of Democrat win 0.40527692437171936
 </section>
 </section>
 <section id="Conclusions">
-<h2>Conclusions<a class="headerlink" href="#Conclusions" title="Permalink to this headline">¶</a></h2>
+<h2>Conclusions<a class="headerlink" href="#Conclusions" title="Permalink to this heading">¶</a></h2>
 <p>In this tutorial, we showed how optimal experimental design principles can be applied to electoral polling. If we have the option of first designing the polling strategy using our prior, this can help lead to better predictions once we have collected our data.</p>
 <p>Our model could be enhanced in a number of ways: a useful guide to the kinds of models used in political science can be found in [3]. Our optimal design strategy will only ever be as good as our prior, so there is certainly a lot of use in investing time in choosing a good prior.</p>
 <p>It might also be possible to search over the possible polling strategies in a more sophisticated way. For instance, simulated annealing [4] is one technique that can be used for optimization in high-dimensional discrete spaces.</p>
@@ -1047,7 +1056,7 @@ Posterior probability of Democrat win 0.40527692437171936
 <p>Finally, it’s worth noting that there is a connection to Bayesian model selection: specifically, in a different model we might have <span class="math notranslate nohighlight">\(w\)</span> a binary random variable to choose between different sub-models. Although conceptually different, our election set-up and the model selection set-up share many mathematical features which means that a similar experimental design approach could be used in both cases.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
 <p>[1] Chaloner, K. and Verdinelli, I., 1995. <strong>Bayesian experimental design: A review.</strong> Statistical Science, pp.273-304.</p>
 <p>[2] Foster, A., Jankowiak, M., Bingham, E., Horsfall, P., Teh, Y.W., Rainforth, T. and Goodman, N., 2019. <strong>Variational Bayesian Optimal Experimental Design.</strong> Advances in Neural Information Processing Systems 2019 (to appear).</p>
 <p>[3] Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A. and Rubin, D.B., 2013. <strong>Bayesian data analysis.</strong> Chapman and Hall/CRC.</p>

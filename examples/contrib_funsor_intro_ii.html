@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pyro.contrib.funsor, a new backend for Pyro - Building inference algorithms (Part 2) &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>pyro.contrib.funsor, a new backend for Pyro - Building inference algorithms (Part 2) &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -412,6 +413,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -420,10 +422,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -435,12 +441,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -468,7 +477,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="pyro.contrib.funsor,-a-new-backend-for-Pyro---Building-inference-algorithms-(Part-2)">
-<h1><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)<a class="headerlink" href="#pyro.contrib.funsor,-a-new-backend-for-Pyro---Building-inference-algorithms-(Part-2)" title="Permalink to this headline">¶</a></h1>
+<h1><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - Building inference algorithms (Part 2)<a class="headerlink" href="#pyro.contrib.funsor,-a-new-backend-for-Pyro---Building-inference-algorithms-(Part-2)" title="Permalink to this heading">¶</a></h1>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -492,7 +501,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
 <p>In part 1 of this tutorial, we were introduced to the new <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> backend for Pyro.</p>
 <p>Here we’ll look at how to use the components in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> to implement a variable elimination inference algorithm from scratch. This tutorial assumes readers are familiar with enumeration-based inference algorithms in Pyro. For background and motivation, readers should consult the <a class="reference external" href="http://pyro.ai/examples/enumeration.html">enumeration tutorial</a>.</p>
 <p>As before, we’ll use <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code> so that we can write our model with standard Pyro syntax.</p>
@@ -577,7 +586,7 @@ x9.shape =  torch.Size([])
 </div>
 </section>
 <section id="Enumerating-discrete-variables">
-<h2>Enumerating discrete variables<a class="headerlink" href="#Enumerating-discrete-variables" title="Permalink to this headline">¶</a></h2>
+<h2>Enumerating discrete variables<a class="headerlink" href="#Enumerating-discrete-variables" title="Permalink to this heading">¶</a></h2>
 <p>Our first step is to implement an effect handler that performs parallel enumeration of discrete latent variables. Here we will implement a stripped-down version of <code class="docutils literal notranslate"><span class="pre">pyro.poutine.enum</span></code>, the effect handler behind Pyro’s most powerful general-purpose inference algorithms <code class="docutils literal notranslate"><span class="pre">pyro.infer.TraceEnum_ELBO</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.infer.mcmc.HMC</span></code>.</p>
 <p>We’ll do that by constructing a <code class="docutils literal notranslate"><span class="pre">funsor.Tensor</span></code> representing the support of each discrete latent variable and using the new <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> primitive from part 1 to convert it to a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> with the appropriate shape.</p>
 <div class="nbinput nblast docutils container">
@@ -657,7 +666,7 @@ x9.shape =  torch.Size([3, 1, 1, 1, 1, 1])
 </div>
 </section>
 <section id="Vectorizing-a-model-across-multiple-samples">
-<h2>Vectorizing a model across multiple samples<a class="headerlink" href="#Vectorizing-a-model-across-multiple-samples" title="Permalink to this headline">¶</a></h2>
+<h2>Vectorizing a model across multiple samples<a class="headerlink" href="#Vectorizing-a-model-across-multiple-samples" title="Permalink to this heading">¶</a></h2>
 <p>Next, since our priors over global variables are continuous and cannot be enumerated exactly, we will implement an effect handler that uses a global dimension to draw multiple samples in parallel from the model. Our implementation will allocate a new particle dimension using <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> as in <code class="docutils literal notranslate"><span class="pre">EnumMessenger</span></code> above, but unlike the enumeration dimensions, we want the particle dimension to be shared across all sample sites, so we will mark it as a <code class="docutils literal notranslate"><span class="pre">DimType.GLOBAL</span></code> dimension when invoking
 <code class="docutils literal notranslate"><span class="pre">pyro.to_funsor</span></code>.</p>
 <p>Recall that in part 1 we saw that <code class="docutils literal notranslate"><span class="pre">DimType.GLOBAL</span></code> dimensions must be deallocated manually or they will persist until the final effect handler has exited. This low-level detail is taken care of automatically by the <code class="docutils literal notranslate"><span class="pre">GlobalNameMessenger</span></code> handler provided in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> as a base class for any effect handlers that allocate global dimensions. Our vectorization effect handler will inherit from this class.</p>
@@ -763,7 +772,7 @@ x9.shape =  torch.Size([3, 1, 1, 1, 1, 1, 1])
 </div>
 </section>
 <section id="Computing-an-ELBO-with-variable-elimination">
-<h2>Computing an ELBO with variable elimination<a class="headerlink" href="#Computing-an-ELBO-with-variable-elimination" title="Permalink to this headline">¶</a></h2>
+<h2>Computing an ELBO with variable elimination<a class="headerlink" href="#Computing-an-ELBO-with-variable-elimination" title="Permalink to this heading">¶</a></h2>
 <p>Now that we have tools for enumerating discrete variables and drawing batches of samples, we can use those to compute quantities of interest for inference algorithms.</p>
 <p>Most inference algorithms in Pyro work with <code class="docutils literal notranslate"><span class="pre">pyro.poutine.Trace</span></code>s, custom data structures that contain parameters and sample site distributions and values and all of the associated metadata needed for inference computations. Our third effect handler <code class="docutils literal notranslate"><span class="pre">LogJointMessenger</span></code> departs from this design pattern, eliminating a tremendous amount of boilerplate in the process. It will automatically build up a lazy Funsor expression for the logarithm of the joint probability density of a model; when
 working with <code class="docutils literal notranslate"><span class="pre">Trace</span></code>s, this process must be triggered manually by calling <code class="docutils literal notranslate"><span class="pre">Trace.compute_log_probs()</span></code> and eagerly computing an objective from the resulting individual log-probability tensors in the trace.</p>
@@ -821,7 +830,7 @@ working with <code class="docutils literal notranslate"><span class="pre">Trace<
 </div>
 </section>
 <section id="Putting-it-all-together">
-<h2>Putting it all together<a class="headerlink" href="#Putting-it-all-together" title="Permalink to this headline">¶</a></h2>
+<h2>Putting it all together<a class="headerlink" href="#Putting-it-all-together" title="Permalink to this heading">¶</a></h2>
 <p>Finally, with all this machinery implemented, we can compute stochastic gradients wrt the ELBO.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:

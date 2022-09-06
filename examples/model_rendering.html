@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Automatic rendering of Pyro models &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Automatic rendering of Pyro models &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -68,6 +69,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -101,7 +103,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -412,6 +413,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -420,10 +422,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -435,12 +441,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -468,10 +477,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Automatic-rendering-of-Pyro-models">
-<h1>Automatic rendering of Pyro models<a class="headerlink" href="#Automatic-rendering-of-Pyro-models" title="Permalink to this headline">¶</a></h1>
+<h1>Automatic rendering of Pyro models<a class="headerlink" href="#Automatic-rendering-of-Pyro-models" title="Permalink to this heading">¶</a></h1>
 <p>In this tutorial we will demonstrate how to create beautiful visualizations of your probabilistic graphical models using <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.util.html#pyro.infer.inspect.render_model">pyro.render_model()</a>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -482,15 +491,15 @@ div.rendered_html tbody tr:hover {
 <span class="kn">import</span> <span class="nn">pyro.distributions.constraints</span> <span class="k">as</span> <span class="nn">constraints</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <section id="A-Simple-Example">
-<h2>A Simple Example<a class="headerlink" href="#A-Simple-Example" title="Permalink to this headline">¶</a></h2>
+<h2>A Simple Example<a class="headerlink" href="#A-Simple-Example" title="Permalink to this heading">¶</a></h2>
 <p>The visualization interface can be readily used with your models:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
@@ -502,7 +511,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
@@ -511,7 +520,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -519,7 +528,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>The visualization can be saved to a file by providing <code class="docutils literal notranslate"><span class="pre">filename='path'</span></code> to <code class="docutils literal notranslate"><span class="pre">pyro.render_model</span></code>. You can use different formats such as PDF or PNG by changing the filename’s suffix. When not saving to a file (<code class="docutils literal notranslate"><span class="pre">filename=None</span></code>), you can also change the format with <code class="docutils literal notranslate"><span class="pre">graph.format</span> <span class="pre">=</span> <span class="pre">'pdf'</span></code> where <code class="docutils literal notranslate"><span class="pre">graph</span></code> is the object returned by <code class="docutils literal notranslate"><span class="pre">pyro.render_model</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,),</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;model.pdf&quot;</span><span class="p">)</span>
@@ -528,10 +537,10 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Tweaking-the-visualization">
-<h2>Tweaking the visualization<a class="headerlink" href="#Tweaking-the-visualization" title="Permalink to this headline">¶</a></h2>
+<h2>Tweaking the visualization<a class="headerlink" href="#Tweaking-the-visualization" title="Permalink to this heading">¶</a></h2>
 <p>As <code class="docutils literal notranslate"><span class="pre">pyro.render_model</span></code> returns an object of type <code class="docutils literal notranslate"><span class="pre">graphviz.dot.Digraph</span></code>, you can further improve the visualization of this graph. For example, you could use the <a class="reference external" href="https://graphviz.readthedocs.io/en/stable/api.html#graphviz.unflatten">unflatten preprocessor</a> to improve the layout aspect ratio for more complex models.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mace</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">annotations</span><span class="p">):</span>
@@ -595,7 +604,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># default layout</span>
@@ -604,14 +613,14 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <img alt="_images/model_rendering_9_0.svg" src="_images/model_rendering_9_0.svg" /></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># layout after processing the layout with unflatten</span>
@@ -620,7 +629,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -628,10 +637,10 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Rendering-the-parameters">
-<h2>Rendering the parameters<a class="headerlink" href="#Rendering-the-parameters" title="Permalink to this headline">¶</a></h2>
+<h2>Rendering the parameters<a class="headerlink" href="#Rendering-the-parameters" title="Permalink to this heading">¶</a></h2>
 <p>We can render the parameters defined as <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> by setting <code class="docutils literal notranslate"><span class="pre">render_params=True</span></code> in <code class="docutils literal notranslate"><span class="pre">pyro.render_model</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
@@ -645,7 +654,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
@@ -654,7 +663,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -662,10 +671,10 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Distribution-and-Constraint-annotations">
-<h2>Distribution and Constraint annotations<a class="headerlink" href="#Distribution-and-Constraint-annotations" title="Permalink to this headline">¶</a></h2>
+<h2>Distribution and Constraint annotations<a class="headerlink" href="#Distribution-and-Constraint-annotations" title="Permalink to this heading">¶</a></h2>
 <p>It is possible to display the distribution of each RV in the generated plot by providing <code class="docutils literal notranslate"><span class="pre">render_distributions=True</span></code> when calling <code class="docutils literal notranslate"><span class="pre">pyro.render_model</span></code>. The constraints associated with parameters are also displayed when <code class="docutils literal notranslate"><span class="pre">render_distributions=True</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
@@ -674,7 +683,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -683,10 +692,10 @@ div.rendered_html tbody tr:hover {
 <p>In the above plot <strong>‘~’</strong> denotes the distribution of RV and <strong>‘:math:`in`’</strong> denotes the constraint of parameter.</p>
 </section>
 <section id="Overlapping-non-nested-plates">
-<h2>Overlapping non-nested plates<a class="headerlink" href="#Overlapping-non-nested-plates" title="Permalink to this headline">¶</a></h2>
+<h2>Overlapping non-nested plates<a class="headerlink" href="#Overlapping-non-nested-plates" title="Permalink to this heading">¶</a></h2>
 <p>Note that overlapping non-nested plates may be drawn as multiple rectangles.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">():</span>
@@ -702,7 +711,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
@@ -710,7 +719,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">

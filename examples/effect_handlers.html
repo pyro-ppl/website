@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Poutine: A Guide to Programming with Effect Handlers in Pyro &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Poutine: A Guide to Programming with Effect Handlers in Pyro &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -423,6 +424,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -431,10 +433,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -446,12 +452,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -479,7 +488,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Poutine:-A-Guide-to-Programming-with-Effect-Handlers-in-Pyro">
-<h1>Poutine: A Guide to Programming with Effect Handlers in Pyro<a class="headerlink" href="#Poutine:-A-Guide-to-Programming-with-Effect-Handlers-in-Pyro" title="Permalink to this headline">¶</a></h1>
+<h1>Poutine: A Guide to Programming with Effect Handlers in Pyro<a class="headerlink" href="#Poutine:-A-Guide-to-Programming-with-Effect-Handlers-in-Pyro" title="Permalink to this heading">¶</a></h1>
 <p><strong>Note to readers</strong>: This tutorial is a guide to the API details of Pyro’s effect handling library, <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html">Poutine</a>. We recommend readers first orient themselves with the simplified <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/pyro/contrib/minipyro.py">minipyro.py</a> which contains a minimal, readable implementation of Pyro’s runtime and the effect handler abstraction described here. Pyro’s effect handler library is more general than minipyro’s but also
 contains more layers of indirection; it helps to read them side-by-side.</p>
 <div class="nbinput nblast docutils container">
@@ -499,7 +508,7 @@ contains more layers of indirection; it helps to read them side-by-side.</p>
 </div>
 </div>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
 <p>Inference in probabilistic programming involves manipulating or transforming probabilistic programs written as generative models. For example, nearly all approximate inference algorithms require computing the unnormalized joint probability of values of latent and observed variables under a generative model.</p>
 <p>Consider the following example model:</p>
 <div class="nbinput nblast docutils container">
@@ -525,7 +534,7 @@ contains more layers of indirection; it helps to read them side-by-side.</p>
 <p>To resolve this conflict and facilitate inference algorithm development, Pyro exposes <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html">Poutine</a>, a library of <em>effect handlers</em>, or composable building blocks for examining and modifying the behavior of Pyro programs. Most of Pyro’s internals are implemented on top of Poutine.</p>
 </section>
 <section id="A-first-look-at-Poutine:-Pyro’s-library-of-algorithmic-building-blocks">
-<h2>A first look at Poutine: Pyro’s library of algorithmic building blocks<a class="headerlink" href="#A-first-look-at-Poutine:-Pyro’s-library-of-algorithmic-building-blocks" title="Permalink to this headline">¶</a></h2>
+<h2>A first look at Poutine: Pyro’s library of algorithmic building blocks<a class="headerlink" href="#A-first-look-at-Poutine:-Pyro’s-library-of-algorithmic-building-blocks" title="Permalink to this heading">¶</a></h2>
 <p>Effect handlers, a common abstraction in the programming languages community, give <em>nonstandard interpretations</em> or <em>side effects</em> to the behavior of particular statements in a programming language, like <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> or <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code>. For background reading on effect handlers in programming language research, see the optional “References” section at the end of this tutorial.</p>
 <p>Rather than reviewing more definitions, let’s look at a first example that addresses the problem above: we can compose two existing effect handlers, <code class="docutils literal notranslate"><span class="pre">poutine.condition</span></code> (which sets output values of <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements) and <code class="docutils literal notranslate"><span class="pre">poutine.trace</span></code> (which records the inputs, distributions, and outputs of <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements), to concisely define a new effect handler that computes the log-joint:</p>
 <div class="nbinput docutils container">
@@ -595,7 +604,7 @@ tensor(-3.0203)
 <p>We’ll look at this process in more detail later in this tutorial. For a simplified implementation in only a few lines of code, see <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/pyro/contrib/minipyro.py">pyro.contrib.minipyro</a>.</p>
 </section>
 <section id="Implementing-new-effect-handlers-with-the-Messenger-API">
-<h2>Implementing new effect handlers with the <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> API<a class="headerlink" href="#Implementing-new-effect-handlers-with-the-Messenger-API" title="Permalink to this headline">¶</a></h2>
+<h2>Implementing new effect handlers with the <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> API<a class="headerlink" href="#Implementing-new-effect-handlers-with-the-Messenger-API" title="Permalink to this heading">¶</a></h2>
 <p>Although it’s easiest to build new effect handlers by composing the existing ones in <code class="docutils literal notranslate"><span class="pre">pyro.poutine</span></code>, implementing a new effect as a <code class="docutils literal notranslate"><span class="pre">pyro.poutine.messenger.Messenger</span></code> subclass is actually fairly straightforward. Before diving into the API, let’s look at another example: a version of our log-joint computation that performs the sum while the model is executing. We’ll then review what each part of the example is actually doing.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -684,7 +693,7 @@ tensor(-3.0203)
 </div>
 </section>
 <section id="The-Messenger-API-in-more-detail">
-<h2>The <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> API in more detail<a class="headerlink" href="#The-Messenger-API-in-more-detail" title="Permalink to this headline">¶</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> API in more detail<a class="headerlink" href="#The-Messenger-API-in-more-detail" title="Permalink to this heading">¶</a></h2>
 <p>Our <code class="docutils literal notranslate"><span class="pre">LogJointMessenger</span></code> implementation has three important methods: <code class="docutils literal notranslate"><span class="pre">__enter__</span></code>, <code class="docutils literal notranslate"><span class="pre">__exit__</span></code>, and <code class="docutils literal notranslate"><span class="pre">_pyro_sample</span></code>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">__enter__</span></code> and <code class="docutils literal notranslate"><span class="pre">__exit__</span></code> are special methods needed by any Python context manager. When implementing new <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> classes, if we override <code class="docutils literal notranslate"><span class="pre">__enter__</span></code> and <code class="docutils literal notranslate"><span class="pre">__exit__</span></code>, we always need to call the base <code class="docutils literal notranslate"><span class="pre">Messenger</span></code>’s <code class="docutils literal notranslate"><span class="pre">__enter__</span></code> and <code class="docutils literal notranslate"><span class="pre">__exit__</span></code> methods for the new <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> to be applied correctly.</p>
 <p>The last method <code class="docutils literal notranslate"><span class="pre">LogJointMessenger._pyro_sample</span></code>, is called once at each sample site. It reads and modifies a <em>message</em>, which is a dictionary containing the sample site’s name, distribution, sampled or observed value, and other metadata. We’ll examine the contents of a message in more detail in the next section.</p>
@@ -701,7 +710,7 @@ tensor(-3.0203)
 </pre></div>
 </div>
 <section id="Interlude:-the-global-Messenger-stack">
-<h3>Interlude: the global <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> stack<a class="headerlink" href="#Interlude:-the-global-Messenger-stack" title="Permalink to this headline">¶</a></h3>
+<h3>Interlude: the global <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> stack<a class="headerlink" href="#Interlude:-the-global-Messenger-stack" title="Permalink to this heading">¶</a></h3>
 <p>See <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/pyro/contrib/minipyro.py">pyro.contrib.minipyro</a> for an end-to-end implementation of the mechanism in this section.</p>
 <p>The order in which <code class="docutils literal notranslate"><span class="pre">Messenger</span></code>s are applied to an operation like a <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statement is determined by the order in which their <code class="docutils literal notranslate"><span class="pre">__enter__</span></code> methods are called. <code class="docutils literal notranslate"><span class="pre">Messenger.__enter__</span></code> appends a <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> to the end (the bottom) of the global handler stack:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Messenger</span><span class="p">:</span>
@@ -735,7 +744,7 @@ tensor(-3.0203)
 </div>
 </section>
 <section id="Returning-to-the-LogJointMessenger-example">
-<h3>Returning to the <code class="docutils literal notranslate"><span class="pre">LogJointMessenger</span></code> example<a class="headerlink" href="#Returning-to-the-LogJointMessenger-example" title="Permalink to this headline">¶</a></h3>
+<h3>Returning to the <code class="docutils literal notranslate"><span class="pre">LogJointMessenger</span></code> example<a class="headerlink" href="#Returning-to-the-LogJointMessenger-example" title="Permalink to this heading">¶</a></h3>
 <p>The second method <code class="docutils literal notranslate"><span class="pre">_postprocess_message</span></code> is necessary because some effects can only be applied after all other effect handlers have had a chance to update the message once. In the case of <code class="docutils literal notranslate"><span class="pre">LogJointMessenger</span></code>, other effects, like enumeration, may modify a sample site’s value or distribution (<code class="docutils literal notranslate"><span class="pre">msg[&quot;value&quot;]</span></code> or <code class="docutils literal notranslate"><span class="pre">msg[&quot;fn&quot;]</span></code>), so we move the log-probability computation to a new method, <code class="docutils literal notranslate"><span class="pre">_pyro_post_sample</span></code>, which is called by <code class="docutils literal notranslate"><span class="pre">_postprocess_message</span></code> (via a dispatch mechanism like the one
 used by <code class="docutils literal notranslate"><span class="pre">_process_message</span></code>) at each <code class="docutils literal notranslate"><span class="pre">sample</span></code> site after all active handlers’ <code class="docutils literal notranslate"><span class="pre">_pyro_sample</span></code> methods have been applied:</p>
 <div class="nbinput docutils container">
@@ -789,7 +798,7 @@ tensor(-3.0203)
 </section>
 </section>
 <section id="Inside-the-messages-sent-by-Messengers">
-<h2>Inside the messages sent by <code class="docutils literal notranslate"><span class="pre">Messenger</span></code>s<a class="headerlink" href="#Inside-the-messages-sent-by-Messengers" title="Permalink to this headline">¶</a></h2>
+<h2>Inside the messages sent by <code class="docutils literal notranslate"><span class="pre">Messenger</span></code>s<a class="headerlink" href="#Inside-the-messages-sent-by-Messengers" title="Permalink to this heading">¶</a></h2>
 <p>As the previous two examples mentioned, the actual messages sent up and down the stack are dictionaries with a particular set of keys. Consider the following sample statement:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">},</span> <span class="n">obs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </pre></div>
@@ -821,10 +830,10 @@ tensor(-3.0203)
 <p>Note that when we use <code class="docutils literal notranslate"><span class="pre">poutine.trace</span></code> or <code class="docutils literal notranslate"><span class="pre">TraceMessenger</span></code> as in our first two versions of <code class="docutils literal notranslate"><span class="pre">make_log_joint</span></code>, the contents of <code class="docutils literal notranslate"><span class="pre">msg</span></code> are exactly the information stored in the trace for each sample and param site.</p>
 </section>
 <section id="Implementing-inference-algorithms-with-existing-effect-handlers:-examples">
-<h2>Implementing inference algorithms with existing effect handlers: examples<a class="headerlink" href="#Implementing-inference-algorithms-with-existing-effect-handlers:-examples" title="Permalink to this headline">¶</a></h2>
+<h2>Implementing inference algorithms with existing effect handlers: examples<a class="headerlink" href="#Implementing-inference-algorithms-with-existing-effect-handlers:-examples" title="Permalink to this heading">¶</a></h2>
 <p>It turns out that many inference operations, like our first version of <code class="docutils literal notranslate"><span class="pre">make_log_joint</span></code> above, have strikingly short implementations in terms of existing effect handlers in <code class="docutils literal notranslate"><span class="pre">pyro.poutine</span></code>.</p>
 <section id="Example:-Variational-inference-with-a-Monte-Carlo-ELBO">
-<h3>Example: Variational inference with a Monte Carlo ELBO<a class="headerlink" href="#Example:-Variational-inference-with-a-Monte-Carlo-ELBO" title="Permalink to this headline">¶</a></h3>
+<h3>Example: Variational inference with a Monte Carlo ELBO<a class="headerlink" href="#Example:-Variational-inference-with-a-Monte-Carlo-ELBO" title="Permalink to this heading">¶</a></h3>
 <p>For example, here is an implementation of variational inference with a Monte Carlo ELBO that uses <code class="docutils literal notranslate"><span class="pre">poutine.trace</span></code>, <code class="docutils literal notranslate"><span class="pre">poutine.condition</span></code>, and <code class="docutils literal notranslate"><span class="pre">poutine.replay</span></code>. This is very similar to the simple ELBO in <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/pyro/contrib/minipyro.py">pyro.contrib.minipyro</a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -881,7 +890,7 @@ tensor(-3.0203)
 </div>
 </section>
 <section id="Example:-exact-inference-via-sequential-enumeration">
-<h3>Example: exact inference via sequential enumeration<a class="headerlink" href="#Example:-exact-inference-via-sequential-enumeration" title="Permalink to this headline">¶</a></h3>
+<h3>Example: exact inference via sequential enumeration<a class="headerlink" href="#Example:-exact-inference-via-sequential-enumeration" title="Permalink to this heading">¶</a></h3>
 <p>Here is an example of a very different inference algorithm–exact inference via enumeration–implemented with <code class="docutils literal notranslate"><span class="pre">pyro.poutine</span></code>. A complete explanation of this algorithm is beyond the scope of this tutorial and may be found in Chapter 3 of the short online book <a class="reference external" href="http://dippl.org/chapters/03-enumeration.html">Design and Implementation of Probabilistic Programming Languages</a>. This example uses <code class="docutils literal notranslate"><span class="pre">poutine.queue</span></code>, itself implemented using <code class="docutils literal notranslate"><span class="pre">poutine.trace</span></code>, <code class="docutils literal notranslate"><span class="pre">poutine.replay</span></code>, and <code class="docutils literal notranslate"><span class="pre">poutine.block</span></code>,
 to enumerate over possible values of all discrete variables in a model and compute a marginal distribution over all possible return values or the possible values at a particular sample site:</p>
 <div class="nbinput nblast docutils container">
@@ -923,7 +932,7 @@ to enumerate over possible values of all discrete variables in a model and compu
 </section>
 </section>
 <section id="Example:-implementing-lazy-evaluation-with-the-Messenger-API">
-<h2>Example: implementing lazy evaluation with the <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> API<a class="headerlink" href="#Example:-implementing-lazy-evaluation-with-the-Messenger-API" title="Permalink to this headline">¶</a></h2>
+<h2>Example: implementing lazy evaluation with the <code class="docutils literal notranslate"><span class="pre">Messenger</span></code> API<a class="headerlink" href="#Example:-implementing-lazy-evaluation-with-the-Messenger-API" title="Permalink to this heading">¶</a></h2>
 <p>Now that we’ve learned more about the internals of <code class="docutils literal notranslate"><span class="pre">Messenger</span></code>, let’s use it to implement a slightly more complicated effect: lazy evaluation. We first define a <code class="docutils literal notranslate"><span class="pre">LazyValue</span></code> class that we will use to build up a computation graph:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -1016,7 +1025,7 @@ tensor(6.5436)
 <p>Together with other effect handlers like <code class="docutils literal notranslate"><span class="pre">TraceMessenger</span></code> and <code class="docutils literal notranslate"><span class="pre">ConditionMessenger</span></code>, with which it freely composes, <code class="docutils literal notranslate"><span class="pre">LazyMessenger</span></code> demonstrates how to use Poutine to quickly and concisely implement state-of-the-art PPL techniques like <a class="reference external" href="https://arxiv.org/abs/1708.07787">delayed sampling with Rao-Blackwellization</a>.</p>
 </section>
 <section id="References:-algebraic-effects-and-handlers-in-programming-language-research">
-<h2>References: algebraic effects and handlers in programming language research<a class="headerlink" href="#References:-algebraic-effects-and-handlers-in-programming-language-research" title="Permalink to this headline">¶</a></h2>
+<h2>References: algebraic effects and handlers in programming language research<a class="headerlink" href="#References:-algebraic-effects-and-handlers-in-programming-language-research" title="Permalink to this heading">¶</a></h2>
 <p>This section contains some references to PL papers for readers interested in this direction.</p>
 <p>Algebraic effects and handlers, which were developed starting in the early 2000s and are a subject of active research in the programming languages community, are a versatile abstraction for building modular implementations of nonstandard interpreters of particular statements in a programming language, like <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> or <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code>. They were originally introduced to address the difficulty of composing nonstandard interpreters implemented with monads and monad transformers.</p>
 <ul class="simple">

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forecasting I: univariate, heavy tailed &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Forecasting I: univariate, heavy tailed &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -414,6 +415,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -422,10 +424,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -437,12 +443,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -470,7 +479,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Forecasting-I:-univariate,-heavy-tailed">
-<h1>Forecasting I: univariate, heavy tailed<a class="headerlink" href="#Forecasting-I:-univariate,-heavy-tailed" title="Permalink to this headline">¶</a></h1>
+<h1>Forecasting I: univariate, heavy tailed<a class="headerlink" href="#Forecasting-I:-univariate,-heavy-tailed" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial introduces the <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html">pyro.contrib.forecast</a> module, a framework for forecasting with Pyro models. This tutorial covers only univariate models and simple likelihoods. This tutorial assumes the reader is already familiar with <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">SVI</a> and <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a>.</p>
 <p>See also:</p>
 <ul class="simple">
@@ -478,7 +487,7 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="http://pyro.ai/examples/forecasting_iii.html">Forecasting III: hierarchical models</a></p></li>
 </ul>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>To create a forecasting model:</p>
 <ol class="arabic simple">
@@ -515,7 +524,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20200221</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -542,7 +551,7 @@ torch.Size([78888, 50, 50])
 </pre></div></div>
 </div>
 <section id="Intro-to-Pyro’s-forecasting-framework">
-<h3>Intro to Pyro’s forecasting framework<a class="headerlink" href="#Intro-to-Pyro’s-forecasting-framework" title="Permalink to this headline">¶</a></h3>
+<h3>Intro to Pyro’s forecasting framework<a class="headerlink" href="#Intro-to-Pyro’s-forecasting-framework" title="Permalink to this heading">¶</a></h3>
 <p>Pyro’s forecasting framework consists of: - a <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.forecaster.ForecastingModel">ForecastingModel</a> base class, whose <code class="docutils literal notranslate"><span class="pre">.model()</span></code> method can be implemented for custom forecasting models, - a <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.forecaster.Forecaster">Forecaster</a> class that trains and forecasts using <code class="docutils literal notranslate"><span class="pre">ForecastingModel</span></code>s, and - a
 <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.evaluate.backtest">backtest()</a> helper to evaluate models on a number of metrics.</p>
 <p>Consider a simple univariate dataset, say weekly <a class="reference external" href="https://www.bart.gov/about/reports/ridership">BART train</a> ridership aggregated over all stations in the network. This data roughly logarithmic, so we log-transform for modeling.</p>
@@ -810,7 +819,7 @@ Wall time: 4.54 s
 </div>
 </section>
 <section id="Time-local-random-variables:-self.time_plate">
-<h3>Time-local random variables: <code class="docutils literal notranslate"><span class="pre">self.time_plate</span></code><a class="headerlink" href="#Time-local-random-variables:-self.time_plate" title="Permalink to this headline">¶</a></h3>
+<h3>Time-local random variables: <code class="docutils literal notranslate"><span class="pre">self.time_plate</span></code><a class="headerlink" href="#Time-local-random-variables:-self.time_plate" title="Permalink to this heading">¶</a></h3>
 <p>So far we’ve seen the <code class="docutils literal notranslate"><span class="pre">ForecastingModel.model()</span></code> method and <code class="docutils literal notranslate"><span class="pre">self.predict()</span></code>. The last piece of forecasting-specific syntax is the <code class="docutils literal notranslate"><span class="pre">self.time_plate</span></code> context for time-local variables. To see how this works, consider changing our global linear trend model above to a local level model. Note the <a class="reference external" href="http://docs.pyro.ai/en/latest/poutine.html#pyro.poutine.handlers.reparam">poutine.reparam()</a> handler is a general Pyro inference trick, not specific to forecasting.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -943,7 +952,7 @@ Wall time: 9.54 s
 </div>
 </section>
 <section id="Heavy-tailed-noise">
-<h3>Heavy-tailed noise<a class="headerlink" href="#Heavy-tailed-noise" title="Permalink to this headline">¶</a></h3>
+<h3>Heavy-tailed noise<a class="headerlink" href="#Heavy-tailed-noise" title="Permalink to this heading">¶</a></h3>
 <p>Our final univariate model will generalize from Gaussian noise to heavy-tailed <a class="reference external" href="http://docs.pyro.ai/en/latest/distributions.html#stable">Stable</a> noise. The only difference is the <code class="docutils literal notranslate"><span class="pre">noise_dist</span></code> which now takes two new parameters: <code class="docutils literal notranslate"><span class="pre">stability</span></code> determines tail weight and <code class="docutils literal notranslate"><span class="pre">skew</span></code> determines the relative size of positive versus negative spikes.</p>
 <p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Stable_distribution">Stable distribution</a> is a natural heavy-tailed generalization of the Normal distribution, but it is difficult to work with due to its intractible density function. Pyro implements auxiliary variable methods for working with Stable distributions. To inform Pyro to use those auxiliary variable methods, we wrap the final line in <a class="reference external" href="http://docs.pyro.ai/en/latest/poutine.html#pyro.poutine.handlers.reparam">poutine.reparam()</a> effect handler
 that applies the <a class="reference external" href="http://docs.pyro.ai/en/latest/infer.reparam.html#pyro.infer.reparam.stable.StableReparam">StableReparam</a> transform to the implicit observe site named “residual”. You can use Stable distributions for other sites by specifying <code class="docutils literal notranslate"><span class="pre">config={&quot;my_site_name&quot;:</span> <span class="pre">StableReparam()}</span></code>.</p>
@@ -1083,7 +1092,7 @@ Wall time: 19.7 s
 </div>
 </section>
 <section id="Backtesting">
-<h3>Backtesting<a class="headerlink" href="#Backtesting" title="Permalink to this headline">¶</a></h3>
+<h3>Backtesting<a class="headerlink" href="#Backtesting" title="Permalink to this heading">¶</a></h3>
 <p>To compare our Gaussian <code class="docutils literal notranslate"><span class="pre">Model2</span></code> and Stable <code class="docutils literal notranslate"><span class="pre">Model3</span></code> we’ll use a simple <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.evaluate.backtest">backtesting()</a> helper. This helper by default evaluates three metrics: <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.evaluate.eval_crps">CRPS</a> assesses distributional accuracy of heavy-tailed data,
 <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.evaluate.eval_mae">MAE</a> assesses point accuracy of heavy-tailed data, and <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.evaluate.eval_rmse">RMSE</a> assesses accuracy of Normal-tailed data. The one nuance here is to set <code class="docutils literal notranslate"><span class="pre">warm_start=True</span></code> to reduce the need for random restarts.</p>
 <div class="nbinput docutils container">

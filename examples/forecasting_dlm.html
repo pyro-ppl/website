@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forecasting with Dynamic Linear Model (DLM) &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Forecasting with Dynamic Linear Model (DLM) &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -425,6 +426,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -433,10 +435,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -448,12 +454,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -481,11 +490,11 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Forecasting-with-Dynamic-Linear-Model-(DLM)">
-<h1>Forecasting with Dynamic Linear Model (DLM)<a class="headerlink" href="#Forecasting-with-Dynamic-Linear-Model-(DLM)" title="Permalink to this headline">¶</a></h1>
+<h1>Forecasting with Dynamic Linear Model (DLM)<a class="headerlink" href="#Forecasting-with-Dynamic-Linear-Model-(DLM)" title="Permalink to this heading">¶</a></h1>
 <p>Among state space models, Dynamic Linear Model (DLM) are one of the most popular models due to its explainability and ability to incorporate regressors with dynamic coefficients. Literature such as Harvey (1989) and Durbin and Koopman (2002) provide a complete review on the models. This notebook introduces a way to construct a vanlia DLM through Pyro and Forecaster modules. In the end, it provides an extension to incorporate flexible coefficients priors.</p>
 <p>See also: - <a class="reference external" href="http://pyro.ai/examples/forecasting_ii.html">Forecasting II: state space models</a></p>
 <section id="Workflow">
-<h2>Workflow<a class="headerlink" href="#Workflow" title="Permalink to this headline">¶</a></h2>
+<h2>Workflow<a class="headerlink" href="#Workflow" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>data simulation</p></li>
 <li><p>visualization of coefficients and response</p></li>
@@ -519,7 +528,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.ops.stats</span> <span class="kn">import</span> <span class="n">quantile</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20200928</span><span class="p">)</span>
 
@@ -529,7 +538,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Data-Simulation">
-<h3>Data Simulation<a class="headerlink" href="#Data-Simulation" title="Permalink to this headline">¶</a></h3>
+<h3>Data Simulation<a class="headerlink" href="#Data-Simulation" title="Permalink to this heading">¶</a></h3>
 <p>Assume we have observation <span class="math notranslate nohighlight">\(y_t\)</span> at time <span class="math notranslate nohighlight">\(t\)</span> such that</p>
 <div class="math notranslate nohighlight">
 \[y_t = x_t^T \beta_t + \epsilon_t\]</div>
@@ -578,7 +587,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Visualization-of-response-and-coefficients">
-<h3>Visualization of response and coefficients<a class="headerlink" href="#Visualization-of-response-and-coefficients" title="Permalink to this headline">¶</a></h3>
+<h3>Visualization of response and coefficients<a class="headerlink" href="#Visualization-of-response-and-coefficients" title="Permalink to this heading">¶</a></h3>
 <p>Let’s take a look on the truth simulated from the previous block.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -606,7 +615,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Train-and-validate-a-vanilla-DLM">
-<h3>Train and validate a vanilla DLM<a class="headerlink" href="#Train-and-validate-a-vanilla-DLM" title="Permalink to this headline">¶</a></h3>
+<h3>Train and validate a vanilla DLM<a class="headerlink" href="#Train-and-validate-a-vanilla-DLM" title="Permalink to this heading">¶</a></h3>
 <p>Let’s build a vanilla DLM following the dynmics we discussed previously.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -684,7 +693,7 @@ Wall time: 8.22 s
 </pre></div></div>
 </div>
 <section id="Posteriors-comparison">
-<h4>Posteriors comparison<a class="headerlink" href="#Posteriors-comparison" title="Permalink to this headline">¶</a></h4>
+<h4>Posteriors comparison<a class="headerlink" href="#Posteriors-comparison" title="Permalink to this heading">¶</a></h4>
 <p>We extract posteriors during the in-sample period and compare them against the truth.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -742,7 +751,7 @@ Wall time: 8.22 s
 <p>We can see that not all coefficients can be recovered in the vanilla model.</p>
 </section>
 <section id="Holdout-validation">
-<h4>Holdout validation<a class="headerlink" href="#Holdout-validation" title="Permalink to this headline">¶</a></h4>
+<h4>Holdout validation<a class="headerlink" href="#Holdout-validation" title="Permalink to this heading">¶</a></h4>
 <p>Here, we will visualize the holdout validation for comparison later.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -773,7 +782,7 @@ Wall time: 8.22 s
 </section>
 </section>
 <section id="Train-a-DLM-with-coefficients-priors-at-various-time-points">
-<h3>Train a DLM with coefficients priors at various time points<a class="headerlink" href="#Train-a-DLM-with-coefficients-priors-at-various-time-points" title="Permalink to this headline">¶</a></h3>
+<h3>Train a DLM with coefficients priors at various time points<a class="headerlink" href="#Train-a-DLM-with-coefficients-priors-at-various-time-points" title="Permalink to this heading">¶</a></h3>
 <p>Sometime user may have prior beliefs of certain coefficients at certain time point. This can be useful in cases where modelers can set an informative prior for those coefficients. For illustration, we create a simple evenly distributed time points and set priors on those points with the known value <span class="math notranslate nohighlight">\(B_t\)</span> as such</p>
 <div class="math notranslate nohighlight">
 \[\beta_t \sim \mathcal{N}_p(B_t, 0.5)\]</div>
@@ -810,7 +819,7 @@ Wall time: 8.22 s
 </pre></div></div>
 </div>
 <section id="Model-Training">
-<h4>Model Training<a class="headerlink" href="#Model-Training" title="Permalink to this headline">¶</a></h4>
+<h4>Model Training<a class="headerlink" href="#Model-Training" title="Permalink to this heading">¶</a></h4>
 <p>Now, let’s construct the new DLM which allows user import coefficents prior at certain time points.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -892,7 +901,7 @@ Wall time: 37.2 s
 </div>
 </section>
 <section id="Posterior-comparison">
-<h4>Posterior comparison<a class="headerlink" href="#Posterior-comparison" title="Permalink to this headline">¶</a></h4>
+<h4>Posterior comparison<a class="headerlink" href="#Posterior-comparison" title="Permalink to this heading">¶</a></h4>
 <p>Finally, let’s redo the exercise we did in previous section to check in-sample posteriors and holdout validation.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -948,7 +957,7 @@ Wall time: 37.2 s
 </div>
 </section>
 <section id="id1">
-<h4>Holdout validation<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<h4>Holdout validation<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
@@ -988,14 +997,14 @@ torch.Size([1000, 28, 1]) torch.Size([28])
 </section>
 </section>
 <section id="Conclusion">
-<h3>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this headline">¶</a></h3>
+<h3>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this heading">¶</a></h3>
 <ol class="arabic simple">
 <li><p>We show how to create a classic DLM with Pyro that provides decent forecast result.</p></li>
 <li><p>With priors injection, we improve the model in getting more accurate coefficients and predictions.</p></li>
 </ol>
 </section>
 <section id="Reference">
-<h3>Reference<a class="headerlink" href="#Reference" title="Permalink to this headline">¶</a></h3>
+<h3>Reference<a class="headerlink" href="#Reference" title="Permalink to this heading">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Harvey, C. A. (1989). <em>Forecasting, Structural Time Series and the Kalman Filter</em>, Cambridge University Press.</p></li>
 <li><p>Durbin, J., Koopman, S. J.. (2001). <em>Time Series Analysis by State Space Methods</em>, Oxford Statistical Science Series</p></li>

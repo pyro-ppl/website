@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Epidemiological models: Introduction &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Epidemiological models: Introduction &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -427,6 +428,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -435,10 +437,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -450,12 +456,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -483,7 +492,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Epidemiological-models:-Introduction">
-<h1>Epidemiological models: Introduction<a class="headerlink" href="#Epidemiological-models:-Introduction" title="Permalink to this headline">¶</a></h1>
+<h1>Epidemiological models: Introduction<a class="headerlink" href="#Epidemiological-models:-Introduction" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial introduces the <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html">pyro.contrib.epidemiology</a> module, an epidemiological modeling language with a number of black box inference algorithms. This tutorial assumes the reader is already familiar with <a class="reference external" href="http://pyro.ai/examples/intro_long.html">modeling</a>, <a class="reference external" href="http://pyro.ai/examples/intro_long.html">inference</a>, and <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">distribution shapes</a>.</p>
 <p>See also the following scripts:</p>
 <ul class="simple">
@@ -492,7 +501,7 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="http://pyro.ai/examples/sir_hmc.html">Epidemiological inference via HMC</a></p></li>
 </ul>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>To create a new model, inherit from the <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel">CompartmentalModel</a> base class.</p></li>
 <li><p>Override methods <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel.global_model">.global_model()</a>, <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel.initialize">.initialize(params)</a>, and <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel.transition">.transition(params, state, t)</a>.</p></li>
@@ -507,7 +516,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Basic-workflow">Basic workflow</a></p>
 <ul>
@@ -541,14 +550,14 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.contrib.epidemiology</span> <span class="kn">import</span> <span class="n">CompartmentalModel</span><span class="p">,</span> <span class="n">binomial_dist</span><span class="p">,</span> <span class="n">infection_dist</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
 <span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>  <span class="c1"># Required for MCMC inference.</span>
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <section id="Basic-workflow">
-<h3>Basic workflow<a class="headerlink" href="#Basic-workflow" title="Permalink to this headline">¶</a></h3>
+<h3>Basic workflow<a class="headerlink" href="#Basic-workflow" title="Permalink to this heading">¶</a></h3>
 <p>The <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html">pyro.contrib.epidemiology</a> module provides a modeling language for a class of stochastic discrete-time discrete-count compartmental models, together with a number of black box inference algorithms to perform joint inference on global parameters and latent variables. This modeling language is more restrictive than the full Pyro probabilistic programming language:</p>
 <ul class="simple">
 <li><p>control flow must be static;</p></li>
@@ -565,7 +574,7 @@ chains, thus making it easier to diagnose mixing issues.</p>
 <p>While MCMC inference can be more accurate for a given model, SVI is much faster and thus allows richer model structure (e.g. incorporating neural networks) and more rapid <a class="reference external" href="https://www.annualreviews.org/doi/abs/10.1146/annurev-statistics-022513-115657?journalCode=statistics">model iteration</a>. We recommend starting model exploration using mean field SVI (via <code class="docutils literal notranslate"><span class="pre">.fit_svi(guide_rank=0)</span></code>), then optionally increasing accuracy using a low-rank multivariate normal guide (via
 <code class="docutils literal notranslate"><span class="pre">.fit_svi(guide_rank=None)</span></code>). For even more accurate posteriors you could then try moment-matched MCMC (via <code class="docutils literal notranslate"><span class="pre">.fit_mcmc(num_quant_bins=1)</span></code>), or the most accurate and most expensive enumerated MCMC (via <code class="docutils literal notranslate"><span class="pre">.fit_mcmc(num_quant_bins=4)</span></code>). We recommend that, when fitting models with neural networks, you train via <code class="docutils literal notranslate"><span class="pre">.fit_svi()</span></code>, then freeze the network (say by omitting a <code class="docutils literal notranslate"><span class="pre">pyro.module()</span></code> statement) before optionally running MCMC inference.</p>
 <section id="Modeling">
-<h4>Modeling<a class="headerlink" href="#Modeling" title="Permalink to this headline">¶</a></h4>
+<h4>Modeling<a class="headerlink" href="#Modeling" title="Permalink to this heading">¶</a></h4>
 <p>The <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#module-pyro.contrib.epidemiology.models">pyro.contrib.epidemiology.models</a> module provides a number of example models. While in principle these are reusable, we recommend forking and modifying these models for your task. Let’s take a look at one of the simplest examples, <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.models.SimpleSIRModel">SimpleSIRModel</a>. This model derives from the
 <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel">CompartmentalModel</a> base class and overrides the three standard methods using familiar Pyro modeling code in each method.</p>
 <ul class="simple">
@@ -625,7 +634,7 @@ chains, thus making it easier to diagnose mixing issues.</p>
 <p>Note also that we’ve taken special care so that <code class="docutils literal notranslate"><span class="pre">t</span></code> can be either an integer or a <code class="docutils literal notranslate"><span class="pre">slice</span></code>. Under the hood, <code class="docutils literal notranslate"><span class="pre">t</span></code> is an integer during SMC initialization, a <code class="docutils literal notranslate"><span class="pre">slice</span></code> during SVI or MCMC inference, and an integer again during prediction.</p>
 </section>
 <section id="Generating-data">
-<h4>Generating data<a class="headerlink" href="#Generating-data" title="Permalink to this headline">¶</a></h4>
+<h4>Generating data<a class="headerlink" href="#Generating-data" title="Permalink to this heading">¶</a></h4>
 <p>To check that our model generates plausible data, we can create a model with empty data and call the model’s <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel.generate">.generate()</a> method. This method first calls, <code class="docutils literal notranslate"><span class="pre">.global_model()</span></code>, then calls <code class="docutils literal notranslate"><span class="pre">.initialize()</span></code>, then calls <code class="docutils literal notranslate"><span class="pre">.transition()</span></code> once per time step (based on the length of our empty data.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -707,7 +716,7 @@ rho.shape = ()
 </div>
 </section>
 <section id="Inference">
-<h4>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h4>
+<h4>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h4>
 <p>Next let’s recover estimates of the latent variables given only observations <code class="docutils literal notranslate"><span class="pre">obs</span></code>. To do this we’ll create a new model instance from the synthetic observations.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -800,7 +809,7 @@ rho.shape = (100, 1)
 </div>
 </section>
 <section id="Prediction">
-<h4>Prediction<a class="headerlink" href="#Prediction" title="Permalink to this headline">¶</a></h4>
+<h4>Prediction<a class="headerlink" href="#Prediction" title="Permalink to this heading">¶</a></h4>
 <p>After inference we can both examine latent variables and forecast forward using the <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel.predict">.predict()</a> method. First let’s simply predict latent variables.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -881,7 +890,7 @@ rho.shape = (100, 1)
 infections.</p>
 </section>
 <section id="Forecasting">
-<h4>Forecasting<a class="headerlink" href="#Forecasting" title="Permalink to this headline">¶</a></h4>
+<h4>Forecasting<a class="headerlink" href="#Forecasting" title="Permalink to this heading">¶</a></h4>
 <p>We can forecast forward by passing a <code class="docutils literal notranslate"><span class="pre">forecast</span></code> argument to the <code class="docutils literal notranslate"><span class="pre">.predict()</span></code> method, specifying the number of time steps ahead we’d like to forecast. The returned <code class="docutils literal notranslate"><span class="pre">sample</span></code> will contain time values during both the first observed time interval (here 90 days) and the forecasted window (say 30 days).</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -1017,7 +1026,7 @@ INFO     Forecasting 30 steps ahead...
 </section>
 </section>
 <section id="Advanced-modeling">
-<h3>Advanced modeling<a class="headerlink" href="#Advanced-modeling" title="Permalink to this headline">¶</a></h3>
+<h3>Advanced modeling<a class="headerlink" href="#Advanced-modeling" title="Permalink to this heading">¶</a></h3>
 <p>So far we’ve seen how to create a simple univariate model, fit the model to data, and predict and forecast future data. Next let’s consider more advanced modeling techniques:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="#Regional-models">regional models</a> that couple compartments among multiple aggregated regions;</p></li>
@@ -1026,7 +1035,7 @@ INFO     Forecasting 30 steps ahead...
 <li><p><a class="reference external" href="#Complex-compartment-flow">Complex compartment flow</a> for models with non-linear transitions.</p></li>
 </ul>
 <section id="Regional-models">
-<h4>Regional models<a class="headerlink" href="#Regional-models" title="Permalink to this headline">¶</a></h4>
+<h4>Regional models<a class="headerlink" href="#Regional-models" title="Permalink to this heading">¶</a></h4>
 <p>Epidemiology models vary in their level of detail. At the coarse-grained extreme are univariate aggregate models as we saw above. At the fine-grained extreme are network models where each individual’s state is tracked and infections occur along edges of a sparse graph (<code class="docutils literal notranslate"><span class="pre">pyro.contrib.epidemiology</span></code> does not implement network models). We now consider an mid-level model where each of many regions (e.g. countries or zip codes) is tracked in aggregate, and infections occur both within regions and
 between pairs of regions. In Pyro we model multiple regions with a <a class="reference external" href="http://docs.pyro.ai/en/stable/primitives.html#pyro.primitives.plate">plate</a>. Pyro’s <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel">CompartmentalModel</a> class does not support general <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> syntax, but it does support a single special <code class="docutils literal notranslate"><span class="pre">self.region_plate</span></code> for regional models. This plate is available iff a <code class="docutils literal notranslate"><span class="pre">CompartmentalModel</span></code> is initialized
 with a vector <code class="docutils literal notranslate"><span class="pre">population</span></code>, and the size of the <code class="docutils literal notranslate"><span class="pre">region_plate</span></code> will be the length of the <code class="docutils literal notranslate"><span class="pre">population</span></code> vector.</p>
@@ -1119,7 +1128,7 @@ See the <a class="reference external" href="#Heterogeneous-models">heterogeneous
 <p>See the <a class="reference external" href="http://pyro.ai/examples/epi_regional.html">Epidemiology: regional models</a> example for a demonstration of how to generate data, train, predict, and forecast with regional models.</p>
 </section>
 <section id="Phylogenetic-likelihoods">
-<h4>Phylogenetic likelihoods<a class="headerlink" href="#Phylogenetic-likelihoods" title="Permalink to this headline">¶</a></h4>
+<h4>Phylogenetic likelihoods<a class="headerlink" href="#Phylogenetic-likelihoods" title="Permalink to this heading">¶</a></h4>
 <p>Epidemiological parameters can be difficult to identify from aggregate observations alone. However some parameters like the superspreading parameter <code class="docutils literal notranslate"><span class="pre">k</span></code> can be more accurately identified by combining aggregate count data with viral phylogenetic trees reconstructed from viral genetic sequencing data <a class="reference external" href="#1">(Li et al. 2017)</a>. Pyro implements a <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.distributions.CoalescentRateLikelihood">CoalescentRateLikelihood</a> class to compute a
 population likelihood <code class="docutils literal notranslate"><span class="pre">p(I|phylogeny)</span></code> given statistics of a phylogenetic tree (or a batch of tree samples). The statistics needed are exactly the times of each sampling event (i.e. when a viral genome was sequenced) and the times of genetic coalescent events in a binary phylogenetic tree; let us call these two vectors <code class="docutils literal notranslate"><span class="pre">leaf_times</span></code> and <code class="docutils literal notranslate"><span class="pre">coal_times</span></code>, respectively, where <code class="docutils literal notranslate"><span class="pre">len(leaf_times)</span> <span class="pre">==</span> <span class="pre">1</span> <span class="pre">+</span> <span class="pre">len(coal_times)</span></code> for binary trees. Pyro provides a helper
 <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.distributions.coalescent.bio_phylo_to_times">bio_phylo_to_times()</a> to extract these statistics from a <a class="reference external" href="https://biopython.readthedocs.io/en/latest/api/Bio.Phylo.BaseTree.html#Bio.Phylo.BaseTree.Clade">Bio.Phylo tree objects</a>; in turn <a class="reference external" href="https://biopython-tutorial.readthedocs.io/en/latest/notebooks/13%20-%20Phylogenetics%20with%20Bio.Phylo.html">Bio.Phylo</a> can parse many file formats of phylogenetic trees.</p>
@@ -1150,7 +1159,7 @@ population likelihood <code class="docutils literal notranslate"><span class="pr
 likelihood involves the coalescent rate <code class="docutils literal notranslate"><span class="pre">coal_rate</span></code> in a coalescent process; we can compute this from an epidemiological model. In this superspreading model <code class="docutils literal notranslate"><span class="pre">coal_rate</span></code> depends on the reproductive number <code class="docutils literal notranslate"><span class="pre">R</span></code>, the superspreading parameter <code class="docutils literal notranslate"><span class="pre">k</span></code>, the incubation time <code class="docutils literal notranslate"><span class="pre">tau_i</span></code>, and the current number of infected individuals <code class="docutils literal notranslate"><span class="pre">state[&quot;I&quot;]</span></code> <a class="reference external" href="#1">(Li et al. 2017)</a>.</p>
 </section>
 <section id="Heterogeneous-models">
-<h4>Heterogeneous models<a class="headerlink" href="#Heterogeneous-models" title="Permalink to this headline">¶</a></h4>
+<h4>Heterogeneous models<a class="headerlink" href="#Heterogeneous-models" title="Permalink to this heading">¶</a></h4>
 <p>Epidemiological parameters often vary in time, due to human interventions, changes in weather, and other external factors. We can model real-valued time-varying latent variables in <code class="docutils literal notranslate"><span class="pre">CompartmentalModel</span></code> by moving static latent variables from <code class="docutils literal notranslate"><span class="pre">.global_model()</span></code> to <code class="docutils literal notranslate"><span class="pre">.initialize()</span></code> and <code class="docutils literal notranslate"><span class="pre">.transition()</span></code>. For example we can model a reproductive number under Brownian drift in log-space by initializing at a random <code class="docutils literal notranslate"><span class="pre">R0</span></code> and multiplying by a drifting factor, as in the
 <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.models.HeterogeneousSIRModel">HeterogeneousSIRModel</a> example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">HeterogeneousSIRModel</span><span class="p">(</span><span class="n">CompartmentalModel</span><span class="p">):</span>
@@ -1193,7 +1202,7 @@ instead sampled <code class="docutils literal notranslate"><span class="pre">R0<
 <p>It is also easy to pass in time-varying covariates as tensors, in the same way we have passed in <code class="docutils literal notranslate"><span class="pre">data</span></code> to the constructors of all example models. To predict the effects of different causal interventions, you can pass in a covariate that is longer than <code class="docutils literal notranslate"><span class="pre">duration</span></code>, run inference (looking only at the first <code class="docutils literal notranslate"><span class="pre">[0,duration)</span></code> entries), then mutate entries of the covariate after <code class="docutils literal notranslate"><span class="pre">duration</span></code> and generate different <code class="docutils literal notranslate"><span class="pre">.predict()</span></code>ions.</p>
 </section>
 <section id="Complex-compartment-flow">
-<h4>Complex compartment flow<a class="headerlink" href="#Complex-compartment-flow" title="Permalink to this headline">¶</a></h4>
+<h4>Complex compartment flow<a class="headerlink" href="#Complex-compartment-flow" title="Permalink to this heading">¶</a></h4>
 <p>The <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel">CompartmentalModel</a> class assumes by default that the compartments are arranged linearly and terminate in an implicit terminal compartment named “R”, for example S-I-R, S-E-I-R or boxcar models like S-E1-E2-I1-I2-I3-R. To describe other more complex flows between compartments, you can override the
 <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.epidemiology.html#pyro.contrib.epidemiology.compartmental.CompartmentalModel.compute_flows">.compute_flows()</a> method. However currently there is no support for flows with undirected loops (e.g. S-I-S).</p>
 <p>Let’s create a branching SIRD model with possible flows</p>
@@ -1245,7 +1254,7 @@ instead sampled <code class="docutils literal notranslate"><span class="pre">R0<
 </section>
 </section>
 <section id="References">
-<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
+<h3>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Lucy M. Li, Nicholas C. Grassly, Christophe Fraser (2017) “Quantifying Transmission Heterogeneity Using Both Pathogen Phylogenies and Incidence Time Series” <a class="reference external" href="https://academic.oup.com/mbe/article/34/11/2982/3952784">https://academic.oup.com/mbe/article/34/11/2982/3952784</a></p></li>
 <li><ol class="upperalpha simple" start="13">

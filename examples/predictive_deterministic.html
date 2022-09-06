@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Example: Utilizing Predictive and Deterministic with MCMC and SVI &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Example: Utilizing Predictive and Deterministic with MCMC and SVI &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -416,6 +417,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -424,10 +426,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -439,12 +445,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -472,7 +481,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Example:-Utilizing-Predictive-and-Deterministic-with-MCMC-and-SVI">
-<h1>Example: Utilizing Predictive and Deterministic with MCMC and SVI<a class="headerlink" href="#Example:-Utilizing-Predictive-and-Deterministic-with-MCMC-and-SVI" title="Permalink to this headline">¶</a></h1>
+<h1>Example: Utilizing Predictive and Deterministic with MCMC and SVI<a class="headerlink" href="#Example:-Utilizing-Predictive-and-Deterministic-with-MCMC-and-SVI" title="Permalink to this heading">¶</a></h1>
 <p>In this short tutorial we’ll see how to use <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> statements inside a model and inspect its samples with <code class="docutils literal notranslate"><span class="pre">Predictive</span></code> class. Additionally a <code class="docutils literal notranslate"><span class="pre">GammaPoisson</span></code> distribution will be discussed as it’ll be used within our model.</p>
 <p>Check out other tutorials that use <code class="docutils literal notranslate"><span class="pre">Predictive</span></code> and <code class="docutils literal notranslate"><span class="pre">Deterministic</span></code>:</p>
 <ul class="simple">
@@ -502,7 +511,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Data-generation">
-<h2>Data generation<a class="headerlink" href="#Data-generation" title="Permalink to this headline">¶</a></h2>
+<h2>Data generation<a class="headerlink" href="#Data-generation" title="Permalink to this heading">¶</a></h2>
 <p>Let’s generate our data with <code class="docutils literal notranslate"><span class="pre">sklearn.datasets.make_regression</span></code> method where we can determine the number of features, bias and noise power. Also we’ll transform the target variable and make it a <code class="docutils literal notranslate"><span class="pre">torch</span></code> tensor.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -535,7 +544,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Model-definition">
-<h2>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this headline">¶</a></h2>
+<h2>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this heading">¶</a></h2>
 <p>In our model we first sample coefficient from a normal distribution with zero mean and sampled standard deviation. We use <code class="docutils literal notranslate"><span class="pre">to_event(1)</span></code> to move the expanded dimension from <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> to <code class="docutils literal notranslate"><span class="pre">event_shape</span></code> as we want to sample from a multivariate normal distribution. <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> part is used to register a <code class="docutils literal notranslate"><span class="pre">name</span></code> whose <code class="docutils literal notranslate"><span class="pre">value</span></code> is fully determined by arguments passed to it. Here we use <code class="docutils literal notranslate"><span class="pre">softplus</span></code> to be sure that the resulting <code class="docutils literal notranslate"><span class="pre">rate</span></code> isn’t negative. Then we use vectorized version
 of <code class="docutils literal notranslate"><span class="pre">plate</span></code> to record <code class="docutils literal notranslate"><span class="pre">counts</span></code> from passed dataset as they were sampled from <code class="docutils literal notranslate"><span class="pre">GammaPoisson</span></code> distribution.</p>
 <p>For now this model might be a little obscure but later we will dive into sampled data to better grasp it’s internals.</p>
@@ -556,7 +565,7 @@ of <code class="docutils literal notranslate"><span class="pre">plate</span></co
 </div>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
 <p>Inference will be done with MCMC algorithm. IMPORTANT! Please note that only <code class="docutils literal notranslate"><span class="pre">scale</span></code> and <code class="docutils literal notranslate"><span class="pre">coef</span></code> variables are returned in samples dict. <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> parts are available via <code class="docutils literal notranslate"><span class="pre">Predictive</span></code>, similarly as observed samples.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -692,7 +701,7 @@ rate: (500, 1, 100)
 <p>But where do these values (and uncertainty) come from? Let’s find out!</p>
 </section>
 <section id="Inspecting-deterministic-part">
-<h2>Inspecting deterministic part<a class="headerlink" href="#Inspecting-deterministic-part" title="Permalink to this headline">¶</a></h2>
+<h2>Inspecting deterministic part<a class="headerlink" href="#Inspecting-deterministic-part" title="Permalink to this heading">¶</a></h2>
 <p>Now let’s move to the essence of this tutorial. <code class="docutils literal notranslate"><span class="pre">GammaPoisson</span></code> distribution used here and parameterized with (<code class="docutils literal notranslate"><span class="pre">concentration</span></code>, <code class="docutils literal notranslate"><span class="pre">rate</span></code>) arguments is basically an alternative parametrization of <code class="docutils literal notranslate"><span class="pre">NegativeBinomial</span></code> distribution.</p>
 <p><code class="docutils literal notranslate"><span class="pre">NegativeBinomial</span></code> answers a question: How many successes will we record before seeing <code class="docutils literal notranslate"><span class="pre">r</span></code> failures (overall) if each trial wins with probability <code class="docutils literal notranslate"><span class="pre">p</span></code>?</p>
 <p>The reparametrization occurs as follows:</p>
@@ -809,7 +818,7 @@ Coef std:  0.036095619201660156
 <p>It indeed does. Red lines show that 28 successes and rate 0.5 are located with the same <code class="docutils literal notranslate"><span class="pre">x</span></code> argument.</p>
 </section>
 <section id="SVI-approach">
-<h2>SVI approach<a class="headerlink" href="#SVI-approach" title="Permalink to this headline">¶</a></h2>
+<h2>SVI approach<a class="headerlink" href="#SVI-approach" title="Permalink to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">Predictive</span></code> class can also be used with the SVI method. In the next section we will use it with <code class="docutils literal notranslate"><span class="pre">AutoGuide</span></code>’s guide and manually designed one.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
@@ -822,7 +831,7 @@ Coef std:  0.036095619201660156
 </div>
 </div>
 <section id="Manually-defined-guide">
-<h3>Manually defined guide<a class="headerlink" href="#Manually-defined-guide" title="Permalink to this headline">¶</a></h3>
+<h3>Manually defined guide<a class="headerlink" href="#Manually-defined-guide" title="Permalink to this heading">¶</a></h3>
 <p>First we define our guide with all <code class="docutils literal notranslate"><span class="pre">sample</span></code> sites that are present in the model and parametrize them with learnable parameters. Then we perform gradient descent with <code class="docutils literal notranslate"><span class="pre">Adam</span></code> optimizer.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
@@ -955,7 +964,7 @@ rate: (500, 1, 100)
 </div>
 </section>
 <section id="AutoGuide">
-<h3>AutoGuide<a class="headerlink" href="#AutoGuide" title="Permalink to this headline">¶</a></h3>
+<h3>AutoGuide<a class="headerlink" href="#AutoGuide" title="Permalink to this heading">¶</a></h3>
 <p>Another approach for conducting SVI is to rely on automatic guide generation. Here we use <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> that underneath uses a normal distribution with a diagonal covariance matrix.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:

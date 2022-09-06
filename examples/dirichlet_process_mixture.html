@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dirichlet Process Mixture Models in Pyro &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Dirichlet Process Mixture Models in Pyro &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -111,7 +113,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -422,6 +423,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -430,10 +432,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -445,12 +451,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -478,14 +487,14 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Dirichlet-Process-Mixture-Models-in-Pyro">
-<h1>Dirichlet Process Mixture Models in Pyro<a class="headerlink" href="#Dirichlet-Process-Mixture-Models-in-Pyro" title="Permalink to this headline">¶</a></h1>
+<h1>Dirichlet Process Mixture Models in Pyro<a class="headerlink" href="#Dirichlet-Process-Mixture-Models-in-Pyro" title="Permalink to this heading">¶</a></h1>
 <section id="What-are-Bayesian-nonparametric-models?">
-<h2>What are Bayesian nonparametric models?<a class="headerlink" href="#What-are-Bayesian-nonparametric-models?" title="Permalink to this headline">¶</a></h2>
+<h2>What are Bayesian nonparametric models?<a class="headerlink" href="#What-are-Bayesian-nonparametric-models?" title="Permalink to this heading">¶</a></h2>
 <p>Bayesian nonparametric models are models where the number of parameters grow freely with the amount of data provided; thus, instead of training several models that vary in complexity and comparing them, one is able to design a model whose complexity grows as more data are observed. The prototypical example of Bayesian nonparametrics in practice is the <em>Dirichlet Process Mixture Model</em> (DPMM). A DPMM allows for a practitioner to build a mixture model when the number of distinct clusters in the
 geometric structure of their data is unknown – in other words, the number of clusters is allowed to grow as more data is observed. This feature makes the DPMM highly useful towards exploratory data analysis, where few facets of the data in question are known; this presentation aims to demonstrate this fact.</p>
 </section>
 <section id="The-Dirichlet-Process-(Ferguson,-1973)">
-<h2>The Dirichlet Process (Ferguson, 1973)<a class="headerlink" href="#The-Dirichlet-Process-(Ferguson,-1973)" title="Permalink to this headline">¶</a></h2>
+<h2>The Dirichlet Process (Ferguson, 1973)<a class="headerlink" href="#The-Dirichlet-Process-(Ferguson,-1973)" title="Permalink to this heading">¶</a></h2>
 <p>Dirichlet processes are a family of probability distributions over discrete probability distributions. Formally, the Dirichlet process (DP) is specified by some base probability distribution <span class="math notranslate nohighlight">\(G_0: \Omega \to \mathbb{R}\)</span> and a positive, real, scaling parameter commonly denoted as <span class="math notranslate nohighlight">\(\alpha\)</span>. A sample <span class="math notranslate nohighlight">\(G\)</span> from a Dirichlet process with parameters <span class="math notranslate nohighlight">\(G_0: \Omega \to \mathbb{R}\)</span> and <span class="math notranslate nohighlight">\(\alpha\)</span> is itself a distribution over <span class="math notranslate nohighlight">\(\Omega\)</span>. For any disjoint partition
 <span class="math notranslate nohighlight">\(\Omega_1, ..., \Omega_k\)</span> of <span class="math notranslate nohighlight">\(\Omega\)</span>, and any sample <span class="math notranslate nohighlight">\(G \sim DP(G_0, \alpha)\)</span>, we have:</p>
 <div class="math notranslate nohighlight">
@@ -493,7 +502,7 @@ geometric structure of their data is unknown – in other words, the number of c
 <p>Essentially, this is taking a discrete partition of our sample space <span class="math notranslate nohighlight">\(\Omega\)</span> and subsequently constructing a discrete distribution over it using the base distribution <span class="math notranslate nohighlight">\(G_0\)</span>. While quite abstract in formulation, the Dirichlet process is very useful as a prior in various graphical models. This fact becomes easier to see in the following scheme.</p>
 </section>
 <section id="The-Chinese-Restaurant-Process-(Aldous,-1985)">
-<h2>The Chinese Restaurant Process (Aldous, 1985)<a class="headerlink" href="#The-Chinese-Restaurant-Process-(Aldous,-1985)" title="Permalink to this headline">¶</a></h2>
+<h2>The Chinese Restaurant Process (Aldous, 1985)<a class="headerlink" href="#The-Chinese-Restaurant-Process-(Aldous,-1985)" title="Permalink to this heading">¶</a></h2>
 <p>Imagine a restaurant with infinite tables (indexed by the positive integers) that accepts customers one at a time. The <span class="math notranslate nohighlight">\(n\)</span>th customer chooses their seat according to the following probabilities:</p>
 <ul class="simple">
 <li><p>With probability <span class="math notranslate nohighlight">\(\frac{n_t}{\alpha + n - 1}\)</span>, sit at table <span class="math notranslate nohighlight">\(t\)</span>, where <span class="math notranslate nohighlight">\(n_t\)</span> is the number of people at table <span class="math notranslate nohighlight">\(t\)</span></p></li>
@@ -505,7 +514,7 @@ for that table. If the observation was assigned to a new table, draw a new set o
 <p>While this formulation of a Dirichlet process mixture model is intuitive, it is also very difficult to perform inference on in a probabilistic programming framework. This motivates an alternative formulation of DPMMs, which has empirically been shown to be more conducive to inference (e.g. Blei and Jordan, 2004).</p>
 </section>
 <section id="The-Stick-Breaking-Method-(Sethuraman,-1994)">
-<h2>The Stick-Breaking Method (Sethuraman, 1994)<a class="headerlink" href="#The-Stick-Breaking-Method-(Sethuraman,-1994)" title="Permalink to this headline">¶</a></h2>
+<h2>The Stick-Breaking Method (Sethuraman, 1994)<a class="headerlink" href="#The-Stick-Breaking-Method-(Sethuraman,-1994)" title="Permalink to this heading">¶</a></h2>
 <p>The generative process for the stick-breaking formulation of DPMMs proceeds as follows:</p>
 <ul class="simple">
 <li><p>Draw <span class="math notranslate nohighlight">\(\beta_i \sim \text{Beta}(1, \alpha)\)</span> for <span class="math notranslate nohighlight">\(i \in \mathbb{N}\)</span></p></li>
@@ -533,16 +542,16 @@ for that table. If the observation was assigned to a new table, draw a new set o
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">Predictive</span><span class="p">,</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
 <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Inference">
-<h2><strong>Inference</strong><a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Inference</strong><a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
 <section id="Synthetic-Mixture-of-Gaussians">
-<h3>Synthetic Mixture of Gaussians<a class="headerlink" href="#Synthetic-Mixture-of-Gaussians" title="Permalink to this headline">¶</a></h3>
+<h3>Synthetic Mixture of Gaussians<a class="headerlink" href="#Synthetic-Mixture-of-Gaussians" title="Permalink to this heading">¶</a></h3>
 <p>We begin by demonstrating the capabilities of Dirichlet process mixture models on a synthetic dataset generated by a mixture of four 2D Gaussians:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -695,7 +704,7 @@ more flexibility), and the <span class="math notranslate nohighlight">\(N\)</spa
 many clusters the data contains.</p>
 </section>
 <section id="Dirichlet-Mixture-Model-for-Long-Term-Solar-Observations">
-<h3>Dirichlet Mixture Model for Long Term Solar Observations<a class="headerlink" href="#Dirichlet-Mixture-Model-for-Long-Term-Solar-Observations" title="Permalink to this headline">¶</a></h3>
+<h3>Dirichlet Mixture Model for Long Term Solar Observations<a class="headerlink" href="#Dirichlet-Mixture-Model-for-Long-Term-Solar-Observations" title="Permalink to this heading">¶</a></h3>
 <p>As mentioned earlier, the Dirichlet process mixture model truly shines when exploring a dataset whose latent geometric structure is completely unknown. To demonstrate this, we fit a DPMM on sunspot count data taken over the past 300 years (provided by the Royal Observatory of Belgium):</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -801,7 +810,7 @@ many clusters the data contains.</p>
 <p>The above plot is the mixture density of the Bayes estimators of the cluster parameters, weighted by their corresponding weights. As in the Gaussian example, we have taken the Bayes estimators of each cluster parameter and their corresponding weights by computing the posterior means of <code class="docutils literal notranslate"><span class="pre">lambda</span></code> and <code class="docutils literal notranslate"><span class="pre">beta</span></code> respectively.</p>
 </section>
 <section id="ELBO-Behavior">
-<h3>ELBO Behavior<a class="headerlink" href="#ELBO-Behavior" title="Permalink to this headline">¶</a></h3>
+<h3>ELBO Behavior<a class="headerlink" href="#ELBO-Behavior" title="Permalink to this heading">¶</a></h3>
 <p>Below are plots of the behavior of the loss function (negative Trace_ELBO) over the SVI iterations during inference using Pyro, as well as a plot of the autocorrelations of the ELBO ‘time series’ versus iteration number. We can see that around 500 iterations, the loss stops decreasing significantly, so we can assume it takes around 500 iterations to achieve convergence. The autocorrelation plot reaches an autocorrelation very close to 0 around a lag of 500, further corroborating this hypothesis.
 Note that these are heuristics and do not necessarily imply convergence.</p>
 <div class="nbinput docutils container">
@@ -838,9 +847,9 @@ Note that these are heuristics and do not necessarily imply convergence.</p>
 </section>
 </section>
 <section id="Criticism">
-<h2><strong>Criticism</strong><a class="headerlink" href="#Criticism" title="Permalink to this headline">¶</a></h2>
+<h2><strong>Criticism</strong><a class="headerlink" href="#Criticism" title="Permalink to this heading">¶</a></h2>
 <section id="Long-Term-Sunspot-Model">
-<h3>Long-Term Sunspot Model<a class="headerlink" href="#Long-Term-Sunspot-Model" title="Permalink to this headline">¶</a></h3>
+<h3>Long-Term Sunspot Model<a class="headerlink" href="#Long-Term-Sunspot-Model" title="Permalink to this heading">¶</a></h3>
 <p>Since we computed the approximate posterior of the DPMM that was fit to the long-term sunspot data, we can utilize some intrinsic metrics, such as the log predictive, posterior dispersion indices, and posterior predictive checks.</p>
 <p>Since the posterior predictive distribution for a Dirichlet process mixture model is itself a scale-mixture distribution that has an analytic approximation <a class="reference external" href="http://www.cs.columbia.edu/~blei/papers/BleiJordan2004.pdf">(Blei and Jordan, 2004)</a>, this makes it particularly amenable to the aforementioned metrics:</p>
 <div class="math notranslate nohighlight">
@@ -919,7 +928,7 @@ Note that these are heuristics and do not necessarily imply convergence.</p>
 </section>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Ferguson, Thomas. <em>A Bayesian Analysis of Some Nonparametric Problems</em>. The Annals of Statistics, Vol. 1, No. 2 (1973).</p></li>
 <li><p>Aldous, D. <em>Exchangeability and Related Topics</em>. Ecole diete de Probabilities Saint Flour (1985).</p></li>

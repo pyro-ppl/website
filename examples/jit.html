@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Using the PyTorch JIT Compiler with Pyro &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Using the PyTorch JIT Compiler with Pyro &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -23,7 +24,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Example: distributed training via Horovod" href="svi_horovod.html" />
-    <link rel="prev" title="High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains" href="workflow.html" /> 
+    <link rel="prev" title="Interactive posterior predictives checks" href="prior_predictive.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Using the PyTorch JIT Compiler with Pyro</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Summary:">Summary:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Table-of-contents">Table of contents</a><ul>
@@ -103,7 +105,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -414,6 +415,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -422,10 +424,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -437,12 +443,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -470,10 +479,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Using-the-PyTorch-JIT-Compiler-with-Pyro">
-<h1>Using the PyTorch JIT Compiler with Pyro<a class="headerlink" href="#Using-the-PyTorch-JIT-Compiler-with-Pyro" title="Permalink to this headline">¶</a></h1>
+<h1>Using the PyTorch JIT Compiler with Pyro<a class="headerlink" href="#Using-the-PyTorch-JIT-Compiler-with-Pyro" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial shows how to use the PyTorch <a class="reference external" href="https://pytorch.org/docs/master/jit.html">jit compiler</a> in Pyro models.</p>
 <section id="Summary:">
-<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this headline">¶</a></h2>
+<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this heading">¶</a></h2>
 <ul>
 <li><p>You can use compiled functions in Pyro models.</p></li>
 <li><p>You cannot use pyro primitives inside compiled functions.</p></li>
@@ -492,7 +501,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Introduction">Introduction</a></p></li>
 <li><p><a class="reference external" href="#A-simple-model">A simple model</a></p></li>
@@ -515,19 +524,19 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.1&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <section id="Introduction">
-<h3>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h3>
+<h3>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h3>
 <p>PyTorch 1.0 includes a <a class="reference external" href="https://pytorch.org/docs/master/jit.html">jit compiler</a> to speed up models. You can think of compilation as a “static mode”, whereas PyTorch usually operates in “eager mode”.</p>
 <p>Pyro supports the jit compiler in two ways. First you can use compiled functions inside Pyro models (but those functions cannot contain Pyro primitives). Second, you can use Pyro’s jit inference algorithms to compile entire inference steps; in static models this can reduce the Python overhead of Pyro models and speed up inference.</p>
 <p>The rest of this tutorial focuses on Pyro’s jitted inference algorithms: <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.trace_elbo.JitTrace_ELBO">JitTrace_ELBO</a>, <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.tracegraph_elbo.JitTraceGraph_ELBO">JitTraceGraph_ELBO</a>, <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.JitTraceEnum_ELBO">JitTraceEnum_ELBO</a>,
 <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.trace_mean_field_elbo.JitTraceMeanField_ELBO">JitMeanField_ELBO</a>, <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.HMC">HMC(jit_compile=True)</a>, and <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.NUTS">NUTS(jit_compile=True)</a>. For further reading, see the <a class="reference external" href="https://github.com/pyro-ppl/pyro/tree/dev/examples">examples/</a> directory, where most examples include a <code class="docutils literal notranslate"><span class="pre">--jit</span></code> option to run in compiled mode.</p>
 </section>
 <section id="A-simple-model">
-<h3>A simple model<a class="headerlink" href="#A-simple-model" title="Permalink to this headline">¶</a></h3>
+<h3>A simple model<a class="headerlink" href="#A-simple-model" title="Permalink to this heading">¶</a></h3>
 <p>Let’s start with a simple Gaussian model and an <a class="reference external" href="http://docs.pyro.ai/en/dev/infer.autoguide.html">autoguide</a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -659,7 +668,7 @@ Wall time: 2.09 s
 <p>We notice a significant increase in sampling throughput when JIT compilation is enabled.</p>
 </section>
 <section id="Varying-structure">
-<h3>Varying structure<a class="headerlink" href="#Varying-structure" title="Permalink to this headline">¶</a></h3>
+<h3>Varying structure<a class="headerlink" href="#Varying-structure" title="Permalink to this heading">¶</a></h3>
 <p>Time series models often run on datasets of multiple time series with different lengths. To accomodate varying structure like this, Pyro requires models to separate all model inputs into tensors and non-tensors.<span class="math notranslate nohighlight">\(^\dagger\)</span></p>
 <ul class="simple">
 <li><p>Non-tensor inputs should be passed as <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to the model and guide. These can determine model structure, so that a model is compiled for each value of the passed <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</p></li>
@@ -764,7 +773,7 @@ Wall time: 22.2 s
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="workflow.html" class="btn btn-neutral float-left" title="High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="prior_predictive.html" class="btn btn-neutral float-left" title="Interactive posterior predictives checks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="svi_horovod.html" class="btn btn-neutral float-right" title="Example: distributed training via Horovod" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

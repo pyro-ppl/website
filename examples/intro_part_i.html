@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>(DEPRECATED) An Introduction to Models in Pyro &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>(DEPRECATED) An Introduction to Models in Pyro &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -413,6 +414,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -421,10 +423,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -436,12 +442,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -469,9 +478,9 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="(DEPRECATED)-An-Introduction-to-Models-in-Pyro">
-<h1>(DEPRECATED) An Introduction to Models in Pyro<a class="headerlink" href="#(DEPRECATED)-An-Introduction-to-Models-in-Pyro" title="Permalink to this headline">¶</a></h1>
+<h1>(DEPRECATED) An Introduction to Models in Pyro<a class="headerlink" href="#(DEPRECATED)-An-Introduction-to-Models-in-Pyro" title="Permalink to this heading">¶</a></h1>
 <section id="WARNING">
-<h2>WARNING<a class="headerlink" href="#WARNING" title="Permalink to this headline">¶</a></h2>
+<h2>WARNING<a class="headerlink" href="#WARNING" title="Permalink to this heading">¶</a></h2>
 <p><strong>This tutorial has been deprecated</strong> in favor of the updated <a class="reference external" href="https://pyro.ai/examples/intro_long.html">Introduction to Pyro</a>. It may be removed in the future.***</p>
 <p>The basic unit of probabilistic programs is the <em>stochastic function</em>. This is an arbitrary Python callable that combines two ingredients:</p>
 <ul class="simple">
@@ -493,7 +502,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Primitive-Stochastic-Functions">
-<h2>Primitive Stochastic Functions<a class="headerlink" href="#Primitive-Stochastic-Functions" title="Permalink to this headline">¶</a></h2>
+<h2>Primitive Stochastic Functions<a class="headerlink" href="#Primitive-Stochastic-Functions" title="Permalink to this heading">¶</a></h2>
 <p>Primitive stochastic functions, or distributions, are an important class of stochastic functions for which we can explicitly compute the probability of the outputs given the inputs. As of PyTorch 0.4 and Pyro 0.2, Pyro uses PyTorch’s <a class="reference external" href="http://pytorch.org/docs/master/distributions.html">distribution library</a>. You can also create custom distributions using <a class="reference external" href="http://pytorch.org/docs/master/distributions.html#module-torch.distributions.transforms">transforms</a>.</p>
 <p>Using primitive stochastic functions is easy. For example, to draw a sample <code class="docutils literal notranslate"><span class="pre">x</span></code> from the unit normal distribution <span class="math notranslate nohighlight">\(\mathcal{N}(0,1)\)</span> we do the following:</p>
 <div class="nbinput docutils container">
@@ -521,7 +530,7 @@ log prob tensor(-1.8857)
 <p>Here, <code class="docutils literal notranslate"><span class="pre">torch.distributions.Normal</span></code> is an instance of the <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> class that takes parameters and provides sample and score methods. Pyro’s distribution library <code class="docutils literal notranslate"><span class="pre">pyro.distributions</span></code> is a thin wrapper around <code class="docutils literal notranslate"><span class="pre">torch.distributions</span></code> because we want to make use of PyTorch’s fast tensor math and autograd capabilities during inference.</p>
 </section>
 <section id="A-Simple-Model">
-<h2>A Simple Model<a class="headerlink" href="#A-Simple-Model" title="Permalink to this headline">¶</a></h2>
+<h2>A Simple Model<a class="headerlink" href="#A-Simple-Model" title="Permalink to this heading">¶</a></h2>
 <p>All probabilistic programs are built up by composing primitive stochastic functions and deterministic computation. Since we’re ultimately interested in probabilistic programming because we want to model things in the real world, let’s start with a model of something concrete.</p>
 <p>Let’s suppose we have a bunch of data with daily mean temperatures and cloud cover. We want to reason about how temperature interacts with whether it was sunny or cloudy. A simple stochastic function that describes how that data might have been generated is given by:</p>
 <div class="nbinput nblast docutils container">
@@ -543,7 +552,7 @@ log prob tensor(-1.8857)
 <p>However, <code class="docutils literal notranslate"><span class="pre">weather</span></code> is entirely independent of Pyro - it only calls PyTorch. We need to turn it into a Pyro program if we want to use this model for anything other than sampling fake data.</p>
 </section>
 <section id="The-pyro.sample-Primitive">
-<h2>The <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> Primitive<a class="headerlink" href="#The-pyro.sample-Primitive" title="Permalink to this headline">¶</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> Primitive<a class="headerlink" href="#The-pyro.sample-Primitive" title="Permalink to this heading">¶</a></h2>
 <p>To turn <code class="docutils literal notranslate"><span class="pre">weather</span></code> into a Pyro program, we’ll replace the <code class="docutils literal notranslate"><span class="pre">torch.distribution</span></code>s with <code class="docutils literal notranslate"><span class="pre">pyro.distribution</span></code>s and the <code class="docutils literal notranslate"><span class="pre">.sample()</span></code> and <code class="docutils literal notranslate"><span class="pre">.rsample()</span></code> calls with calls to <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>, one of the core language primitives in Pyro. Using <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> is as simple as calling a primitive stochastic function with one important difference:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -595,7 +604,7 @@ tensor(-0.8152)
 degrees, how likely is it to be cloudy? How to formulate and answer these kinds of questions will be the subject of the next tutorial.</p>
 </section>
 <section id="Universality:-Stochastic-Recursion,-Higher-order-Stochastic-Functions,-and-Random-Control-Flow">
-<h2>Universality: Stochastic Recursion, Higher-order Stochastic Functions, and Random Control Flow<a class="headerlink" href="#Universality:-Stochastic-Recursion,-Higher-order-Stochastic-Functions,-and-Random-Control-Flow" title="Permalink to this headline">¶</a></h2>
+<h2>Universality: Stochastic Recursion, Higher-order Stochastic Functions, and Random Control Flow<a class="headerlink" href="#Universality:-Stochastic-Recursion,-Higher-order-Stochastic-Functions,-and-Random-Control-Flow" title="Permalink to this heading">¶</a></h2>
 <p>We’ve now seen how to define a simple model. Building off of it is easy. For example:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -670,7 +679,7 @@ tensor(2.1493)
 <p>It is worth emphasizing that this is one reason why Pyro is built on top of PyTorch: dynamic computational graphs are an important ingredient in allowing for universal models that can benefit from GPU-accelerated tensor math.</p>
 </section>
 <section id="Next-Steps">
-<h2>Next Steps<a class="headerlink" href="#Next-Steps" title="Permalink to this headline">¶</a></h2>
+<h2>Next Steps<a class="headerlink" href="#Next-Steps" title="Permalink to this heading">¶</a></h2>
 <p>We’ve shown how we can use stochastic functions and primitive distributions to represent models in Pyro. In order to learn models from data and reason about them we need to be able to do inference. This is the subject of the <a class="reference internal" href="intro_part_ii.html"><span class="doc">next tutorial</span></a>.</p>
 </section>
 </section>

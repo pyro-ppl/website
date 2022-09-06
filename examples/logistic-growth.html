@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Logistic growth models of SARS-CoV-2 lineage proportions &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Logistic growth models of SARS-CoV-2 lineage proportions &mdash; Pyro Tutorials 1.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,6 +15,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -35,7 +36,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +96,6 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Custom SVI Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -427,6 +428,7 @@ div.nboutput.container div.output_area > div[class^='highlight']{
 }
 
 /* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
 div.rendered_html table {
   border: none;
   border-collapse: collapse;
@@ -435,10 +437,14 @@ div.rendered_html table {
   font-size: 12px;
   table-layout: fixed;
 }
+.jp-RenderedHTMLCommon thead,
 div.rendered_html thead {
   border-bottom: 1px solid black;
   vertical-align: bottom;
 }
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
 div.rendered_html tr,
 div.rendered_html th,
 div.rendered_html td {
@@ -450,12 +456,15 @@ div.rendered_html td {
   max-width: none;
   border: none;
 }
+.jp-RenderedHTMLCommon th,
 div.rendered_html th {
   font-weight: bold;
 }
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
 div.rendered_html tbody tr:nth-child(odd) {
   background: #f5f5f5;
 }
+.jp-RenderedHTMLCommon tbody tr:hover,
 div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
@@ -483,11 +492,11 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Logistic-growth-models-of-SARS-CoV-2-lineage-proportions">
-<h1>Logistic growth models of SARS-CoV-2 lineage proportions<a class="headerlink" href="#Logistic-growth-models-of-SARS-CoV-2-lineage-proportions" title="Permalink to this headline">¶</a></h1>
+<h1>Logistic growth models of SARS-CoV-2 lineage proportions<a class="headerlink" href="#Logistic-growth-models-of-SARS-CoV-2-lineage-proportions" title="Permalink to this heading">¶</a></h1>
 <p>This notebook explores logistic growth models, with the goal of inferring the differential growth rates of different SARS-CoV-2 lineages over time. Before this tutorial you may want to familiarize yourself with <a class="reference external" href="http://pyro.ai/examples/intro_long.html">Pyro modeling basics</a> and <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a> in Pyro and PyTorch.</p>
 <p><strong>WARNING</strong>: The purpose of this tutorial is to demonstrate Pyro’s modeling and inference syntax. Making reliable inferences about SARS-CoV-2 <strong>is not</strong> the purpose of this tutorial.</p>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Overview">Overview</a></p></li>
 <li><p><a class="reference external" href="#Loading-data">Loading data</a></p></li>
@@ -497,7 +506,7 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="#Generalizations">Generalizations</a></p></li>
 </ul>
 <section id="Overview">
-<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
+<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">¶</a></h3>
 <p>When different strains/lineages/variants of a virus like SARS-CoV-2 circulate in a population, those lineages that have the largest fitness will tend to dominate, and those lineages that are least fit will tend to be outcompeted by the fittest lineages. In this tutorial we set out to infer (differential) growth rates for different SARS-CoV-2 lineages using a spatio-temporal dataset of SARS-CoV-2 genetic sequences. We’ll start with the simplest possible model and then move on to more complex
 models with hierarchical structure.</p>
 <div class="nbinput docutils container">
@@ -537,7 +546,7 @@ Using CPU
 </div>
 </section>
 <section id="Loading-data">
-<h3>Loading data<a class="headerlink" href="#Loading-data" title="Permalink to this headline">¶</a></h3>
+<h3>Loading data<a class="headerlink" href="#Loading-data" title="Permalink to this heading">¶</a></h3>
 <p>Our data consist of a few million genetic sequences of SARS-CoV-2 viruses, clustered into <a class="reference external" href="https://cov-lineages.org">PANGO lineages</a>, and aggregated into a few hundred regions globally and into 28-day time bins. Preprocessing was performed by Nextstrain’s <a class="reference external" href="https://docs.nextstrain.org/projects/ncov/en/latest/reference/remote_inputs.html">ncov</a> tool, and aggregation was performed by the Broad Institute’s
 <a class="reference external" href="https://github.com/broadinstitute/pyro-cov/blob/master/scripts/preprocess_nextstrain.py">pyro-cov</a> tool.</p>
 <div class="nbinput docutils container">
@@ -606,7 +615,7 @@ time_step_days: int
 </div>
 </div>
 <section id="Helpers-for-manipulating-data">
-<h4>Helpers for manipulating data<a class="headerlink" href="#Helpers-for-manipulating-data" title="Permalink to this headline">¶</a></h4>
+<h4>Helpers for manipulating data<a class="headerlink" href="#Helpers-for-manipulating-data" title="Permalink to this heading">¶</a></h4>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -632,7 +641,7 @@ time_step_days: int
 </section>
 </section>
 <section id="A-first-model">
-<h3>A first model<a class="headerlink" href="#A-first-model" title="Permalink to this headline">¶</a></h3>
+<h3>A first model<a class="headerlink" href="#A-first-model" title="Permalink to this heading">¶</a></h3>
 <p>First let’s zoom-in on Massachusetts and a few surrounding states:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -723,7 +732,7 @@ torch.Size([27, 2])
 </div>
 <p>We see that at first Alpha was dominant, but then Delta started outcompeting it until Delta became dominant.</p>
 <section id="Model-definition">
-<h4>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this headline">¶</a></h4>
+<h4>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this heading">¶</a></h4>
 <p>Instead of attempting to model how the total number of observed sequences varies as a function of time (which depends on complex human behavior), we instead model the <em>proportion</em> of sequences at each time step that are Alpha versus Delta. In other words if we observed 8 Alpha lineages and 2 Delta lineages at a given time step, we model the proportions 80% and 20% instead of the raw counts 8 and 2. To do this we use a <a class="reference external" href="https://en.wikipedia.org/wiki/Logistic_function">Logistic Growth</a> model
 with a <a class="reference external" href="https://pytorch.org/docs/stable/distributions.html#multinomial">Multinomial</a> distribution as the likelihood.</p>
 <div class="nbinput nblast docutils container">
@@ -781,7 +790,7 @@ with a <a class="reference external" href="https://pytorch.org/docs/stable/distr
 </div>
 </section>
 <section id="Define-a-helper-for-fitting-models">
-<h4>Define a helper for fitting models<a class="headerlink" href="#Define-a-helper-for-fitting-models" title="Permalink to this headline">¶</a></h4>
+<h4>Define a helper for fitting models<a class="headerlink" href="#Define-a-helper-for-fitting-models" title="Permalink to this heading">¶</a></h4>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
@@ -818,7 +827,7 @@ with a <a class="reference external" href="https://pytorch.org/docs/stable/distr
 </div>
 </section>
 <section id="Let’s-fit-basic_model-and-inspect-the-results">
-<h4>Let’s fit <code class="docutils literal notranslate"><span class="pre">basic_model</span></code> and inspect the results<a class="headerlink" href="#Let’s-fit-basic_model-and-inspect-the-results" title="Permalink to this headline">¶</a></h4>
+<h4>Let’s fit <code class="docutils literal notranslate"><span class="pre">basic_model</span></code> and inspect the results<a class="headerlink" href="#Let’s-fit-basic_model-and-inspect-the-results" title="Permalink to this heading">¶</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
@@ -856,7 +865,7 @@ Wall time: 4.73 s
 </section>
 </section>
 <section id="Let’s-inspect-the-posterior-means-of-our-latent-parameters:">
-<h2>Let’s inspect the posterior means of our latent parameters:<a class="headerlink" href="#Let’s-inspect-the-posterior-means-of-our-latent-parameters:" title="Permalink to this headline">¶</a></h2>
+<h2>Let’s inspect the posterior means of our latent parameters:<a class="headerlink" href="#Let’s-inspect-the-posterior-means-of-our-latent-parameters:" title="Permalink to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -895,7 +904,7 @@ Multiplicative advantage: 1.72
 </div>
 <p>This seems like it might be an overestimate. Can we get better estimates by modeling each spatial region individually?</p>
 <section id="A-regional-model">
-<h3>A regional model<a class="headerlink" href="#A-regional-model" title="Permalink to this headline">¶</a></h3>
+<h3>A regional model<a class="headerlink" href="#A-regional-model" title="Permalink to this heading">¶</a></h3>
 <p>Instead of focusing on northeastern US states we now consider the entire global dataset and do not aggregate across regions.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -1058,7 +1067,7 @@ Multiplicative advantage: 1.17
 <p>Notice this is a lower estimate than the previous global estimate.</p>
 </section>
 <section id="An-alternative-regional-model">
-<h3>An alternative regional model<a class="headerlink" href="#An-alternative-regional-model" title="Permalink to this headline">¶</a></h3>
+<h3>An alternative regional model<a class="headerlink" href="#An-alternative-regional-model" title="Permalink to this heading">¶</a></h3>
 <p>The regional model we defined above assumed that the <code class="docutils literal notranslate"><span class="pre">rate</span></code> for each lineage did not vary between regions. Here we add additional hierarchical structure and allow the rate to vary from region to region.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
@@ -1172,7 +1181,7 @@ Multiplicative advantage: 1.14
 </div>
 </section>
 <section id="Generalizations">
-<h3>Generalizations<a class="headerlink" href="#Generalizations" title="Permalink to this headline">¶</a></h3>
+<h3>Generalizations<a class="headerlink" href="#Generalizations" title="Permalink to this heading">¶</a></h3>
 <p>So far we’ve seen how to model two variants at a time either globally or split across multiple regions, and how to use <a class="reference external" href="https://docs.pyro.ai/en/stable/primitives.html#pyro.primitives.plate">pyro.plate</a> to model multiple variants or regions or times.</p>
 <p>What other models can you think of that might make epidemiological sense? Here are some ideas:</p>
 <ul class="simple">
