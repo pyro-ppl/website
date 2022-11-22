@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Compiled Sequential Importance Sampling &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Compiled Sequential Importance Sampling &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -96,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -481,7 +481,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Compiled-Sequential-Importance-Sampling">
-<h1>Compiled Sequential Importance Sampling<a class="headerlink" href="#Compiled-Sequential-Importance-Sampling" title="Permalink to this heading">¶</a></h1>
+<h1>Compiled Sequential Importance Sampling<a class="headerlink" href="#Compiled-Sequential-Importance-Sampling" title="Permalink to this headline">¶</a></h1>
 <p>Compiled sequential importance sampling [1], or inference compilation, is a technique to amortize the computational cost of inference by learning a proposal distribution for importance sampling.</p>
 <p>The proposal distribution is learned to minimise the KL divergence between the model and the guide, <span class="math notranslate nohighlight">\(\rm{KL}\!\left( p({\bf z} | {\bf x}) \lVert q_{\phi, x}({\bf z}) \right)\)</span>. This differs from variational inference, which would minimise <span class="math notranslate nohighlight">\(\rm{KL}\!\left( q_{\phi, x}({\bf z}) \lVert p({\bf z} | {\bf x}) \right)\)</span>. Using this loss encourages the approximate proposal distribution to be broader than the true posterior (mass covering), whereas variational inference typically learns a
 narrower approximation (mode seeking). Guides for importance sampling are usually desired to have heavier tails than the model (see this <a class="reference external" href="https://stats.stackexchange.com/questions/76798/in-importance-sampling-why-should-the-importance-density-have-heavier-tails">stackexchange question</a>). Therefore, the inference compilation loss is usually more suited to compiling a guide for importance sampling.</p>
@@ -507,7 +507,7 @@ narrower approximation (mode seeking). Guides for importance sampling are usuall
 </div>
 </div>
 <section id="Specify-the-model:">
-<h2>Specify the model:<a class="headerlink" href="#Specify-the-model:" title="Permalink to this heading">¶</a></h2>
+<h2>Specify the model:<a class="headerlink" href="#Specify-the-model:" title="Permalink to this headline">¶</a></h2>
 <p>The model is specified in the same way as any Pyro model, except that a keyword argument, <code class="docutils literal notranslate"><span class="pre">observations</span></code>, must be used to input a dictionary with each observation as a key. Since inference compilation involves learning to perform inference for any observed values, it is not important what the values in the dictionary are. <code class="docutils literal notranslate"><span class="pre">0</span></code> is used here.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -523,7 +523,7 @@ narrower approximation (mode seeking). Guides for importance sampling are usuall
 </div>
 </section>
 <section id="And-the-guide:">
-<h2>And the guide:<a class="headerlink" href="#And-the-guide:" title="Permalink to this heading">¶</a></h2>
+<h2>And the guide:<a class="headerlink" href="#And-the-guide:" title="Permalink to this headline">¶</a></h2>
 <p>The guide will be trained (a.k.a. compiled) to use the observed values to make proposal distributions for each unconditioned <code class="docutils literal notranslate"><span class="pre">sample</span></code> statement. In the paper [1], a neural network architecture is automatically generated for any model. However, for the implementation in Pyro the user must specify a task-specific guide program structure. As with any Pyro guide function, this should have the same call signature as the model. It must also encounter the same unobserved <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements as the
 model. So that the guide program can be trained to make good proposal distributions, the distributions at <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements should depend on the values in <code class="docutils literal notranslate"><span class="pre">observations</span></code>. In this example, a feed-forward neural network is used to map the observations to a proposal distribution for the latent variable.</p>
 <p><code class="docutils literal notranslate"><span class="pre">pyro.module</span></code> is called when the guide function is run so that the guide parameters can be found by the optimiser during training.</p>
@@ -561,7 +561,7 @@ model. So that the guide program can be trained to make good proposal distributi
 </div>
 </section>
 <section id="Now-create-a-CSIS-instance:">
-<h2>Now create a <code class="docutils literal notranslate"><span class="pre">CSIS</span></code> instance:<a class="headerlink" href="#Now-create-a-CSIS-instance:" title="Permalink to this heading">¶</a></h2>
+<h2>Now create a <code class="docutils literal notranslate"><span class="pre">CSIS</span></code> instance:<a class="headerlink" href="#Now-create-a-CSIS-instance:" title="Permalink to this headline">¶</a></h2>
 <p>The object is initialised with the model; the guide; a PyTorch optimiser for training the guide; and the number of importance-weighted samples to draw when performing inference. The guide will be optimised for a particular value of the model/guide argument, <code class="docutils literal notranslate"><span class="pre">prior_mean</span></code>, so we use the value set here throughout training and inference.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -575,7 +575,7 @@ model. So that the guide program can be trained to make good proposal distributi
 </div>
 </section>
 <section id="Now-we-‘compile’-the-instance-to-perform-inference-on-this-model:">
-<h2>Now we ‘compile’ the instance to perform inference on this model:<a class="headerlink" href="#Now-we-‘compile’-the-instance-to-perform-inference-on-this-model:" title="Permalink to this heading">¶</a></h2>
+<h2>Now we ‘compile’ the instance to perform inference on this model:<a class="headerlink" href="#Now-we-‘compile’-the-instance-to-perform-inference-on-this-model:" title="Permalink to this headline">¶</a></h2>
 <p>The arguments given to <code class="docutils literal notranslate"><span class="pre">csis.step</span></code> are passed to the model and guide when they are run to evaluate the loss.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -588,7 +588,7 @@ model. So that the guide program can be trained to make good proposal distributi
 </div>
 </section>
 <section id="And-now-perform-inference-by-importance-sampling:">
-<h2>And now perform inference by importance sampling:<a class="headerlink" href="#And-now-perform-inference-by-importance-sampling:" title="Permalink to this heading">¶</a></h2>
+<h2>And now perform inference by importance sampling:<a class="headerlink" href="#And-now-perform-inference-by-importance-sampling:" title="Permalink to this headline">¶</a></h2>
 <p>The compiled guide program should now be able to propose a distribution for <code class="docutils literal notranslate"><span class="pre">z</span></code> that approximates the posterior, <span class="math notranslate nohighlight">\(p(z | x_1, x_2)\)</span>, for any <span class="math notranslate nohighlight">\(x_1, x_2\)</span>. The same <code class="docutils literal notranslate"><span class="pre">prior_mean</span></code> is entered again, as well as the observed values inside <code class="docutils literal notranslate"><span class="pre">observations</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -603,7 +603,7 @@ model. So that the guide program can be trained to make good proposal distributi
 </div>
 </section>
 <section id="We-now-plot-the-results-and-compare-with-importance-sampling:">
-<h2>We now plot the results and compare with importance sampling:<a class="headerlink" href="#We-now-plot-the-results-and-compare-with-importance-sampling:" title="Permalink to this heading">¶</a></h2>
+<h2>We now plot the results and compare with importance sampling:<a class="headerlink" href="#We-now-plot-the-results-and-compare-with-importance-sampling:" title="Permalink to this headline">¶</a></h2>
 <p>We observe <span class="math notranslate nohighlight">\(x_1 = 8\)</span> and <span class="math notranslate nohighlight">\(x_2 = 9\)</span>. Inference is performed by taking 50 samples using CSIS, and 50 using importance sampling from the prior. We then plot the resulting approximations to the posterior distributions, along with the analytic posterior.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -658,7 +658,7 @@ model. So that the guide program can be trained to make good proposal distributi
 <p>Using <span class="math notranslate nohighlight">\(x_1 = 8\)</span> and <span class="math notranslate nohighlight">\(x_2 = 9\)</span> gives a posterior far from the prior, and so using the prior as a guide for importance sampling is inefficient, giving a very small effective sample size. By first learning a suitable guide function, CSIS has a proposal distribution much more closely matched to the true posterior. This allows samples to be drawn with far better coverage of the true posterior, and greater effective sample size, as shown in the graph above.</p>
 <p>For other examples of inference compilation, see [1] or <a class="reference external" href="https://github.com/probprog/anglican-infcomp-examples">https://github.com/probprog/anglican-infcomp-examples</a>.</p>
 <section id="References">
-<h3>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h3>
+<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Inference</span> <span class="pre">compilation</span> <span class="pre">and</span> <span class="pre">universal</span> <span class="pre">probabilistic</span> <span class="pre">programming</span></code>,     Tuan Anh Le, Atilim Gunes Baydin, and Frank Wood</p>
 </section>
 </section>

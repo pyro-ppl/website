@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Boosting Black Box Variational Inference &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Boosting Black Box Variational Inference &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -24,7 +23,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Example: Neural MCMC with NeuTraReparam" href="neutra.html" />
-    <link rel="prev" title="Writing guides using EasyGuide" href="easyguide.html" /> 
+    <link rel="prev" title="Customizing SVI objectives and training loops" href="custom_objectives.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -96,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Boosting Black Box Variational Inference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Contents">Contents</a></li>
@@ -491,14 +491,14 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Boosting-Black-Box-Variational-Inference">
-<h1>Boosting Black Box Variational Inference<a class="headerlink" href="#Boosting-Black-Box-Variational-Inference" title="Permalink to this heading">¶</a></h1>
+<h1>Boosting Black Box Variational Inference<a class="headerlink" href="#Boosting-Black-Box-Variational-Inference" title="Permalink to this headline">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p>This tutorial demonstrates how to implement boosting black box Variational Inference [1] in Pyro. In boosting Variational Inference [2], we approximate a target distribution with an iteratively selected mixture of densities. In cases where a single denisity provided by regular Variational Inference doesn’t adequately approximate a target density, boosting VI thus offers a simple way of getting more complex approximations. We show how this can be implemented as a relatively straightforward
 extension of Pyro’s SVI.</p>
 </section>
 <section id="Contents">
-<h2>Contents<a class="headerlink" href="#Contents" title="Permalink to this heading">¶</a></h2>
+<h2>Contents<a class="headerlink" href="#Contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#theoretical-background">Theoretical Background</a></p>
 <ul>
@@ -518,9 +518,9 @@ extension of Pyro’s SVI.</p>
 </ul>
 </section>
 <section id="Theoretical-Background">
-<h2>Theoretical Background<a class="headerlink" href="#Theoretical-Background" title="Permalink to this heading">¶</a></h2>
+<h2>Theoretical Background<a class="headerlink" href="#Theoretical-Background" title="Permalink to this headline">¶</a></h2>
 <section id="Variational-Inference">
-<h3>Variational Inference<a class="headerlink" href="#Variational-Inference" title="Permalink to this heading">¶</a></h3>
+<h3>Variational Inference<a class="headerlink" href="#Variational-Inference" title="Permalink to this headline">¶</a></h3>
 <p>For an introduction to regular Variational Inference, we recommend having a look at <a class="reference external" href="https://pyro.ai/examples/svi_part_i.html">the tutorial on SVI in Pyro</a> and this excellent review [3].</p>
 <p>Briefly, Variational Inference allows us to find approximations of probability densities which are intractable to compute analytically. For instance, one might have observed variables <span class="math notranslate nohighlight">\(\textbf{x}\)</span>, latent variables <span class="math notranslate nohighlight">\(\textbf{z}\)</span> and a joint distribution <span class="math notranslate nohighlight">\(p(\textbf{x}, \textbf{z})\)</span>. One can then use Variational Inference to approximate <span class="math notranslate nohighlight">\(p(\textbf{z}|\textbf{x})\)</span>. To do so, one first chooses a set of tractable densities, a variational family, and then tries to find the
 element of this set which most closely approximates the target distribution <span class="math notranslate nohighlight">\(p(\textbf{z}|\textbf{x})\)</span>. This approximating density is found by maximizing the Evidence Lower BOund (ELBO):</p>
@@ -529,7 +529,7 @@ element of this set which most closely approximates the target distribution <spa
 <p>where <span class="math notranslate nohighlight">\(q(\mathbf{z})\)</span> is the approximating density.</p>
 </section>
 <section id="id1">
-<h3>Boosting Black Box Variational Inference<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
+<h3>Boosting Black Box Variational Inference<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>In boosting black box Variational inference (BBBVI), we approximate the target density with a mixture of densities from the variational family:</p>
 <div class="math notranslate nohighlight">
 \[q^t(\mathbf{z}) = \sum_{i=1}^t \gamma_i s_i(\mathbf{z})\]</div>
@@ -546,7 +546,7 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 </section>
 </section>
 <section id="BBBVI-in-Pyro">
-<h2>BBBVI in Pyro<a class="headerlink" href="#BBBVI-in-Pyro" title="Permalink to this heading">¶</a></h2>
+<h2>BBBVI in Pyro<a class="headerlink" href="#BBBVI-in-Pyro" title="Permalink to this headline">¶</a></h2>
 <p>To implement boosting black box variational inference in Pyro, we need to consider the following points: 1. The approximation components <span class="math notranslate nohighlight">\(s_{t}(\mathbf{z})\)</span> (guides). 2. The RELBO. 3. The approximation itself <span class="math notranslate nohighlight">\(q^t(\mathbf{z})\)</span>. 4. Using Pyro’s SVI to find new components of the approximation.</p>
 <p>We will illustrate these points by looking at simple example: approximating a bimodal posterior.</p>
 <div class="nbinput nblast docutils container">
@@ -571,7 +571,7 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 </div>
 </div>
 <section id="The-Model">
-<h3>The Model<a class="headerlink" href="#The-Model" title="Permalink to this heading">¶</a></h3>
+<h3>The Model<a class="headerlink" href="#The-Model" title="Permalink to this headline">¶</a></h3>
 <p>Boosting BBVI is particularly useful when we want to approximate multimodal distributions. In this tutorial, we’ll thus consider the following model:</p>
 <div class="math notranslate nohighlight">
 \[\mathbf{z} \sim \mathcal{N}(0,5)\]</div>
@@ -596,7 +596,7 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 </div>
 </section>
 <section id="The-Guide">
-<h3>The Guide<a class="headerlink" href="#The-Guide" title="Permalink to this heading">¶</a></h3>
+<h3>The Guide<a class="headerlink" href="#The-Guide" title="Permalink to this headline">¶</a></h3>
 <p>Next, we specify the guide which in our case will make up the components of our mixture. Recall that in Pyro the guide needs to take the same arguments as the model which is why our guide function also takes the data as an input.</p>
 <p>We also need to make sure that every <code class="docutils literal notranslate"><span class="pre">pyro.sample()</span></code> statement from the model has a matching <code class="docutils literal notranslate"><span class="pre">pyro.sample()</span></code> statement in the guide. In our case, we include <code class="docutils literal notranslate"><span class="pre">z</span></code> in both the model and the guide.</p>
 <p>In contrast to regular SVI, our guide takes an additional argument: <code class="docutils literal notranslate"><span class="pre">index</span></code>. Having this argument allows us to easily create new guides in each iteration of the greedy algorithm. Specifically, we make use of <code class="docutils literal notranslate"><span class="pre">partial()</span></code> from the <a class="reference external" href="https://docs.python.org/3.7/library/functools.html">functools library</a> to create guides which only take <code class="docutils literal notranslate"><span class="pre">data</span></code> as an argument. The statement <code class="docutils literal notranslate"><span class="pre">partial(guide,</span> <span class="pre">index=t)</span></code> creates a guide that will take only <code class="docutils literal notranslate"><span class="pre">data</span></code> as an input and which has trainable parameters
@@ -615,7 +615,7 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 </div>
 </section>
 <section id="The-RELBO">
-<h3>The RELBO<a class="headerlink" href="#The-RELBO" title="Permalink to this heading">¶</a></h3>
+<h3>The RELBO<a class="headerlink" href="#The-RELBO" title="Permalink to this headline">¶</a></h3>
 <p>We implement the RELBO as a function which can be passed to Pyro’s SVI class in place of ELBO to find the approximation components <span class="math notranslate nohighlight">\(s_t(z)\)</span>. Recall that the RELBO has the following form:</p>
 <div class="math notranslate nohighlight">
 \[\mathbb{E}_s[\log p(\mathbf{x},\mathbf{z})] - \lambda \mathbb{E}_s[\log s(\mathbf{z})] - \mathbb{E}_s[\log q^t(\mathbf{z})]\]</div>
@@ -653,7 +653,7 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 </div>
 </section>
 <section id="The-Approximation">
-<h3>The Approximation<a class="headerlink" href="#The-Approximation" title="Permalink to this heading">¶</a></h3>
+<h3>The Approximation<a class="headerlink" href="#The-Approximation" title="Permalink to this headline">¶</a></h3>
 <p>Our implementation of the approximation <span class="math notranslate nohighlight">\(q^t(z) = \sum_{i=1}^t \gamma_i s_i(z)\)</span> consists of a list of components, i.e. the guides from the greedy selection steps, and a list containing the mixture weights of the components. To sample from the approximation, we thus first sample a component according to the mixture weights. In a second step, we draw a sample from the corresponding component.</p>
 <p>Similarly as with the guide, we use <code class="docutils literal notranslate"><span class="pre">partial(approximation,</span> <span class="pre">components=components,</span> <span class="pre">weights=weights)</span></code> to get an approximation function which has the same signature as the model.</p>
 <div class="nbinput nblast docutils container">
@@ -669,7 +669,7 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 </div>
 </section>
 <section id="The-Greedy-Algorithm">
-<h3>The Greedy Algorithm<a class="headerlink" href="#The-Greedy-Algorithm" title="Permalink to this heading">¶</a></h3>
+<h3>The Greedy Algorithm<a class="headerlink" href="#The-Greedy-Algorithm" title="Permalink to this headline">¶</a></h3>
 <p>We now have all the necessary parts to implement the greedy algorithm. First, we initialize the approximation:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
@@ -789,7 +789,7 @@ scale = 0.06008879840373993
 </section>
 </section>
 <section id="The-Complete-Implementation">
-<h2>The Complete Implementation<a class="headerlink" href="#The-Complete-Implementation" title="Permalink to this heading">¶</a></h2>
+<h2>The Complete Implementation<a class="headerlink" href="#The-Complete-Implementation" title="Permalink to this headline">¶</a></h2>
 <p>Putting all the components together, we then get the complete implementation of boosting black box Variational Inference:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
@@ -958,7 +958,7 @@ scale = 0.01308442372828722
 </div>
 </div>
 <section id="References">
-<h3>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h3>
+<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
 <p>[1] Locatello, Francesco, et al. “Boosting black box variational inference.” Advances in Neural Information Processing Systems. 2018.</p>
 <p>[2] Ranganath, Rajesh, Sean Gerrish, and David Blei. “Black box variational inference.” Artificial Intelligence and Statistics. 2014.</p>
 <p>[3] Blei, David M., Alp Kucukelbir, and Jon D. McAuliffe. “Variational inference: A review for statisticians.” Journal of the American statistical Association 112.518 (2017): 859-877.</p>
@@ -970,7 +970,7 @@ scale = 0.01308442372828722
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="easyguide.html" class="btn btn-neutral float-left" title="Writing guides using EasyGuide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="custom_objectives.html" class="btn btn-neutral float-left" title="Customizing SVI objectives and training loops" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="neutra.html" class="btn btn-neutral float-right" title="Example: Neural MCMC with NeuTraReparam" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

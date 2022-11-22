@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -96,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -484,7 +484,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Designing-Adaptive-Experiments-to-Study-Working-Memory">
-<h1>Designing Adaptive Experiments to Study Working Memory<a class="headerlink" href="#Designing-Adaptive-Experiments-to-Study-Working-Memory" title="Permalink to this heading">¶</a></h1>
+<h1>Designing Adaptive Experiments to Study Working Memory<a class="headerlink" href="#Designing-Adaptive-Experiments-to-Study-Working-Memory" title="Permalink to this headline">¶</a></h1>
 <p>In most of machine learning, we begin with data and go on to learn a model. In other contexts, we also have a hand in the data generation process. This gives us an exciting opportunity: we can try to obtain data that will help our model learn more effectively. This procedure is called <em>optimal experimental design</em> (OED) and Pyro supports choosing optimal designs through the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.oed</span></code> module.</p>
 <p>When using OED, the data generation and modelling works as follows:</p>
 <ol class="arabic simple">
@@ -495,7 +495,7 @@ div.rendered_html tbody tr:hover {
 <p>We can also run multiple ‘rounds’ or iterations of experiments. When doing this, we take the learned model from step 3 and use it as our prior in step 1 for the next round. This approach can be particularly useful because it allows us to design the next experiment based on what has already been learned: the experiments are <em>adaptive</em>.</p>
 <p>In this tutorial, we work through a specific example of this entire OED procedure with multiple rounds. We will show how to design adaptive experiments to learn a participant’s working memory capacity. The design we will be adapting is the <em>length of a sequence of digits that we ask a participant to remember</em>. Let’s dive into the full details.</p>
 <section id="The-experiment-set-up">
-<h2>The experiment set-up<a class="headerlink" href="#The-experiment-set-up" title="Permalink to this heading">¶</a></h2>
+<h2>The experiment set-up<a class="headerlink" href="#The-experiment-set-up" title="Permalink to this headline">¶</a></h2>
 <p>Suppose you, the participant, are shown a sequence of digits</p>
 <div class="math notranslate nohighlight">
 \[1\ 4\ 7\ 0\ 9\]</div>
@@ -504,7 +504,7 @@ div.rendered_html tbody tr:hover {
 \[6\ 5\ 0\ 2\ 8\ 0 .\]</div>
 <p>The longest sequence that you can remember is your working memory capacity. In this tutorial, we build a Bayesian model for working memory, and use it to run an adaptive sequence of experiments that very quickly learn someone’s working memory capacity.</p>
 <section id="A-model-of-working-memory">
-<h3>A model of working memory<a class="headerlink" href="#A-model-of-working-memory" title="Permalink to this heading">¶</a></h3>
+<h3>A model of working memory<a class="headerlink" href="#A-model-of-working-memory" title="Permalink to this headline">¶</a></h3>
 <p>Our model for a single round of the digits experiment described above has three components: the length <span class="math notranslate nohighlight">\(l\)</span> of the sequence that the participant has to remember, the participant’s true working memory capacity <span class="math notranslate nohighlight">\(\theta\)</span>, and the outcome of the experiment <span class="math notranslate nohighlight">\(y\)</span> which indicates whether they were able to remember the sequence successfully (<span class="math notranslate nohighlight">\(y=1\)</span>) or not (<span class="math notranslate nohighlight">\(y=0\)</span>). We choose a prior for working memory capacity based on the (in)famous “The magical number seven, plus or minus
 two” [1].</p>
 <p><strong>Note</strong>: <span class="math notranslate nohighlight">\(\theta\)</span> actually represents the point where the participant has a 50/50 chance of remembering the sequence correctly.</p>
@@ -574,7 +574,7 @@ two” [1].</p>
 </div>
 </section>
 <section id="Inference-in-the-model">
-<h3>Inference in the model<a class="headerlink" href="#Inference-in-the-model" title="Permalink to this heading">¶</a></h3>
+<h3>Inference in the model<a class="headerlink" href="#Inference-in-the-model" title="Permalink to this headline">¶</a></h3>
 <p>With the model in hand, we quickly demonstrate variational inference in Pyro for this model. We define a Normal guide for variational inference.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -662,7 +662,7 @@ Posterior: N(7.749, 1.282)
 <p>Under our posterior, we can see that we have an updated estimate for the participant’s working memory capacity, and our uncertainty has now decreased.</p>
 </section>
 <section id="Bayesian-optimal-experimental-design">
-<h3>Bayesian optimal experimental design<a class="headerlink" href="#Bayesian-optimal-experimental-design" title="Permalink to this heading">¶</a></h3>
+<h3>Bayesian optimal experimental design<a class="headerlink" href="#Bayesian-optimal-experimental-design" title="Permalink to this headline">¶</a></h3>
 <p>So far so standard. In the previous example, the lengths <code class="docutils literal notranslate"><span class="pre">l_data</span></code> were not chosen with a great deal of forethought. Fortunately, in a setting like this, it is possible to use a more sophisticated strategy to choose the sequence lengths to make the most of every question we ask.</p>
 <p>We do this using Bayesian optimal experimental design (BOED). In BOED, we are interested in designing experiments that maximise the information gain, which is defined formally as</p>
 <div class="math notranslate nohighlight">
@@ -678,7 +678,7 @@ Posterior: N(7.749, 1.282)
 </section>
 </section>
 <section id="Optimal-experimental-design-in-Pyro">
-<h2>Optimal experimental design in Pyro<a class="headerlink" href="#Optimal-experimental-design-in-Pyro" title="Permalink to this heading">¶</a></h2>
+<h2>Optimal experimental design in Pyro<a class="headerlink" href="#Optimal-experimental-design-in-Pyro" title="Permalink to this headline">¶</a></h2>
 <p>Fortunately, Pyro comes ready with tools to estimate the EIG. All we have to do is define the “marginal guide” <span class="math notranslate nohighlight">\(q(y|l)\)</span> in the formula above.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -796,7 +796,7 @@ Optimal design: 7
 </div>
 <p>The elements of this fitted tensor represent the marginal over <span class="math notranslate nohighlight">\(y\)</span>, for each possible sequence length <span class="math notranslate nohighlight">\(l\)</span> in <code class="docutils literal notranslate"><span class="pre">candidate_designs</span></code>. We have marginalised out the unknown <span class="math notranslate nohighlight">\(\theta\)</span> so this fitted tensor shows the probabilities for an ‘average’ participant.</p>
 <section id="The-adaptive-experiment">
-<h3>The adaptive experiment<a class="headerlink" href="#The-adaptive-experiment" title="Permalink to this heading">¶</a></h3>
+<h3>The adaptive experiment<a class="headerlink" href="#The-adaptive-experiment" title="Permalink to this headline">¶</a></h3>
 <p>We now have the ingredients to build an adaptive experiment to study working memory. We repeat the following steps:</p>
 <ol class="arabic simple">
 <li><p>Use the EIG to find the optimal sequence length <span class="math notranslate nohighlight">\(l\)</span></p></li>
@@ -1034,7 +1034,7 @@ Estimate of θ: 5.434 ± 0.640
 <p>Although both design strategies give us data, the optimal strategy ends up with a posterior distribution that is more peaked: that means we have greater confidence in our final answer, or may be able to stop experimenting earlier.</p>
 </section>
 <section id="Extensions">
-<h3>Extensions<a class="headerlink" href="#Extensions" title="Permalink to this heading">¶</a></h3>
+<h3>Extensions<a class="headerlink" href="#Extensions" title="Permalink to this headline">¶</a></h3>
 <p>In this tutorial we used variational inference to fit an approximate posterior for <span class="math notranslate nohighlight">\(\theta\)</span>. This could be substituted for an alternative posterior inference strategy, such as Hamiltonian Monte Carlo.</p>
 <p>The model in this tutorial is very simple and could be extended in a number of ways. For instance, it’s possible that as well as measuring whether the participant did or did not remember the sequence, we might collect some other information as well. We could build a model for the number of mistakes made (e.g. the edit distance between the correct sequence and the participant’s response) or jointly model the correctness and the time taken to respond. Here is an example model where we model the
 response time using a LogNormal distribution, as suggested by [4].</p>
@@ -1060,7 +1060,7 @@ response time using a LogNormal distribution, as suggested by [4].</p>
 means to select the optimal design in such scenarios.</p>
 </section>
 <section id="References">
-<h3>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h3>
+<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
 <p>[1] Miller, G.A., 1956. <strong>The magical number seven, plus or minus two: Some limits on our capacity for processing information.</strong> Psychological review, 63(2), p.81.</p>
 <p>[2] Chaloner, K. and Verdinelli, I., 1995. <strong>Bayesian experimental design: A review.</strong> Statistical Science, pp.273-304.</p>
 <p>[3] Foster, A., Jankowiak, M., Bingham, E., Horsfall, P., Teh, Y.W., Rainforth, T. and Goodman, N., 2019. <strong>Variational Bayesian Optimal Experimental Design.</strong> Advances in Neural Information Processing Systems 2019 (to appear).</p>

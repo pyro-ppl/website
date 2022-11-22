@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bayesian Regression - Inference Algorithms (Part 2) &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Bayesian Regression - Inference Algorithms (Part 2) &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -105,6 +104,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -479,7 +479,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Bayesian-Regression---Inference-Algorithms-(Part-2)">
-<h1>Bayesian Regression - Inference Algorithms (Part 2)<a class="headerlink" href="#Bayesian-Regression---Inference-Algorithms-(Part-2)" title="Permalink to this heading">¶</a></h1>
+<h1>Bayesian Regression - Inference Algorithms (Part 2)<a class="headerlink" href="#Bayesian-Regression---Inference-Algorithms-(Part-2)" title="Permalink to this headline">¶</a></h1>
 <p>In <a class="reference internal" href="bayesian_regression.html"><span class="doc">Part I</span></a>, we looked at how to perform inference on a simple Bayesian linear regression model using SVI. In this tutorial, we’ll explore more expressive guides as well as exact inference techniques. We’ll use the same dataset as before.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -508,7 +508,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">import</span> <span class="nn">pyro.optim</span> <span class="k">as</span> <span class="nn">optim</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -528,11 +528,11 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Bayesian-Linear-Regression">
-<h2>Bayesian Linear Regression<a class="headerlink" href="#Bayesian-Linear-Regression" title="Permalink to this heading">¶</a></h2>
+<h2>Bayesian Linear Regression<a class="headerlink" href="#Bayesian-Linear-Regression" title="Permalink to this headline">¶</a></h2>
 <p>Our goal is once again to predict log GDP per capita of a nation as a function of two features from the dataset - whether the nation is in Africa, and its Terrain Ruggedness Index, but we will explore more expressive guides.</p>
 </section>
 <section id="Model-+-Guide">
-<h2>Model + Guide<a class="headerlink" href="#Model-+-Guide" title="Permalink to this heading">¶</a></h2>
+<h2>Model + Guide<a class="headerlink" href="#Model-+-Guide" title="Permalink to this headline">¶</a></h2>
 <p>We will write out the model again, similar to that in <a class="reference internal" href="bayesian_regression.html"><span class="doc">Part I</span></a>, but explicitly without the use of <code class="docutils literal notranslate"><span class="pre">PyroModule</span></code>. We will write out each term in the regression, using the same priors. <code class="docutils literal notranslate"><span class="pre">bA</span></code> and <code class="docutils literal notranslate"><span class="pre">bR</span></code> are regression coefficients corresponding to <code class="docutils literal notranslate"><span class="pre">is_cont_africa</span></code> and <code class="docutils literal notranslate"><span class="pre">ruggedness</span></code>, <code class="docutils literal notranslate"><span class="pre">a</span></code> is the intercept, and <code class="docutils literal notranslate"><span class="pre">bAR</span></code> is the correlating factor between the two features.</p>
 <p>Writing down a guide will proceed in close analogy to the construction of our model, with the key difference that the guide parameters need to be trainable. To do this we register the guide parameters in the ParamStore using <code class="docutils literal notranslate"><span class="pre">pyro.param()</span></code>. Note the positive constraints on scale parameters.</p>
 <div class="nbinput nblast docutils container">
@@ -590,7 +590,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="SVI">
-<h2>SVI<a class="headerlink" href="#SVI" title="Permalink to this heading">¶</a></h2>
+<h2>SVI<a class="headerlink" href="#SVI" title="Permalink to this headline">¶</a></h2>
 <p>As before, we will use SVI to perform inference.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -686,7 +686,7 @@ Site: sigma
 </div>
 </section>
 <section id="HMC">
-<h2>HMC<a class="headerlink" href="#HMC" title="Permalink to this heading">¶</a></h2>
+<h2>HMC<a class="headerlink" href="#HMC" title="Permalink to this headline">¶</a></h2>
 <p>In contrast to using variational inference which gives us an approximate posterior over our latent variables, we can also do exact inference using <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html">Markov Chain Monte Carlo</a> (MCMC), a class of algorithms that in the limit, allow us to draw unbiased samples from the true posterior. The algorithm that we will be using is called the No-U Turn Sampler (NUTS) [1], which provides an efficient and automated way of running Hamiltonian Monte Carlo. It is slightly
 slower than variational inference, but provides an exact estimate.</p>
 <div class="nbinput docutils container">
@@ -752,7 +752,7 @@ Site: sigma
 </div>
 </section>
 <section id="Comparing-Posterior-Distributions">
-<h2>Comparing Posterior Distributions<a class="headerlink" href="#Comparing-Posterior-Distributions" title="Permalink to this heading">¶</a></h2>
+<h2>Comparing Posterior Distributions<a class="headerlink" href="#Comparing-Posterior-Distributions" title="Permalink to this headline">¶</a></h2>
 <p>Let us compare the posterior distribution of the latent variables that we obtained from variational inference with those from Hamiltonian Monte Carlo. As can be seen below, for Variational Inference, the marginal distribution of the different regression coefficients is under-dispersed w.r.t. the true posterior (from HMC). This is an artifact of the <em>KL(q||p)</em> loss (the KL divergence of the true posterior from the approximate posterior) that is minimized by Variational Inference.</p>
 <p>This can be better seen when we plot different cross sections from the joint posterior distribution overlaid with the approximate posterior from variational inference. Note that since our variational family has diagonal covariance, we cannot model any correlation between the latents and the resulting approximation is overconfident (under-dispersed)</p>
 <div class="nbinput docutils container">
@@ -806,7 +806,7 @@ Site: sigma
 </div>
 </section>
 <section id="MultivariateNormal-Guide">
-<h2>MultivariateNormal Guide<a class="headerlink" href="#MultivariateNormal-Guide" title="Permalink to this heading">¶</a></h2>
+<h2>MultivariateNormal Guide<a class="headerlink" href="#MultivariateNormal-Guide" title="Permalink to this headline">¶</a></h2>
 <p>As comparison to the previously obtained results from Diagonal Normal guide, we will now use a guide that generates samples from a Cholesky factorization of a multivariate normal distribution. This allows us to capture the correlations between the latent variables via a covariance matrix. If we wrote this manually, we would need to combine all the latent variables so we could sample a Multivarite Normal jointly.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -928,7 +928,7 @@ Elbo loss: 249.86634194850922
 </div>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1] Hoffman, Matthew D., and Andrew Gelman. “The No-U-turn sampler: adaptively setting path lengths in Hamiltonian Monte Carlo.” Journal of Machine Learning Research 15.1 (2014): 1593-1623. <a class="reference external" href="https://arxiv.org/abs/1111.4246">https://arxiv.org/abs/1111.4246</a>.</p>
 </section>
 </section>

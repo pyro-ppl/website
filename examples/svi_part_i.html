@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -109,6 +108,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -483,10 +483,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="SVI-Part-I:-An-Introduction-to-Stochastic-Variational-Inference-in-Pyro">
-<h1>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro<a class="headerlink" href="#SVI-Part-I:-An-Introduction-to-Stochastic-Variational-Inference-in-Pyro" title="Permalink to this heading">¶</a></h1>
+<h1>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro<a class="headerlink" href="#SVI-Part-I:-An-Introduction-to-Stochastic-Variational-Inference-in-Pyro" title="Permalink to this headline">¶</a></h1>
 <p>Pyro has been designed with particular attention paid to supporting stochastic variational inference as a general purpose inference algorithm. Let’s see how we go about doing variational inference in Pyro.</p>
 <section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this heading">¶</a></h2>
+<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this headline">¶</a></h2>
 <p>We’re going to assume we’ve already defined our model in Pyro (for more details on how this is done see <a class="reference internal" href="intro_long.html"><span class="doc">Introduction to Pyro</span></a>). As a quick reminder, the model is given as a stochastic function <code class="docutils literal notranslate"><span class="pre">model(*args,</span> <span class="pre">**kwargs)</span></code>, which, in the general case takes arguments. The different pieces of <code class="docutils literal notranslate"><span class="pre">model()</span></code> are encoded via the mapping:</p>
 <ol class="arabic simple">
 <li><p>observations <span class="math notranslate nohighlight">\(\Longleftrightarrow\)</span> <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> with the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument</p></li>
@@ -504,7 +504,7 @@ div.rendered_html tbody tr:hover {
 </ol>
 </section>
 <section id="Model-Learning">
-<h2>Model Learning<a class="headerlink" href="#Model-Learning" title="Permalink to this heading">¶</a></h2>
+<h2>Model Learning<a class="headerlink" href="#Model-Learning" title="Permalink to this headline">¶</a></h2>
 <p>In this context our criterion for learning a good model will be maximizing the log evidence, i.e. we want to find the value of <span class="math notranslate nohighlight">\(\theta\)</span> given by</p>
 <div class="math notranslate nohighlight">
 \[\theta_{\rm{max}} = \underset{\theta}{\operatorname{argmax}} \log p_{\theta}({\bf x})\]</div>
@@ -519,7 +519,7 @@ div.rendered_html tbody tr:hover {
 <p>Note that the denominator of this expression is the (usually intractable) evidence. Variational inference offers a scheme for finding <span class="math notranslate nohighlight">\(\theta_{\rm{max}}\)</span> and computing an approximation to the posterior <span class="math notranslate nohighlight">\(p_{\theta_{\rm{max}}}({\bf z} | {\bf x})\)</span>. Let’s see how that works.</p>
 </section>
 <section id="Guide">
-<h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this heading">¶</a></h2>
+<h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this headline">¶</a></h2>
 <p>The basic idea is that we introduce a parameterized distribution <span class="math notranslate nohighlight">\(q_{\phi}({\bf z})\)</span>, where <span class="math notranslate nohighlight">\(\phi\)</span> are known as the variational parameters. This distribution is called the variational distribution in much of the literature, and in the context of Pyro it’s called the <strong>guide</strong> (one syllable instead of nine!). The guide will serve as an approximation to the posterior. We can think of <span class="math notranslate nohighlight">\(\phi\)</span> as parameterizing a space or family of probability distributions. Our goal will be to find
 the (not necessarily unique) probability distribution in that space that is the best possible approximation to the posterior distribution.</p>
 <p>Just like the model, the guide is encoded as a stochastic function <code class="docutils literal notranslate"><span class="pre">guide()</span></code> that contains <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> statements. It does <em>not</em> contain observed data, since the guide needs to be a properly normalized distribution. Note that Pyro enforces that <code class="docutils literal notranslate"><span class="pre">model()</span></code> and <code class="docutils literal notranslate"><span class="pre">guide()</span></code> have the same call signature, i.e. both callables should take the same arguments.</p>
@@ -538,7 +538,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 <p>Once we’ve specified a guide (we give some explicit examples below), we’re ready to proceed to inference. Learning will be setup as an optimization problem where each iteration of training takes a step in <span class="math notranslate nohighlight">\(\theta-\phi\)</span> space that moves the guide closer to the exact posterior. To do this we need to define an appropriate objective function.</p>
 </section>
 <section id="ELBO">
-<h2>ELBO<a class="headerlink" href="#ELBO" title="Permalink to this heading">¶</a></h2>
+<h2>ELBO<a class="headerlink" href="#ELBO" title="Permalink to this headline">¶</a></h2>
 <p>A simple derivation (for example see reference [1]) yields what we’re after: the evidence lower bound (ELBO). The ELBO, which is a function of both <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span>, is defined as an expectation w.r.t. to samples from the guide:</p>
 <div class="math notranslate nohighlight">
 \[{\rm ELBO} \equiv \mathbb{E}_{q_{\phi}({\bf z})} \left [
@@ -556,7 +556,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 <p>So at high level variational inference is easy: all we need to do is define a guide and compute gradients of the ELBO. Actually, computing gradients for general model and guide pairs leads to some complications (see the tutorial <a class="reference internal" href="svi_part_iii.html"><span class="doc">SVI Part III</span></a> for a discussion). For the purposes of this tutorial, let’s consider that a solved problem and look at the support that Pyro provides for doing variational inference.</p>
 </section>
 <section id="SVI-Class">
-<h2><code class="docutils literal notranslate"><span class="pre">SVI</span></code> Class<a class="headerlink" href="#SVI-Class" title="Permalink to this heading">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">SVI</span></code> Class<a class="headerlink" href="#SVI-Class" title="Permalink to this headline">¶</a></h2>
 <p>In Pyro the machinery for doing variational inference is encapsulated in the <code class="docutils literal notranslate"><span class="pre">`SVI</span></code> &lt;<a class="reference external" href="https://docs.pyro.ai/en/stable/inference_algos.html?highlight=svi">https://docs.pyro.ai/en/stable/inference_algos.html?highlight=svi</a>&gt;`__ class.</p>
 <p>The user needs to provide three things: the model, the guide, and an optimizer. We’ve discussed the model and guide above and we’ll discuss the optimizer in some detail below, so let’s assume we have all three ingredients at hand. To construct an instance of <code class="docutils literal notranslate"><span class="pre">SVI</span></code> that will do optimization via the ELBO objective, the user writes</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro</span>
@@ -572,7 +572,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 <p>For the case where the loss is the ELBO, both methods also accept an optional argument <code class="docutils literal notranslate"><span class="pre">num_particles</span></code>, which denotes the number of samples used to compute the loss (in the case of <code class="docutils literal notranslate"><span class="pre">evaluate_loss</span></code>) and the loss and gradient (in the case of <code class="docutils literal notranslate"><span class="pre">step</span></code>).</p>
 </section>
 <section id="Optimizers">
-<h2>Optimizers<a class="headerlink" href="#Optimizers" title="Permalink to this heading">¶</a></h2>
+<h2>Optimizers<a class="headerlink" href="#Optimizers" title="Permalink to this headline">¶</a></h2>
 <p>In Pyro, the model and guide are allowed to be arbitrary stochastic functions provided that</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">guide</span></code> doesn’t contain <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements with the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument</p></li>
@@ -605,7 +605,7 @@ a simple example to illustrate the API:</p>
 <p>This simply tells Pyro to use a learning rate of <code class="docutils literal notranslate"><span class="pre">0.010</span></code> for the Pyro parameter <code class="docutils literal notranslate"><span class="pre">my_special_parameter</span></code> and a learning rate of <code class="docutils literal notranslate"><span class="pre">0.001</span></code> for all other parameters.</p>
 </section>
 <section id="A-simple-example">
-<h2>A simple example<a class="headerlink" href="#A-simple-example" title="Permalink to this heading">¶</a></h2>
+<h2>A simple example<a class="headerlink" href="#A-simple-example" title="Permalink to this headline">¶</a></h2>
 <p>We finish with a simple example. You’ve been given a two-sided coin. You want to determine whether the coin is fair or not, i.e. whether it falls heads or tails with the same frequency. You have a prior belief about the likely fairness of the coin based on two observations:</p>
 <ul class="simple">
 <li><p>it’s a standard quarter issued by the US Mint</p></li>
@@ -683,7 +683,7 @@ a simple example to illustrate the API:</p>
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
 <span class="n">n_steps</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2000</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 
 <span class="c1"># clear the param store in case we&#39;re in a REPL</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
@@ -749,7 +749,7 @@ a simple example to illustrate the API:</p>
 </div>
 </div>
 <section id="Sample-output:">
-<h3>Sample output:<a class="headerlink" href="#Sample-output:" title="Permalink to this heading">¶</a></h3>
+<h3>Sample output:<a class="headerlink" href="#Sample-output:" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>based on the data and our prior belief, the fairness of the coin is 0.532 +- 0.090
 </pre></div>
 </div>
@@ -757,7 +757,7 @@ a simple example to illustrate the API:</p>
 </section>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Automated</span> <span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Probabilistic</span> <span class="pre">Programming</span></code>,      David Wingate, Theo Weber</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Black</span> <span class="pre">Box</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,     Rajesh Ranganath, Sean Gerrish, David M. Blei</p>
 <p>[3] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>

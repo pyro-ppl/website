@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forecasting II: state space models &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Forecasting II: state space models &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -96,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -478,7 +478,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Forecasting-II:-state-space-models">
-<h1>Forecasting II: state space models<a class="headerlink" href="#Forecasting-II:-state-space-models" title="Permalink to this heading">¶</a></h1>
+<h1>Forecasting II: state space models<a class="headerlink" href="#Forecasting-II:-state-space-models" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial covers state space modeling with the <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html">pyro.contrib.forecast</a> module. This tutorial assumes the reader is already familiar with <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">SVI</a>, <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a>, and <a class="reference external" href="http://pyro.ai/examples/forecasting_i.html">univariate forecasting</a>.</p>
 <p>See also:</p>
 <ul class="simple">
@@ -486,7 +486,7 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="http://pyro.ai/examples/forecasting_iii.html">Forecasting III: hierarchical models</a></p></li>
 </ul>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Pyro’s <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#pyro.contrib.forecast.forecaster.ForecastingModel">ForecastingModel</a> can combine regression, variational inference, and exact inference.</p></li>
 <li><p>To model a linear-Gaussian dynamical system, use a <a class="reference external" href="http://docs.pyro.ai/en/latest/distributions.html#gaussianhmm">GaussianHMM</a> <code class="docutils literal notranslate"><span class="pre">noise_dist</span></code>.</p></li>
@@ -510,13 +510,13 @@ div.rendered_html tbody tr:hover {
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20200305</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <section id="Intro-to-state-space-models">
-<h3>Intro to state space models<a class="headerlink" href="#Intro-to-state-space-models" title="Permalink to this heading">¶</a></h3>
+<h3>Intro to state space models<a class="headerlink" href="#Intro-to-state-space-models" title="Permalink to this headline">¶</a></h3>
 <p>In the <a class="reference external" href="http://pyro.ai/examples/forecasting_i.html">univariate tutorial</a> we saw how to model time series as regression plus a local level model, using variational inference. This tutorial covers a different way to model time series: state space models and exact inference. Pyro’s forecasting module allows these two paradigms to be combined, for example modeling seasonality with regression, including a slow global trend, and using a state-space model for short-term local trend.</p>
 <p>Pyro implements a few state space models, but the most important are the <a class="reference external" href="http://docs.pyro.ai/en/latest/distributions.html#gaussianhmm">GaussianHMM</a> distribution and its heavy-tailed generalization the <a class="reference external" href="http://docs.pyro.ai/en/latest/distributions.html#linearhmm">LinearHMM</a> distribution. Both of these model a linear dynamical system with hidden state; both are multivariate, and both allow learning of all process parameters. On top of these the
 <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.timeseries.html">pyro.contrib.timeseries</a> module implements a variety of multivariate Gaussian Process models that compile down to <code class="docutils literal notranslate"><span class="pre">GaussianHMM</span></code>s.</p>
@@ -595,7 +595,7 @@ torch.Size([78888, 1])
 </div>
 </section>
 <section id="GaussianHMM">
-<h3>GaussianHMM<a class="headerlink" href="#GaussianHMM" title="Permalink to this heading">¶</a></h3>
+<h3>GaussianHMM<a class="headerlink" href="#GaussianHMM" title="Permalink to this headline">¶</a></h3>
 <p>Let’s start by modeling hourly seasonality together with a local linear trend, where we model seasonality via regression and local linear trend via a <a class="reference external" href="http://docs.pyro.ai/en/latest/distributions.html#gaussianhmm">GaussianHMM</a>. This noise model includes a mean-reverting hidden state (an <a class="reference external" href="https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process">Ornstein-Uhlenbeck process</a>) plus Gaussian observation noise.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -844,7 +844,7 @@ Wall time: 29.6 s
 </div>
 </section>
 <section id="Heavy-tailed-modeling-with-LinearHMM">
-<h3>Heavy-tailed modeling with LinearHMM<a class="headerlink" href="#Heavy-tailed-modeling-with-LinearHMM" title="Permalink to this heading">¶</a></h3>
+<h3>Heavy-tailed modeling with LinearHMM<a class="headerlink" href="#Heavy-tailed-modeling-with-LinearHMM" title="Permalink to this headline">¶</a></h3>
 <p>Next let’s change our model to a linear-<a class="reference external" href="http://docs.pyro.ai/en/latest/distributions.html#pyro.distributions.Stable">Stable</a> dynamical system, exhibiting learnable heavy tailed behavior in both the process noise and observation noise. As we’ve already seen in the <a class="reference external" href="http://pyro.ai/examples/forecasting_i.html">univariate tutorial</a>, this will require special handling of stable distributions by <a class="reference external" href="http://docs.pyro.ai/en/latest/poutine.html#pyro.poutine.handlers.reparam">poutine.reparam()</a>. For
 state space models, we combine <a class="reference external" href="http://docs.pyro.ai/en/latest/infer.reparam.html#pyro.infer.reparam.hmm.LinearHMMReparam">LinearHMMReparam</a> with other reparameterizers like <a class="reference external" href="http://docs.pyro.ai/en/latest/infer.reparam.html#pyro.infer.reparam.stable.StableReparam">StableReparam</a> and <a class="reference external" href="http://docs.pyro.ai/en/latest/infer.reparam.html#pyro.infer.reparam.stable.SymmetricStableReparam">SymmetricStableReparam</a>. All reparameterizers preserve behavior of the generative model, and only serve to
 enable inference via auxiliary variable methods.</p>

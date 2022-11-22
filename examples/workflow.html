@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -111,6 +110,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -485,13 +485,13 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="High-dimensional-Bayesian-workflow,-with-applications-to-SARS-CoV-2-strains">
-<h1>High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains<a class="headerlink" href="#High-dimensional-Bayesian-workflow,-with-applications-to-SARS-CoV-2-strains" title="Permalink to this heading">¶</a></h1>
+<h1>High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains<a class="headerlink" href="#High-dimensional-Bayesian-workflow,-with-applications-to-SARS-CoV-2-strains" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial describes a workflow for incrementally building pipelines to analyze high-dimensional data in Pyro. This workflow has evolved over a few years of applying Pyro to models with <span class="math notranslate nohighlight">\(10^5\)</span> or more latent variables. We build on <a class="reference external" href="https://arxiv.org/abs/2011.01808">Gelman et al. (2020)</a>’s concept of <em>Bayesian workflow</em>, and focus on aspects particular to high-dimensional models: approximate inference and numerical stability. While the individual components of the pipeline deserve
 their own tutorials, this tutorial focuses on incrementally combining those components.</p>
 <p>The fastest way to find a good model of your data is to quickly discard many bad models, i.e. to iterate. In statistics we call this iterative workflow <a class="reference external" href="http://www.cs.columbia.edu/~blei/papers/Blei2014b.pdf">Box’s loop</a>. An efficient workflow allows us to discard bad models as quickly as possible. Workflow efficiency demands that code changes to upstream components don’t break previous coding effort on downstream components. Pyro’s approaches to this challenge include strategies for
 variational approximations (<a class="reference external" href="https://docs.pyro.ai/en/stable/infer.autoguide.html">pyro.infer.autoguide</a>) and strategies for transforming model coordinate systems to improve geometry (<a class="reference external" href="https://docs.pyro.ai/en/stable/infer.reparam.html">pyro.infer.reparam</a>).</p>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Great models can only be achieved by iterative development.</p></li>
 <li><p>Iterate quickly by building a pipeline that is robust to code changes.</p></li>
@@ -502,7 +502,7 @@ variational approximations (<a class="reference external" href="https://docs.pyr
 </ul>
 </section>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Overview">Overview</a></p></li>
 <li><p><a class="reference external" href="#Running-example">Running example: SARS-CoV-2 strain prediction</a></p></li>
@@ -516,7 +516,7 @@ variational approximations (<a class="reference external" href="https://docs.pyr
 <li><p><a class="reference external" href="#Customize">Customize the variational family: autoguides, easyguides, custom guides</a></p></li>
 </ol>
 <section id="Overview">
-<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">¶</a></h3>
+<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
 <p>Consider the problem of sampling from the posterior distribution of a probabilistic model with <span class="math notranslate nohighlight">\(10^5\)</span> or more continuous latent variables, but whose data fits entirely in memory. (For larger datasets, consider <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">amortized variational inference</a>.) Inference in such high-dimensional models can be challenging even when posteriors are known to be <a class="reference external" href="https://en.wikipedia.org/wiki/Unimodality">unimodal</a> or even
 <a class="reference external" href="https://arxiv.org/abs/1404.5886">log-concave</a>, due to correlations among latent variables.</p>
 <p>To perform inference in such high-dimensional models in Pyro, we have evolved a <a class="reference external" href="https://arxiv.org/abs/2011.01808">workflow</a> to incrementally build data analysis pipelines combining variational inference, reparametrization effects, and ad-hoc initialization strategies. Our workflow is summarized as a sequence of steps, where validation after any step might suggest backtracking to change design decisions at a previous step.</p>
@@ -531,7 +531,7 @@ variational approximations (<a class="reference external" href="https://docs.pyr
 <p>The crux of efficient workflow is to ensure changes don’t break your pipeline. That is, after you build a number of pipeline stages, validate results, and decide to change one component in the pipeline, you’d like to minimize code changes needed in other components. The remainder of this tutorial describes these steps individually, then describes nuances of interactions among stages, then provides an example.</p>
 </section>
 <section id="Running-example:-SARS-CoV-2-strain-prediction">
-<h3>Running example: SARS-CoV-2 strain prediction<a class="headerlink" href="#Running-example:-SARS-CoV-2-strain-prediction" title="Permalink to this heading">¶</a></h3>
+<h3>Running example: SARS-CoV-2 strain prediction<a class="headerlink" href="#Running-example:-SARS-CoV-2-strain-prediction" title="Permalink to this headline">¶</a></h3>
 <p>The running example in this tutorial will be a model <a class="reference external" href="https://www.medrxiv.org/content/10.1101/2021.09.07.21263228v2">(Obermeyer et al. 2022)</a> of the relative growth rates of different strains of the SARS-CoV-2 virus, based on <a class="reference external" href="https://docs.nextstrain.org/projects/ncov/en/latest/reference/remote_inputs.html">open data</a> counting different <a class="reference external" href="https://cov-lineages.org/">PANGO lineages</a> of viral genomic samples collected at different times around the world. There are about 2 million sequences
 in total.</p>
 <p>The model is a high-dimensional regression model with around 1000 coefficients, a multivariate logistic growth function (using a simple <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html">torch.softmax()</a>) and a <a class="reference external" href="https://pytorch.org/docs/stable/distributions.html#multinomial">Multinomial</a> likelihood. While the number of coefficients is relatively small, there are about 500,000 local latent variables to estimate, and plate structure in the model should lead to an
@@ -584,7 +584,7 @@ Using CPU
 </div>
 </section>
 <section id="Clean-the-data">
-<h3>Clean the data<a class="headerlink" href="#Clean-the-data" title="Permalink to this heading">¶</a></h3>
+<h3>Clean the data<a class="headerlink" href="#Clean-the-data" title="Permalink to this headline">¶</a></h3>
 <p>Our running example will use a pre-cleaned dataset. We started with Nextstrain’s <a class="reference external" href="https://docs.nextstrain.org/projects/ncov/en/latest/reference/remote_inputs.html">ncov</a> tool for preprocessing, followed by the Broad Institute’s <a class="reference external" href="https://github.com/broadinstitute/pyro-cov/blob/master/scripts/preprocess_nextstrain.py">pyro-cov</a> tool for aggregation, resulting in a dataset of SARS-CoV-2 lineages observed around the world through time.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -626,7 +626,7 @@ time_step_days: int
 </div>
 </section>
 <section id="Create-a-generative-model">
-<h3>Create a generative model<a class="headerlink" href="#Create-a-generative-model" title="Permalink to this heading">¶</a></h3>
+<h3>Create a generative model<a class="headerlink" href="#Create-a-generative-model" title="Permalink to this headline">¶</a></h3>
 <p>The first step to using Pyro is creating a generative model, either a python function or a <a class="reference external" href="https://docs.pyro.ai/en/dev/nn.html#pyro.nn.module.PyroModule">pyro.nn.Module</a>. Start simple. Start with a shallow hierarchy and later add latent variables to share statistical strength. Start with a slice of your data then add a <a class="reference external" href="https://docs.pyro.ai/en/stable/primitives.html#pyro.primitives.plate">plate</a> over multiple slices. Start with simple distributions like
 <a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.Normal">Normal</a>, <a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.LogNormal">LogNormal</a>, <a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.Poisson">Poisson</a> and <a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.Multinomial">Multinomial</a>, then consider overdispersed versions like
 <a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.StudentT">StudentT</a>, <a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.Gamma">Gamma</a>, <a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.GammaPoisson">GammaPoisson</a>/<a class="reference external" href="https://docs.pyro.ai/en/stable/distributions.html#pyro.distributions.NegativeBinomial">NegativeBinomial</a>, and
@@ -734,7 +734,7 @@ counts has 57129 / 7177464 nonzero elements
 </div>
 </section>
 <section id="Sanity-check-using-mean-field-inference">
-<h3>Sanity check using mean field inference<a class="headerlink" href="#Sanity-check-using-mean-field-inference" title="Permalink to this heading">¶</a></h3>
+<h3>Sanity check using mean field inference<a class="headerlink" href="#Sanity-check-using-mean-field-inference" title="Permalink to this headline">¶</a></h3>
 <p>Mean field Normal inference is cheap and robust, and is a good way to sanity check your posterior point estimate, even if the posterior uncertainty may be implausibly narrow. We recommend starting with an <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autonormal">AutoNormal</a> guide, and possibly setting <code class="docutils literal notranslate"><span class="pre">init_scale</span></code> to a small value like <code class="docutils literal notranslate"><span class="pre">init_scale=0.01</span></code> or <code class="docutils literal notranslate"><span class="pre">init_scale=0.001</span></code>.</p>
 <p>Note that while MAP estimating via <a class="reference external" href="https://docs.pyro.ai/en/latest/infer.autoguide.html#autodelta">AutoDelta</a> is even cheaper and more robust than mean-field <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code>, <code class="docutils literal notranslate"><span class="pre">AutoDelta</span></code> is coordinate-system dependent and is not invariant to reparametrization. Because in our experience most models benefit from some reparameterization, we recommend <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> over <code class="docutils literal notranslate"><span class="pre">AutoDelta</span></code> because <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> is less sensitive to reparametrization (<code class="docutils literal notranslate"><span class="pre">AutoDelta</span></code> can give incorrect results in some
 reparametrized models).</p>
@@ -928,7 +928,7 @@ Wall time: 1min 47s
 </div>
 </section>
 <section id="Create-an-initialization-heuristic">
-<h3>Create an initialization heuristic<a class="headerlink" href="#Create-an-initialization-heuristic" title="Permalink to this heading">¶</a></h3>
+<h3>Create an initialization heuristic<a class="headerlink" href="#Create-an-initialization-heuristic" title="Permalink to this headline">¶</a></h3>
 <p>In high-dimensional models, convergence can be slow and NANs arise easily, even when sampling from <a class="reference external" href="http://www.stat.columbia.edu/~gelman/presentations/weakpriorstalk.pdf">weakly informative priors</a>. We recommend heuristically initializing a point estimate for each latent variable, aiming to initialize at something that is the right order of magnitude. Often you can initialize to a simple statistic of the data, e.g. a mean or standard deviation.</p>
 <p>Pyro’s autoguides provide a number of <a href="#id1"><span class="problematic" id="id2">`initialization strategies &lt;&gt;`__</span></a> for initializing the location parameter of many variational families, specified as <code class="docutils literal notranslate"><span class="pre">init_loc_fn</span></code>. You can create a custom initializer by accepting a pyro sample site dict and generating a sample from <code class="docutils literal notranslate"><span class="pre">site[&quot;name&quot;]</span></code> and <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;]</span></code> using e.g. <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].shape()</span></code>, <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].support</span></code>, <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].mean</span></code>, or sampling via <code class="docutils literal notranslate"><span class="pre">site[&quot;fn&quot;].sample()</span></code>.</p>
 <div class="nbinput nblast docutils container">
@@ -1016,7 +1016,7 @@ Wall time: 1min 58s
 </div>
 </section>
 <section id="Reparametrize-the-model">
-<h3>Reparametrize the model<a class="headerlink" href="#Reparametrize-the-model" title="Permalink to this heading">¶</a></h3>
+<h3>Reparametrize the model<a class="headerlink" href="#Reparametrize-the-model" title="Permalink to this headline">¶</a></h3>
 <p>Reparametrizing a model preserves its distribution while changing its geometry. Reparametrizing is simply a change of coordinates. When reparametrizing we aim to warp a model’s geometry to remove correlations and to lift inconvenient topological manifolds into simpler higher dimensional flat Euclidean space.</p>
 <p>Whereas many probabilistic programming languages require users to rewrite models to change coordinates, Pyro implements a library of about 15 different reparametrization effects including decentering (Gorinova et al. 2020), Haar wavelet transforms, and neural transport (Hoffman et al. 2019), as well as strategies to automatically apply effects and machinery to create custom reparametrization effects. Using these reparametrizers you can separate modeling from inference: first specify a model in a
 form that is natural to domain experts, then in inference code, reparametrize the model to have geometry that is more amenable to variational inference.</p>
@@ -1098,7 +1098,7 @@ Wall time: 2min 17s
 </div>
 </section>
 <section id="Customize-the-variational-family">
-<h3>Customize the variational family<a class="headerlink" href="#Customize-the-variational-family" title="Permalink to this heading">¶</a></h3>
+<h3>Customize the variational family<a class="headerlink" href="#Customize-the-variational-family" title="Permalink to this headline">¶</a></h3>
 <p>When creating a new model, we recommend starting with mean field variational inference using an <a href="#id1"><span class="problematic" id="id3">`AutoNormal &lt;&gt;`__</span></a> guide. This mean field guide is good at finding the neighborhood of your model’s mode, but naively it ignores correlations between latent variables. A first step in capturing correlations is to reparametrize the model as above: using a <code class="docutils literal notranslate"><span class="pre">LocScaleReparam</span></code> or <code class="docutils literal notranslate"><span class="pre">HaarReparam</span></code> (where appropriate) already allows the guide to capture some correlations among latent variables.</p>
 <p>The next step towards modeling uncertainty is to customize the variational family by trying other autoguides, building on <a href="#id1"><span class="problematic" id="id4">`EasyGuide &lt;&gt;`__</span></a>, or creating a custom guide using Pyro primitives. We recommend increasing guide complexity gradually via these steps: 1. Start with an <a href="#id1"><span class="problematic" id="id5">`AutoNormal &lt;&gt;`__</span></a> guide. 2. Try <a href="#id1"><span class="problematic" id="id6">`AutoLowRankMultivariateNormal &lt;&gt;`__</span></a>, which can model the principle components of correlated uncertainty. (For models with only ~100 latent variables you might also try
 <a href="#id1"><span class="problematic" id="id7">`AutoMultivariateNormal &lt;&gt;`__</span></a> or <a href="#id1"><span class="problematic" id="id8">`AutoGaussian &lt;&gt;`__</span></a>). 3. Try combining multiple guides using <a href="#id1"><span class="problematic" id="id9">`AutoGuideList &lt;&gt;`__</span></a>. For example if <a href="#id1"><span class="problematic" id="id10">`AutoLowRankMultivariateNormal &lt;&gt;`__</span></a> is too expensive for all the latent variables, you can use <a href="#id1"><span class="problematic" id="id11">`AutoGuideList &lt;&gt;`__</span></a> to combine an <a href="#id1"><span class="problematic" id="id12">`AutoLowRankMultivariateNormal &lt;&gt;`__</span></a> guide over a few top-level global latent variables, together with a cheaper <a href="#id1"><span class="problematic" id="id13">`AutoNormal &lt;&gt;`__</span></a> guide over more numerous local latent variables. 4. Try using <a href="#id1"><span class="problematic" id="id14">`AutoGuideList &lt;&gt;`__</span></a> to combine a autoguide
@@ -1335,7 +1335,7 @@ Wall time: 2min 18s
 </div>
 </section>
 <section id="Conclusion">
-<h3>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this heading">¶</a></h3>
+<h3>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this headline">¶</a></h3>
 <p>We’ve seen how to use initialization, reparameterization, autoguides, and custom guides in a Bayesian workflow. For more examples of these pieces of machinery, we recommend exploring the Pyro codebase, e.g. <a class="reference external" href="https://github.com/pyro-ppl/pyro/search?q=poutine.reparam&amp;type=code">search for “poutine.reparam”</a> or <a class="reference external" href="https://github.com/pyro-ppl/pyro/search?q=init_loc_fn&amp;type=code">“init_loc_fn”</a> in the Pyro codebase.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>SVI Part II: Conditional Independence, Subsampling, and Amortization &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -114,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -234,9 +234,9 @@
 }
 </style>
 <section id="SVI-Part-II:-Conditional-Independence,-Subsampling,-and-Amortization">
-<h1>SVI Part II: Conditional Independence, Subsampling, and Amortization<a class="headerlink" href="#SVI-Part-II:-Conditional-Independence,-Subsampling,-and-Amortization" title="Permalink to this heading">¶</a></h1>
+<h1>SVI Part II: Conditional Independence, Subsampling, and Amortization<a class="headerlink" href="#SVI-Part-II:-Conditional-Independence,-Subsampling,-and-Amortization" title="Permalink to this headline">¶</a></h1>
 <section id="The-Goal:-Scaling-SVI-to-Large-Datasets">
-<h2>The Goal: Scaling SVI to Large Datasets<a class="headerlink" href="#The-Goal:-Scaling-SVI-to-Large-Datasets" title="Permalink to this heading">¶</a></h2>
+<h2>The Goal: Scaling SVI to Large Datasets<a class="headerlink" href="#The-Goal:-Scaling-SVI-to-Large-Datasets" title="Permalink to this headline">¶</a></h2>
 <p>For a model with <span class="math notranslate nohighlight">\(N\)</span> observations, running the <code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">guide</span></code> and constructing the ELBO involves evaluating log pdf’s whose complexity scales badly with <span class="math notranslate nohighlight">\(N\)</span>. This is a problem if we want to scale to large datasets. Luckily, the ELBO objective naturally supports subsampling provided that our model/guide have some conditional independence structure that we can take advantage of. For example, in the case that the observations are conditionally independent given the latents, the
 log likelihood term in the ELBO can be approximated with</p>
 <div class="math notranslate nohighlight">
@@ -245,10 +245,10 @@ log likelihood term in the ELBO can be approximated with</p>
 <p>where <span class="math notranslate nohighlight">\(\mathcal{I}_M\)</span> is a mini-batch of indices of size <span class="math notranslate nohighlight">\(M\)</span> with <span class="math notranslate nohighlight">\(M&lt;N\)</span> (for a discussion please see references [1,2]). Great, problem solved! But how do we do this in Pyro?</p>
 </section>
 <section id="Marking-Conditional-Independence-in-Pyro">
-<h2>Marking Conditional Independence in Pyro<a class="headerlink" href="#Marking-Conditional-Independence-in-Pyro" title="Permalink to this heading">¶</a></h2>
+<h2>Marking Conditional Independence in Pyro<a class="headerlink" href="#Marking-Conditional-Independence-in-Pyro" title="Permalink to this headline">¶</a></h2>
 <p>If a user wants to do this sort of thing in Pyro, he or she first needs to make sure that the model and guide are written in such a way that Pyro can leverage the relevant conditional independencies. Let’s see how this is done. Pyro provides two language primitives for marking conditional independencies: <code class="docutils literal notranslate"><span class="pre">plate</span></code> and <code class="docutils literal notranslate"><span class="pre">markov</span></code>. Let’s start with the simpler of the two.</p>
 <section id="Sequential-plate">
-<h3>Sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Sequential-plate" title="Permalink to this heading">¶</a></h3>
+<h3>Sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Sequential-plate" title="Permalink to this headline">¶</a></h3>
 <p>Let’s return to the example we used in the <a class="reference internal" href="svi_part_i.html"><span class="doc">previous tutorial</span></a>. For convenience let’s replicate the main logic of <code class="docutils literal notranslate"><span class="pre">model</span></code> here:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="c1"># sample f from the beta prior</span>
@@ -286,7 +286,7 @@ log likelihood term in the ELBO can be approximated with</p>
 should be used instead.</p>
 </section>
 <section id="Vectorized-plate">
-<h3>Vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Vectorized-plate" title="Permalink to this heading">¶</a></h3>
+<h3>Vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Vectorized-plate" title="Permalink to this headline">¶</a></h3>
 <p>Conceptually vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code> is the same as sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code> except that it is a vectorized operation (as <code class="docutils literal notranslate"><span class="pre">torch.arange</span></code> is to <code class="docutils literal notranslate"><span class="pre">range</span></code>). As such it potentially enables large speed-ups compared to the explicit <code class="docutils literal notranslate"><span class="pre">for</span></code> loop that appears with sequential <code class="docutils literal notranslate"><span class="pre">plate</span></code>. Let’s see how this looks for our running example. First we need <code class="docutils literal notranslate"><span class="pre">data</span></code> to be in the form of a tensor:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>  <span class="c1"># 6 heads and 4 tails</span>
@@ -307,10 +307,10 @@ should be used instead.</p>
 </section>
 </section>
 <section id="Subsampling">
-<h2>Subsampling<a class="headerlink" href="#Subsampling" title="Permalink to this heading">¶</a></h2>
+<h2>Subsampling<a class="headerlink" href="#Subsampling" title="Permalink to this headline">¶</a></h2>
 <p>We now know how to mark conditional independence in Pyro. This is useful in and of itself (see the <a class="reference internal" href="svi_part_iii.html"><span class="doc">dependency tracking section</span></a> in SVI Part III), but we’d also like to do subsampling so that we can do SVI on large datasets. Depending on the structure of the model and guide, Pyro supports several ways of doing subsampling. Let’s go through these one by one.</p>
 <section id="Automatic-subsampling-with-plate">
-<h3>Automatic subsampling with <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Automatic-subsampling-with-plate" title="Permalink to this heading">¶</a></h3>
+<h3>Automatic subsampling with <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Automatic-subsampling-with-plate" title="Permalink to this headline">¶</a></h3>
 <p>Let’s look at the simplest case first, in which we get subsampling for free with one or two additional arguments to <code class="docutils literal notranslate"><span class="pre">plate</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data_loop&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
@@ -326,19 +326,19 @@ should be used instead.</p>
 <p>Finally, note that the user must pass a <code class="docutils literal notranslate"><span class="pre">device</span></code> argument to <code class="docutils literal notranslate"><span class="pre">plate</span></code> if <code class="docutils literal notranslate"><span class="pre">data</span></code> is on the GPU.</p>
 </section>
 <section id="Custom-subsampling-strategies-with-plate">
-<h3>Custom subsampling strategies with <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Custom-subsampling-strategies-with-plate" title="Permalink to this heading">¶</a></h3>
+<h3>Custom subsampling strategies with <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Custom-subsampling-strategies-with-plate" title="Permalink to this headline">¶</a></h3>
 <p>Every time the above <code class="docutils literal notranslate"><span class="pre">model()</span></code> is run <code class="docutils literal notranslate"><span class="pre">plate</span></code> will sample new subsample indices. Since this subsampling is stateless, this can lead to some problems: basically for a sufficiently large dataset even after a large number of iterations there’s a nonnegligible probability that some of the datapoints will have never been selected. To avoid this the user can take control of subsampling by making use of the <code class="docutils literal notranslate"><span class="pre">subsample</span></code> argument to <code class="docutils literal notranslate"><span class="pre">plate</span></code>. See <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">the
 docs</a> for details.</p>
 </section>
 <section id="Subsampling-when-there-are-only-local-random-variables">
-<h3>Subsampling when there are only local random variables<a class="headerlink" href="#Subsampling-when-there-are-only-local-random-variables" title="Permalink to this heading">¶</a></h3>
+<h3>Subsampling when there are only local random variables<a class="headerlink" href="#Subsampling-when-there-are-only-local-random-variables" title="Permalink to this headline">¶</a></h3>
 <p>We have in mind a model with a joint probability density given by</p>
 <div class="math notranslate nohighlight">
 \[p({\bf x}, {\bf z}) = \prod_{i=1}^N p({\bf x}_i | {\bf z}_i) p({\bf z}_i)\]</div>
 <p>For a model with this dependency structure the scale factor introduced by subsampling scales all the terms in the ELBO by the same amount. This is the case, for example, for a vanilla VAE. This explains why for the VAE it’s permissible for the user to take complete control over subsampling and pass mini-batches directly to the model and guide; <code class="docutils literal notranslate"><span class="pre">plate</span></code> is still used, but <code class="docutils literal notranslate"><span class="pre">subsample_size</span></code> and <code class="docutils literal notranslate"><span class="pre">subsample</span></code> are not. To see how this looks in detail, see the <a class="reference internal" href="vae.html"><span class="doc">VAE tutorial</span></a>.</p>
 </section>
 <section id="Subsampling-when-there-are-both-global-and-local-random-variables">
-<h3>Subsampling when there are both global and local random variables<a class="headerlink" href="#Subsampling-when-there-are-both-global-and-local-random-variables" title="Permalink to this heading">¶</a></h3>
+<h3>Subsampling when there are both global and local random variables<a class="headerlink" href="#Subsampling-when-there-are-both-global-and-local-random-variables" title="Permalink to this headline">¶</a></h3>
 <p>In the coin flip examples above <code class="docutils literal notranslate"><span class="pre">plate</span></code> appeared in the model but not in the guide, since the only thing being subsampled was the observations. Let’s look at a more complicated example where subsampling appears in both the model and guide. To make things simple let’s keep the discussion somewhat abstract and avoid writing a complete model and guide.</p>
 <p>Consider the model specified by the following joint distribution:</p>
 <div class="math notranslate nohighlight">
@@ -371,7 +371,7 @@ docs</a> for details.</p>
 </section>
 </section>
 <section id="Amortization">
-<h2>Amortization<a class="headerlink" href="#Amortization" title="Permalink to this heading">¶</a></h2>
+<h2>Amortization<a class="headerlink" href="#Amortization" title="Permalink to this headline">¶</a></h2>
 <p>Let’s again consider a model with global and local latent random variables and local variational parameters:</p>
 <div class="math notranslate nohighlight">
 \[ p({\bf x}, {\bf z}, \beta) = p(\beta)
@@ -385,11 +385,11 @@ q({\bf z}, \beta) = q(\beta) \prod_{i=1}^N q({\bf z}_i | \beta, \lambda_i)\]</di
 precisely the approach used in the <a class="reference internal" href="vae.html"><span class="doc">VAE</span></a>.</p>
 </section>
 <section id="Tensor-shapes-and-vectorized-plate">
-<h2>Tensor shapes and vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Tensor-shapes-and-vectorized-plate" title="Permalink to this heading">¶</a></h2>
+<h2>Tensor shapes and vectorized <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Tensor-shapes-and-vectorized-plate" title="Permalink to this headline">¶</a></h2>
 <p>The usage of <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code> in this tutorial was limited to relatively simple cases. For example, none of the <code class="docutils literal notranslate"><span class="pre">plate</span></code>s were nested inside of other <code class="docutils literal notranslate"><span class="pre">plate</span></code>s. In order to make full use of <code class="docutils literal notranslate"><span class="pre">plate</span></code>, the user must be careful to use Pyro’s tensor shape semantics. For a discussion see the <a class="reference internal" href="tensor_shapes.html"><span class="doc">tensor shapes tutorial</span></a>.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,      Matthew D. Hoffman, David M. Blei, Chong Wang, John Paisley</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>
 </section>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bayesian Regression - Introduction (Part 1) &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Bayesian Regression - Introduction (Part 1) &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -119,6 +118,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -493,7 +493,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Bayesian-Regression---Introduction-(Part-1)">
-<h1>Bayesian Regression - Introduction (Part 1)<a class="headerlink" href="#Bayesian-Regression---Introduction-(Part-1)" title="Permalink to this heading">¶</a></h1>
+<h1>Bayesian Regression - Introduction (Part 1)<a class="headerlink" href="#Bayesian-Regression---Introduction-(Part-1)" title="Permalink to this headline">¶</a></h1>
 <p>Regression is one of the most common and basic supervised learning tasks in machine learning. Suppose we’re given a dataset <span class="math notranslate nohighlight">\(\mathcal{D}\)</span> of the form</p>
 <div class="math notranslate nohighlight">
 \[\mathcal{D}  = \{ (X_i, y_i) \} \qquad \text{for}\qquad i=1,2,...,N\]</div>
@@ -503,7 +503,7 @@ div.rendered_html tbody tr:hover {
 <p>where <span class="math notranslate nohighlight">\(w\)</span> and <span class="math notranslate nohighlight">\(b\)</span> are learnable parameters and <span class="math notranslate nohighlight">\(\epsilon\)</span> represents observation noise. Specifically <span class="math notranslate nohighlight">\(w\)</span> is a matrix of weights and <span class="math notranslate nohighlight">\(b\)</span> is a bias vector.</p>
 <p>In this tutorial, we will first implement linear regression in PyTorch and learn point estimates for the parameters <span class="math notranslate nohighlight">\(w\)</span> and <span class="math notranslate nohighlight">\(b\)</span>. Then we will see how to incorporate uncertainty into our estimates by using Pyro to implement Bayesian regression. Additionally, we will learn how to use the Pyro’s utility functions to do predictions and serve our model using <code class="docutils literal notranslate"><span class="pre">TorchScript</span></code>.</p>
 <section id="Tutorial-Outline">
-<h2>Tutorial Outline<a class="headerlink" href="#Tutorial-Outline" title="Permalink to this heading">¶</a></h2>
+<h2>Tutorial Outline<a class="headerlink" href="#Tutorial-Outline" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Setup">Setup</a></p>
 <ul>
@@ -528,7 +528,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this heading">¶</a></h2>
+<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this headline">¶</a></h2>
 <p>Let’s begin by importing the modules we’ll need.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -555,7 +555,7 @@ div.rendered_html tbody tr:hover {
 
 <span class="c1"># for CI testing</span>
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
 
@@ -566,7 +566,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Dataset">
-<h3>Dataset<a class="headerlink" href="#Dataset" title="Permalink to this heading">¶</a></h3>
+<h3>Dataset<a class="headerlink" href="#Dataset" title="Permalink to this headline">¶</a></h3>
 <p>The following example is adapted from [1]. We would like to explore the relationship between topographic heterogeneity of a nation as measured by the Terrain Ruggedness Index (variable <em>rugged</em> in the dataset) and its GDP per capita. In particular, it was noted by the authors in [2] that terrain ruggedness or bad geography is related to poorer economic performance outside of Africa, but rugged terrains have had a reverse effect on income for African nations. Let us look at the data and
 investigate this relationship. We will be focusing on three features from the dataset:</p>
 <ul class="simple">
@@ -619,7 +619,7 @@ investigate this relationship. We will be focusing on three features from the da
 </section>
 </section>
 <section id="Linear-Regression">
-<h2>Linear Regression<a class="headerlink" href="#Linear-Regression" title="Permalink to this heading">¶</a></h2>
+<h2>Linear Regression<a class="headerlink" href="#Linear-Regression" title="Permalink to this headline">¶</a></h2>
 <p>We would like to predict log GDP per capita of a nation as a function of two features from the dataset - whether the nation is in Africa, and its Terrain Ruggedness Index. We will create a trivial class called <code class="docutils literal notranslate"><span class="pre">PyroModule[nn.Linear]</span></code> that subclasses <a class="reference external" href="http://docs.pyro.ai/en/dev/nn.html#module-pyro.nn.module">PyroModule</a> and <code class="docutils literal notranslate"><span class="pre">torch.nn.Linear</span></code>. <code class="docutils literal notranslate"><span class="pre">PyroModule</span></code> is very similar to PyTorch’s <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>, but additionally supports <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#primitives">Pyro
 primitives</a> as attributes that can be modified by Pyro’s <a class="reference external" href="http://pyro.ai/examples/effect_handlers.html">effect handlers</a> (see the <a class="reference external" href="#Model">next section</a> on how we can have module attributes that are <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> primitives). Some general notes:</p>
 <ul class="simple">
@@ -640,7 +640,7 @@ primitives</a> as attributes that can be modified by Pyro’s <a class="referenc
 </div>
 </div>
 <section id="Training-with-PyTorch-Optimizers">
-<h3>Training with PyTorch Optimizers<a class="headerlink" href="#Training-with-PyTorch-Optimizers" title="Permalink to this heading">¶</a></h3>
+<h3>Training with PyTorch Optimizers<a class="headerlink" href="#Training-with-PyTorch-Optimizers" title="Permalink to this headline">¶</a></h3>
 <p>Note that in addition to the two features <code class="docutils literal notranslate"><span class="pre">rugged</span></code> and <code class="docutils literal notranslate"><span class="pre">cont_africa</span></code>, we also include an interaction term in our model, which lets us separately model the effect of ruggedness on the GDP for nations within and outside Africa.</p>
 <p>We use the mean squared error (MSE) as our loss and Adam as our optimizer from the <code class="docutils literal notranslate"><span class="pre">torch.optim</span></code> module. We would like to optimize the parameters of our model, namely the <code class="docutils literal notranslate"><span class="pre">weight</span></code> and <code class="docutils literal notranslate"><span class="pre">bias</span></code> parameters of the network, which corresponds to our regression coefficents and the intercept.</p>
 <div class="nbinput docutils container">
@@ -729,7 +729,7 @@ bias [9.22308]
 </div>
 </section>
 <section id="Plotting-the-Regression-Fit">
-<h3>Plotting the Regression Fit<a class="headerlink" href="#Plotting-the-Regression-Fit" title="Permalink to this heading">¶</a></h3>
+<h3>Plotting the Regression Fit<a class="headerlink" href="#Plotting-the-Regression-Fit" title="Permalink to this headline">¶</a></h3>
 <p>Let us plot the regression fit for our model, separately for countries outside and within Africa.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -767,9 +767,9 @@ systematic framework for reasoning about model uncertainty. Instead of just lear
 </section>
 </section>
 <section id="Bayesian-Regression-with-Pyro’s-Stochastic-Variational-Inference-(SVI)">
-<h2>Bayesian Regression with Pyro’s Stochastic Variational Inference (SVI)<a class="headerlink" href="#Bayesian-Regression-with-Pyro’s-Stochastic-Variational-Inference-(SVI)" title="Permalink to this heading">¶</a></h2>
+<h2>Bayesian Regression with Pyro’s Stochastic Variational Inference (SVI)<a class="headerlink" href="#Bayesian-Regression-with-Pyro’s-Stochastic-Variational-Inference-(SVI)" title="Permalink to this headline">¶</a></h2>
 <section id="Model">
-<h3>Model<a class="headerlink" href="#Model" title="Permalink to this heading">¶</a></h3>
+<h3>Model<a class="headerlink" href="#Model" title="Permalink to this headline">¶</a></h3>
 <p>In order to make our linear regression Bayesian, we need to put priors on the parameters <span class="math notranslate nohighlight">\(w\)</span> and <span class="math notranslate nohighlight">\(b\)</span>. These are distributions that represent our prior belief about reasonable values for <span class="math notranslate nohighlight">\(w\)</span> and <span class="math notranslate nohighlight">\(b\)</span> (before observing any data).</p>
 <p>Making a Bayesian model for linear regression is very intuitive using <code class="docutils literal notranslate"><span class="pre">PyroModule</span></code> as earlier. Note the following:</p>
 <ul class="simple">
@@ -802,7 +802,7 @@ systematic framework for reasoning about model uncertainty. Instead of just lear
 </div>
 </section>
 <section id="Using-an-AutoGuide">
-<h3>Using an AutoGuide<a class="headerlink" href="#Using-an-AutoGuide" title="Permalink to this heading">¶</a></h3>
+<h3>Using an AutoGuide<a class="headerlink" href="#Using-an-AutoGuide" title="Permalink to this headline">¶</a></h3>
 <p>In order to do inference, i.e. learn the posterior distribution over our unobserved parameters, we will use Stochastic Variational Inference (SVI). The guide determines a family of distributions, and <code class="docutils literal notranslate"><span class="pre">SVI</span></code> aims to find an approximate posterior distribution from this family that has the lowest KL divergence from the true posterior.</p>
 <p>Users can write arbitrarily flexible custom guides in Pyro, but in this tutorial, we will restrict ourselves to Pyro’s <a class="reference external" href="http://docs.pyro.ai/en/dev/infer.autoguide.html">autoguide library</a>. In the next <a class="reference internal" href="bayesian_regression_ii.html"><span class="doc">tutorial</span></a>, we will explore how to write guides by hand.</p>
 <p>To begin with, we will use the <code class="docutils literal notranslate"><span class="pre">AutoDiagonalNormal</span></code> guide that models the distribution of unobserved parameters in the model as a Gaussian with diagonal covariance, i.e. it assumes that there is no correlation amongst the latent variables (quite a strong modeling assumption as we shall see in <a class="reference internal" href="bayesian_regression_ii.html"><span class="doc">Part II</span></a>). Under the hood, this defines a <code class="docutils literal notranslate"><span class="pre">guide</span></code> that uses a <code class="docutils literal notranslate"><span class="pre">Normal</span></code> distribution with learnable parameters corresponding to each <code class="docutils literal notranslate"><span class="pre">sample</span></code> statement in the model.
@@ -821,7 +821,7 @@ e.g. in our case, this distribution should have a size of <code class="docutils
 </div>
 </section>
 <section id="Optimizing-the-Evidence-Lower-Bound">
-<h3>Optimizing the Evidence Lower Bound<a class="headerlink" href="#Optimizing-the-Evidence-Lower-Bound" title="Permalink to this heading">¶</a></h3>
+<h3>Optimizing the Evidence Lower Bound<a class="headerlink" href="#Optimizing-the-Evidence-Lower-Bound" title="Permalink to this headline">¶</a></h3>
 <p>We will use stochastic variational inference (SVI) (for an introduction to SVI, see <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI Part I</span></a>) for doing inference. Just like in the non-Bayesian linear regression model, each iteration of our training loop will take a gradient step, with the difference that in this case, we’ll use the Evidence Lower Bound (ELBO) objective instead of the MSE loss by constructing a <code class="docutils literal notranslate"><span class="pre">Trace_ELBO</span></code> object that we pass to <code class="docutils literal notranslate"><span class="pre">SVI</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -920,7 +920,7 @@ AutoDiagonalNormal.scale tensor([0.0551, 0.1142, 0.0387, 0.0769, 0.0702])
 </section>
 </section>
 <section id="Model-Evaluation">
-<h2>Model Evaluation<a class="headerlink" href="#Model-Evaluation" title="Permalink to this heading">¶</a></h2>
+<h2>Model Evaluation<a class="headerlink" href="#Model-Evaluation" title="Permalink to this headline">¶</a></h2>
 <p>To evaluate our model, we’ll generate some predictive samples and look at the posteriors. For this we will make use of the <a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html#pyro.infer.predictive.Predictive">Predictive</a> utility class.</p>
 <ul class="simple">
 <li><p>We generate 800 samples from our trained model. Internally, this is done by first generating samples for the unobserved sites in the <code class="docutils literal notranslate"><span class="pre">guide</span></code>, and then running the model forward by conditioning the sites to values sampled from the <code class="docutils literal notranslate"><span class="pre">guide</span></code>. Refer to the <a class="reference external" href="#Model-Serving-via-TorchScript">Model Serving</a> section for insight on how the <code class="docutils literal notranslate"><span class="pre">Predictive</span></code> class works.</p></li>
@@ -1088,7 +1088,7 @@ hypothesis.</p>
 </div>
 </section>
 <section id="Model-Serving-via-TorchScript">
-<h2>Model Serving via TorchScript<a class="headerlink" href="#Model-Serving-via-TorchScript" title="Permalink to this heading">¶</a></h2>
+<h2>Model Serving via TorchScript<a class="headerlink" href="#Model-Serving-via-TorchScript" title="Permalink to this headline">¶</a></h2>
 <p>Finally, note that the <code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">guide</span></code> and the <code class="docutils literal notranslate"><span class="pre">Predictive</span></code> utility class are all <code class="docutils literal notranslate"><span class="pre">torch.nn.Module</span></code> instances, and can be serialized as <a class="reference external" href="https://pytorch.org/docs/stable/jit.html">TorchScript</a>.</p>
 <p>Here, we show how we can serve a Pyro model as a <a class="reference external" href="https://pytorch.org/docs/stable/jit.html#torch.jit.ScriptModule">torch.jit.ModuleScript</a>, which can be run separately as a C++ program without a Python runtime.</p>
 <p>To do so, we will rewrite our own simple version of the <code class="docutils literal notranslate"><span class="pre">Predictive</span></code> utility class using Pyro’s <a class="reference external" href="http://pyro.ai/examples/effect_handlers.html">effect handling library</a>. This uses:</p>
@@ -1198,7 +1198,7 @@ hypothesis.</p>
 </div>
 <p>In the next section, we’ll look at how to write guides for variational inference as well as compare the results with inference via HMC.</p>
 <section id="References">
-<h3>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h3>
+<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p>McElreath, D., <em>Statistical Rethinking, Chapter 7</em>, 2016</p></li>
 <li><p>Nunn, N. &amp; Puga, D., <a class="reference external" href="https://diegopuga.org/papers/rugged.pdf">Ruggedness: The blessing of bad geography in Africa”</a>, Review of Economics and Statistics 94(1), Feb. 2012</p></li>

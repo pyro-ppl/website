@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Custom SVI Objectives &mdash; Pyro Tutorials 1.8.1 documentation</title>
+  <title>Customizing SVI objectives and training loops &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -35,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.1
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tensor_shapes.html">Tensor shapes in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 </ul>
@@ -94,7 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Custom SVI Objectives</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Customizing SVI objectives and training loops</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Basic-SVI-Usage">Basic SVI Usage</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#A-Lower-Level-Pattern">A Lower-Level Pattern</a></li>
 </ul>
@@ -195,7 +196,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Custom SVI Objectives</li>
+      <li>Customizing SVI objectives and training loops</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/custom_objectives.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -229,11 +230,11 @@
     text-align: unset;
 }
 </style>
-<section id="Custom-SVI-Objectives">
-<h1>Custom SVI Objectives<a class="headerlink" href="#Custom-SVI-Objectives" title="Permalink to this headline">¶</a></h1>
+<section id="Customizing-SVI-objectives-and-training-loops">
+<h1>Customizing SVI objectives and training loops<a class="headerlink" href="#Customizing-SVI-objectives-and-training-loops" title="Permalink to this headline">¶</a></h1>
 <p>Pyro provides support for various optimization-based approaches to Bayesian inference, with <code class="docutils literal notranslate"><span class="pre">Trace_ELBO</span></code> serving as the basic implementation of SVI (stochastic variational inference). See the <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#module-pyro.infer.svi">docs</a> for more information on the various SVI implementations and SVI tutorials <a class="reference external" href="http://pyro.ai/examples/svi_part_i.html">I</a>, <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">II</a>, and
 <a class="reference external" href="http://pyro.ai/examples/svi_part_iii.html">III</a> for background on SVI.</p>
-<p>In this tutorial we show how advanced users can modify and/or augment the variational objectives (alternatively: loss functions) provided by Pyro to support special use cases.</p>
+<p>In this tutorial we show how advanced users can modify and/or augment the variational objectives (alternatively: loss functions) and the training step implementation provided by Pyro to support special use cases.</p>
 <ol class="arabic simple">
 <li><p><a class="reference external" href="#Basic-SVI-Usage">Basic SVI Usage</a></p>
 <ol class="arabic simple">
@@ -262,16 +263,26 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">pyro.optim.Adam</span></code> dynamically creates a new <code class="docutils literal notranslate"><span class="pre">torch.optim.Adam</span></code> optimizer whenever a new parameter is encountered</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">SVI.step()</span></code> zeros gradients between gradient steps</p></li>
 </ul>
-<p>If we want more control, we can directly manipulate the differentiable loss method of the various <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> classes. For example, (assuming we know all the parameters in advance) this is equivalent to the previous code snippet:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># define optimizer and loss function</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">my_parameters</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)})</span>
-<span class="n">loss_fn</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span><span class="o">.</span><span class="n">differentiable_loss</span>
-<span class="c1"># compute loss</span>
-<span class="n">loss</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">model_and_guide_args</span><span class="p">)</span>
-<span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-<span class="c1"># take a step and zero the parameter gradients</span>
-<span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-<span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+<p>If we want more control, we can directly manipulate the differentiable loss method of the various <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> classes. For example, this optimization loop:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">svi</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>is equivalent to this low-level pattern:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loss_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">:</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span><span class="o">.</span><span class="n">differentiable_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">poutine</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">param_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">param_capture</span><span class="p">:</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unconstrained</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">param_capture</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>
+    <span class="c1"># compute loss</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="c1"># take a step and zero the parameter gradients</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
@@ -300,6 +311,7 @@
 <span class="gi">+ optimizer = pyro.optim.Adam({&quot;lr&quot;: 0.001, &quot;betas&quot;: (0.90, 0.999)}, {&quot;clip_norm&quot;: 10.0})</span><span class="w"></span>
 </pre></div>
 </div>
+<p>Further variants of gradient clipping can also be implemented manually by modifying the low-level pattern described above.</p>
 </section>
 <section id="Example:-Scaling-the-Loss">
 <h2>Example: Scaling the Loss<a class="headerlink" href="#Example:-Scaling-the-Loss" title="Permalink to this headline">¶</a></h2>

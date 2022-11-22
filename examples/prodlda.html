@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Probabilistic Topic Modeling &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Probabilistic Topic Modeling &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -108,6 +107,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -482,16 +482,16 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Probabilistic-Topic-Modeling">
-<h1>Probabilistic Topic Modeling<a class="headerlink" href="#Probabilistic-Topic-Modeling" title="Permalink to this heading">¶</a></h1>
+<h1>Probabilistic Topic Modeling<a class="headerlink" href="#Probabilistic-Topic-Modeling" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial implements the ProdLDA topic model from <a class="reference external" href="https://arxiv.org/abs/1703.01488">Autoencoding Variational Inference For Topic Models</a> by Akash Srivastava and Charles Sutton. This model returns consistently better topics than vanilla LDA and trains much more quickly. Furthermore, it does not require a custom inference algorithm that relies on complex mathematical derivations. This tutorial also serves as an introduction to probabilistic modeling with Pyro, and is heavily inspired by
 <a class="reference external" href="http://www.cs.columbia.edu/~blei/papers/Blei2012.pdf">Probabilistic topic models</a> from David Blei.</p>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p>Topic models are a suite of unsupervised learning algorithms that aim to discover and annotate large archives of documents with thematic information. Probabilistic topic models use statistical methods to analyze the words in each text to discover common themes, how those themes are connected to each other, and how they change over time. They enable us to organize and summarize electronic archives at a scale that would be impossible with human annotation alone. The most popular topic model is
 called latent Dirichlet allocation, or LDA.</p>
 </section>
 <section id="Latent-Dirichlet-Allocation:-Intuition">
-<h2>Latent Dirichlet Allocation: Intuition<a class="headerlink" href="#Latent-Dirichlet-Allocation:-Intuition" title="Permalink to this heading">¶</a></h2>
+<h2>Latent Dirichlet Allocation: Intuition<a class="headerlink" href="#Latent-Dirichlet-Allocation:-Intuition" title="Permalink to this headline">¶</a></h2>
 <p>LDA is a statistical model of document collections that encodes the intuition that documents exhibit multiple topics. It is most easily described by its generative process, the idealized random process from which the model assumes the documents were generated. The figure below illustrates the intuition:</p>
 <p><img alt="image1" src="https://i.ibb.co/zV5rjX6/Screen-Shot-2020-09-24-at-11-21-38.png" /></p>
 <center><p>Figure 1: The intuition behind Latent Dirichlet Allocation (Blei 2012).</p>
@@ -501,7 +501,7 @@ David Blei.</p>
 <p>We will now see how easy it is to implement this model in Pyro.</p>
 </section>
 <section id="Probabilistic-Modeling-and-the-Dirichlet-distribution-in-Pyro">
-<h2>Probabilistic Modeling and the Dirichlet distribution in Pyro<a class="headerlink" href="#Probabilistic-Modeling-and-the-Dirichlet-distribution-in-Pyro" title="Permalink to this heading">¶</a></h2>
+<h2>Probabilistic Modeling and the Dirichlet distribution in Pyro<a class="headerlink" href="#Probabilistic-Modeling-and-the-Dirichlet-distribution-in-Pyro" title="Permalink to this headline">¶</a></h2>
 <p>LDA is part of the larger field of probabilistic modeling. If you are already familiar with probabilistic modeling and Pyro, feel free to skip to the next section: <a class="reference external" href="#LDA-pseudocode,-mathematical-form,-and-graphical-model">LDA pseudocode, mathematical form, and graphical model</a>; if not, read on!</p>
 <p>In generative probabilistic modeling, we treat our data as arising from a generative process that includes hidden variables. This generative process defines a joint probability distribution over both the observed and hidden random variables. We perform data analysis by using that joint distribution to compute the conditional distribution of the hidden variables given the observed variables. This conditional distribution is also called the posterior distribution.</p>
 <p>To understand how probabilistic modeling and Pyro work, let’s imagine a very simple example. Let’s say we have a dice and we want to determine whether it is loaded or fair. We cannot directly observe the dice’s ‘fairness’; we can only infer it by throwing the dice and observing the results. So, we throw it 30 times and observe the following results:</p>
@@ -561,7 +561,7 @@ p(\mathcal{D} | \theta) = \prod_{i}^{6} \theta_{k}^{N_k}
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 <span class="c1"># Enable smoke test - run the notebook cells on CI.</span>
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
 </pre></div>
@@ -681,7 +681,7 @@ Inferred dice probabilities from the data (68% confidence intervals):
 <p>As expected, this produces the same inferences as computed earlier. Now that we’ve had a brief introduction to probabilistic programming in Pyro and reviewed a simple application of Dirichlet and multinomial/categorical distributions, we are ready to resume our LDA tutorial.</p>
 </section>
 <section id="LDA-pseudocode,-mathematical-form,-and-graphical-model">
-<h2>LDA pseudocode, mathematical form, and graphical model<a class="headerlink" href="#LDA-pseudocode,-mathematical-form,-and-graphical-model" title="Permalink to this heading">¶</a></h2>
+<h2>LDA pseudocode, mathematical form, and graphical model<a class="headerlink" href="#LDA-pseudocode,-mathematical-form,-and-graphical-model" title="Permalink to this headline">¶</a></h2>
 <p>We can define LDA more formally in 3 different ways: via pseudocode, via the mathematical form of the joint distribution, and via a probabilistic graphical model. Let’s start with the <strong>pseudocode</strong>.</p>
 <p>Each document of the collection is represented as a mixture of topics, where each topic <span class="math notranslate nohighlight">\(\beta_k\)</span> is a probability distribution over the vocabulary (see the distributions over words on the left in Figure 1). We also use <span class="math notranslate nohighlight">\(\beta\)</span> to denote the matrix <span class="math notranslate nohighlight">\(\beta = (\beta_1, ..., \beta_k)\)</span>. The generative process is then as described in the following algorithm:</p>
 <p><img alt="image2" class="no-scaled-link" src="https://i.ibb.co/3pyQfCV/Screen-Shot-2020-09-24-at-21-31-39.png" style="width: 400px;" /></p>
@@ -711,7 +711,7 @@ p(\mathcal{D} | \alpha, \beta) = \prod_{d=1}^{M} \int_{\theta} \Bigg( \prod_{n=1
 <p>We now turn to the computational problem: computing the posterior distribution of the topic structure given the observed documents.</p>
 </section>
 <section id="Autoencoding-Variational-Bayes-in-Latent-Dirichlet-Allocation">
-<h2>Autoencoding Variational Bayes in Latent Dirichlet Allocation<a class="headerlink" href="#Autoencoding-Variational-Bayes-in-Latent-Dirichlet-Allocation" title="Permalink to this heading">¶</a></h2>
+<h2>Autoencoding Variational Bayes in Latent Dirichlet Allocation<a class="headerlink" href="#Autoencoding-Variational-Bayes-in-Latent-Dirichlet-Allocation" title="Permalink to this headline">¶</a></h2>
 <p>Posterior inference over the hidden variables <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(z\)</span> is intractable due to the coupling between the <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span> under the multinomial assumption; see equation <span class="math notranslate nohighlight">\(\eqref{eq:joint1}\)</span>. This is actually a major challenge in applying topic models and developing new models: the computational cost of computing the posterior distribution.</p>
 <p>To solve this challenge, there are two common approaches: - approximate inference methods, the most popular methods being variational methods, especially mean field methods, and - (asymptotically exact) sampling based methods, the most popular being Markov chain Monte Carlo, particularly methods based on collapsed Gibbs sampling</p>
 <p>Both mean-field and collapsed Gibbs have the drawback that applying them to new topic models, even if there is only a small change to the modeling assumptions, requires re-deriving the inference methods, which can be mathematically arduous and time consuming, and limits the ability of practitioners to freely explore the space of different modeling assumptions.</p>
@@ -721,7 +721,7 @@ scale family, which hinders reparameterization, and second, the well known probl
 model and see how to implement it using Pyro.</p>
 </section>
 <section id="Pre-processing-Data-and-Vectorizing-Documents">
-<h2>Pre-processing Data and Vectorizing Documents<a class="headerlink" href="#Pre-processing-Data-and-Vectorizing-Documents" title="Permalink to this heading">¶</a></h2>
+<h2>Pre-processing Data and Vectorizing Documents<a class="headerlink" href="#Pre-processing-Data-and-Vectorizing-Documents" title="Permalink to this headline">¶</a></h2>
 <p>So let’s get started. The first thing we need to do is to <strong>prepare the data</strong>. We will use the <strong>20 newsgroups text dataset</strong>, one of the datasets used by the authors. The 20 newsgroups dataset comprises around 18000 newsgroups posts on 20 topics. Let’s fetch the data:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -776,7 +776,7 @@ Corpus size: torch.Size([18846, 12722])
 <p>There we go! We have a dictionary of 12,722 unique words and indices for each of them! And our corpus is comprised of almost 19,000 documents, where each row represents a document, and each column represents a word in the vocabulary. The data is the count of how many times each word occurs in that specific document. Now we are ready to move to the model.</p>
 </section>
 <section id="ProdLDA:-Latent-Dirichlet-Allocation-with-Product-of-Experts">
-<h2>ProdLDA: Latent Dirichlet Allocation with Product of Experts<a class="headerlink" href="#ProdLDA:-Latent-Dirichlet-Allocation-with-Product-of-Experts" title="Permalink to this heading">¶</a></h2>
+<h2>ProdLDA: Latent Dirichlet Allocation with Product of Experts<a class="headerlink" href="#ProdLDA:-Latent-Dirichlet-Allocation-with-Product-of-Experts" title="Permalink to this headline">¶</a></h2>
 <p>To successfuly apply AEVB to LDA, here’s how the paper’s authors addressed the two challenges mentioned earlier.</p>
 <p><strong>Challenge #1: Dirichlet prior is not a location scale family.</strong> To address this issue, they used an encoder network that approximates the Dirichlet prior <span class="math notranslate nohighlight">\(p(\theta | \alpha)\)</span> with a logistic-normal distribution (more precisely, this is softmax-normal distribution). In other words, they use</p>
 <div class="math notranslate nohighlight">
@@ -957,7 +957,7 @@ Corpus size: torch.Size([18846, 12722])
 <p>And that’s it! Now, let’s visualize the results.</p>
 </section>
 <section id="WordClouds">
-<h2>WordClouds<a class="headerlink" href="#WordClouds" title="Permalink to this heading">¶</a></h2>
+<h2>WordClouds<a class="headerlink" href="#WordClouds" title="Permalink to this headline">¶</a></h2>
 <p>Let’s check the word clouds for each of the 20 topics. We will use a Python package called <code class="docutils literal notranslate"><span class="pre">wordcloud</span></code>. We will visualize the top 100 words per topic, where the font size of each is proportional to its beta (i.e. the larger the word, the more important it is to the corresponding topic):</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -1016,11 +1016,11 @@ Corpus size: torch.Size([18846, 12722])
 </ul>
 </section>
 <section id="Conclusion">
-<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this heading">¶</a></h2>
+<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this headline">¶</a></h2>
 <p>In this tutorial, we have introduced Probabilistic Topic Modeling, Latent Dirichlet Allocation, and implemented ProdLDA in Pyro: a new topic model introduced in 2017 that effectively applies the AEVB inference algorithm to latent Dirichlet allocation. We hope you have fun exploring the power of unsupervised machine learning to manage large archives of documents!</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Akash Srivastava, &amp; Charles Sutton. (2017). Autoencoding Variational Inference For Topic Models.</p></li>
 <li><p>Blei, D. (2012). Probabilistic Topic Models. Commun. ACM, 55(4), 77–84.</p></li>

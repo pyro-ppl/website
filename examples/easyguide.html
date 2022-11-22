@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Writing guides using EasyGuide &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Writing guides using EasyGuide &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -23,7 +22,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Boosting Black Box Variational Inference" href="boosting_bbvi.html" />
+    <link rel="next" title="Customizing SVI objectives and training loops" href="custom_objectives.html" />
     <link rel="prev" title="MLE and MAP Estimation" href="mle_map.html" /> 
 </head>
 
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -106,6 +105,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -480,10 +480,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Writing-guides-using-EasyGuide">
-<h1>Writing guides using EasyGuide<a class="headerlink" href="#Writing-guides-using-EasyGuide" title="Permalink to this heading">¶</a></h1>
+<h1>Writing guides using EasyGuide<a class="headerlink" href="#Writing-guides-using-EasyGuide" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial describes the <a class="reference external" href="http://docs.pyro.ai/en/stable/contrib.easyguide.html">pyro.contrib.easyguide</a> module. This tutorial assumes the reader is already familiar with <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">SVI</a> and <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a>.</p>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>For simple black-box guides, try using components in <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html">pyro.infer.autoguide</a>.</p></li>
 <li><p>For more complex guides, try using components in <a class="reference external" href="http://docs.pyro.ai/en/stable/contrib.easyguide.html">pyro.contrib.easyguide</a>.</p></li>
@@ -497,7 +497,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Modeling-time-series-data">Modeling time series data</a></p></li>
 <li><p><a class="reference external" href="#Writing-a-guide-without-EasyGuide">Writing a guide without EasyGuide</a></p></li>
@@ -518,12 +518,12 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <section id="Modeling-time-series-data">
-<h3>Modeling time series data<a class="headerlink" href="#Modeling-time-series-data" title="Permalink to this heading">¶</a></h3>
+<h3>Modeling time series data<a class="headerlink" href="#Modeling-time-series-data" title="Permalink to this headline">¶</a></h3>
 <p>Consider a time-series model with a slowly-varying continuous latent state and Bernoulli observations with a logistic link function.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -560,7 +560,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Writing-a-guide-without-EasyGuide">
-<h3>Writing a guide without EasyGuide<a class="headerlink" href="#Writing-a-guide-without-EasyGuide" title="Permalink to this heading">¶</a></h3>
+<h3>Writing a guide without EasyGuide<a class="headerlink" href="#Writing-a-guide-without-EasyGuide" title="Permalink to this headline">¶</a></h3>
 <p>Consider a possible guide for this model where we point-estimate the <code class="docutils literal notranslate"><span class="pre">drift</span></code> parameter using a <code class="docutils literal notranslate"><span class="pre">Delta</span></code> distribution, and then model local time series using shared uncertainty but local means, using a <code class="docutils literal notranslate"><span class="pre">LowRankMultivariateNormal</span></code> distribution. There is a single global sample site which we can model with a <code class="docutils literal notranslate"><span class="pre">param</span></code> and <code class="docutils literal notranslate"><span class="pre">sample</span></code> statement. Then we sample a global pair of uncertainty parameters <code class="docutils literal notranslate"><span class="pre">cov_diag</span></code> and <code class="docutils literal notranslate"><span class="pre">cov_factor</span></code>. Next we sample a local <code class="docutils literal notranslate"><span class="pre">loc</span></code> parameter using
 <code class="docutils literal notranslate"><span class="pre">pyro.param(...,</span> <span class="pre">event_dim=...)</span></code> and an auxiliary sample site. Finally we unpack that auxiliary site into one element per time series. The auxiliary-unpacked-to-<code class="docutils literal notranslate"><span class="pre">Delta</span></code>s pattern is quite common.</p>
 <div class="nbinput nblast docutils container">
@@ -631,7 +631,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Using-EasyGuide">
-<h3>Using EasyGuide<a class="headerlink" href="#Using-EasyGuide" title="Permalink to this heading">¶</a></h3>
+<h3>Using EasyGuide<a class="headerlink" href="#Using-EasyGuide" title="Permalink to this headline">¶</a></h3>
 <p>Now let’s simplify using the <code class="docutils literal notranslate"><span class="pre">&#64;easy_guide</span></code> decorator. Our modifications are: 1. Decorate with <code class="docutils literal notranslate"><span class="pre">&#64;easy_guide</span></code> and add <code class="docutils literal notranslate"><span class="pre">self</span></code> to args. 2. Replace the <code class="docutils literal notranslate"><span class="pre">Delta</span></code> guide for drift with a simple <code class="docutils literal notranslate"><span class="pre">map_estimate()</span></code>. 3. Select a <code class="docutils literal notranslate"><span class="pre">group</span></code> of model sites and read their concatenated <code class="docutils literal notranslate"><span class="pre">event_shape</span></code>. 4. Replace the auxiliary site and <code class="docutils literal notranslate"><span class="pre">Delta</span></code> slices with a single <code class="docutils literal notranslate"><span class="pre">group.sample()</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -670,7 +670,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Amortized-guides">
-<h3>Amortized guides<a class="headerlink" href="#Amortized-guides" title="Permalink to this heading">¶</a></h3>
+<h3>Amortized guides<a class="headerlink" href="#Amortized-guides" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">EasyGuide</span></code> also makes it easy to write amortized guides (guides where we learn a function that predicts latent variables from data, rather than learning one parameter per datapoint). Let’s modify the last guide to predict the latent <code class="docutils literal notranslate"><span class="pre">loc</span></code> as an affine function of observed data, rather than memorizing each data point’s latent variable. This amortized guide is more useful in practice because it can handle new data.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -725,7 +725,7 @@ div.rendered_html tbody tr:hover {
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="mle_map.html" class="btn btn-neutral float-left" title="MLE and MAP Estimation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="boosting_bbvi.html" class="btn btn-neutral float-right" title="Boosting Black Box Variational Inference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="custom_objectives.html" class="btn btn-neutral float-right" title="Customizing SVI objectives and training loops" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

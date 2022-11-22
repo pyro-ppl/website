@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tensor shapes in Pyro &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Tensor shapes in Pyro &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -115,6 +114,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -489,14 +489,14 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Tensor-shapes-in-Pyro">
-<h1>Tensor shapes in Pyro<a class="headerlink" href="#Tensor-shapes-in-Pyro" title="Permalink to this heading">¶</a></h1>
+<h1>Tensor shapes in Pyro<a class="headerlink" href="#Tensor-shapes-in-Pyro" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
 <div class="line">This tutorial introduces Pyro’s organization of tensor dimensions. Before starting, you should familiarize yourself with <a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">PyTorch broadcasting semantics</a>.</div>
 <div class="line">After this tutorial, you may want to also read about <a class="reference external" href="http://pyro.ai/examples/enumeration.html">enumeration</a>.</div>
 </div>
 <p>You may also find it useful to read Eric J. Ma’s post <a class="reference external" href="https://ericmjl.github.io/blog/2019/5/29/reasoning-about-shapes-and-probability-distributions/">Reasoning about Shapes and Probability Distributions</a>. While this post is specifically about TensorFlow Probability, many of the same concepts apply.</p>
 <section id="Summary:">
-<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this heading">¶</a></h2>
+<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Tensors broadcast by aligning on the right: <code class="docutils literal notranslate"><span class="pre">torch.ones(3,4,5)</span> <span class="pre">+</span> <span class="pre">torch.ones(5)</span></code>.</p></li>
 <li><p>Distribution <code class="docutils literal notranslate"><span class="pre">.sample().shape</span> <span class="pre">==</span> <span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape</span></code>.</p></li>
@@ -522,7 +522,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Table-of-Contents">
-<h2>Table of Contents<a class="headerlink" href="#Table-of-Contents" title="Permalink to this heading">¶</a></h2>
+<h2>Table of Contents<a class="headerlink" href="#Table-of-Contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Distributions-shapes:-batch_shape-and-event_shape">Distribution shapes</a></p>
 <ul>
@@ -555,7 +555,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 
 <span class="c1"># We&#39;ll ue this helper to check our models are correct.</span>
 <span class="k">def</span> <span class="nf">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">loss</span><span class="p">):</span>
@@ -565,7 +565,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Distributions-shapes:-batch_shape-and-event_shape">
-<h3>Distributions shapes: <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">event_shape</span></code><a class="headerlink" href="#Distributions-shapes:-batch_shape-and-event_shape" title="Permalink to this heading">¶</a></h3>
+<h3>Distributions shapes: <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">event_shape</span></code><a class="headerlink" href="#Distributions-shapes:-batch_shape-and-event_shape" title="Permalink to this headline">¶</a></h3>
 <p>PyTorch <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>s have a single <code class="docutils literal notranslate"><span class="pre">.shape</span></code> attribute, but <code class="docutils literal notranslate"><span class="pre">Distribution</span></code>s have two shape attributions with special meaning: <code class="docutils literal notranslate"><span class="pre">.batch_shape</span></code> and <code class="docutils literal notranslate"><span class="pre">.event_shape</span></code>. These two combine to define the total shape of a sample</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
 <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">d</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="n">d</span><span class="o">.</span><span class="n">event_shape</span>
@@ -588,7 +588,7 @@ shape = sample_shape + batch_shape + event_shape
 </div>
 <p>For example univariate distributions have empty event shape (because each number is an independent event). Distributions over vectors like <code class="docutils literal notranslate"><span class="pre">MultivariateNormal</span></code> have <code class="docutils literal notranslate"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">1</span></code>. Distributions over matrices like <code class="docutils literal notranslate"><span class="pre">InverseWishart</span></code> have <code class="docutils literal notranslate"><span class="pre">len(event_shape)</span> <span class="pre">==</span> <span class="pre">2</span></code>.</p>
 <section id="Examples">
-<h4>Examples<a class="headerlink" href="#Examples" title="Permalink to this heading">¶</a></h4>
+<h4>Examples<a class="headerlink" href="#Examples" title="Permalink to this headline">¶</a></h4>
 <p>The simplest distribution shape is a single univariate distribution.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -647,7 +647,7 @@ shape = sample_shape + batch_shape + event_shape
 </div>
 </section>
 <section id="Reshaping-distributions">
-<h4>Reshaping distributions<a class="headerlink" href="#Reshaping-distributions" title="Permalink to this heading">¶</a></h4>
+<h4>Reshaping distributions<a class="headerlink" href="#Reshaping-distributions" title="Permalink to this headline">¶</a></h4>
 <p>In Pyro you can treat a univariate distribution as multivariate by calling the <a class="reference external" href="http://docs.pyro.ai/en/dev/distributions.html#pyro.distributions.torch_distribution.TorchDistributionMixin.to_event">.to_event(n)</a> property where <code class="docutils literal notranslate"><span class="pre">n</span></code> is the number of batch dimensions (from the right) to declare as <em>dependent</em>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -665,7 +665,7 @@ shape = sample_shape + batch_shape + event_shape
 <p>While you work with Pyro programs, keep in mind that samples have shape <code class="docutils literal notranslate"><span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">event_shape</span></code>, whereas <code class="docutils literal notranslate"><span class="pre">.log_prob(x)</span></code> values have shape <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code>. You’ll need to ensure that <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> is carefully controlled by either trimming it down with <code class="docutils literal notranslate"><span class="pre">.to_event(n)</span></code> or by declaring dimensions as independent via <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>.</p>
 </section>
 <section id="It-is-always-safe-to-assume-dependence">
-<h4>It is always safe to assume dependence<a class="headerlink" href="#It-is-always-safe-to-assume-dependence" title="Permalink to this heading">¶</a></h4>
+<h4>It is always safe to assume dependence<a class="headerlink" href="#It-is-always-safe-to-assume-dependence" title="Permalink to this headline">¶</a></h4>
 <p>Often in Pyro we’ll declare some dimensions as dependent even though they are in fact independent, e.g.</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="mi">10</span><span class="p">])</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">10</span><span class="p">,)</span>
@@ -682,7 +682,7 @@ independence when variables are actually dependent (i.e. narrowing the model cl
 </section>
 </section>
 <section id="Declaring-independent-dims-with-plate">
-<h3>Declaring independent dims with <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Declaring-independent-dims-with-plate" title="Permalink to this heading">¶</a></h3>
+<h3>Declaring independent dims with <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Declaring-independent-dims-with-plate" title="Permalink to this headline">¶</a></h3>
 <p>Pyro models can use the context manager <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">pyro.plate</a> to declare that certain batch dimensions are independent. Inference algorithms can then take advantage of this independence to e.g. construct lower variance gradient estimators or to enumerate in linear space rather than exponential space. An example of an independent dimension is the index over data in a minibatch: each datum should be independent of all others.</p>
 <p>The simplest way to declare a dimension as independent is to declare the rightmost batch dimension as independent via a simple</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;my_plate&quot;</span><span class="p">):</span>
@@ -831,7 +831,7 @@ Sample Sites:
 </div>
 </section>
 <section id="Subsampling-tensors-inside-a-plate">
-<h3>Subsampling tensors inside a <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Subsampling-tensors-inside-a-plate" title="Permalink to this heading">¶</a></h3>
+<h3>Subsampling tensors inside a <code class="docutils literal notranslate"><span class="pre">plate</span></code><a class="headerlink" href="#Subsampling-tensors-inside-a-plate" title="Permalink to this headline">¶</a></h3>
 <p>One of the main uses of <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">plate</a> is to subsample data. This is possible within a <code class="docutils literal notranslate"><span class="pre">plate</span></code> because data are conditionally independent, so the expected value of the loss on, say, half the data should be half the expected loss on the full data.</p>
 <p>To subsample data, you need to inform Pyro of both the original data size and the subsample size; Pyro will then choose a random subset of data and yield the set of indices.</p>
 <div class="nbinput nblast docutils container">
@@ -856,7 +856,7 @@ Sample Sites:
 </div>
 </section>
 <section id="Broadcasting-to-allow-parallel-enumeration">
-<h3>Broadcasting to allow parallel enumeration<a class="headerlink" href="#Broadcasting-to-allow-parallel-enumeration" title="Permalink to this heading">¶</a></h3>
+<h3>Broadcasting to allow parallel enumeration<a class="headerlink" href="#Broadcasting-to-allow-parallel-enumeration" title="Permalink to this headline">¶</a></h3>
 <p>Pyro 0.2 introduces the ability to enumerate discrete latent variables in parallel. This can significantly reduce the variance of gradient estimators when learning a posterior via <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.svi.SVI">SVI</a>.</p>
 <p>To use parallel enumeration, Pyro needs to allocate tensor dimension that it can use for enumeration. To avoid conflicting with other dimensions that we want to use for <code class="docutils literal notranslate"><span class="pre">plate</span></code>s, we need to declare a budget of the maximum number of tensor dimensions we’ll use. This budget is called <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> and is an argument to <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html">SVI</a> (the argument is simply passed through to
 <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.TraceEnum_ELBO">TraceEnum_ELBO</a>). Usually Pyro can determine this budget on its own (it runs the <code class="docutils literal notranslate"><span class="pre">(model,guide)</span></code> pair once and record what happens), but in case of dynamic model structure you may need to declare <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> manually.</p>
@@ -985,7 +985,7 @@ Sample Sites:
 </pre></div></div>
 </div>
 <section id="Writing-parallelizable-code">
-<h4>Writing parallelizable code<a class="headerlink" href="#Writing-parallelizable-code" title="Permalink to this heading">¶</a></h4>
+<h4>Writing parallelizable code<a class="headerlink" href="#Writing-parallelizable-code" title="Permalink to this headline">¶</a></h4>
 <p>It can be tricky to write Pyro models that correctly handle parallelized sample sites. Two tricks help: <a class="reference external" href="http://pytorch.org/docs/master/notes/broadcasting.html">broadcasting</a> and <a class="reference external" href="http://python-reference.readthedocs.io/en/dev/docs/brackets/ellipsis.html">ellipsis slicing</a>. Let’s look at a contrived model to see how these work in practice. Our aim is to write a model that works both with and without enumeration.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -1054,7 +1054,7 @@ Sample Sites:
 </div>
 </section>
 <section id="Automatic-broadcasting-inside-pyro.plate">
-<h4>Automatic broadcasting inside pyro.plate<a class="headerlink" href="#Automatic-broadcasting-inside-pyro.plate" title="Permalink to this heading">¶</a></h4>
+<h4>Automatic broadcasting inside pyro.plate<a class="headerlink" href="#Automatic-broadcasting-inside-pyro.plate" title="Permalink to this headline">¶</a></h4>
 <p>Note that in all our model/guide specifications, we have relied on <a class="reference external" href="http://docs.pyro.ai/en/dev/primitives.html#pyro.plate">pyro.plate</a> to automatically expand sample shapes to satisfy the constraints on batch shape enforced by <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements. However this broadcasting is equivalent to hand-annotated <code class="docutils literal notranslate"><span class="pre">.expand()</span></code> statements.</p>
 <p>We will demonstrate this using <code class="docutils literal notranslate"><span class="pre">model4</span></code> from the <a class="reference external" href="#Writing-parallelizable-code">previous section</a>. Note the following changes to the code from earlier:</p>
 <ul class="simple">

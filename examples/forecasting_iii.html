@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forecasting III: hierarchical models &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Forecasting III: hierarchical models &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -96,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -478,7 +478,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Forecasting-III:-hierarchical-models">
-<h1>Forecasting III: hierarchical models<a class="headerlink" href="#Forecasting-III:-hierarchical-models" title="Permalink to this heading">¶</a></h1>
+<h1>Forecasting III: hierarchical models<a class="headerlink" href="#Forecasting-III:-hierarchical-models" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial covers hierarchical multivariate time series modeling with the <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html">pyro.contrib.forecast</a> module. This tutorial assumes the reader is already familiar with <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">SVI</a>, <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a>, and <a class="reference external" href="http://pyro.ai/examples/forecasting_i.html">univariate forecasting</a>.</p>
 <p>See also:</p>
 <ul class="simple">
@@ -486,7 +486,7 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="http://pyro.ai/examples/forecasting_ii.html">Forecasting II: state space models</a></p></li>
 </ul>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Hierarchial forecasting works like any other hierarchial modeling in Pyro.</p></li>
 <li><p>To create hierarchical models in Pyro, use the <a class="reference external" href="http://docs.pyro.ai/en/latest/primitives.html#pyro.plate">plate</a> context manager.</p></li>
@@ -510,7 +510,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20200305</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -538,7 +538,7 @@ torch.Size([78888, 50, 50])
 </pre></div></div>
 </div>
 <section id="Multivariate-time-series">
-<h3>Multivariate time series<a class="headerlink" href="#Multivariate-time-series" title="Permalink to this heading">¶</a></h3>
+<h3>Multivariate time series<a class="headerlink" href="#Multivariate-time-series" title="Permalink to this headline">¶</a></h3>
 <p>Let’s start by modeling arrivals to Embarcadero station, from each of the other 50 stations. Note this is nine years of hourly data, so the dataset is quite long.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -726,7 +726,7 @@ torch.Size([100, 1, 336, 50]) torch.Size([336, 50])
 <p>Note the poor predictions on the Christmas holiday. This is to be expected since we only trained on 90 days of data and have not modeled holidays. To accurately forecast holiday behavior we would need to train on multiple years of data, include yearly seasonality components, and ideally include holiday features in covariates.</p>
 </section>
 <section id="Deeper-hierarchical-models">
-<h3>Deeper hierarchical models<a class="headerlink" href="#Deeper-hierarchical-models" title="Permalink to this heading">¶</a></h3>
+<h3>Deeper hierarchical models<a class="headerlink" href="#Deeper-hierarchical-models" title="Permalink to this headline">¶</a></h3>
 <p>Next let’s consider a larger hierarchy: all 50 x 50 = 2500 pairs of stations.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -910,7 +910,7 @@ Wall time: 32.4 s
 <p>Notice that the hierarchy allows the model to make accurate predictions even for very low-volume (station,station) pairs. For example almost nobody rides from Ashby station to Antioch.</p>
 </section>
 <section id="Subsampling">
-<h3>Subsampling<a class="headerlink" href="#Subsampling" title="Permalink to this heading">¶</a></h3>
+<h3>Subsampling<a class="headerlink" href="#Subsampling" title="Permalink to this headline">¶</a></h3>
 <p>It can be expensive to train models of high-dimensional time series data. However since we’re using stochastic variational inference for training, we can subsample some of the data plates, trading gradient variance for speed. In our BART example we can subsample both origins and destinations (but we can never subsample the <code class="docutils literal notranslate"><span class="pre">time_plate</span></code>).</p>
 <p>To enable subampling in a <a class="reference external" href="http://docs.pyro.ai/en/latest/contrib.forecast.html#module-pyro.contrib.forecast">Forecaster</a> (or more generally in any Pyro <a class="reference external" href="http://docs.pyro.ai/en/latest/infer.autoguide.html#autodelta">AutoDelta</a> or <a class="reference external" href="http://docs.pyro.ai/en/latest/infer.autoguide.html#autonormal">Autonormal</a> guide), we need to define a callback fuction that creates subsampled plates in the guide. This callback will be named <code class="docutils literal notranslate"><span class="pre">create_plates()</span></code>. It will input the same
 <code class="docutils literal notranslate"><span class="pre">(zero_data,</span> <span class="pre">covariates)</span></code> args as the model (or more generally the same <code class="docutils literal notranslate"><span class="pre">(*args,</span> <span class="pre">**kwargs)</span></code>), and will return a plate or iterable of plates.</p>

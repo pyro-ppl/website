@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pyro.contrib.funsor, a new backend for Pyro - New primitives (Part 1) &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>pyro.contrib.funsor, a new backend for Pyro - New primitives (Part 1) &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -96,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -481,15 +481,15 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="pyro.contrib.funsor,-a-new-backend-for-Pyro---New-primitives-(Part-1)">
-<h1><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)<a class="headerlink" href="#pyro.contrib.funsor,-a-new-backend-for-Pyro---New-primitives-(Part-1)" title="Permalink to this heading">¶</a></h1>
+<h1><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)<a class="headerlink" href="#pyro.contrib.funsor,-a-new-backend-for-Pyro---New-primitives-(Part-1)" title="Permalink to this headline">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p>In this tutorial we’ll cover the basics of <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for the Pyro probabilistic programming system that is intended to replace the current internals of Pyro and significantly expand its capabilities as both a modelling tool and an inference research platform.</p>
 <p>This tutorial is aimed at readers interested in developing custom inference algorithms and understanding Pyro’s current and future internals. As such, the material here assumes some familiarity with the <a class="reference external" href="https://pyro.ai/api/">generic Pyro API package</a> <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code> and with Funsor. Additional documentation for Funsor can be found on <a class="reference external" href="https://funsor.pyro.ai/en/stable/">the Pyro website</a>, on <a class="reference external" href="https://github.com/pyro-ppl/funsor">GitHub</a>, and in the research paper <a class="reference external" href="https://arxiv.org/abs/1910.10775">“Functional Tensors for
 Probabilistic Programming.”</a> Those who are less interested in such details should find that they can already use the general-purpose algorithms in <code class="docutils literal notranslate"><span class="pre">contrib.funsor</span></code> with their existing Pyro models via <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code>.</p>
 </section>
 <section id="Reinterpreting-existing-Pyro-models-with-pyroapi">
-<h2>Reinterpreting existing Pyro models with <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code><a class="headerlink" href="#Reinterpreting-existing-Pyro-models-with-pyroapi" title="Permalink to this heading">¶</a></h2>
+<h2>Reinterpreting existing Pyro models with <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code><a class="headerlink" href="#Reinterpreting-existing-Pyro-models-with-pyroapi" title="Permalink to this headline">¶</a></h2>
 <p>The new backend uses the <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code> package to integrate with existing Pyro code.</p>
 <p>First, we import some dependencies:</p>
 <div class="nbinput nblast docutils container">
@@ -533,7 +533,7 @@ Probabilistic Programming.”</a> Those who are less interested in such details 
 <p>And we’re off! From here on, any <code class="docutils literal notranslate"><span class="pre">pyro.(...)</span></code> statement should be understood as dispatching to the new backend.</p>
 </section>
 <section id="Two-new-primitives:-to_funsor-and-to_data">
-<h2>Two new primitives: <code class="docutils literal notranslate"><span class="pre">to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">to_data</span></code><a class="headerlink" href="#Two-new-primitives:-to_funsor-and-to_data" title="Permalink to this heading">¶</a></h2>
+<h2>Two new primitives: <code class="docutils literal notranslate"><span class="pre">to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">to_data</span></code><a class="headerlink" href="#Two-new-primitives:-to_funsor-and-to_data" title="Permalink to this headline">¶</a></h2>
 <p>The first and most important new concept in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> is the new pair of primitives <code class="docutils literal notranslate"><span class="pre">pyro.to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code>.</p>
 <p>These are <em>effectful</em> versions of <code class="docutils literal notranslate"><span class="pre">funsor.to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">funsor.to_data</span></code>, i.e. versions whose behavior can be intercepted, controlled, or used to trigger side effects by Pyro’s library of algebraic effect handlers. Let’s briefly review these two underlying functions before diving into the effectful versions in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>.</p>
 <p>As one might expect from the name, <code class="docutils literal notranslate"><span class="pre">to_funsor</span></code> takes as inputs objects that are not <code class="docutils literal notranslate"><span class="pre">funsor.Funsor</span></code>s and attempts to convert them into Funsor terms. For example, calling <code class="docutils literal notranslate"><span class="pre">funsor.to_funsor</span></code> on a Python number converts it to a <code class="docutils literal notranslate"><span class="pre">funsor.terms.Number</span></code> object:</p>
@@ -799,7 +799,7 @@ px:  &lt;class &#39;funsor.tensor.Tensor&#39;&gt; OrderedDict([(&#39;x&#39;, Bin
 </div>
 </section>
 <section id="Dealing-with-large-numbers-of-variables:-(re-)introducing-pyro.markov">
-<h2>Dealing with large numbers of variables: (re-)introducing <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code><a class="headerlink" href="#Dealing-with-large-numbers-of-variables:-(re-)introducing-pyro.markov" title="Permalink to this heading">¶</a></h2>
+<h2>Dealing with large numbers of variables: (re-)introducing <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code><a class="headerlink" href="#Dealing-with-large-numbers-of-variables:-(re-)introducing-pyro.markov" title="Permalink to this headline">¶</a></h2>
 <p>So far, so good. However, what if the number of different named dimensions continues to increase? We face two problems: first, reusing the fixed number of available positional dimensions (25 in PyTorch), and second, computing shape information with time complexity that is independent of the number of variables.</p>
 <p>A fully general automated solution to this problem would require deeper integration with Python or PyTorch. Instead, as an intermediate solution, we introduce the second key concept in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>: the <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> annotation, a way to indicate the shelf life of certain variables. <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> is already part of Pyro (see enumeration tutorial) but the implementation in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> is fresh.</p>
 <p>The primary constraint on the design of <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> is backwards compatibility: in order for <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> to be compatible with the large range of existing Pyro models, the new implementation had to match the shape semantics of Pyro’s existing enumeration machinery as closely as possible.</p>
@@ -864,9 +864,9 @@ Shape of x[9]:  torch.Size([2, 1, 1, 1, 1])
 </div>
 </section>
 <section id="Use-cases-beyond-enumeration:-global-and-visible-dimensions">
-<h2>Use cases beyond enumeration: global and visible dimensions<a class="headerlink" href="#Use-cases-beyond-enumeration:-global-and-visible-dimensions" title="Permalink to this heading">¶</a></h2>
+<h2>Use cases beyond enumeration: global and visible dimensions<a class="headerlink" href="#Use-cases-beyond-enumeration:-global-and-visible-dimensions" title="Permalink to this headline">¶</a></h2>
 <section id="Global-dimensions">
-<h3>Global dimensions<a class="headerlink" href="#Global-dimensions" title="Permalink to this heading">¶</a></h3>
+<h3>Global dimensions<a class="headerlink" href="#Global-dimensions" title="Permalink to this headline">¶</a></h3>
 <p>It is sometimes useful to have dimensions and variables ignore the <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> structure of a program and remain active in arbitrarily deeply nested <code class="docutils literal notranslate"><span class="pre">markov</span></code> and <code class="docutils literal notranslate"><span class="pre">named</span></code> contexts. For example, suppose we wanted to draw a batch of samples from a Pyro model’s joint distribution. To accomplish this we indicate to <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> that a dimension should be treated as “global” (<code class="docutils literal notranslate"><span class="pre">DimType.GLOBAL</span></code>) via the <code class="docutils literal notranslate"><span class="pre">dim_type</span></code> keyword argument.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -927,7 +927,7 @@ A third new global dimension after recycling:  OrderedDict([(&#39;plate3&#39;, B
 <p>Performing this deallocation directly is often unnecessary, and we include this interaction primarily to illuminate the internals of <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>. Instead, effect handlers that introduce global dimensions, like <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>, may inherit from the <code class="docutils literal notranslate"><span class="pre">GlobalNamedMessenger</span></code> effect handler which deallocates global dimensions generically upon entry and exit. We will see an example of this in the next tutorial.</p>
 </section>
 <section id="Visible-dimensions">
-<h3>Visible dimensions<a class="headerlink" href="#Visible-dimensions" title="Permalink to this heading">¶</a></h3>
+<h3>Visible dimensions<a class="headerlink" href="#Visible-dimensions" title="Permalink to this headline">¶</a></h3>
 <p>We might also wish to preserve the meaning of the shape of a tensor of data. For this we indicate to <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> that a dimension should be treated as not merely global but “visible” (<code class="docutils literal notranslate"><span class="pre">DimTypes.VISIBLE</span></code>). By default, the 4 rightmost batch dimensions are reserved as “visible” dimensions, but this can be changed by setting the <code class="docutils literal notranslate"><span class="pre">first_available_dim</span></code> attribute of the global state object <code class="docutils literal notranslate"><span class="pre">_DIM_STACK</span></code>.</p>
 <p>Users who have come across <code class="docutils literal notranslate"><span class="pre">pyro.infer.TraceEnum_ELBO</span></code>’s <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> argument are already familiar with this distinction.</p>
 <div class="nbinput docutils container">

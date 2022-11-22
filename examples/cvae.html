@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Conditional Variational Auto-encoder &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Conditional Variational Auto-encoder &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -106,6 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -226,9 +226,9 @@
 }
 </style>
 <section id="Conditional-Variational-Auto-encoder">
-<h1>Conditional Variational Auto-encoder<a class="headerlink" href="#Conditional-Variational-Auto-encoder" title="Permalink to this heading">¶</a></h1>
+<h1>Conditional Variational Auto-encoder<a class="headerlink" href="#Conditional-Variational-Auto-encoder" title="Permalink to this headline">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p>This tutorial implements <a class="reference external" href="http://papers.nips.cc/paper/5775-learning-structured-output-representation-using-deep-conditional-generati">Learning Structured Output Representation using Deep Conditional Generative Models</a> paper, which introduced Conditional Variational Auto-encoders in 2015, using Pyro PPL.</p>
 <p>Supervised deep learning has been successfully applied for many recognition problems in machine learning and computer vision. Although it can approximate a complex many-to-one function very well when large number of training data is provided, the lack of probabilistic inference of the current supervised deep learning methods makes it difficult to model a complex structured output representations. In this work, Kihyuk Sohn, Honglak Lee and Xinchen Yan develop a scalable deep conditional
 generative model for structured output variables using Gaussian latent variables. The model is trained efficiently in the framework of stochastic gradient variational Bayes, and allows a fast prediction using stochastic feed-forward inference. They called the model Conditional Variational Auto-encoder (CVAE).</p>
@@ -236,13 +236,13 @@ generative model for structured output variables using Gaussian latent variables
 but realistic output predictions using stochastic inference. Here, we will implement their proof of concept: an artificial experimental setting for structured output prediction using MNIST database.</p>
 </section>
 <section id="The-problem">
-<h2>The problem<a class="headerlink" href="#The-problem" title="Permalink to this heading">¶</a></h2>
+<h2>The problem<a class="headerlink" href="#The-problem" title="Permalink to this headline">¶</a></h2>
 <p>Let’s divide each digit image into four quadrants, and take one, two, or three quadrant(s) as an input and the remaining quadrants as an output to be predicted. The image below shows the case where one quadrant is the input:</p>
 <p><img alt="image1" class="no-scaled-link" src="https://i.ibb.co/x17xFwy/image1.png" style="width: 300px;" /></p>
 <p>Our objective is to <strong>learn a model that can perform probabilistic inference and make diverse predictions from a single input</strong>. This is because we are not simply modeling a many-to-one function as in classification tasks, but we may need to model a mapping from single input to many possible outputs. One of the limitations of deterministic neural networks is that they generate only a single prediction. In the example above, the input shows a small part of a digit that might be a three or a five.</p>
 </section>
 <section id="Preparing-the-data">
-<h2>Preparing the data<a class="headerlink" href="#Preparing-the-data" title="Permalink to this heading">¶</a></h2>
+<h2>Preparing the data<a class="headerlink" href="#Preparing-the-data" title="Permalink to this headline">¶</a></h2>
 <p>We use the MNIST dataset; the first step is to prepare it. Depending on how many quadrants we will use as inputs, we will build the datasets and dataloaders, removing the unused pixels with -1:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CVAEMNIST</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -333,7 +333,7 @@ but realistic output predictions using stochastic inference. Here, we will imple
 </div>
 </section>
 <section id="Baseline:-Deterministic-Neural-Network">
-<h2>Baseline: Deterministic Neural Network<a class="headerlink" href="#Baseline:-Deterministic-Neural-Network" title="Permalink to this heading">¶</a></h2>
+<h2>Baseline: Deterministic Neural Network<a class="headerlink" href="#Baseline:-Deterministic-Neural-Network" title="Permalink to this headline">¶</a></h2>
 <p>Before we dive into the CVAE implementation, let’s code the baseline model. It is a straightforward implementation:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BaselineNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hidden_1</span><span class="p">,</span> <span class="n">hidden_2</span><span class="p">):</span>
@@ -367,7 +367,7 @@ but realistic output predictions using stochastic inference. Here, we will imple
 <p>The training is very straightforward. We use 500 neurons in each hidden layer, Adam optimizer with <code class="docutils literal notranslate"><span class="pre">1e-3</span></code> learning rate, and early stopping. Please check the <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/cvae">Github repo</a> for the full implementation.</p>
 </section>
 <section id="Deep-Conditional-Generative-Models-for-Structured-Output-Prediction">
-<h2>Deep Conditional Generative Models for Structured Output Prediction<a class="headerlink" href="#Deep-Conditional-Generative-Models-for-Structured-Output-Prediction" title="Permalink to this heading">¶</a></h2>
+<h2>Deep Conditional Generative Models for Structured Output Prediction<a class="headerlink" href="#Deep-Conditional-Generative-Models-for-Structured-Output-Prediction" title="Permalink to this headline">¶</a></h2>
 <p>As illustrated in the image below, there are three types of variables in a deep conditional generative model (CGM): input variables <span class="math notranslate nohighlight">\(\bf x\)</span>, output variables <span class="math notranslate nohighlight">\(\bf y\)</span>, and latent variables <span class="math notranslate nohighlight">\(\bf z\)</span>. The conditional generative process of the model is given in (b) as follows: for given observation <span class="math notranslate nohighlight">\(\bf x\)</span>, <span class="math notranslate nohighlight">\(\bf z\)</span> is drawn from the prior distribution <span class="math notranslate nohighlight">\(p_{\theta}({\bf z} | {\bf x})\)</span>, and the output <span class="math notranslate nohighlight">\(\bf y\)</span> is generated from the distribution
 <span class="math notranslate nohighlight">\(p_{\theta}({\bf y} | {\bf x, z})\)</span>. Compared to the baseline NN (a), the latent variables <span class="math notranslate nohighlight">\(\bf z\)</span> allow for modeling multiple modes in conditional distribution of output variables <span class="math notranslate nohighlight">\(\bf y\)</span> given input <span class="math notranslate nohighlight">\(\bf x\)</span>, making the proposed CGM suitable for modeling one-to-many mapping.</p>
 <p><img alt="image1" class="no-scaled-link" src="https://i.ibb.co/0mVvkSF/image2.png" style="width: 800px;" /></p>
@@ -482,7 +482,7 @@ network components of the CVAE <strong>on top of the baseline NN</strong>. Speci
 </div>
 </section>
 <section id="Training">
-<h2>Training<a class="headerlink" href="#Training" title="Permalink to this heading">¶</a></h2>
+<h2>Training<a class="headerlink" href="#Training" title="Permalink to this headline">¶</a></h2>
 <p>The training code can be found in the <a class="reference external" href="https://github.com/pyro-ppl/pyro/tree/dev/examples/cvae">Github repo</a>. Click play in the video below to watch how the CVAE learns throughout approximately 40 epochs.</p>
 <p><video muted controls loop width="100%"><source src="https://ucals-github.s3-sa-east-1.amazonaws.com/cvae_animation.mp4" type="video/mp4"><source src="https://ucals-github.s3-sa-east-1.amazonaws.com/cvae_animation.webm" type="video/webm"></video></p><p>As we can see, the model learned posterior distribution continuously improves as the training progresses: not only the loss goes down, but also we can see clearly how the predictions get better and better.</p>
 <p>Additionally, here we can already observe the key advantage of CVAEs: the model learns to generate multiple predictions from a single input. In the first digit, the input is clearly a piece of a 7. The model learns it and keeps predicting clearer 7’s, but with different writing styles. In the second and third digits, the inputs are pieces of what could be either a 3 or a 5 (truth is 3), and what could be either a 4 or a 9 (truth is 4). During the first epochs, the CVAE predictions are blurred,
@@ -490,7 +490,7 @@ and they get clearer as time passes, as expected.</p>
 <p>However, different from the first digit, it’s hard to determine whether the truth is 3 and 4 for the second and third digits, respectively, by observing only one quarter of the digits as input. By the end of the training, the CVAE generates very clear and realistic predictions, but it doesn’t force either a 3 or a 5 for the second digit, and a 4 or a 9 for the third digit. Sometimes it predicts one option, and sometimes it predicts another.</p>
 </section>
 <section id="Evaluating-the-results">
-<h2>Evaluating the results<a class="headerlink" href="#Evaluating-the-results" title="Permalink to this heading">¶</a></h2>
+<h2>Evaluating the results<a class="headerlink" href="#Evaluating-the-results" title="Permalink to this headline">¶</a></h2>
 <p>For qualitative analysis, we visualize the generated output samples in the next figure. As we can see, the baseline NNs can only make a single deterministic prediction, and as a result the output looks blurry and doesn’t look realistic in many cases. In contrast, the samples generated by the CVAE models are more realistic and diverse in shape; sometimes they can even change their identity (digit labels), such as from 3 to 5 or from 4 to 9, and vice versa.</p>
 <p><img alt="image1" class="no-scaled-link" src="https://i.ibb.co/Jvz9v71/cvae-q1.png" style="width: 400px;" /></p>
 <p>We also provide a quantitative evidence by estimating the marginal conditional log-likelihoods (CLLs) in next table (lower is better).</p>
@@ -530,7 +530,7 @@ and they get clearer as time passes, as expected.</p>
 <p>See the full code on <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/cvae">Github</a>.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Learning</span> <span class="pre">Structured</span> <span class="pre">Output</span> <span class="pre">Representation</span> <span class="pre">using</span> <span class="pre">Deep</span> <span class="pre">Conditional</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>,     Kihyuk Sohn, Xinchen Yan, Honglak Lee</p>
 </section>
 </section>

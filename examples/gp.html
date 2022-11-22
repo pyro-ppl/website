@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaussian Processes &mdash; Pyro Tutorials 1.8.2 documentation</title>
+  <title>Gaussian Processes &mdash; Pyro Tutorials 1.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,6 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -36,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.2
+                1.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -96,6 +95,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html">MLE and MAP Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mle_map.html#Doing-the-same-thing-with-AutoGuides">Doing the same thing with AutoGuides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="easyguide.html">Writing guides using EasyGuide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_objectives.html">Customizing SVI objectives and training loops</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boosting_bbvi.html">Boosting Black Box Variational Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neutra.html">Example: Neural MCMC with NeuTraReparam</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sparse_regression.html">Example: Sparse Bayesian Linear Regression</a></li>
@@ -488,9 +488,9 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Gaussian-Processes">
-<h1>Gaussian Processes<a class="headerlink" href="#Gaussian-Processes" title="Permalink to this heading">¶</a></h1>
+<h1>Gaussian Processes<a class="headerlink" href="#Gaussian-Processes" title="Permalink to this headline">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_process">Gaussian Processes</a> have been used in supervised, unsupervised, and even reinforcement learning problems and are described by an elegant mathematical theory (for an overview of the subject see [1, 4]). They are also very attractive conceptually, since they offer an intuitive way to define priors over functions. And finally, since Gaussian Processes are formulated in a Bayesian setting, they come equipped with a powerful notion of uncertainty.</p>
 <p>Happily, Pyro offers some support for Gaussian Processes in the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> module. The goal of this tutorial is to give a brief introduction to Gaussian Processes (GPs) in the context of this module. We will mostly be focusing on how to use the GP interface in Pyro and refer the reader to the references for more details about GPs in general.</p>
 <p>The model we’re interested in is defined by</p>
@@ -506,7 +506,7 @@ div.rendered_html tbody tr:hover {
 <p>Here <span class="math notranslate nohighlight">\(\sigma^2\)</span> and <span class="math notranslate nohighlight">\(l\)</span> are parameters that specify the kernel; specifically, <span class="math notranslate nohighlight">\(\sigma^2\)</span> is a variance or amplitude squared and <span class="math notranslate nohighlight">\(l\)</span> is a lengthscale. We’ll get some intuition for these parameters below.</p>
 </section>
 <section id="Imports">
-<h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this heading">¶</a></h2>
+<h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this headline">¶</a></h2>
 <p>First, we import necessary modules.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -530,7 +530,7 @@ div.rendered_html tbody tr:hover {
 
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="s2">&quot;CI&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>  <span class="c1"># ignore; used to check code integrity in the Pyro repo</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.2&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -596,7 +596,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Data">
-<h2>Data<a class="headerlink" href="#Data" title="Permalink to this heading">¶</a></h2>
+<h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
 <p>The data consist of <span class="math notranslate nohighlight">\(20\)</span> points sampled from</p>
 <div class="math notranslate nohighlight">
 \[y = 0.5\sin(3x) + \epsilon, \quad \epsilon \sim \mathcal{N}(0, 0.2).\]</div>
@@ -622,7 +622,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Define-model">
-<h2>Define model<a class="headerlink" href="#Define-model" title="Permalink to this heading">¶</a></h2>
+<h2>Define model<a class="headerlink" href="#Define-model" title="Permalink to this headline">¶</a></h2>
 <p>First we define a RBF kernel, specifying the values of the two hyperparameters <code class="docutils literal notranslate"><span class="pre">variance</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscale</span></code>. Then we construct a <code class="docutils literal notranslate"><span class="pre">GPRegression</span></code> object. Here we feed in another hyperparameter, <code class="docutils literal notranslate"><span class="pre">noise</span></code>, that corresponds to <span class="math notranslate nohighlight">\(\epsilon\)</span> above.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -696,7 +696,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
 <p>In the above we set the kernel hyperparameters by hand. If we want to learn the hyperparameters from the data, we need to do inference. In the simplest (conjugate) case we do gradient ascent on the log marginal likelihood. In <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code>, we can use any <a class="reference external" href="https://pytorch.org/docs/stable/optim.html">PyTorch optimizer</a> to optimize parameters of a model. In addition, we need a loss function which takes inputs are the pair model and guide and returns an ELBO loss (see <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI Part
 I</span></a> tutorial).</p>
 <div class="nbinput nblast docutils container">
@@ -845,7 +845,7 @@ I</span></a> tutorial).</p>
 </div>
 <img alt="_images/gpr-fit.gif" src="_images/gpr-fit.gif" />
 <section id="Fit-the-model-using-MAP">
-<h3>Fit the model using MAP<a class="headerlink" href="#Fit-the-model-using-MAP" title="Permalink to this heading">¶</a></h3>
+<h3>Fit the model using MAP<a class="headerlink" href="#Fit-the-model-using-MAP" title="Permalink to this headline">¶</a></h3>
 <p>We need to define priors for the hyperparameters.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -926,7 +926,7 @@ noise = 0.042222216725349426
 </section>
 </section>
 <section id="Sparse-GPs">
-<h2>Sparse GPs<a class="headerlink" href="#Sparse-GPs" title="Permalink to this heading">¶</a></h2>
+<h2>Sparse GPs<a class="headerlink" href="#Sparse-GPs" title="Permalink to this headline">¶</a></h2>
 <p>For large datasets computing the log marginal likelihood is costly due to the expensive matrix operations involved (e.g. see Section 2.2 of [1]). A variety of so-called ‘sparse’ variational methods have been developed to make GPs viable for larger datasets. This is a big area of research and we won’t be going into all the details. Instead we quickly show how we can use <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> to make use of these methods.</p>
 <p>First, we generate more data.</p>
 <div class="nbinput docutils container">
@@ -1093,11 +1093,11 @@ noise = 0.042222216725349426
 <p>By default, <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> will use “VFE” as the inference method. We can use other methods by passing a different <code class="docutils literal notranslate"><span class="pre">approx</span></code> flag to <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code>.</p>
 </section>
 <section id="More-Sparse-GPs">
-<h2>More Sparse GPs<a class="headerlink" href="#More-Sparse-GPs" title="Permalink to this heading">¶</a></h2>
+<h2>More Sparse GPs<a class="headerlink" href="#More-Sparse-GPs" title="Permalink to this headline">¶</a></h2>
 <p>Both <code class="docutils literal notranslate"><span class="pre">GPRegression</span></code> and <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> above are limited to Gaussian likelihoods. We can use other likelihoods with GPs—for example, we can use the Bernoulli likelihood for classification problems—but the inference problem becomes more difficult. In this section, we show how to use the <code class="docutils literal notranslate"><span class="pre">VariationalSparseGP</span></code> module, which can handle non-Gaussian likelihoods. So we can compare to what we’ve done above, we’re still going to use a Gaussian likelihood. The point is that the inference
 that’s being done under the hood can support other likelihoods.</p>
 <section id="Gaussian-Likelihood">
-<h3>Gaussian Likelihood<a class="headerlink" href="#Gaussian-Likelihood" title="Permalink to this heading">¶</a></h3>
+<h3>Gaussian Likelihood<a class="headerlink" href="#Gaussian-Likelihood" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
@@ -1147,7 +1147,7 @@ that’s being done under the hood can support other likelihoods.</p>
 </section>
 </section>
 <section id="GP-Classification">
-<h2>GP Classification<a class="headerlink" href="#GP-Classification" title="Permalink to this heading">¶</a></h2>
+<h2>GP Classification<a class="headerlink" href="#GP-Classification" title="Permalink to this headline">¶</a></h2>
 <p>We will now briefly discuss GP classification for multi-class classification. The two main changes needed to the model specification (in comparison to GP regression) are:</p>
 <div class="math notranslate nohighlight">
 \[p(y\mid f)=\mathrm{Softmax}(f)\]</div>
@@ -1465,7 +1465,7 @@ Accuracy: 96.00%
 <p>We can see our model doing a good job in classifying the IRIS data based on the two features.</p>
 </section>
 <section id="Combining-Kernels">
-<h2>Combining Kernels<a class="headerlink" href="#Combining-Kernels" title="Permalink to this heading">¶</a></h2>
+<h2>Combining Kernels<a class="headerlink" href="#Combining-Kernels" title="Permalink to this headline">¶</a></h2>
 <p>We now look into combining different kernels. We will create a simple data set containing a linear trend and some periodicity.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
@@ -1547,7 +1547,7 @@ Accuracy: 96.00%
 <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/contrib/gp/sv-dkl.py">here</a>.</p>
 </section>
 <section id="Reference">
-<h2>Reference<a class="headerlink" href="#Reference" title="Permalink to this heading">¶</a></h2>
+<h2>Reference<a class="headerlink" href="#Reference" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Deep</span> <span class="pre">Gaussian</span> <span class="pre">processes</span> <span class="pre">and</span> <span class="pre">variational</span> <span class="pre">propagation</span> <span class="pre">of</span> <span class="pre">uncertainty</span></code>,     Andreas Damianou</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">unifying</span> <span class="pre">framework</span> <span class="pre">for</span> <span class="pre">sparse</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">approximation</span> <span class="pre">using</span> <span class="pre">power</span> <span class="pre">expectation</span> <span class="pre">propagation</span></code>,     Thang D. Bui, Josiah Yan, and Richard E. Turner</p>
 <p>[3] <code class="docutils literal notranslate"><span class="pre">Scalable</span> <span class="pre">variational</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">classification</span></code>,     James Hensman, Alexander G. de G. Matthews, and Zoubin Ghahramani</p>
