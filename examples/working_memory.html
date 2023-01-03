@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Designing Adaptive Experiments to Study Working Memory &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -194,8 +196,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Designing Adaptive Experiments to Study Working Memory</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Designing Adaptive Experiments to Study Working Memory</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/working_memory.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -315,10 +317,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -484,7 +487,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Designing-Adaptive-Experiments-to-Study-Working-Memory">
-<h1>Designing Adaptive Experiments to Study Working Memory<a class="headerlink" href="#Designing-Adaptive-Experiments-to-Study-Working-Memory" title="Permalink to this headline">¶</a></h1>
+<h1>Designing Adaptive Experiments to Study Working Memory<a class="headerlink" href="#Designing-Adaptive-Experiments-to-Study-Working-Memory" title="Permalink to this heading">¶</a></h1>
 <p>In most of machine learning, we begin with data and go on to learn a model. In other contexts, we also have a hand in the data generation process. This gives us an exciting opportunity: we can try to obtain data that will help our model learn more effectively. This procedure is called <em>optimal experimental design</em> (OED) and Pyro supports choosing optimal designs through the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.oed</span></code> module.</p>
 <p>When using OED, the data generation and modelling works as follows:</p>
 <ol class="arabic simple">
@@ -495,7 +498,7 @@ div.rendered_html tbody tr:hover {
 <p>We can also run multiple ‘rounds’ or iterations of experiments. When doing this, we take the learned model from step 3 and use it as our prior in step 1 for the next round. This approach can be particularly useful because it allows us to design the next experiment based on what has already been learned: the experiments are <em>adaptive</em>.</p>
 <p>In this tutorial, we work through a specific example of this entire OED procedure with multiple rounds. We will show how to design adaptive experiments to learn a participant’s working memory capacity. The design we will be adapting is the <em>length of a sequence of digits that we ask a participant to remember</em>. Let’s dive into the full details.</p>
 <section id="The-experiment-set-up">
-<h2>The experiment set-up<a class="headerlink" href="#The-experiment-set-up" title="Permalink to this headline">¶</a></h2>
+<h2>The experiment set-up<a class="headerlink" href="#The-experiment-set-up" title="Permalink to this heading">¶</a></h2>
 <p>Suppose you, the participant, are shown a sequence of digits</p>
 <div class="math notranslate nohighlight">
 \[1\ 4\ 7\ 0\ 9\]</div>
@@ -504,7 +507,7 @@ div.rendered_html tbody tr:hover {
 \[6\ 5\ 0\ 2\ 8\ 0 .\]</div>
 <p>The longest sequence that you can remember is your working memory capacity. In this tutorial, we build a Bayesian model for working memory, and use it to run an adaptive sequence of experiments that very quickly learn someone’s working memory capacity.</p>
 <section id="A-model-of-working-memory">
-<h3>A model of working memory<a class="headerlink" href="#A-model-of-working-memory" title="Permalink to this headline">¶</a></h3>
+<h3>A model of working memory<a class="headerlink" href="#A-model-of-working-memory" title="Permalink to this heading">¶</a></h3>
 <p>Our model for a single round of the digits experiment described above has three components: the length <span class="math notranslate nohighlight">\(l\)</span> of the sequence that the participant has to remember, the participant’s true working memory capacity <span class="math notranslate nohighlight">\(\theta\)</span>, and the outcome of the experiment <span class="math notranslate nohighlight">\(y\)</span> which indicates whether they were able to remember the sequence successfully (<span class="math notranslate nohighlight">\(y=1\)</span>) or not (<span class="math notranslate nohighlight">\(y=0\)</span>). We choose a prior for working memory capacity based on the (in)famous “The magical number seven, plus or minus
 two” [1].</p>
 <p><strong>Note</strong>: <span class="math notranslate nohighlight">\(\theta\)</span> actually represents the point where the participant has a 50/50 chance of remembering the sequence correctly.</p>
@@ -512,30 +515,30 @@ two” [1].</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import torch
 
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-
-
-<span class="n">sensitivity</span> <span class="o">=</span> <span class="mf">1.0</span>
-<span class="n">prior_mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">7.0</span><span class="p">)</span>
-<span class="n">prior_sd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+import pyro
+import pyro.distributions as dist
 
 
-<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-    <span class="c1"># Dimension -1 of `l` represents the number of rounds</span>
-    <span class="c1"># Other dimensions are batch dimensions: we indicate this with a plate_stack</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate_stack</span><span class="p">(</span><span class="s2">&quot;plate&quot;</span><span class="p">,</span> <span class="n">l</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">prior_mean</span><span class="p">,</span> <span class="n">prior_sd</span><span class="p">))</span>
-        <span class="c1"># Share theta across the number of rounds of the experiment</span>
-        <span class="c1"># This represents repeatedly testing the same participant</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># This define a *logistic regression* model for y</span>
-        <span class="n">logit_p</span> <span class="o">=</span> <span class="n">sensitivity</span> <span class="o">*</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">l</span><span class="p">)</span>
-        <span class="c1"># The event shape represents responses from the same participant</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logit_p</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">y</span>
+sensitivity = 1.0
+prior_mean = torch.tensor(7.0)
+prior_sd = torch.tensor(2.0)
+
+
+def model(l):
+    # Dimension -1 of `l` represents the number of rounds
+    # Other dimensions are batch dimensions: we indicate this with a plate_stack
+    with pyro.plate_stack(&quot;plate&quot;, l.shape[:-1]):
+        theta = pyro.sample(&quot;theta&quot;, dist.Normal(prior_mean, prior_sd))
+        # Share theta across the number of rounds of the experiment
+        # This represents repeatedly testing the same participant
+        theta = theta.unsqueeze(-1)
+        # This define a *logistic regression* model for y
+        logit_p = sensitivity * (theta - l)
+        # The event shape represents responses from the same participant
+        y = pyro.sample(&quot;y&quot;, dist.Bernoulli(logits=logit_p).to_event(1))
+        return y
 </pre></div>
 </div>
 </div>
@@ -544,24 +547,24 @@ two” [1].</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import matplotlib
+import matplotlib.pyplot as plt
 
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
+matplotlib.rcParams.update({&#39;font.size&#39;: 22})
 
-<span class="c1"># We sample five times from the prior</span>
-<span class="n">theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">prior_mean</span> <span class="o">+</span> <span class="n">prior_sd</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span>
-<span class="n">l</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
-<span class="c1"># This is the same as using &#39;logits=&#39; in the prior above</span>
-<span class="n">prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">sensitivity</span> <span class="o">*</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">l</span><span class="p">))</span>
+# We sample five times from the prior
+theta = (prior_mean + prior_sd * torch.randn((5,1)))
+l = torch.arange(1, 16, dtype=torch.float)
+# This is the same as using &#39;logits=&#39; in the prior above
+prob = torch.sigmoid(sensitivity * (theta - l))
 
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">curve</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">curve</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Length of sequence $l$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Probability of correctly remembering</span><span class="se">\n</span><span class="s2">a sequence of length $l$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;Person </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+plt.figure(figsize=(12, 8))
+for curve in torch.unbind(prob, 0):
+    plt.plot(l.numpy(), curve.numpy(), marker=&#39;o&#39;)
+plt.xlabel(&quot;Length of sequence $l$&quot;)
+plt.ylabel(&quot;Probability of correctly remembering\na sequence of length $l$&quot;)
+plt.legend([&quot;Person {}&quot;.format(i+1) for i in range(5)])
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -574,19 +577,19 @@ two” [1].</p>
 </div>
 </section>
 <section id="Inference-in-the-model">
-<h3>Inference in the model<a class="headerlink" href="#Inference-in-the-model" title="Permalink to this headline">¶</a></h3>
+<h3>Inference in the model<a class="headerlink" href="#Inference-in-the-model" title="Permalink to this heading">¶</a></h3>
 <p>With the model in hand, we quickly demonstrate variational inference in Pyro for this model. We define a Normal guide for variational inference.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch.distributions.constraints</span> <span class="kn">import</span> <span class="n">positive</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from torch.distributions.constraints import positive
 
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-    <span class="c1"># The guide is initialised at the prior</span>
-    <span class="n">posterior_mean</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_mean&quot;</span><span class="p">,</span> <span class="n">prior_mean</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span>
-    <span class="n">posterior_sd</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_sd&quot;</span><span class="p">,</span> <span class="n">prior_sd</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">posterior_mean</span><span class="p">,</span> <span class="n">posterior_sd</span><span class="p">))</span>
+def guide(l):
+    # The guide is initialised at the prior
+    posterior_mean = pyro.param(&quot;posterior_mean&quot;, prior_mean.clone())
+    posterior_sd = pyro.param(&quot;posterior_sd&quot;, prior_sd.clone(), constraint=positive)
+    pyro.sample(&quot;theta&quot;, dist.Normal(posterior_mean, posterior_sd))
 </pre></div>
 </div>
 </div>
@@ -595,8 +598,8 @@ two” [1].</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">l_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">5.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">,</span> <span class="mf">9.</span><span class="p">])</span>
-<span class="n">y_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>l_data = torch.tensor([5., 7., 9.])
+y_data = torch.tensor([1., 1., 0.])
 </pre></div>
 </div>
 </div>
@@ -605,21 +608,21 @@ two” [1].</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from pyro.infer import SVI, Trace_ELBO
+from pyro.optim import Adam
 
-<span class="n">conditioned_model</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y_data</span><span class="p">})</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">conditioned_model</span><span class="p">,</span>
-          <span class="n">guide</span><span class="p">,</span>
-          <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">.001</span><span class="p">}),</span>
-          <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
-          <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">num_iters</span> <span class="o">=</span> <span class="mi">5000</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iters</span><span class="p">):</span>
-    <span class="n">elbo</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">l_data</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">500</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Neg ELBO:&quot;</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
+conditioned_model = pyro.condition(model, {&quot;y&quot;: y_data})
+svi = SVI(conditioned_model,
+          guide,
+          Adam({&quot;lr&quot;: .001}),
+          loss=Trace_ELBO(),
+          num_samples=100)
+pyro.clear_param_store()
+num_iters = 5000
+for i in range(num_iters):
+    elbo = svi.step(l_data)
+    if i % 500 == 0:
+        print(&quot;Neg ELBO:&quot;, elbo)
 </pre></div>
 </div>
 </div>
@@ -644,9 +647,9 @@ Neg ELBO: 1.3095542192459106
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Prior:     N(</span><span class="si">{:.3f}</span><span class="s2">, </span><span class="si">{:.3f}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prior_mean</span><span class="p">,</span> <span class="n">prior_sd</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Posterior: N(</span><span class="si">{:.3f}</span><span class="s2">, </span><span class="si">{:.3f}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_mean&quot;</span><span class="p">),</span>
-                                            <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_sd&quot;</span><span class="p">)))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;Prior:     N({:.3f}, {:.3f})&quot;.format(prior_mean, prior_sd))
+print(&quot;Posterior: N({:.3f}, {:.3f})&quot;.format(pyro.param(&quot;posterior_mean&quot;),
+                                            pyro.param(&quot;posterior_sd&quot;)))
 </pre></div>
 </div>
 </div>
@@ -662,7 +665,7 @@ Posterior: N(7.749, 1.282)
 <p>Under our posterior, we can see that we have an updated estimate for the participant’s working memory capacity, and our uncertainty has now decreased.</p>
 </section>
 <section id="Bayesian-optimal-experimental-design">
-<h3>Bayesian optimal experimental design<a class="headerlink" href="#Bayesian-optimal-experimental-design" title="Permalink to this headline">¶</a></h3>
+<h3>Bayesian optimal experimental design<a class="headerlink" href="#Bayesian-optimal-experimental-design" title="Permalink to this heading">¶</a></h3>
 <p>So far so standard. In the previous example, the lengths <code class="docutils literal notranslate"><span class="pre">l_data</span></code> were not chosen with a great deal of forethought. Fortunately, in a setting like this, it is possible to use a more sophisticated strategy to choose the sequence lengths to make the most of every question we ask.</p>
 <p>We do this using Bayesian optimal experimental design (BOED). In BOED, we are interested in designing experiments that maximise the information gain, which is defined formally as</p>
 <div class="math notranslate nohighlight">
@@ -678,16 +681,16 @@ Posterior: N(7.749, 1.282)
 </section>
 </section>
 <section id="Optimal-experimental-design-in-Pyro">
-<h2>Optimal experimental design in Pyro<a class="headerlink" href="#Optimal-experimental-design-in-Pyro" title="Permalink to this headline">¶</a></h2>
+<h2>Optimal experimental design in Pyro<a class="headerlink" href="#Optimal-experimental-design-in-Pyro" title="Permalink to this heading">¶</a></h2>
 <p>Fortunately, Pyro comes ready with tools to estimate the EIG. All we have to do is define the “marginal guide” <span class="math notranslate nohighlight">\(q(y|l)\)</span> in the formula above.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">marginal_guide</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">observation_labels</span><span class="p">,</span> <span class="n">target_labels</span><span class="p">):</span>
-    <span class="c1"># This shape allows us to learn a different parameter for each candidate design l</span>
-    <span class="n">q_logit</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;q_logit&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">design</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]))</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">q_logit</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def marginal_guide(design, observation_labels, target_labels):
+    # This shape allows us to learn a different parameter for each candidate design l
+    q_logit = pyro.param(&quot;q_logit&quot;, torch.zeros(design.shape[-2:]))
+    pyro.sample(&quot;y&quot;, dist.Bernoulli(logits=q_logit).to_event(1))
 </pre></div>
 </div>
 </div>
@@ -696,28 +699,28 @@ Posterior: N(7.749, 1.282)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.contrib.oed.eig</span> <span class="kn">import</span> <span class="n">marginal_eig</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from pyro.contrib.oed.eig import marginal_eig
 
-<span class="c1"># The shape of `candidate_designs` is (number designs, 1)</span>
-<span class="c1"># This represents a batch of candidate designs, each design is for one round of experiment</span>
-<span class="n">candidate_designs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">num_steps</span><span class="p">,</span> <span class="n">start_lr</span><span class="p">,</span> <span class="n">end_lr</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.001</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">ExponentialLR</span><span class="p">({</span><span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">,</span>
-                                      <span class="s1">&#39;optim_args&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">start_lr</span><span class="p">},</span>
-                                      <span class="s1">&#39;gamma&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">end_lr</span> <span class="o">/</span> <span class="n">start_lr</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">num_steps</span><span class="p">)})</span>
+# The shape of `candidate_designs` is (number designs, 1)
+# This represents a batch of candidate designs, each design is for one round of experiment
+candidate_designs = torch.arange(1, 15, dtype=torch.float).unsqueeze(-1)
+pyro.clear_param_store()
+num_steps, start_lr, end_lr = 1000, 0.1, 0.001
+optimizer = pyro.optim.ExponentialLR({&#39;optimizer&#39;: torch.optim.Adam,
+                                      &#39;optim_args&#39;: {&#39;lr&#39;: start_lr},
+                                      &#39;gamma&#39;: (end_lr / start_lr) ** (1 / num_steps)})
 
-<span class="n">eig</span> <span class="o">=</span> <span class="n">marginal_eig</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
-                   <span class="n">candidate_designs</span><span class="p">,</span>       <span class="c1"># design, or in this case, tensor of possible designs</span>
-                   <span class="s2">&quot;y&quot;</span><span class="p">,</span>                     <span class="c1"># site label of observations, could be a list</span>
-                   <span class="s2">&quot;theta&quot;</span><span class="p">,</span>                 <span class="c1"># site label of &#39;targets&#39; (latent variables), could also be list</span>
-                   <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>         <span class="c1"># number of samples to draw per step in the expectation</span>
-                   <span class="n">num_steps</span><span class="o">=</span><span class="n">num_steps</span><span class="p">,</span>     <span class="c1"># number of gradient steps</span>
-                   <span class="n">guide</span><span class="o">=</span><span class="n">marginal_guide</span><span class="p">,</span>    <span class="c1"># guide q(y)</span>
-                   <span class="n">optim</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>         <span class="c1"># optimizer with learning rate decay</span>
-                   <span class="n">final_num_samples</span><span class="o">=</span><span class="mi">10000</span>  <span class="c1"># at the last step, we draw more samples</span>
-                                            <span class="c1"># for a more accurate EIG estimate</span>
-                  <span class="p">)</span>
+eig = marginal_eig(model,
+                   candidate_designs,       # design, or in this case, tensor of possible designs
+                   &quot;y&quot;,                     # site label of observations, could be a list
+                   &quot;theta&quot;,                 # site label of &#39;targets&#39; (latent variables), could also be list
+                   num_samples=100,         # number of samples to draw per step in the expectation
+                   num_steps=num_steps,     # number of gradient steps
+                   guide=marginal_guide,    # guide q(y)
+                   optim=optimizer,         # optimizer with learning rate decay
+                   final_num_samples=10000  # at the last step, we draw more samples
+                                            # for a more accurate EIG estimate
+                  )
 </pre></div>
 </div>
 </div>
@@ -726,12 +729,12 @@ Posterior: N(7.749, 1.282)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">candidate_designs</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">eig</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$l$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;EIG($l$)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.figure(figsize=(10,5))
+matplotlib.rcParams.update({&#39;font.size&#39;: 22})
+plt.plot(candidate_designs.numpy(), eig.detach().numpy(), marker=&#39;o&#39;, linewidth=2)
+plt.xlabel(&quot;$l$&quot;)
+plt.ylabel(&quot;EIG($l$)&quot;)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -746,8 +749,8 @@ Posterior: N(7.749, 1.282)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">best_l</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">eig</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Optimal design:&quot;</span><span class="p">,</span> <span class="n">best_l</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>best_l = 1 + torch.argmax(eig)
+print(&quot;Optimal design:&quot;, best_l.item())
 </pre></div>
 </div>
 </div>
@@ -765,10 +768,10 @@ Optimal design: 7
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q_prob</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;q_logit&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;   l | q(y = 1 | l)&quot;</span><span class="p">)</span>
-<span class="k">for</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">candidate_designs</span><span class="p">,</span> <span class="n">q_prob</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:&gt;4}</span><span class="s2"> | </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">item</span><span class="p">()),</span> <span class="n">q</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>q_prob = torch.sigmoid(pyro.param(&quot;q_logit&quot;))
+print(&quot;   l | q(y = 1 | l)&quot;)
+for (l, q) in zip(candidate_designs, q_prob):
+    print(&quot;{:&gt;4} | {}&quot;.format(int(l.item()), q.item()))
 </pre></div>
 </div>
 </div>
@@ -796,7 +799,7 @@ Optimal design: 7
 </div>
 <p>The elements of this fitted tensor represent the marginal over <span class="math notranslate nohighlight">\(y\)</span>, for each possible sequence length <span class="math notranslate nohighlight">\(l\)</span> in <code class="docutils literal notranslate"><span class="pre">candidate_designs</span></code>. We have marginalised out the unknown <span class="math notranslate nohighlight">\(\theta\)</span> so this fitted tensor shows the probabilities for an ‘average’ participant.</p>
 <section id="The-adaptive-experiment">
-<h3>The adaptive experiment<a class="headerlink" href="#The-adaptive-experiment" title="Permalink to this headline">¶</a></h3>
+<h3>The adaptive experiment<a class="headerlink" href="#The-adaptive-experiment" title="Permalink to this heading">¶</a></h3>
 <p>We now have the ingredients to build an adaptive experiment to study working memory. We repeat the following steps:</p>
 <ol class="arabic simple">
 <li><p>Use the EIG to find the optimal sequence length <span class="math notranslate nohighlight">\(l\)</span></p></li>
@@ -809,12 +812,12 @@ Optimal design: 7
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">synthetic_person</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-    <span class="c1"># The synthetic person can remember any sequence shorter than 6</span>
-    <span class="c1"># They cannot remember any sequence of length 6 or above</span>
-    <span class="c1"># (There is no randomness in their responses)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">l</span> <span class="o">&lt;</span> <span class="mf">6.</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">y</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def synthetic_person(l):
+    # The synthetic person can remember any sequence shorter than 6
+    # They cannot remember any sequence of length 6 or above
+    # (There is no randomness in their responses)
+    y = (l &lt; 6.).float()
+    return y
 </pre></div>
 </div>
 </div>
@@ -823,21 +826,21 @@ Optimal design: 7
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_model</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-        <span class="c1"># Dimension -1 of `l` represents the number of rounds</span>
-        <span class="c1"># Other dimensions are batch dimensions: we indicate this with a plate_stack</span>
-        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate_stack</span><span class="p">(</span><span class="s2">&quot;plate&quot;</span><span class="p">,</span> <span class="n">l</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">sd</span><span class="p">))</span>
-            <span class="c1"># Share theta across the number of rounds of the experiment</span>
-            <span class="c1"># This represents repeatedly testing the same participant</span>
-            <span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="c1"># This define a *logistic regression* model for y</span>
-            <span class="n">logit_p</span> <span class="o">=</span> <span class="n">sensitivity</span> <span class="o">*</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">l</span><span class="p">)</span>
-            <span class="c1"># The event shape represents responses from the same participant</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logit_p</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="k">return</span> <span class="n">y</span>
-    <span class="k">return</span> <span class="n">model</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def make_model(mean, sd):
+    def model(l):
+        # Dimension -1 of `l` represents the number of rounds
+        # Other dimensions are batch dimensions: we indicate this with a plate_stack
+        with pyro.plate_stack(&quot;plate&quot;, l.shape[:-1]):
+            theta = pyro.sample(&quot;theta&quot;, dist.Normal(mean, sd))
+            # Share theta across the number of rounds of the experiment
+            # This represents repeatedly testing the same participant
+            theta = theta.unsqueeze(-1)
+            # This define a *logistic regression* model for y
+            logit_p = sensitivity * (theta - l)
+            # The event shape represents responses from the same participant
+            y = pyro.sample(&quot;y&quot;, dist.Bernoulli(logits=logit_p).to_event(1))
+            return y
+    return model
 </pre></div>
 </div>
 </div>
@@ -846,51 +849,51 @@ Optimal design: 7
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ys</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])</span>
-<span class="n">ls</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([])</span>
-<span class="n">history</span> <span class="o">=</span> <span class="p">[(</span><span class="n">prior_mean</span><span class="p">,</span> <span class="n">prior_sd</span><span class="p">)]</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">current_model</span> <span class="o">=</span> <span class="n">make_model</span><span class="p">(</span><span class="n">prior_mean</span><span class="p">,</span> <span class="n">prior_sd</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ys = torch.tensor([])
+ls = torch.tensor([])
+history = [(prior_mean, prior_sd)]
+pyro.clear_param_store()
+current_model = make_model(prior_mean, prior_sd)
 
-<span class="k">for</span> <span class="n">experiment</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Round&quot;</span><span class="p">,</span> <span class="n">experiment</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+for experiment in range(10):
+    print(&quot;Round&quot;, experiment + 1)
 
-    <span class="c1"># Step 1: compute the optimal length</span>
-    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">ExponentialLR</span><span class="p">({</span><span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">,</span>
-                                          <span class="s1">&#39;optim_args&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">start_lr</span><span class="p">},</span>
-                                          <span class="s1">&#39;gamma&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">end_lr</span> <span class="o">/</span> <span class="n">start_lr</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">num_steps</span><span class="p">)})</span>
-    <span class="n">eig</span> <span class="o">=</span> <span class="n">marginal_eig</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">candidate_designs</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                       <span class="n">num_steps</span><span class="o">=</span><span class="n">num_steps</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="n">marginal_guide</span><span class="p">,</span> <span class="n">optim</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
-                       <span class="n">final_num_samples</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
-    <span class="n">best_l</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">eig</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    # Step 1: compute the optimal length
+    optimizer = pyro.optim.ExponentialLR({&#39;optimizer&#39;: torch.optim.Adam,
+                                          &#39;optim_args&#39;: {&#39;lr&#39;: start_lr},
+                                          &#39;gamma&#39;: (end_lr / start_lr) ** (1 / num_steps)})
+    eig = marginal_eig(current_model, candidate_designs, &quot;y&quot;, &quot;theta&quot;, num_samples=100,
+                       num_steps=num_steps, guide=marginal_guide, optim=optimizer,
+                       final_num_samples=10000)
+    best_l = 1 + torch.argmax(eig).float().detach()
 
-    <span class="c1"># Step 2: run the experiment, here using the synthetic person</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Asking the participant to remember a sequence of length&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">best_l</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">synthetic_person</span><span class="p">(</span><span class="n">best_l</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">y</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Participant remembered correctly&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Participant could not remember the sequence&quot;</span><span class="p">)</span>
-    <span class="c1"># Store the sequence length and outcome</span>
-    <span class="n">ls</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">ls</span><span class="p">,</span> <span class="n">best_l</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">1</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">ys</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">ys</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+    # Step 2: run the experiment, here using the synthetic person
+    print(&quot;Asking the participant to remember a sequence of length&quot;, int(best_l.item()))
+    y = synthetic_person(best_l)
+    if y:
+        print(&quot;Participant remembered correctly&quot;)
+    else:
+        print(&quot;Participant could not remember the sequence&quot;)
+    # Store the sequence length and outcome
+    ls = torch.cat([ls, best_l.expand(1)], dim=0)
+    ys = torch.cat([ys, y.expand(1)])
 
-    <span class="c1"># Step 3: learn the posterior using all data seen so far</span>
-    <span class="n">conditioned_model</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">ys</span><span class="p">})</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">conditioned_model</span><span class="p">,</span>
-              <span class="n">guide</span><span class="p">,</span>
-              <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">.005</span><span class="p">}),</span>
-              <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
-              <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-    <span class="n">num_iters</span> <span class="o">=</span> <span class="mi">2000</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iters</span><span class="p">):</span>
-        <span class="n">elbo</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">ls</span><span class="p">)</span>
+    # Step 3: learn the posterior using all data seen so far
+    conditioned_model = pyro.condition(model, {&quot;y&quot;: ys})
+    svi = SVI(conditioned_model,
+              guide,
+              Adam({&quot;lr&quot;: .005}),
+              loss=Trace_ELBO(),
+              num_samples=100)
+    num_iters = 2000
+    for i in range(num_iters):
+        elbo = svi.step(ls)
 
-    <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_mean&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
-                    <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_sd&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
-    <span class="n">current_model</span> <span class="o">=</span> <span class="n">make_model</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_mean&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span>
-                               <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_sd&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Estimate of </span><span class="se">\u03b8</span><span class="s2">: </span><span class="si">{:.3f}</span><span class="s2"> </span><span class="se">\u00b1</span><span class="s2"> </span><span class="si">{:.3f}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    history.append((pyro.param(&quot;posterior_mean&quot;).detach().clone().numpy(),
+                    pyro.param(&quot;posterior_sd&quot;).detach().clone().numpy()))
+    current_model = make_model(pyro.param(&quot;posterior_mean&quot;).detach().clone(),
+                               pyro.param(&quot;posterior_sd&quot;).detach().clone())
+    print(&quot;Estimate of \u03b8: {:.3f} \u00b1 {:.3f}\n&quot;.format(*history[-1]))
 </pre></div>
 </div>
 </div>
@@ -956,25 +959,25 @@ Estimate of θ: 5.434 ± 0.640
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
-<span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="k">as</span> <span class="nn">colors</span>
-<span class="kn">import</span> <span class="nn">matplotlib.cm</span> <span class="k">as</span> <span class="nn">cmx</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import numpy as np
+from scipy.stats import norm
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
 
 
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
-<span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s1">&#39;winter&#39;</span><span class="p">)</span>
-<span class="n">cNorm</span>  <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">scalarMap</span> <span class="o">=</span> <span class="n">cmx</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">norm</span><span class="o">=</span><span class="n">cNorm</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">sd</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">history</span><span class="p">):</span>
-    <span class="n">color</span> <span class="o">=</span> <span class="n">scalarMap</span><span class="o">.</span><span class="n">to_rgba</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">sd</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">theta$&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;p.d.f.&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+matplotlib.rcParams.update({&#39;font.size&#39;: 22})
+cmap = plt.get_cmap(&#39;winter&#39;)
+cNorm  = colors.Normalize(vmin=0, vmax=len(history)-1)
+scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
+plt.figure(figsize=(12, 6))
+x = np.linspace(0, 14, 100)
+for idx, (mean, sd) in enumerate(history):
+    color = scalarMap.to_rgba(idx)
+    y = norm.pdf(x, mean, sd)
+    plt.plot(x, y, color=color)
+    plt.xlabel(&quot;$\\theta$&quot;)
+    plt.ylabel(&quot;p.d.f.&quot;)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -991,18 +994,18 @@ Estimate of θ: 5.434 ± 0.640
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">ls</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
-<span class="n">ys</span> <span class="o">=</span> <span class="n">synthetic_person</span><span class="p">(</span><span class="n">ls</span><span class="p">)</span>
-<span class="n">conditioned_model</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">ys</span><span class="p">})</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">conditioned_model</span><span class="p">,</span>
-          <span class="n">guide</span><span class="p">,</span>
-          <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">.005</span><span class="p">}),</span>
-          <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
-          <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<span class="n">num_iters</span> <span class="o">=</span> <span class="mi">2000</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_iters</span><span class="p">):</span>
-    <span class="n">elbo</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">ls</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.clear_param_store()
+ls = torch.arange(1, 11, dtype=torch.float)
+ys = synthetic_person(ls)
+conditioned_model = pyro.condition(model, {&quot;y&quot;: ys})
+svi = SVI(conditioned_model,
+          guide,
+          Adam({&quot;lr&quot;: .005}),
+          loss=Trace_ELBO(),
+          num_samples=100)
+num_iters = 2000
+for i in range(num_iters):
+    elbo = svi.step(ls)
 </pre></div>
 </div>
 </div>
@@ -1010,17 +1013,17 @@ Estimate of θ: 5.434 ± 0.640
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
-<span class="n">y1</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_mean&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
-              <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;posterior_sd&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-<span class="n">y2</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y1</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;Simple design&quot;</span><span class="p">,</span> <span class="s2">&quot;Optimal design&quot;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">theta$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;p.d.f.&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.figure(figsize=(12,6))
+matplotlib.rcParams.update({&#39;font.size&#39;: 22})
+y1 = norm.pdf(x, pyro.param(&quot;posterior_mean&quot;).detach().numpy(),
+              pyro.param(&quot;posterior_sd&quot;).detach().numpy())
+y2 = norm.pdf(x, history[-1][0], history[-1][1])
+plt.plot(x, y1)
+plt.plot(x, y2)
+plt.legend([&quot;Simple design&quot;, &quot;Optimal design&quot;])
+plt.xlabel(&quot;$\\theta$&quot;)
+plt.ylabel(&quot;p.d.f.&quot;)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -1034,7 +1037,7 @@ Estimate of θ: 5.434 ± 0.640
 <p>Although both design strategies give us data, the optimal strategy ends up with a posterior distribution that is more peaked: that means we have greater confidence in our final answer, or may be able to stop experimenting earlier.</p>
 </section>
 <section id="Extensions">
-<h3>Extensions<a class="headerlink" href="#Extensions" title="Permalink to this headline">¶</a></h3>
+<h3>Extensions<a class="headerlink" href="#Extensions" title="Permalink to this heading">¶</a></h3>
 <p>In this tutorial we used variational inference to fit an approximate posterior for <span class="math notranslate nohighlight">\(\theta\)</span>. This could be substituted for an alternative posterior inference strategy, such as Hamiltonian Monte Carlo.</p>
 <p>The model in this tutorial is very simple and could be extended in a number of ways. For instance, it’s possible that as well as measuring whether the participant did or did not remember the sequence, we might collect some other information as well. We could build a model for the number of mistakes made (e.g. the edit distance between the correct sequence and the participant’s response) or jointly model the correctness and the time taken to respond. Here is an example model where we model the
 response time using a LogNormal distribution, as suggested by [4].</p>
@@ -1042,16 +1045,16 @@ response time using a LogNormal distribution, as suggested by [4].</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">time_intercept</span> <span class="o">=</span> <span class="mf">0.5</span>
-<span class="n">time_scale</span> <span class="o">=</span> <span class="mf">0.5</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>time_intercept = 0.5
+time_scale = 0.5
 
-<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-    <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">prior_mean</span><span class="p">,</span> <span class="n">prior_sd</span><span class="p">))</span>
-    <span class="n">logit_p</span> <span class="o">=</span> <span class="n">sensitivity</span> <span class="o">*</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">l</span><span class="p">)</span>
-    <span class="n">correct</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;correct&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logit_p</span><span class="p">))</span>
-    <span class="n">mean_log_time</span> <span class="o">=</span> <span class="n">time_intercept</span> <span class="o">+</span> <span class="n">time_scale</span> <span class="o">*</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">l</span><span class="p">)</span>
-    <span class="n">time</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">mean_log_time</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">correct</span><span class="p">,</span> <span class="n">time</span>
+def model(l):
+    theta = pyro.sample(&quot;theta&quot;, dist.Normal(prior_mean, prior_sd))
+    logit_p = sensitivity * (theta - l)
+    correct = pyro.sample(&quot;correct&quot;, dist.Bernoulli(logits=logit_p))
+    mean_log_time = time_intercept + time_scale * (theta - l)
+    time = pyro.sample(&quot;time&quot;, dist.LogNormal(mean_log_time, 1.0))
+    return correct, time
 </pre></div>
 </div>
 </div>
@@ -1060,7 +1063,7 @@ response time using a LogNormal distribution, as suggested by [4].</p>
 means to select the optimal design in such scenarios.</p>
 </section>
 <section id="References">
-<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
+<h3>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h3>
 <p>[1] Miller, G.A., 1956. <strong>The magical number seven, plus or minus two: Some limits on our capacity for processing information.</strong> Psychological review, 63(2), p.81.</p>
 <p>[2] Chaloner, K. and Verdinelli, I., 1995. <strong>Bayesian experimental design: A review.</strong> Statistical Science, pp.273-304.</p>
 <p>[3] Foster, A., Jankowiak, M., Bingham, E., Horsfall, P., Teh, Y.W., Rainforth, T. and Goodman, N., 2019. <strong>Variational Bayesian Optimal Experimental Design.</strong> Advances in Neural Information Processing Systems 2019 (to appear).</p>

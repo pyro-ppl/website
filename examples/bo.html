@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bayesian Optimization &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Bayesian Optimization &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -189,8 +191,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Bayesian Optimization</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Bayesian Optimization</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/bo.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -310,10 +312,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -479,11 +482,11 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Bayesian-Optimization">
-<h1>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Permalink to this headline">¶</a></h1>
+<h1>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Permalink to this heading">¶</a></h1>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Bayesian_optimization">Bayesian optimization</a> is a powerful strategy for minimizing (or maximizing) objective functions that are costly to evaluate. It is an important component of <a class="reference external" href="https://en.wikipedia.org/wiki/Automated_machine_learning">automated machine learning</a> toolboxes such as <a class="reference external" href="https://automl.github.io/auto-sklearn/stable/">auto-sklearn</a>, <a class="reference external" href="http://www.cs.ubc.ca/labs/beta/Projects/autoweka/">auto-weka</a>, and
 <a class="reference external" href="https://scikit-optimize.github.io/">scikit-optimize</a>, where Bayesian optimization is used to select model hyperparameters. Bayesian optimization is used for a wide range of other applications as well; as cataloged in the review [2], these include interactive user-interfaces, robotics, environmental monitoring, information extraction, combinatorial optimization, sensor networks, adaptive Monte Carlo, experimental design, and reinforcement learning.</p>
 <section id="Problem-Setup">
-<h2>Problem Setup<a class="headerlink" href="#Problem-Setup" title="Permalink to this headline">¶</a></h2>
+<h2>Problem Setup<a class="headerlink" href="#Problem-Setup" title="Permalink to this heading">¶</a></h2>
 <p>We are given a minimization problem</p>
 <div class="math notranslate nohighlight">
 \[x^* = \text{arg}\min \ f(x),\]</div>
@@ -511,24 +514,24 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.gridspec</span> <span class="k">as</span> <span class="nn">gridspec</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.autograd</span> <span class="k">as</span> <span class="nn">autograd</span>
-<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
-<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span><span class="p">,</span> <span class="n">transform_to</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import torch
+import torch.autograd as autograd
+import torch.optim as optim
+from torch.distributions import constraints, transform_to
 
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="k">as</span> <span class="nn">gp</span>
+import pyro
+import pyro.contrib.gp as gp
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
+pyro.set_rng_seed(1)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Define-an-objective-function">
-<h2>Define an objective function<a class="headerlink" href="#Define-an-objective-function" title="Permalink to this headline">¶</a></h2>
+<h2>Define an objective function<a class="headerlink" href="#Define-an-objective-function" title="Permalink to this heading">¶</a></h2>
 <p>For the purposes of demonstration, the objective function we are going to consider is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008) function</a>:</p>
 <div class="math notranslate nohighlight">
 \[f(x) = (6x-2)^2 \sin(12x-4), \quad x\in [0, 1].\]</div>
@@ -537,8 +540,8 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def f(x):
+    return (6 * x - 2)**2 * torch.sin(12 * x - 4)
 </pre></div>
 </div>
 </div>
@@ -547,10 +550,10 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>x = torch.linspace(0, 1)
+plt.figure(figsize=(8, 4))
+plt.plot(x.numpy(), f(x).numpy())
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -563,7 +566,7 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 </div>
 </section>
 <section id="Setting-a-Gaussian-Process-prior">
-<h2>Setting a Gaussian Process prior<a class="headerlink" href="#Setting-a-Gaussian-Process-prior" title="Permalink to this headline">¶</a></h2>
+<h2>Setting a Gaussian Process prior<a class="headerlink" href="#Setting-a-Gaussian-Process-prior" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_process">Gaussian processes</a> are a popular choice for a function priors due to their power and flexibility. The core of a Gaussian Process is its covariance function <span class="math notranslate nohighlight">\(k\)</span>, which governs the similarity of <span class="math notranslate nohighlight">\(f(x)\)</span> for pairs of input points. Here we will use a Gaussian Process as our prior for the objective function <span class="math notranslate nohighlight">\(f\)</span>. Given inputs <span class="math notranslate nohighlight">\(X\)</span> and the corresponding noisy observations <span class="math notranslate nohighlight">\(y\)</span>, the model takes the form</p>
 <div class="math notranslate nohighlight">
 \[f\sim\mathrm{MultivariateNormal}(0,k(X,X)),\]</div>
@@ -575,11 +578,11 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize the model with four input points: 0.0, 0.33, 0.66, 1.0</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.33</span><span class="p">,</span> <span class="mf">0.66</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-<span class="n">gpmodel</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPRegression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                                 <span class="n">noise</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">jitter</span><span class="o">=</span><span class="mf">1.0e-4</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># initialize the model with four input points: 0.0, 0.33, 0.66, 1.0
+X = torch.tensor([0.0, 0.33, 0.66, 1.0])
+y = f(X)
+gpmodel = gp.models.GPRegression(X, y, gp.kernels.Matern52(input_dim=1),
+                                 noise=torch.tensor(0.1), jitter=1.0e-4)
 </pre></div>
 </div>
 </div>
@@ -588,20 +591,20 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">update_posterior</span><span class="p">(</span><span class="n">x_new</span><span class="p">):</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x_new</span><span class="p">)</span> <span class="c1"># evaluate f at new point.</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">x_new</span><span class="p">])</span> <span class="c1"># incorporate new evaluation</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
-    <span class="n">gpmodel</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-    <span class="c1"># optimize the GP hyperparameters using Adam with lr=0.001</span>
-    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
-    <span class="n">gp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">gpmodel</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def update_posterior(x_new):
+    y = f(x_new) # evaluate f at new point.
+    X = torch.cat([gpmodel.X, x_new]) # incorporate new evaluation
+    y = torch.cat([gpmodel.y, y])
+    gpmodel.set_data(X, y)
+    # optimize the GP hyperparameters using Adam with lr=0.001
+    optimizer = torch.optim.Adam(gpmodel.parameters(), lr=0.001)
+    gp.util.train(gpmodel, optimizer)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Define-an-acquisition-function">
-<h2>Define an acquisition function<a class="headerlink" href="#Define-an-acquisition-function" title="Permalink to this headline">¶</a></h2>
+<h2>Define an acquisition function<a class="headerlink" href="#Define-an-acquisition-function" title="Permalink to this heading">¶</a></h2>
 <p>There are many reasonable options for the acquisition function (see references [1] and [2] for a list of popular choices and a discussion of their properties). Here we will use one that is ‘simple to implement and interpret,’ namely the ‘Lower Confidence Bound’ acquisition function. It is given by</p>
 <div class="math notranslate nohighlight">
 \[\alpha(x) = \mu(x) - \kappa \sigma(x)\]</div>
@@ -611,10 +614,10 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">lower_confidence_bound</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
-    <span class="n">mu</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">gpmodel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">noiseless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">sigma</span> <span class="o">=</span> <span class="n">variance</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">sigma</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def lower_confidence_bound(x, kappa=2):
+    mu, variance = gpmodel(x, full_cov=False, noiseless=False)
+    sigma = variance.sqrt()
+    return mu - kappa * sigma
 </pre></div>
 </div>
 </div>
@@ -629,88 +632,88 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">find_a_candidate</span><span class="p">(</span><span class="n">x_init</span><span class="p">,</span> <span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-    <span class="c1"># transform x to an unconstrained domain</span>
-    <span class="n">constraint</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">)</span>
-    <span class="n">unconstrained_x_init</span> <span class="o">=</span> <span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">x_init</span><span class="p">)</span>
-    <span class="n">unconstrained_x</span> <span class="o">=</span> <span class="n">unconstrained_x_init</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">minimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">LBFGS</span><span class="p">([</span><span class="n">unconstrained_x</span><span class="p">],</span> <span class="n">line_search_fn</span><span class="o">=</span><span class="s1">&#39;strong_wolfe&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def find_a_candidate(x_init, lower_bound=0, upper_bound=1):
+    # transform x to an unconstrained domain
+    constraint = constraints.interval(lower_bound, upper_bound)
+    unconstrained_x_init = transform_to(constraint).inv(x_init)
+    unconstrained_x = unconstrained_x_init.clone().detach().requires_grad_(True)
+    minimizer = optim.LBFGS([unconstrained_x], line_search_fn=&#39;strong_wolfe&#39;)
 
-    <span class="k">def</span> <span class="nf">closure</span><span class="p">():</span>
-        <span class="n">minimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)(</span><span class="n">unconstrained_x</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">lower_confidence_bound</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">autograd</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">unconstrained_x</span><span class="p">,</span> <span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">unconstrained_x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">y</span>
+    def closure():
+        minimizer.zero_grad()
+        x = transform_to(constraint)(unconstrained_x)
+        y = lower_confidence_bound(x)
+        autograd.backward(unconstrained_x, autograd.grad(y, unconstrained_x))
+        return y
 
-    <span class="n">minimizer</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">closure</span><span class="p">)</span>
-    <span class="c1"># after finding a candidate in the unconstrained domain,</span>
-    <span class="c1"># convert it back to original domain.</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">transform_to</span><span class="p">(</span><span class="n">constraint</span><span class="p">)(</span><span class="n">unconstrained_x</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    minimizer.step(closure)
+    # after finding a candidate in the unconstrained domain,
+    # convert it back to original domain.
+    x = transform_to(constraint)(unconstrained_x)
+    return x.detach()
 </pre></div>
 </div>
 </div>
 </section>
 <section id="The-inner-loop-of-Bayesian-Optimization">
-<h2>The inner loop of Bayesian Optimization<a class="headerlink" href="#The-inner-loop-of-Bayesian-Optimization" title="Permalink to this headline">¶</a></h2>
+<h2>The inner loop of Bayesian Optimization<a class="headerlink" href="#The-inner-loop-of-Bayesian-Optimization" title="Permalink to this heading">¶</a></h2>
 <p>With the various helper functions defined above, we can now encapsulate the main logic of a single step of Bayesian Optimization in the function <code class="docutils literal notranslate"><span class="pre">next_x</span></code>:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">next_x</span><span class="p">(</span><span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_candidates</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def next_x(lower_bound=0, upper_bound=1, num_candidates=5):
+    candidates = []
+    values = []
 
-    <span class="n">x_init</span> <span class="o">=</span> <span class="n">gpmodel</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_candidates</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">find_a_candidate</span><span class="p">(</span><span class="n">x_init</span><span class="p">,</span> <span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">lower_confidence_bound</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-        <span class="n">x_init</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">new_empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">)</span>
+    x_init = gpmodel.X[-1:]
+    for i in range(num_candidates):
+        x = find_a_candidate(x_init, lower_bound, upper_bound)
+        y = lower_confidence_bound(x)
+        candidates.append(x)
+        values.append(y)
+        x_init = x.new_empty(1).uniform_(lower_bound, upper_bound)
 
-    <span class="n">argmin</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">candidates</span><span class="p">[</span><span class="n">argmin</span><span class="p">]</span>
+    argmin = torch.min(torch.cat(values), dim=0)[1].item()
+    return candidates[argmin]
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Running-the-algorithm">
-<h2>Running the algorithm<a class="headerlink" href="#Running-the-algorithm" title="Permalink to this headline">¶</a></h2>
+<h2>Running the algorithm<a class="headerlink" href="#Running-the-algorithm" title="Permalink to this heading">¶</a></h2>
 <p>To illustrate how Bayesian Optimization works, we make a convenient plotting function that will help us visualize our algorithm’s progress.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">with_title</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">xlabel</span> <span class="o">=</span> <span class="s2">&quot;xmin&quot;</span> <span class="k">if</span> <span class="n">xlabel</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
-    <span class="n">Xnew</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
-    <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">gpmodel</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s2">&quot;kx&quot;</span><span class="p">)</span>  <span class="c1"># plot all observed data</span>
-    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-        <span class="n">loc</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">gpmodel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">noiseless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">sd</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
-        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">loc</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># plot predictive mean</span>
-        <span class="n">ax1</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">loc</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">sd</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">loc</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">sd</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
-                         <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>  <span class="c1"># plot uncertainty intervals</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Find </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xlabel</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">with_title</span><span class="p">:</span>
-        <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Gaussian Process Regression&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot(gs, xmin, xlabel=None, with_title=True):
+    xlabel = &quot;xmin&quot; if xlabel is None else &quot;x{}&quot;.format(xlabel)
+    Xnew = torch.linspace(-0.1, 1.1)
+    ax1 = plt.subplot(gs[0])
+    ax1.plot(gpmodel.X.numpy(), gpmodel.y.numpy(), &quot;kx&quot;)  # plot all observed data
+    with torch.no_grad():
+        loc, var = gpmodel(Xnew, full_cov=False, noiseless=False)
+        sd = var.sqrt()
+        ax1.plot(Xnew.numpy(), loc.numpy(), &quot;r&quot;, lw=2)  # plot predictive mean
+        ax1.fill_between(Xnew.numpy(), loc.numpy() - 2*sd.numpy(), loc.numpy() + 2*sd.numpy(),
+                         color=&quot;C0&quot;, alpha=0.3)  # plot uncertainty intervals
+    ax1.set_xlim(-0.1, 1.1)
+    ax1.set_title(&quot;Find {}&quot;.format(xlabel))
+    if with_title:
+        ax1.set_ylabel(&quot;Gaussian Process Regression&quot;)
 
-    <span class="n">ax2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-        <span class="c1"># plot the acquisition function</span>
-        <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xnew</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">lower_confidence_bound</span><span class="p">(</span><span class="n">Xnew</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-        <span class="c1"># plot the new candidate point</span>
-        <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xmin</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">lower_confidence_bound</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s2">&quot;^&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-                 <span class="n">label</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> = </span><span class="si">{:.5f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xlabel</span><span class="p">,</span> <span class="n">xmin</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">with_title</span><span class="p">:</span>
-        <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Acquisition Function&quot;</span><span class="p">)</span>
-    <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    ax2 = plt.subplot(gs[1])
+    with torch.no_grad():
+        # plot the acquisition function
+        ax2.plot(Xnew.numpy(), lower_confidence_bound(Xnew).numpy())
+        # plot the new candidate point
+        ax2.plot(xmin.numpy(), lower_confidence_bound(xmin).numpy(), &quot;^&quot;, markersize=10,
+                 label=&quot;{} = {:.5f}&quot;.format(xlabel, xmin.item()))
+    ax2.set_xlim(-0.1, 1.1)
+    if with_title:
+        ax2.set_ylabel(&quot;Acquisition Function&quot;)
+    ax2.legend(loc=1)
 </pre></div>
 </div>
 </div>
@@ -719,16 +722,16 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
-<span class="n">outer_gs</span> <span class="o">=</span> <span class="n">gridspec</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">gpmodel</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
-<span class="n">gp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">gpmodel</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
-    <span class="n">xmin</span> <span class="o">=</span> <span class="n">next_x</span><span class="p">()</span>
-    <span class="n">gs</span> <span class="o">=</span> <span class="n">gridspec</span><span class="o">.</span><span class="n">GridSpecFromSubplotSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot_spec</span><span class="o">=</span><span class="n">outer_gs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-    <span class="n">plot</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">with_title</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
-    <span class="n">update_posterior</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.figure(figsize=(12, 30))
+outer_gs = gridspec.GridSpec(5, 2)
+optimizer = torch.optim.Adam(gpmodel.parameters(), lr=0.001)
+gp.util.train(gpmodel, optimizer)
+for i in range(8):
+    xmin = next_x()
+    gs = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_gs[i])
+    plot(gs, xmin, xlabel=i+1, with_title=(i % 2 == 0))
+    update_posterior(xmin)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -743,7 +746,7 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 <p>While this tutorial is only intended to be a brief introduction to Bayesian Optimization, we hope that we have been able to convey the basic underlying ideas. Consider watching the lecture by Nando de Freitas [3] for an excellent exposition of the basic theory. Finally, the reference paper [2] gives a review of recent research on Bayesian Optimization, together with many discussions about important technical details.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Practical</span> <span class="pre">bayesian</span> <span class="pre">optimization</span> <span class="pre">of</span> <span class="pre">machine</span> <span class="pre">learning</span> <span class="pre">algorithms</span></code>,     Jasper Snoek, Hugo Larochelle, and Ryan P. Adams</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Taking</span> <span class="pre">the</span> <span class="pre">human</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">loop:</span> <span class="pre">A</span> <span class="pre">review</span> <span class="pre">of</span> <span class="pre">bayesian</span> <span class="pre">optimization</span></code>,     Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, and Nando De Freitas</p>
 <p>[3] <a class="reference external" href="https://www.youtube.com/watch?v=vz3D36VXefI">Machine learning - Bayesian optimization and multi-armed bandits</a></p>

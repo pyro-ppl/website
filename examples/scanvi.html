@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>scANVI: Deep Generative Modeling for Single Cell Data with Pyro &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>scANVI: Deep Generative Modeling for Single Cell Data with Pyro &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -192,8 +194,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li><em>scANVI: Deep Generative Modeling for Single Cell Data with Pyro</em></li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active"><em>scANVI: Deep Generative Modeling for Single Cell Data with Pyro</em></li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/scanvi.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -313,10 +315,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -482,7 +485,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="scANVI:-Deep-Generative-Modeling-for-Single-Cell-Data-with-Pyro">
-<h1><em>scANVI: Deep Generative Modeling for Single Cell Data with Pyro</em><a class="headerlink" href="#scANVI:-Deep-Generative-Modeling-for-Single-Cell-Data-with-Pyro" title="Permalink to this headline">¶</a></h1>
+<h1><em>scANVI: Deep Generative Modeling for Single Cell Data with Pyro</em><a class="headerlink" href="#scANVI:-Deep-Generative-Modeling-for-Single-Cell-Data-with-Pyro" title="Permalink to this heading">¶</a></h1>
 <p>In this tutorial we show how to use Pyro to construct a semi-supervised deep generative model of transcriptomics data that can be used to propagate labels from a small set of labeled cells to a larger set of unlabeled cells. In particular we use a dataset of peripheral blood mononuclear cells (PBMC) from 10x Genomics and (approximately) reproduce Figure 6 in <a class="reference external" href="https://www.embopress.org/doi/full/10.15252/msb.20209620">Probabilistic Harmonization and Annotation of Single-cell Transcriptomics Data with Deep Generative
 Models</a>.</p>
 <p>(Note that the code below is also available as a <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/scanvi/scanvi.py">script</a>.)</p>
@@ -490,16 +493,16 @@ Models</a>.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup environment</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>  <span class="c1"># for continuous integration tests</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># setup environment
+import os
+smoke_test = (&#39;CI&#39; in os.environ)  # for continuous integration tests
 
-<span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span><span class="p">:</span>
-    <span class="c1"># install scanpy (used for pre-processing and UMAP)</span>
-    <span class="o">!</span>pip install -q <span class="nv">scanpy</span><span class="o">==</span><span class="m">1</span>.8.2
-    <span class="o">!</span>pip install -q umap-learn<span class="o">==</span><span class="m">0</span>.5.1
-    <span class="c1"># install scvi (used to get data)</span>
-    <span class="o">!</span>pip install -q scvi-tools<span class="o">[</span>tutorials<span class="o">]</span>
+if not smoke_test:
+    # install scanpy (used for pre-processing and UMAP)
+    !pip install -q scanpy==1.8.2
+    !pip install -q umap-learn==0.5.1
+    # install scvi (used to get data)
+    !pip install -q scvi-tools[tutorials]
 </pre></div>
 </div>
 </div>
@@ -507,41 +510,41 @@ Models</a>.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># various import statements</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># various import statements
+import numpy as np
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">softplus</span><span class="p">,</span> <span class="n">softmax</span>
-<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+import torch
+import torch.nn as nn
+from torch.nn.functional import softplus, softmax
+from torch.distributions import constraints
+from torch.optim import Adam
 
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
-<span class="kn">from</span> <span class="nn">pyro.distributions.util</span> <span class="kn">import</span> <span class="n">broadcast_shape</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">MultiStepLR</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">config_enumerate</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.contrib.examples.scanvi_data</span> <span class="kn">import</span> <span class="n">get_data</span>
+import pyro
+import pyro.distributions as dist
+import pyro.poutine as poutine
+from pyro.distributions.util import broadcast_shape
+from pyro.optim import MultiStepLR
+from pyro.infer import SVI, config_enumerate, TraceEnum_ELBO
+from pyro.contrib.examples.scanvi_data import get_data
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="kn">import</span> <span class="n">Patch</span>
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 </pre></div>
 </div>
 </div>
 <section id="Data-pre-processing">
-<h2>Data pre-processing<a class="headerlink" href="#Data-pre-processing" title="Permalink to this headline">¶</a></h2>
+<h2>Data pre-processing<a class="headerlink" href="#Data-pre-processing" title="Permalink to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%capture</span>
-<span class="c1"># Download and pre-process data</span>
-<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span><span class="p">:</span>
-    <span class="n">dataloader</span><span class="p">,</span> <span class="n">num_genes</span><span class="p">,</span> <span class="n">l_mean</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">,</span> <span class="n">anndata</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="s1">&#39;pbmc&#39;</span><span class="p">,</span> <span class="n">cuda</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">dataloader</span><span class="p">,</span> <span class="n">num_genes</span><span class="p">,</span> <span class="n">l_mean</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">,</span> <span class="n">anndata</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="s1">&#39;mock&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%capture
+# Download and pre-process data
+batch_size = 100
+if not smoke_test:
+    dataloader, num_genes, l_mean, l_scale, anndata = get_data(dataset=&#39;pbmc&#39;, cuda=True, batch_size=batch_size)
+else:
+    dataloader, num_genes, l_mean, l_scale, anndata = get_data(dataset=&#39;mock&#39;)
 </pre></div>
 </div>
 </div>
@@ -559,8 +562,8 @@ OMP: Info #271: omp_set_nested routine deprecated, please use omp_set_max_active
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Count data matrix shape:&quot;</span><span class="p">,</span> <span class="n">dataloader</span><span class="o">.</span><span class="n">data_x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mean counts per cell: </span><span class="si">{:.1f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataloader</span><span class="o">.</span><span class="n">data_x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;Count data matrix shape:&quot;, dataloader.data_x.shape)
+print(&quot;Mean counts per cell: {:.1f}&quot;.format(dataloader.data_x.sum(-1).mean().item()))
 </pre></div>
 </div>
 </div>
@@ -578,7 +581,7 @@ Mean counts per cell: 1418.6
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of labeled cells:&quot;</span><span class="p">,</span> <span class="n">dataloader</span><span class="o">.</span><span class="n">num_labeled</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;Number of labeled cells:&quot;, dataloader.num_labeled)
 </pre></div>
 </div>
 </div>
@@ -592,7 +595,7 @@ Number of labeled cells: 200
 </div>
 </section>
 <section id="Semi-supervised-generative-modeling">
-<h2>Semi-supervised generative modeling<a class="headerlink" href="#Semi-supervised-generative-modeling" title="Permalink to this headline">¶</a></h2>
+<h2>Semi-supervised generative modeling<a class="headerlink" href="#Semi-supervised-generative-modeling" title="Permalink to this heading">¶</a></h2>
 <p>Our high-level goal is to learn a parametric model p(<strong>x</strong>) that provides a good fit to the observed count data {<strong>x</strong>_i}. To build a sufficiently rich and flexible model we introduce several latent variables that can capture variability in the data. In particular we introduce the following latent variables: - two continuous latent variables <strong>z</strong>_1 and <strong>z</strong>_2 which are intended to encode things like cell state - a scalar latent variable <strong>ℓ</strong> that encodes the total number of counts in
 a cell, and thus reflects cell size, capture efficiency, etc - a discrete latent variable <strong>y</strong> that encodes the four possible cell labels</p>
 <p>The structure of our model can be represented as a plate diagram, with the index <em>i</em> ranging over the N cells (in other words we are modeling the count matrix row-by-row). In particular each cell has its own copy of each of these latent variables:</p>
@@ -603,140 +606,140 @@ a cell, and thus reflects cell size, capture efficiency, etc - a discrete latent
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model_sketch</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="c1"># This gene-level parameter modulates the variance of the</span>
-    <span class="c1"># observation distribution for our vector of counts x</span>
-    <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;inverse_dispersion&quot;</span><span class="p">,</span> <span class="mf">10.0</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_genes</span><span class="p">),</span>
-                       <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model_sketch(x, y=None):
+    # This gene-level parameter modulates the variance of the
+    # observation distribution for our vector of counts x
+    theta = pyro.param(&quot;inverse_dispersion&quot;, 10.0 * torch.ones(num_genes),
+                       constraint=constraints.positive)
 
-    <span class="c1"># The plate statement encodes that each datapoint (i.e. cell count vector x_i)</span>
-    <span class="c1"># is conditionally independent given its own latent variables.</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;batch&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
-        <span class="c1"># Define a unit Normal prior distribution for z1</span>
-        <span class="n">z1</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z1&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">latent_dim</span><span class="p">))</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-        <span class="c1"># Define a uniform categorical prior for y.</span>
-        <span class="c1"># Note that if y is None (i.e. y is unobserved) then y will be sampled;</span>
-        <span class="c1"># otherwise y will be treated as observed.</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">OneHotCategorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_labels</span><span class="p">)),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+    # The plate statement encodes that each datapoint (i.e. cell count vector x_i)
+    # is conditionally independent given its own latent variables.
+    with pyro.plate(&quot;batch&quot;, len(x)):
+        # Define a unit Normal prior distribution for z1
+        z1 = pyro.sample(&quot;z1&quot;, dist.Normal(0, torch.ones(latent_dim)).to_event(1))
+        # Define a uniform categorical prior for y.
+        # Note that if y is None (i.e. y is unobserved) then y will be sampled;
+        # otherwise y will be treated as observed.
+        y = pyro.sample(&quot;y&quot;, dist.OneHotCategorical(logits=torch.zeros(num_labels)),
+                        obs=y)
 
-        <span class="c1"># Pass z1 and y to the z2 decoder neural network</span>
-        <span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span> <span class="o">=</span> <span class="n">z2_decoder</span><span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-        <span class="c1"># Define the prior distribution for z2. The parameters of this distribution</span>
-        <span class="c1"># depend on both z1 and y.</span>
-        <span class="n">z2</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z2&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        # Pass z1 and y to the z2 decoder neural network
+        z2_loc, z2_scale = z2_decoder(z1, y)
+        # Define the prior distribution for z2. The parameters of this distribution
+        # depend on both z1 and y.
+        z2 = pyro.sample(&quot;z2&quot;, dist.Normal(z2_loc, z2_scale).to_event(1))
 
-        <span class="c1"># Define a LogNormal prior distribution for the log count variable ℓ</span>
-        <span class="n">l</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;l&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        # Define a LogNormal prior distribution for the log count variable ℓ
+        l = pyro.sample(&quot;l&quot;, dist.LogNormal(l_loc, l_scale).to_event(1))
 
-        <span class="c1"># We now construct the observation distribution. To do this we</span>
-        <span class="c1"># first pass z2 to the x decoder neural network.</span>
-        <span class="n">gate_logits</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">x_decoder</span><span class="p">(</span><span class="n">z2</span><span class="p">)</span>
-        <span class="c1"># Using the outputs of the neural network we can define the parameters</span>
-        <span class="c1"># of our ZINB observation distribution.</span>
-        <span class="c1"># Note that by construction mu is normalized (i.e. mu.sum(-1) == 1) and the</span>
-        <span class="c1"># total scale of counts for each cell is determined by the latent variable ℓ.</span>
-        <span class="c1"># That is, `l * mu` is a G-dimensional vector of mean gene counts.</span>
-        <span class="n">nb_logits</span> <span class="o">=</span> <span class="p">(</span><span class="n">l</span> <span class="o">*</span> <span class="n">mu</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span> <span class="o">-</span> <span class="n">theta</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
-        <span class="n">x_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">ZeroInflatedNegativeBinomial</span><span class="p">(</span><span class="n">gate_logits</span><span class="o">=</span><span class="n">gate_logits</span><span class="p">,</span>
-                                                   <span class="n">total_count</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span>
-                                                   <span class="n">logits</span><span class="o">=</span><span class="n">nb_logits</span><span class="p">)</span>
-        <span class="c1"># Observe the datapoint x using the observation distribution x_dist</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">x_dist</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+        # We now construct the observation distribution. To do this we
+        # first pass z2 to the x decoder neural network.
+        gate_logits, mu = x_decoder(z2)
+        # Using the outputs of the neural network we can define the parameters
+        # of our ZINB observation distribution.
+        # Note that by construction mu is normalized (i.e. mu.sum(-1) == 1) and the
+        # total scale of counts for each cell is determined by the latent variable ℓ.
+        # That is, `l * mu` is a G-dimensional vector of mean gene counts.
+        nb_logits = (l * mu).log() - theta.log()
+        x_dist = dist.ZeroInflatedNegativeBinomial(gate_logits=gate_logits,
+                                                   total_count=theta,
+                                                   logits=nb_logits)
+        # Observe the datapoint x using the observation distribution x_dist
+        pyro.sample(&quot;x&quot;, x_dist.to_event(1), obs=x)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Variational-inference">
-<h2>Variational inference<a class="headerlink" href="#Variational-inference" title="Permalink to this headline">¶</a></h2>
+<h2>Variational inference<a class="headerlink" href="#Variational-inference" title="Permalink to this heading">¶</a></h2>
 <p>Recall that in Variational Inference it’s necessary to specify a variational distribution. In Pyro we call these <em>guides</em>. While Pyro includes some machinery for constructing these automatically, for complex models it’s usually necessary to build these by hand in order to get the best possible performance. Let’s sketch the high-level structure of the guide we use for this model:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The guide specifies the variational distribution</span>
-<span class="k">def</span> <span class="nf">guide_sketch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="c1"># This plate statement matches the plate in the model</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;batch&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
-        <span class="c1"># We pass the observed count vector x to an encoder network</span>
-        <span class="c1"># that generates the parameters we use to define the variational</span>
-        <span class="c1"># distributions for the latent variables z2 and ℓ.</span>
-        <span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span><span class="p">,</span> <span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span> <span class="o">=</span> <span class="n">z2l_encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;l&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-        <span class="n">z2</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z2&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># The guide specifies the variational distribution
+def guide_sketch(self, x, y=None):
+    # This plate statement matches the plate in the model
+    with pyro.plate(&quot;batch&quot;, len(x)):
+        # We pass the observed count vector x to an encoder network
+        # that generates the parameters we use to define the variational
+        # distributions for the latent variables z2 and ℓ.
+        z2_loc, z2_scale, l_loc, l_scale = z2l_encoder(x)
+        pyro.sample(&quot;l&quot;, dist.LogNormal(l_loc, l_scale).to_event(1))
+        z2 = pyro.sample(&quot;z2&quot;, dist.Normal(z2_loc, z2_scale).to_event(1))
 
-        <span class="c1"># We only need to specify a variational distribution over y if y is unobserved</span>
-        <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># We use the `classifier` neural network to turn the latent code</span>
-            <span class="c1"># z2 into logits that we can use to specify a distribution over y.</span>
-            <span class="n">y_logits</span> <span class="o">=</span> <span class="n">classifier</span><span class="p">(</span><span class="n">z2</span><span class="p">)</span>
-            <span class="n">y_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">OneHotCategorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">y_logits</span><span class="p">)</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">y_dist</span><span class="p">)</span>
+        # We only need to specify a variational distribution over y if y is unobserved
+        if y is None:
+            # We use the `classifier` neural network to turn the latent code
+            # z2 into logits that we can use to specify a distribution over y.
+            y_logits = classifier(z2)
+            y_dist = dist.OneHotCategorical(logits=y_logits)
+            y = pyro.sample(&quot;y&quot;, y_dist)
 
-        <span class="c1"># Finally we generate the parameters for the z1 distribution by</span>
-        <span class="c1"># passing z2 and y through an encoder neural network z1_encoder.</span>
-        <span class="n">z1_loc</span><span class="p">,</span> <span class="n">z1_scale</span> <span class="o">=</span> <span class="n">z1_encoder</span><span class="p">(</span><span class="n">z2</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z1&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z1_loc</span><span class="p">,</span> <span class="n">z1_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        # Finally we generate the parameters for the z1 distribution by
+        # passing z2 and y through an encoder neural network z1_encoder.
+        z1_loc, z1_scale = z1_encoder(z2, y)
+        pyro.sample(&quot;z1&quot;, dist.Normal(z1_loc, z1_scale).to_event(1))
 </pre></div>
 </div>
 </div>
 <section id="Define-some-helper-functions-for-making-fully-connected-neural-networks-and-reshaping-tensors">
-<h3>Define some helper functions for making fully-connected neural networks and reshaping tensors<a class="headerlink" href="#Define-some-helper-functions-for-making-fully-connected-neural-networks-and-reshaping-tensors" title="Permalink to this headline">¶</a></h3>
+<h3>Define some helper functions for making fully-connected neural networks and reshaping tensors<a class="headerlink" href="#Define-some-helper-functions-for-making-fully-connected-neural-networks-and-reshaping-tensors" title="Permalink to this heading">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Helper for making fully-connected neural networks</span>
-<span class="k">def</span> <span class="nf">make_fc</span><span class="p">(</span><span class="n">dims</span><span class="p">):</span>
-    <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">in_dim</span><span class="p">,</span> <span class="n">out_dim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_dim</span><span class="p">,</span> <span class="n">out_dim</span><span class="p">))</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="n">out_dim</span><span class="p">))</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">())</span>
-    <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># Exclude final ReLU non-linearity</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Helper for making fully-connected neural networks
+def make_fc(dims):
+    layers = []
+    for in_dim, out_dim in zip(dims, dims[1:]):
+        layers.append(nn.Linear(in_dim, out_dim))
+        layers.append(nn.BatchNorm1d(out_dim))
+        layers.append(nn.ReLU())
+    return nn.Sequential(*layers[:-1])  # Exclude final ReLU non-linearity
 
-<span class="c1"># Splits a tensor in half along the final dimension</span>
-<span class="k">def</span> <span class="nf">split_in_half</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+# Splits a tensor in half along the final dimension
+def split_in_half(t):
+    return t.reshape(t.shape[:-1] + (2, -1)).unbind(-2)
 
-<span class="c1"># Helper for broadcasting inputs to neural net</span>
-<span class="k">def</span> <span class="nf">broadcast_inputs</span><span class="p">(</span><span class="n">input_args</span><span class="p">):</span>
-    <span class="n">shape</span> <span class="o">=</span> <span class="n">broadcast_shape</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">input_args</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span>
-    <span class="n">input_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">input_args</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">input_args</span>
+# Helper for broadcasting inputs to neural net
+def broadcast_inputs(input_args):
+    shape = broadcast_shape(*[s.shape[:-1] for s in input_args]) + (-1,)
+    input_args = [s.expand(shape) for s in input_args]
+    return input_args
 </pre></div>
 </div>
 </div>
 </section>
 </section>
 <section id="Neural-encoders-and-decoders">
-<h2>Neural encoders and decoders<a class="headerlink" href="#Neural-encoders-and-decoders" title="Permalink to this headline">¶</a></h2>
+<h2>Neural encoders and decoders<a class="headerlink" href="#Neural-encoders-and-decoders" title="Permalink to this heading">¶</a></h2>
 <p>The main thing we need to do to complete the specification of our model and guide is define the various decoder/encoder neural networks. Since this is largely just a matter of invoking standard PyTorch API, we do not go into great detail here. We limit ourselves to taking a quick look at <code class="docutils literal notranslate"><span class="pre">XDecoder</span></code>, which is the decoder neural network we use to specify the observation distribution p(<strong>x</strong> | <strong>z</strong>_2) used in the model:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Used in parameterizing p(x | z2)</span>
-<span class="k">class</span> <span class="nc">XDecoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="c1"># This __init__ statement is executed once upon construction of the neural network.</span>
-    <span class="c1"># Here we specify that the neural network has input dimension z2_dim</span>
-    <span class="c1"># and output dimension 2 * num_genes.</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_genes</span><span class="p">,</span> <span class="n">z2_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">z2_dim</span><span class="p">]</span> <span class="o">+</span> <span class="n">hidden_dims</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">num_genes</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">make_fc</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Used in parameterizing p(x | z2)
+class XDecoder(nn.Module):
+    # This __init__ statement is executed once upon construction of the neural network.
+    # Here we specify that the neural network has input dimension z2_dim
+    # and output dimension 2 * num_genes.
+    def __init__(self, num_genes, z2_dim, hidden_dims):
+        super().__init__()
+        dims = [z2_dim] + hidden_dims + [2 * num_genes]
+        self.fc = make_fc(dims)
 
-    <span class="c1"># This method defines the actual computation of the neural network. It takes</span>
-    <span class="c1"># z2 as input and spits out two parameters that are then used in the model</span>
-    <span class="c1"># to define the ZINB observation distribution. In particular it generates</span>
-    <span class="c1"># `gate_logits`, which controls zero-inflation, and `mu` which encodes the</span>
-    <span class="c1"># relative frequencies of different genes.</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z2</span><span class="p">):</span>
-        <span class="n">gate_logits</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">split_in_half</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">z2</span><span class="p">))</span>
-        <span class="c1"># Note that mu is normalized so that total count information is</span>
-        <span class="c1"># encoded by the latent variable ℓ.</span>
-        <span class="n">mu</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gate_logits</span><span class="p">,</span> <span class="n">mu</span>
+    # This method defines the actual computation of the neural network. It takes
+    # z2 as input and spits out two parameters that are then used in the model
+    # to define the ZINB observation distribution. In particular it generates
+    # `gate_logits`, which controls zero-inflation, and `mu` which encodes the
+    # relative frequencies of different genes.
+    def forward(self, z2):
+        gate_logits, mu = split_in_half(self.fc(z2))
+        # Note that mu is normalized so that total count information is
+        # encoded by the latent variable ℓ.
+        mu = softmax(mu, dim=-1)
+        return gate_logits, mu
 </pre></div>
 </div>
 </div>
@@ -745,79 +748,79 @@ a cell, and thus reflects cell size, capture efficiency, etc - a discrete latent
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Used in parameterizing p(z2 | z1, y)</span>
-<span class="k">class</span> <span class="nc">Z2Decoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z1_dim</span><span class="p">,</span> <span class="n">y_dim</span><span class="p">,</span> <span class="n">z2_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">z1_dim</span> <span class="o">+</span> <span class="n">y_dim</span><span class="p">]</span> <span class="o">+</span> <span class="n">hidden_dims</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">z2_dim</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">make_fc</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Used in parameterizing p(z2 | z1, y)
+class Z2Decoder(nn.Module):
+    def __init__(self, z1_dim, y_dim, z2_dim, hidden_dims):
+        super().__init__()
+        dims = [z1_dim + y_dim] + hidden_dims + [2 * z2_dim]
+        self.fc = make_fc(dims)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z1</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="n">z1_y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">z1</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># We reshape the input to be two-dimensional so that nn.BatchNorm1d behaves correctly</span>
-        <span class="n">_z1_y</span> <span class="o">=</span> <span class="n">z1_y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">z1_y</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">_z1_y</span><span class="p">)</span>
-        <span class="c1"># If the input was three-dimensional we now restore the original shape</span>
-        <span class="n">hidden</span> <span class="o">=</span> <span class="n">hidden</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">z1_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">hidden</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:])</span>
-        <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">split_in_half</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
-        <span class="c1"># Here and elsewhere softplus ensures that scale is positive. Note that we generally</span>
-        <span class="c1"># expect softplus to be more numerically stable than exp.</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span>
+    def forward(self, z1, y):
+        z1_y = torch.cat([z1, y], dim=-1)
+        # We reshape the input to be two-dimensional so that nn.BatchNorm1d behaves correctly
+        _z1_y = z1_y.reshape(-1, z1_y.size(-1))
+        hidden = self.fc(_z1_y)
+        # If the input was three-dimensional we now restore the original shape
+        hidden = hidden.reshape(z1_y.shape[:-1] + hidden.shape[-1:])
+        loc, scale = split_in_half(hidden)
+        # Here and elsewhere softplus ensures that scale is positive. Note that we generally
+        # expect softplus to be more numerically stable than exp.
+        scale = softplus(scale)
+        return loc, scale
 
-<span class="c1"># Used in parameterizing q(z2 | x) and q(l | x)</span>
-<span class="k">class</span> <span class="nc">Z2LEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_genes</span><span class="p">,</span> <span class="n">z2_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">num_genes</span><span class="p">]</span> <span class="o">+</span> <span class="n">hidden_dims</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">z2_dim</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">make_fc</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span>
+# Used in parameterizing q(z2 | x) and q(l | x)
+class Z2LEncoder(nn.Module):
+    def __init__(self, num_genes, z2_dim, hidden_dims):
+        super().__init__()
+        dims = [num_genes] + hidden_dims + [2 * z2_dim + 2]
+        self.fc = make_fc(dims)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="c1"># Transform the counts x to log space for increased numerical stability.</span>
-        <span class="c1"># Note that we only use this transformation here; in particular the observation</span>
-        <span class="c1"># distribution in the model is a proper count distribution.</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span>
-        <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span> <span class="o">=</span> <span class="n">split_in_half</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span> <span class="o">=</span> <span class="n">h1</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">softplus</span><span class="p">(</span><span class="n">h2</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span> <span class="o">=</span> <span class="n">h1</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">softplus</span><span class="p">(</span><span class="n">h2</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:])</span>
-        <span class="k">return</span> <span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span><span class="p">,</span> <span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span>
+    def forward(self, x):
+        # Transform the counts x to log space for increased numerical stability.
+        # Note that we only use this transformation here; in particular the observation
+        # distribution in the model is a proper count distribution.
+        x = torch.log(1 + x)
+        h1, h2 = split_in_half(self.fc(x))
+        z2_loc, z2_scale = h1[..., :-1], softplus(h2[..., :-1])
+        l_loc, l_scale = h1[..., -1:], softplus(h2[..., -1:])
+        return z2_loc, z2_scale, l_loc, l_scale
 
-<span class="c1"># Used in parameterizing q(z1 | z2, y)</span>
-<span class="k">class</span> <span class="nc">Z1Encoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_labels</span><span class="p">,</span> <span class="n">z1_dim</span><span class="p">,</span> <span class="n">z2_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">num_labels</span> <span class="o">+</span> <span class="n">z2_dim</span><span class="p">]</span> <span class="o">+</span> <span class="n">hidden_dims</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">z1_dim</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">make_fc</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span>
+# Used in parameterizing q(z1 | z2, y)
+class Z1Encoder(nn.Module):
+    def __init__(self, num_labels, z1_dim, z2_dim, hidden_dims):
+        super().__init__()
+        dims = [num_labels + z2_dim] + hidden_dims + [2 * z1_dim]
+        self.fc = make_fc(dims)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="c1"># This broadcasting is necessary since Pyro expands y during enumeration (but not z2)</span>
-        <span class="n">z2_y</span> <span class="o">=</span> <span class="n">broadcast_inputs</span><span class="p">([</span><span class="n">z2</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
-        <span class="n">z2_y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">z2_y</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># We reshape the input to be two-dimensional so that nn.BatchNorm1d behaves correctly</span>
-        <span class="n">_z2_y</span> <span class="o">=</span> <span class="n">z2_y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">z2_y</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">_z2_y</span><span class="p">)</span>
-        <span class="c1"># If the input was three-dimensional we now restore the original shape</span>
-        <span class="n">hidden</span> <span class="o">=</span> <span class="n">hidden</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">z2_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">hidden</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:])</span>
-        <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">split_in_half</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span>
+    def forward(self, z2, y):
+        # This broadcasting is necessary since Pyro expands y during enumeration (but not z2)
+        z2_y = broadcast_inputs([z2, y])
+        z2_y = torch.cat(z2_y, dim=-1)
+        # We reshape the input to be two-dimensional so that nn.BatchNorm1d behaves correctly
+        _z2_y = z2_y.reshape(-1, z2_y.size(-1))
+        hidden = self.fc(_z2_y)
+        # If the input was three-dimensional we now restore the original shape
+        hidden = hidden.reshape(z2_y.shape[:-1] + hidden.shape[-1:])
+        loc, scale = split_in_half(hidden)
+        scale = softplus(scale)
+        return loc, scale
 
-<span class="c1"># Used in parameterizing q(y | z2)</span>
-<span class="k">class</span> <span class="nc">Classifier</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z2_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">,</span> <span class="n">num_labels</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">z2_dim</span><span class="p">]</span> <span class="o">+</span> <span class="n">hidden_dims</span> <span class="o">+</span> <span class="p">[</span><span class="n">num_labels</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">make_fc</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span>
+# Used in parameterizing q(y | z2)
+class Classifier(nn.Module):
+    def __init__(self, z2_dim, hidden_dims, num_labels):
+        super().__init__()
+        dims = [z2_dim] + hidden_dims + [num_labels]
+        self.fc = make_fc(dims)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">logits</span>
+    def forward(self, x):
+        logits = self.fc(x)
+        return logits
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Putting-everything-together">
-<h2>Putting everything together<a class="headerlink" href="#Putting-everything-together" title="Permalink to this headline">¶</a></h2>
+<h2>Putting everything together<a class="headerlink" href="#Putting-everything-together" title="Permalink to this heading">¶</a></h2>
 <p>At this juncture we can put everything together. We will package our Pyro model and guide as a PyTorch <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>. We briefly discuss some of the more technical points that were swept under the rug in our high-level specifications <code class="docutils literal notranslate"><span class="pre">model_sketch</span></code> and <code class="docutils literal notranslate"><span class="pre">guide_sketch</span></code> introduced above: - We use <code class="docutils literal notranslate"><span class="pre">pyro.module</span></code> statements to register the various neural networks with Pyro (this ensures their parameters get trained). - The <a class="reference external" href="https://arxiv.org/abs/1406.5298">semi-supervised modeling framework</a>
 upon which scANVI is based includes an additional term in the ELBO loss function that ensures that the <code class="docutils literal notranslate"><span class="pre">classifier</span></code> neural network learns from both labeled and unlabeled data. This explains the presence of the <code class="docutils literal notranslate"><span class="pre">pyro.factor</span></code> statement in the guide, which essentially just adds an auxiliary cross entropy loss term. - In defining <code class="docutils literal notranslate"><span class="pre">nb_logits</span></code> below we use a fudge factor <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> to ensure numerical stability. Fitting flexible models equipped with neural networks to high-dimensional data
 inevitably requires paying some attention to numerical issues.</p>
@@ -825,157 +828,157 @@ inevitably requires paying some attention to numerical issues.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Packages the scANVI model and guide as a PyTorch nn.Module</span>
-<span class="k">class</span> <span class="nc">SCANVI</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_genes</span><span class="p">,</span> <span class="n">num_labels</span><span class="p">,</span> <span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">,</span>
-                 <span class="n">latent_dim</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_genes</span> <span class="o">=</span> <span class="n">num_genes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_labels</span> <span class="o">=</span> <span class="n">num_labels</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Packages the scANVI model and guide as a PyTorch nn.Module
+class SCANVI(nn.Module):
+    def __init__(self, num_genes, num_labels, l_loc, l_scale,
+                 latent_dim=10, alpha=0.01, scale_factor=1.0):
+        self.num_genes = num_genes
+        self.num_labels = num_labels
 
-        <span class="c1"># This is the dimension of both z1 and z2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span> <span class="o">=</span> <span class="n">latent_dim</span>
+        # This is the dimension of both z1 and z2
+        self.latent_dim = latent_dim
 
-        <span class="c1"># The next two hyperparameters determine the prior over the log_count latent variable `l`</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l_loc</span> <span class="o">=</span> <span class="n">l_loc</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l_scale</span> <span class="o">=</span> <span class="n">l_scale</span>
+        # The next two hyperparameters determine the prior over the log_count latent variable `l`
+        self.l_loc = l_loc
+        self.l_scale = l_scale
 
-        <span class="c1"># This hyperparameter controls the strength of the auxiliary classification loss</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span> <span class="o">=</span> <span class="n">scale_factor</span>
+        # This hyperparameter controls the strength of the auxiliary classification loss
+        self.alpha = alpha
+        self.scale_factor = scale_factor
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        super().__init__()
 
-        <span class="c1"># Setup the various neural networks used in the model and guide</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z2_decoder</span> <span class="o">=</span> <span class="n">Z2Decoder</span><span class="p">(</span><span class="n">z1_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">,</span> <span class="n">y_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_labels</span><span class="p">,</span>
-                                    <span class="n">z2_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">50</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x_decoder</span> <span class="o">=</span> <span class="n">XDecoder</span><span class="p">(</span><span class="n">num_genes</span><span class="o">=</span><span class="n">num_genes</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">],</span> <span class="n">z2_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z2l_encoder</span> <span class="o">=</span> <span class="n">Z2LEncoder</span><span class="p">(</span><span class="n">num_genes</span><span class="o">=</span><span class="n">num_genes</span><span class="p">,</span> <span class="n">z2_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">Classifier</span><span class="p">(</span><span class="n">z2_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">50</span><span class="p">],</span> <span class="n">num_labels</span><span class="o">=</span><span class="n">num_labels</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z1_encoder</span> <span class="o">=</span> <span class="n">Z1Encoder</span><span class="p">(</span><span class="n">num_labels</span><span class="o">=</span><span class="n">num_labels</span><span class="p">,</span> <span class="n">z1_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">,</span>
-                                    <span class="n">z2_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">50</span><span class="p">])</span>
+        # Setup the various neural networks used in the model and guide
+        self.z2_decoder = Z2Decoder(z1_dim=self.latent_dim, y_dim=self.num_labels,
+                                    z2_dim=self.latent_dim, hidden_dims=[50])
+        self.x_decoder = XDecoder(num_genes=num_genes, hidden_dims=[100], z2_dim=self.latent_dim)
+        self.z2l_encoder = Z2LEncoder(num_genes=num_genes, z2_dim=self.latent_dim, hidden_dims=[100])
+        self.classifier = Classifier(z2_dim=self.latent_dim, hidden_dims=[50], num_labels=num_labels)
+        self.z1_encoder = Z1Encoder(num_labels=num_labels, z1_dim=self.latent_dim,
+                                    z2_dim=self.latent_dim, hidden_dims=[50])
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="mf">0.006</span>
+        self.epsilon = 0.006
 
-    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="c1"># Register various nn.Modules (i.e. the decoder/encoder networks) with Pyro</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;scanvi&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+    def model(self, x, y=None):
+        # Register various nn.Modules (i.e. the decoder/encoder networks) with Pyro
+        pyro.module(&quot;scanvi&quot;, self)
 
-        <span class="c1"># This gene-level parameter modulates the variance of the observation distribution</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;inverse_dispersion&quot;</span><span class="p">,</span> <span class="mf">10.0</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_genes</span><span class="p">),</span>
-                           <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
+        # This gene-level parameter modulates the variance of the observation distribution
+        theta = pyro.param(&quot;inverse_dispersion&quot;, 10.0 * x.new_ones(self.num_genes),
+                           constraint=constraints.positive)
 
-        <span class="c1"># We scale all sample statements by scale_factor so that the ELBO loss function</span>
-        <span class="c1"># is normalized wrt the number of datapoints and genes.</span>
-        <span class="c1"># This helps with numerical stability during optimization.</span>
-        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;batch&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">poutine</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span><span class="p">):</span>
-            <span class="n">z1</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z1&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">))</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">OneHotCategorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_labels</span><span class="p">)),</span>
-                            <span class="n">obs</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+        # We scale all sample statements by scale_factor so that the ELBO loss function
+        # is normalized wrt the number of datapoints and genes.
+        # This helps with numerical stability during optimization.
+        with pyro.plate(&quot;batch&quot;, len(x)), poutine.scale(scale=self.scale_factor):
+            z1 = pyro.sample(&quot;z1&quot;, dist.Normal(0, x.new_ones(self.latent_dim)).to_event(1))
+            y = pyro.sample(&quot;y&quot;, dist.OneHotCategorical(logits=x.new_zeros(self.num_labels)),
+                            obs=y)
 
-            <span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z2_decoder</span><span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-            <span class="n">z2</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z2&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            z2_loc, z2_scale = self.z2_decoder(z1, y)
+            z2 = pyro.sample(&quot;z2&quot;, dist.Normal(z2_loc, z2_scale).to_event(1))
 
-            <span class="n">l_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">l_scale</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">l</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;l&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            l_scale = self.l_scale * x.new_ones(1)
+            l = pyro.sample(&quot;l&quot;, dist.LogNormal(self.l_loc, l_scale).to_event(1))
 
-            <span class="c1"># Note that by construction mu is normalized (i.e. mu.sum(-1) == 1) and the</span>
-            <span class="c1"># total scale of counts for each cell is determined by `l`</span>
-            <span class="n">gate_logits</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_decoder</span><span class="p">(</span><span class="n">z2</span><span class="p">)</span>
-            <span class="n">nb_logits</span> <span class="o">=</span> <span class="p">(</span><span class="n">l</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="n">theta</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
-            <span class="n">x_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">ZeroInflatedNegativeBinomial</span><span class="p">(</span><span class="n">gate_logits</span><span class="o">=</span><span class="n">gate_logits</span><span class="p">,</span> <span class="n">total_count</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span>
-                                                       <span class="n">logits</span><span class="o">=</span><span class="n">nb_logits</span><span class="p">)</span>
-            <span class="c1"># Observe the datapoint x using the observation distribution x_dist</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">x_dist</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+            # Note that by construction mu is normalized (i.e. mu.sum(-1) == 1) and the
+            # total scale of counts for each cell is determined by `l`
+            gate_logits, mu = self.x_decoder(z2)
+            nb_logits = (l * mu + self.epsilon).log() - (theta + self.epsilon).log()
+            x_dist = dist.ZeroInflatedNegativeBinomial(gate_logits=gate_logits, total_count=theta,
+                                                       logits=nb_logits)
+            # Observe the datapoint x using the observation distribution x_dist
+            pyro.sample(&quot;x&quot;, x_dist.to_event(1), obs=x)
 
-    <span class="c1"># The guide specifies the variational distribution</span>
-    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;scanvi&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;batch&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">poutine</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span><span class="p">):</span>
-            <span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span><span class="p">,</span> <span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z2l_encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;l&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">l_loc</span><span class="p">,</span> <span class="n">l_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">z2</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z2&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z2_loc</span><span class="p">,</span> <span class="n">z2_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    # The guide specifies the variational distribution
+    def guide(self, x, y=None):
+        pyro.module(&quot;scanvi&quot;, self)
+        with pyro.plate(&quot;batch&quot;, len(x)), poutine.scale(scale=self.scale_factor):
+            z2_loc, z2_scale, l_loc, l_scale = self.z2l_encoder(x)
+            pyro.sample(&quot;l&quot;, dist.LogNormal(l_loc, l_scale).to_event(1))
+            z2 = pyro.sample(&quot;z2&quot;, dist.Normal(z2_loc, z2_scale).to_event(1))
 
-            <span class="n">y_logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">z2</span><span class="p">)</span>
-            <span class="n">y_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">OneHotCategorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">y_logits</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># x is unlabeled so sample y using q(y|z2)</span>
-                <span class="n">y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">y_dist</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># x is labeled so add a classification loss term</span>
-                <span class="c1"># (this way q(y|z2) learns from both labeled and unlabeled data)</span>
-                <span class="n">classification_loss</span> <span class="o">=</span> <span class="n">y_dist</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-                <span class="c1"># Note that the negative sign appears because we&#39;re adding this term in the guide</span>
-                <span class="c1"># and the guide log_prob appears in the ELBO as -log q</span>
-                <span class="n">pyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;classification_loss&quot;</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">classification_loss</span><span class="p">,</span> <span class="n">has_rsample</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            y_logits = self.classifier(z2)
+            y_dist = dist.OneHotCategorical(logits=y_logits)
+            if y is None:
+                # x is unlabeled so sample y using q(y|z2)
+                y = pyro.sample(&quot;y&quot;, y_dist)
+            else:
+                # x is labeled so add a classification loss term
+                # (this way q(y|z2) learns from both labeled and unlabeled data)
+                classification_loss = y_dist.log_prob(y)
+                # Note that the negative sign appears because we&#39;re adding this term in the guide
+                # and the guide log_prob appears in the ELBO as -log q
+                pyro.factor(&quot;classification_loss&quot;, -self.alpha * classification_loss, has_rsample=False)
 
-            <span class="n">z1_loc</span><span class="p">,</span> <span class="n">z1_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z1_encoder</span><span class="p">(</span><span class="n">z2</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z1&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z1_loc</span><span class="p">,</span> <span class="n">z1_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            z1_loc, z1_scale = self.z1_encoder(z2, y)
+            pyro.sample(&quot;z1&quot;, dist.Normal(z1_loc, z1_scale).to_event(1))
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Training">
-<h2>Training<a class="headerlink" href="#Training" title="Permalink to this headline">¶</a></h2>
+<h2>Training<a class="headerlink" href="#Training" title="Permalink to this heading">¶</a></h2>
 <p>Now that we’ve fully specified our model and guide we can proceed to training via stochastic variational inference!</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clear Pyro param store so we don&#39;t conflict with previous</span>
-<span class="c1"># training runs in this session</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="c1"># Fix random number seed</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="c1"># Enable optional validation warnings</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Clear Pyro param store so we don&#39;t conflict with previous
+# training runs in this session
+pyro.clear_param_store()
+# Fix random number seed
+pyro.util.set_rng_seed(0)
+# Enable optional validation warnings
+pyro.enable_validation(True)
 
-<span class="c1"># Instantiate instance of model/guide and various neural networks</span>
-<span class="n">scanvi</span> <span class="o">=</span> <span class="n">SCANVI</span><span class="p">(</span><span class="n">num_genes</span><span class="o">=</span><span class="n">num_genes</span><span class="p">,</span> <span class="n">num_labels</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-                <span class="n">l_loc</span><span class="o">=</span><span class="n">l_mean</span><span class="p">,</span> <span class="n">l_scale</span><span class="o">=</span><span class="n">l_scale</span><span class="p">,</span>
-                <span class="n">scale_factor</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">num_genes</span><span class="p">))</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span><span class="p">:</span>
-    <span class="n">scanvi</span> <span class="o">=</span> <span class="n">scanvi</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+# Instantiate instance of model/guide and various neural networks
+scanvi = SCANVI(num_genes=num_genes, num_labels=4,
+                l_loc=l_mean, l_scale=l_scale,
+                scale_factor=1.0 / (batch_size * num_genes))
+if not smoke_test:
+    scanvi = scanvi.cuda()
 
-<span class="c1"># Setup an optimizer (Adam) and learning rate scheduler.</span>
-<span class="c1"># We start with a moderately high learning rate (0.006) and</span>
-<span class="c1"># reduce by a factor of 5 after 20 epochs.</span>
-<span class="n">scheduler</span> <span class="o">=</span> <span class="n">MultiStepLR</span><span class="p">({</span><span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">Adam</span><span class="p">,</span>
-                         <span class="s1">&#39;optim_args&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.006</span><span class="p">},</span>
-                         <span class="s1">&#39;gamma&#39;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s1">&#39;milestones&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">20</span><span class="p">]})</span>
+# Setup an optimizer (Adam) and learning rate scheduler.
+# We start with a moderately high learning rate (0.006) and
+# reduce by a factor of 5 after 20 epochs.
+scheduler = MultiStepLR({&#39;optimizer&#39;: Adam,
+                         &#39;optim_args&#39;: {&#39;lr&#39;: 0.006},
+                         &#39;gamma&#39;: 0.2, &#39;milestones&#39;: [20]})
 
-<span class="c1"># Tell Pyro to enumerate out y when y is unobserved.</span>
-<span class="c1"># (By default y would be sampled from the guide)</span>
-<span class="n">guide</span> <span class="o">=</span> <span class="n">config_enumerate</span><span class="p">(</span><span class="n">scanvi</span><span class="o">.</span><span class="n">guide</span><span class="p">,</span> <span class="s2">&quot;parallel&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+# Tell Pyro to enumerate out y when y is unobserved.
+# (By default y would be sampled from the guide)
+guide = config_enumerate(scanvi.guide, &quot;parallel&quot;, expand=True)
 
-<span class="c1"># Setup a variational objective for gradient-based learning.</span>
-<span class="c1"># Note we use TraceEnum_ELBO in order to leverage Pyro&#39;s machinery</span>
-<span class="c1"># for automatic enumeration of the discrete latent variable y.</span>
-<span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">strict_enumeration_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">scanvi</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
+# Setup a variational objective for gradient-based learning.
+# Note we use TraceEnum_ELBO in order to leverage Pyro&#39;s machinery
+# for automatic enumeration of the discrete latent variable y.
+elbo = TraceEnum_ELBO(strict_enumeration_warning=False)
+svi = SVI(scanvi.model, guide, scheduler, elbo)
 
-<span class="c1"># Training loop.</span>
-<span class="c1"># We train for 80 epochs, although this isn&#39;t enough to achieve full convergence.</span>
-<span class="c1"># For optimal results it is necessary to tweak the optimization parameters.</span>
-<span class="c1"># For our purposes, however, 80 epochs of training is sufficient.</span>
-<span class="c1"># Training should take about 8 minutes on a GPU-equipped Colab instance.</span>
-<span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">80</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">1</span>
+# Training loop.
+# We train for 80 epochs, although this isn&#39;t enough to achieve full convergence.
+# For optimal results it is necessary to tweak the optimization parameters.
+# For our purposes, however, 80 epochs of training is sufficient.
+# Training should take about 8 minutes on a GPU-equipped Colab instance.
+num_epochs = 80 if not smoke_test else 1
 
-<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_epochs</span><span class="p">):</span>
-    <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
+for epoch in range(num_epochs):
+    losses = []
 
-    <span class="c1"># Take a gradient step for each mini-batch in the dataset</span>
-    <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-        <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+    # Take a gradient step for each mini-batch in the dataset
+    for x, y in dataloader:
+        if y is not None:
+            y = y.type_as(x)
+        loss = svi.step(x, y)
+        losses.append(loss)
 
-    <span class="c1"># Tell the scheduler we&#39;ve done one epoch.</span>
-    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    # Tell the scheduler we&#39;ve done one epoch.
+    scheduler.step()
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[Epoch </span><span class="si">%02d</span><span class="s2">]  Loss: </span><span class="si">%.5f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">losses</span><span class="p">)))</span>
+    print(&quot;[Epoch %02d]  Loss: %.5f&quot; % (epoch, np.mean(losses)))
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished training!&quot;</span><span class="p">)</span>
+print(&quot;Finished training!&quot;)
 </pre></div>
 </div>
 </div>
@@ -1069,69 +1072,69 @@ Finished training!
 </div>
 </section>
 <section id="Plotting-our-results">
-<h2>Plotting our results<a class="headerlink" href="#Plotting-our-results" title="Permalink to this headline">¶</a></h2>
+<h2>Plotting our results<a class="headerlink" href="#Plotting-our-results" title="Permalink to this heading">¶</a></h2>
 <p>Finally, we generate a figure that illustrates the latent representations learned by our model. In particular we identify each cell with the 10-dimensional representation encoded in the inferred latent variable <strong>z</strong>_2. Note that for a given cell with counts <strong>x</strong>, the inferred mean of <strong>z</strong>_2 can be computed by using the <code class="docutils literal notranslate"><span class="pre">z2l_encoder</span></code> that is part of our amortized guide.</p>
 <p>In addition we show that our <code class="docutils literal notranslate"><span class="pre">classifier</span></code> neural network can be used to label the unlabeled cells. Moreover, these labels come equipped with uncertainty estimates.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span><span class="p">:</span>
-    <span class="c1"># Now that we&#39;re done training we&#39;ll inspect the latent representations we&#39;ve learned</span>
-    <span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>if not smoke_test:
+    # Now that we&#39;re done training we&#39;ll inspect the latent representations we&#39;ve learned
+    import scanpy as sc
 
-    <span class="c1"># Put the neural networks in evaluation mode (needed because of batch norm)</span>
-    <span class="n">scanvi</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    # Put the neural networks in evaluation mode (needed because of batch norm)
+    scanvi.eval()
 
-    <span class="c1"># Compute latent representation (z2_loc) for each cell in the dataset</span>
-    <span class="n">latent_rep</span> <span class="o">=</span> <span class="n">scanvi</span><span class="o">.</span><span class="n">z2l_encoder</span><span class="p">(</span><span class="n">dataloader</span><span class="o">.</span><span class="n">data_x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    # Compute latent representation (z2_loc) for each cell in the dataset
+    latent_rep = scanvi.z2l_encoder(dataloader.data_x)[0]
 
-    <span class="c1"># Compute inferred cell type probabilities for each cell</span>
-    <span class="n">y_logits</span> <span class="o">=</span> <span class="n">scanvi</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">latent_rep</span><span class="p">)</span>
-    <span class="c1"># Convert logits to probabilities</span>
-    <span class="n">y_probs</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">y_logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    # Compute inferred cell type probabilities for each cell
+    y_logits = scanvi.classifier(latent_rep)
+    # Convert logits to probabilities
+    y_probs = softmax(y_logits, dim=-1).data.cpu().numpy()
 
-    <span class="c1"># Use scanpy to compute 2-dimensional UMAP coordinates using our</span>
-    <span class="c1"># learned 10-dimensional latent representation z2</span>
-    <span class="n">anndata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s2">&quot;X_scANVI&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">latent_rep</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-    <span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">anndata</span><span class="p">,</span> <span class="n">use_rep</span><span class="o">=</span><span class="s2">&quot;X_scANVI&quot;</span><span class="p">)</span>
-    <span class="n">sc</span><span class="o">.</span><span class="n">tl</span><span class="o">.</span><span class="n">umap</span><span class="p">(</span><span class="n">anndata</span><span class="p">)</span>
-    <span class="n">umap1</span><span class="p">,</span> <span class="n">umap2</span> <span class="o">=</span> <span class="n">anndata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s1">&#39;X_umap&#39;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">anndata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s1">&#39;X_umap&#39;</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+    # Use scanpy to compute 2-dimensional UMAP coordinates using our
+    # learned 10-dimensional latent representation z2
+    anndata.obsm[&quot;X_scANVI&quot;] = latent_rep.data.cpu().numpy()
+    sc.pp.neighbors(anndata, use_rep=&quot;X_scANVI&quot;)
+    sc.tl.umap(anndata)
+    umap1, umap2 = anndata.obsm[&#39;X_umap&#39;][:, 0], anndata.obsm[&#39;X_umap&#39;][:, 1]
 
-    <span class="c1"># Construct plots; all plots are scatterplots depicting the two-dimensional UMAP embedding</span>
-    <span class="c1"># and only differ in how points are colored</span>
+    # Construct plots; all plots are scatterplots depicting the two-dimensional UMAP embedding
+    # and only differ in how points are colored
 
-    <span class="c1"># The topmost plot depicts the 200 hand-curated seed labels in our dataset</span>
-    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
-    <span class="n">seed_marker_sizes</span> <span class="o">=</span> <span class="n">anndata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;seed_marker_sizes&#39;</span><span class="p">]</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">umap1</span><span class="p">,</span> <span class="n">umap2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">seed_marker_sizes</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">anndata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;seed_colors&#39;</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Hand-Curated Seed Labels&#39;</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;UMAP-1&#39;</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;UMAP-2&#39;</span><span class="p">)</span>
-    <span class="n">patch1</span> <span class="o">=</span> <span class="n">Patch</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;lightcoral&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;CD8-Naive&#39;</span><span class="p">)</span>
-    <span class="n">patch2</span> <span class="o">=</span> <span class="n">Patch</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;limegreen&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;CD4-Naive&#39;</span><span class="p">)</span>
-    <span class="n">patch3</span> <span class="o">=</span> <span class="n">Patch</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;deepskyblue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;CD4-Memory&#39;</span><span class="p">)</span>
-    <span class="n">patch4</span> <span class="o">=</span> <span class="n">Patch</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;mediumorchid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;CD4-Regulatory&#39;</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;center left&#39;</span><span class="p">,</span> <span class="n">handles</span><span class="o">=</span><span class="p">[</span><span class="n">patch1</span><span class="p">,</span> <span class="n">patch2</span><span class="p">,</span> <span class="n">patch3</span><span class="p">,</span> <span class="n">patch4</span><span class="p">])</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_yaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_frame_on</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    # The topmost plot depicts the 200 hand-curated seed labels in our dataset
+    fig, axes = plt.subplots(3, 2, figsize=(9, 12))
+    seed_marker_sizes = anndata.obs[&#39;seed_marker_sizes&#39;]
+    axes[0, 0].scatter(umap1, umap2, s=seed_marker_sizes, c=anndata.obs[&#39;seed_colors&#39;], marker=&#39;.&#39;, alpha=0.7)
+    axes[0, 0].set_title(&#39;Hand-Curated Seed Labels&#39;)
+    axes[0, 0].set_xlabel(&#39;UMAP-1&#39;)
+    axes[0, 0].set_ylabel(&#39;UMAP-2&#39;)
+    patch1 = Patch(color=&#39;lightcoral&#39;, label=&#39;CD8-Naive&#39;)
+    patch2 = Patch(color=&#39;limegreen&#39;, label=&#39;CD4-Naive&#39;)
+    patch3 = Patch(color=&#39;deepskyblue&#39;, label=&#39;CD4-Memory&#39;)
+    patch4 = Patch(color=&#39;mediumorchid&#39;, label=&#39;CD4-Regulatory&#39;)
+    axes[0, 1].legend(loc=&#39;center left&#39;, handles=[patch1, patch2, patch3, patch4])
+    axes[0, 1].get_xaxis().set_visible(False)
+    axes[0, 1].get_yaxis().set_visible(False)
+    axes[0, 1].set_frame_on(False)
 
-    <span class="c1"># The remaining plots depict the inferred cell type probability for each of the four cell types</span>
-    <span class="n">s10</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">umap1</span><span class="p">,</span> <span class="n">umap2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">y_probs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Inferred CD8-Naive probability&#39;</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">s10</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-    <span class="n">s11</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">umap1</span><span class="p">,</span> <span class="n">umap2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">y_probs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Inferred CD4-Naive probability&#39;</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">s11</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-    <span class="n">s20</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">umap1</span><span class="p">,</span> <span class="n">umap2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">y_probs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Inferred CD4-Memory probability&#39;</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">s20</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-    <span class="n">s21</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">umap1</span><span class="p">,</span> <span class="n">umap2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">y_probs</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Inferred CD4-Regulatory probability&#39;</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">s21</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    # The remaining plots depict the inferred cell type probability for each of the four cell types
+    s10 = axes[1, 0].scatter(umap1, umap2, s=1, c=y_probs[:, 0], marker=&#39;.&#39;, alpha=0.7)
+    axes[1, 0].set_title(&#39;Inferred CD8-Naive probability&#39;)
+    fig.colorbar(s10, ax=axes[1, 0])
+    s11 = axes[1, 1].scatter(umap1, umap2, s=1, c=y_probs[:, 1], marker=&#39;.&#39;, alpha=0.7)
+    axes[1, 1].set_title(&#39;Inferred CD4-Naive probability&#39;)
+    fig.colorbar(s11, ax=axes[1, 1])
+    s20 = axes[2, 0].scatter(umap1, umap2, s=1, c=y_probs[:, 2], marker=&#39;.&#39;, alpha=0.7)
+    axes[2, 0].set_title(&#39;Inferred CD4-Memory probability&#39;)
+    fig.colorbar(s20, ax=axes[2, 0])
+    s21 = axes[2, 1].scatter(umap1, umap2, s=1, c=y_probs[:, 3], marker=&#39;.&#39;, alpha=0.7)
+    axes[2, 1].set_title(&#39;Inferred CD4-Regulatory probability&#39;)
+    fig.colorbar(s21, ax=axes[2, 1])
 
-    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    fig.tight_layout()
 </pre></div>
 </div>
 </div>

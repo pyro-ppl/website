@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attend Infer Repeat &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Attend Infer Repeat &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -204,8 +206,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Attend Infer Repeat</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Attend Infer Repeat</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/air.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -325,10 +327,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -494,29 +497,29 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Attend-Infer-Repeat">
-<h1>Attend Infer Repeat<a class="headerlink" href="#Attend-Infer-Repeat" title="Permalink to this headline">¶</a></h1>
+<h1>Attend Infer Repeat<a class="headerlink" href="#Attend-Infer-Repeat" title="Permalink to this heading">¶</a></h1>
 <p>In this tutorial we will implement the model and inference strategy described in “Attend, Infer, Repeat: Fast Scene Understanding with Generative Models” (AIR) [1] and apply it to the multi-mnist dataset.</p>
 <p>A <a class="reference external" href="https://github.com/pyro-ppl/pyro/tree/dev/examples/air">standalone implementation</a> is also available.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">pylab</span> inline
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.optim</span> <span class="k">as</span> <span class="nn">optim</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceGraph_ELBO</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
-<span class="kn">import</span> <span class="nn">pyro.contrib.examples.multi_mnist</span> <span class="k">as</span> <span class="nn">multi_mnist</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">relu</span><span class="p">,</span> <span class="n">sigmoid</span><span class="p">,</span> <span class="n">softplus</span><span class="p">,</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">affine_grid</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%pylab inline
+import os
+from collections import namedtuple
+import pyro
+import pyro.optim as optim
+from pyro.infer import SVI, TraceGraph_ELBO
+import pyro.distributions as dist
+import pyro.poutine as poutine
+import pyro.contrib.examples.multi_mnist as multi_mnist
+import torch
+import torch.nn as nn
+from torch.nn.functional import relu, sigmoid, softplus, grid_sample, affine_grid
+import numpy as np
 
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
+smoke_test = (&#39;CI&#39; in os.environ)
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
 </pre></div>
 </div>
 </div>
@@ -529,24 +532,24 @@ Populating the interactive namespace from numpy and matplotlib
 </pre></div></div>
 </div>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
 <p>The model described in [1] is a generative model of scenes. In this tutorial we will use it to model images from a dataset that is similar to the multi-mnist dataset in [1]. Here are some data points from this data set:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inpath</span> <span class="o">=</span> <span class="s1">&#39;../../examples/air/.data&#39;</span>
-<span class="n">X_np</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">multi_mnist</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">inpath</span><span class="p">)</span>
-<span class="n">X_np</span> <span class="o">=</span> <span class="n">X_np</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">X_np</span> <span class="o">/=</span> <span class="mf">255.0</span>
-<span class="n">mnist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X_np</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">show_images</span><span class="p">(</span><span class="n">imgs</span><span class="p">):</span>
-    <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">imgs</span><span class="p">):</span>
-        <span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">imgs</span><span class="p">),</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
-        <span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">mnist</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">14</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>inpath = &#39;../../examples/air/.data&#39;
+X_np, _ = multi_mnist.load(inpath)
+X_np = X_np.astype(np.float32)
+X_np /= 255.0
+mnist = torch.from_numpy(X_np)
+def show_images(imgs):
+    figure(figsize=(8, 2))
+    for i, img in enumerate(imgs):
+        subplot(1, len(imgs), i + 1)
+        axis(&#39;off&#39;)
+        imshow(img.data.numpy(), cmap=&#39;gray&#39;)
+show_images(mnist[9:14])
 </pre></div>
 </div>
 </div>
@@ -572,9 +575,9 @@ size of each object. We’ll describe an object’s location and size as its “
 be implemented in Pyro, and we’ll see how later in the tutorial.</p>
 </section>
 <section id="Model">
-<h2>Model<a class="headerlink" href="#Model" title="Permalink to this headline">¶</a></h2>
+<h2>Model<a class="headerlink" href="#Model" title="Permalink to this heading">¶</a></h2>
 <section id="Generating-a-single-object">
-<h3>Generating a single object<a class="headerlink" href="#Generating-a-single-object" title="Permalink to this headline">¶</a></h3>
+<h3>Generating a single object<a class="headerlink" href="#Generating-a-single-object" title="Permalink to this heading">¶</a></h3>
 <p>Let’s look at the model more closely. At the core of the model is the generative process for a single object. Recall that:</p>
 <ul class="simple">
 <li><p>At each step a single object is generated.</p></li>
@@ -586,44 +589,44 @@ be implemented in Pyro, and we’ll see how later in the tutorial.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create the neural network. This takes a latent code, z_what, to pixel intensities.</span>
-<span class="k">class</span> <span class="nc">Decoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Create the neural network. This takes a latent code, z_what, to pixel intensities.
+class Decoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.l1 = nn.Linear(50, 200)
+        self.l2 = nn.Linear(200, 400)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_what</span><span class="p">):</span>
-        <span class="n">h</span> <span class="o">=</span> <span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l1</span><span class="p">(</span><span class="n">z_what</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l2</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
+    def forward(self, z_what):
+        h = relu(self.l1(z_what))
+        return sigmoid(self.l2(h))
 
-<span class="n">decode</span> <span class="o">=</span> <span class="n">Decoder</span><span class="p">()</span>
+decode = Decoder()
 
-<span class="n">z_where_prior_loc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">])</span>
-<span class="n">z_where_prior_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">])</span>
-<span class="n">z_what_prior_loc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
-<span class="n">z_what_prior_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+z_where_prior_loc = torch.tensor([3., 0., 0.])
+z_where_prior_scale = torch.tensor([0.1, 1., 1.])
+z_what_prior_loc = torch.zeros(50)
+z_what_prior_scale = torch.ones(50)
 
-<span class="k">def</span> <span class="nf">prior_step_sketch</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-    <span class="c1"># Sample object pose. This is a 3-dimensional vector representing x,y position and size.</span>
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_where_prior_loc</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-                                      <span class="n">z_where_prior_scale</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-                              <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+def prior_step_sketch(t):
+    # Sample object pose. This is a 3-dimensional vector representing x,y position and size.
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_prior_loc.expand(1, -1),
+                                      z_where_prior_scale.expand(1, -1))
+                              .to_event(1))
 
-    <span class="c1"># Sample object code. This is a 50-dimensional vector.</span>
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_what_prior_loc</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-                                     <span class="n">z_what_prior_scale</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    # Sample object code. This is a 50-dimensional vector.
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_prior_loc.expand(1, -1),
+                                     z_what_prior_scale.expand(1, -1))
+                             .to_event(1))
 
-    <span class="c1"># Map code to pixel space using the neural network.</span>
-    <span class="n">y_att</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">z_what</span><span class="p">)</span>
+    # Map code to pixel space using the neural network.
+    y_att = decode(z_what)
 
-    <span class="c1"># Position/scale object within larger image.</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">object_to_image</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">y_att</span><span class="p">)</span>
+    # Position/scale object within larger image.
+    y = object_to_image(z_where, y_att)
 
-    <span class="k">return</span> <span class="n">y</span>
+    return y
 </pre></div>
 </div>
 </div>
@@ -635,21 +638,21 @@ which we require in order to perform <a class="reference internal" href="svi_par
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">expand_z_where</span><span class="p">(</span><span class="n">z_where</span><span class="p">):</span>
-    <span class="c1"># Takes 3-dimensional vectors, and massages them into 2x3 matrices with elements like so:</span>
-    <span class="c1"># [s,x,y] -&gt; [[s,0,x],</span>
-    <span class="c1">#             [0,s,y]]</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">z_where</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">expansion_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">z_where</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">expansion_indices</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def expand_z_where(z_where):
+    # Takes 3-dimensional vectors, and massages them into 2x3 matrices with elements like so:
+    # [s,x,y] -&gt; [[s,0,x],
+    #             [0,s,y]]
+    n = z_where.size(0)
+    expansion_indices = torch.LongTensor([1, 0, 2, 0, 1, 3])
+    out = torch.cat((torch.zeros([1, 1]).expand(n, 1), z_where), 1)
+    return torch.index_select(out, 1, expansion_indices).view(n, 2, 3)
 
-<span class="k">def</span> <span class="nf">object_to_image</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">theta</span> <span class="o">=</span> <span class="n">expand_z_where</span><span class="p">(</span><span class="n">z_where</span><span class="p">)</span>
-    <span class="n">grid</span> <span class="o">=</span> <span class="n">affine_grid</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)))</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">grid_sample</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">grid</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+def object_to_image(z_where, obj):
+    n = obj.size(0)
+    theta = expand_z_where(z_where)
+    grid = affine_grid(theta, torch.Size((n, 1, 50, 50)))
+    out = grid_sample(obj.view(n, 1, 20, 20), grid)
+    return out.view(n, 50, 50)
 </pre></div>
 </div>
 </div>
@@ -659,9 +662,9 @@ which we require in order to perform <a class="reference internal" href="svi_par
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">prior_step_sketch</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.set_rng_seed(0)
+samples = [prior_step_sketch(0)[0] for _ in range(5)]
+show_images(samples)
 </pre></div>
 </div>
 </div>
@@ -674,24 +677,24 @@ which we require in order to perform <a class="reference internal" href="svi_par
 </div>
 </section>
 <section id="Generating-an-entire-image">
-<h3>Generating an entire image<a class="headerlink" href="#Generating-an-entire-image" title="Permalink to this headline">¶</a></h3>
+<h3>Generating an entire image<a class="headerlink" href="#Generating-an-entire-image" title="Permalink to this heading">¶</a></h3>
 <p>Having completed the implementation of a single step, we next consider how we can use this to generate an entire image. Recall that we would like to maintain uncertainty over the number of steps used to generate each data point. One choice we could make for the prior over the number of steps is the geometric distribution, which can be expressed as follows:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="n">num_trials</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">])</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;x</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_trials</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">num_trials</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">geom</span><span class="p">(</span><span class="n">num_trials</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.set_rng_seed(0)
+def geom(num_trials=0):
+    p = torch.tensor([0.5])
+    x = pyro.sample(&#39;x{}&#39;.format(num_trials), dist.Bernoulli(p))
+    if x[0] == 1:
+        return num_trials
+    else:
+        return geom(num_trials + 1)
 
-<span class="c1"># Generate some samples.</span>
-<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;sampled </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">geom</span><span class="p">()))</span>
+# Generate some samples.
+for _ in range(5):
+    print(&#39;sampled {}&#39;.format(geom()))
 </pre></div>
 </div>
 </div>
@@ -713,14 +716,14 @@ sampled 0
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">geom_prior</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">])</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;i</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">x</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">prior_step_sketch</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">geom_prior</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def geom_prior(x, step=0):
+    p = torch.tensor([0.5])
+    i = pyro.sample(&#39;i{}&#39;.format(step), dist.Bernoulli(p))
+    if i[0] == 1:
+        return x
+    else:
+        x = x + prior_step_sketch(step)
+        return geom_prior(x, step + 1)
 </pre></div>
 </div>
 </div>
@@ -729,10 +732,10 @@ sampled 0
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-<span class="n">x_empty</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">geom_prior</span><span class="p">(</span><span class="n">x_empty</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.set_rng_seed(4)
+x_empty = torch.zeros(1, 50, 50)
+samples = [geom_prior(x_empty)[0] for _ in range(5)]
+show_images(samples)
 </pre></div>
 </div>
 </div>
@@ -744,7 +747,7 @@ sampled 0
 </div>
 </div>
 <section id="Aside:-Vectorized-mini-batches">
-<h4>Aside: Vectorized mini-batches<a class="headerlink" href="#Aside:-Vectorized-mini-batches" title="Permalink to this headline">¶</a></h4>
+<h4>Aside: Vectorized mini-batches<a class="headerlink" href="#Aside:-Vectorized-mini-batches" title="Permalink to this heading">¶</a></h4>
 <p>In our final implementation we would like to generate a mini batch of samples in parallel for efficiency. While Pyro supports vectorized mini batches with <code class="docutils literal notranslate"><span class="pre">plate</span></code>, it currently requires that each <code class="docutils literal notranslate"><span class="pre">sample</span></code> statement within <code class="docutils literal notranslate"><span class="pre">plate</span></code> makes a choice for all samples in the mini batch. Another way to say this is that each sample in the mini batch will encounter the same set of <code class="docutils literal notranslate"><span class="pre">sample</span></code> statements. This is problematic for us, because as we’ve just seen, samples can make differing numbers of
 choices under our model.</p>
 <p>One way around this is to have all samples take the same number of steps, but to nullify (so far as is possible) the effect of the superfuous random choices made after the sample is conceptually “complete”. We’ll say that a sample is “complete” once a zero is sampled from the Bernoulli random choice, and prior to that we’ll say that a sample is “active”.</p>
@@ -766,36 +769,36 @@ choices under our model.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">prior_step</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">prev_x</span><span class="p">,</span> <span class="n">prev_z_pres</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def prior_step(n, t, prev_x, prev_z_pres):
 
-    <span class="c1"># Sample variable indicating whether to add this object to the output.</span>
+    # Sample variable indicating whether to add this object to the output.
 
-    <span class="c1"># We multiply the success probability of 0.5 by the value sampled for this</span>
-    <span class="c1"># choice in the previous step. By doing so we add objects to the output until</span>
-    <span class="c1"># the first 0 is sampled, after which we add no further objects.</span>
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">prev_z_pres</span><span class="p">)</span>
-                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    # We multiply the success probability of 0.5 by the value sampled for this
+    # choice in the previous step. By doing so we add objects to the output until
+    # the first 0 is sampled, after which we add no further objects.
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(0.5 * prev_z_pres)
+                             .to_event(1))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_where_prior_loc</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-                                      <span class="n">z_where_prior_scale</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-                              <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">z_pres</span><span class="p">)</span>
-                              <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_prior_loc.expand(n, -1),
+                                      z_where_prior_scale.expand(n, -1))
+                              .mask(z_pres)
+                              .to_event(1))
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_what_prior_loc</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-                                     <span class="n">z_what_prior_scale</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-                             <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">z_pres</span><span class="p">)</span>
-                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_prior_loc.expand(n, -1),
+                                     z_what_prior_scale.expand(n, -1))
+                             .mask(z_pres)
+                             .to_event(1))
 
-    <span class="n">y_att</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">z_what</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">object_to_image</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">y_att</span><span class="p">)</span>
+    y_att = decode(z_what)
+    y = object_to_image(z_where, y_att)
 
-    <span class="c1"># Combine the image generated at this step with the image so far.</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">prev_x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">z_pres</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    # Combine the image generated at this step with the image so far.
+    x = prev_x + y * z_pres.view(-1, 1, 1)
 
-    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">z_pres</span>
+    return x, z_pres
 </pre></div>
 </div>
 </div>
@@ -804,12 +807,12 @@ choices under our model.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">prior</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-        <span class="n">x</span><span class="p">,</span> <span class="n">z_pres</span> <span class="o">=</span> <span class="n">prior_step</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z_pres</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">x</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def prior(n):
+    x = torch.zeros(n, 50, 50)
+    z_pres = torch.ones(n, 1)
+    for t in range(3):
+        x, z_pres = prior_step(n, t, x, z_pres)
+    return x
 </pre></div>
 </div>
 </div>
@@ -818,8 +821,8 @@ choices under our model.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
-<span class="n">show_images</span><span class="p">(</span><span class="n">prior</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.set_rng_seed(121)
+show_images(prior(5))
 </pre></div>
 </div>
 </div>
@@ -832,22 +835,22 @@ choices under our model.</p>
 </div>
 </section>
 <section id="Specifying-the-likelihood">
-<h4>Specifying the likelihood<a class="headerlink" href="#Specifying-the-likelihood" title="Permalink to this headline">¶</a></h4>
+<h4>Specifying the likelihood<a class="headerlink" href="#Specifying-the-likelihood" title="Permalink to this heading">¶</a></h4>
 <p>The last thing we need in order to complete the specification of the model is a likelihood function. Following [1] we will use a Gaussian likelihood with a fixed standard deviation of 0.3. This is straight forward to implement with <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> using the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument.</p>
 <p>When we later come to perform inference we will find it convenient to package the prior and likelihood into a single function. This is also a convenient place to introduce <code class="docutils literal notranslate"><span class="pre">plate</span></code>, which we use to implement data subsampling, and to register the networks we would like to optimize with <code class="docutils literal notranslate"><span class="pre">pyro.module</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># Register network for optimization.</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;decode&quot;</span><span class="p">,</span> <span class="n">decode</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="k">as</span> <span class="n">indices</span><span class="p">:</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">prior</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
-        <span class="n">sd</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.3</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;obs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sd</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
-                    <span class="n">obs</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(data):
+    # Register network for optimization.
+    pyro.module(&quot;decode&quot;, decode)
+    with pyro.plate(&#39;data&#39;, data.size(0)) as indices:
+        batch = data[indices]
+        x = prior(batch.size(0)).view(-1, 50 * 50)
+        sd = (0.3 * torch.ones(1)).expand_as(x)
+        pyro.sample(&#39;obs&#39;, dist.Normal(x, sd).to_event(1),
+                    obs=batch)
 </pre></div>
 </div>
 </div>
@@ -855,7 +858,7 @@ choices under our model.</p>
 </section>
 </section>
 <section id="Guide">
-<h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this headline">¶</a></h2>
+<h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this heading">¶</a></h2>
 <p>Following [1] we will perform <a class="reference internal" href="svi_part_i.html"><span class="doc">amortized stochastic variational inference</span></a> in this model. Pyro provides general purpose machinery that implements most of this inference strategy, but as we have seen in earlier tutorials we are required to provide a model specific guide. What we call a guide in Pyro is exactly the entity called the “inference network” in the paper.</p>
 <p>We will structure the guide around a recurrent network to allow the guide to capture (some of) the dependencies we expect to be present in the true posterior. At each step the recurrent network will generate the parameters for the choices made within the step. The values sampled will be fed back into the recurrent network so that this information can be used when computing the parameters for the next step. The guide for the <a class="reference internal" href="dmm.html"><span class="doc">Deep Markov Model</span></a> shares a similar structure.</p>
 <p>As in the model, the core of the guide is the logic for a single step. Here’s a sketch of an implementation of this:</p>
@@ -863,26 +866,26 @@ choices under our model.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide_step_basic</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def guide_step_basic(t, data, prev):
 
-    <span class="c1"># The RNN takes the images and choices from the previous step as input.</span>
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">h</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">c</span><span class="p">))</span>
+    # The RNN takes the images and choices from the previous step as input.
+    rnn_input = torch.cat((data, prev.z_where, prev.z_what, prev.z_pres), 1)
+    h, c = rnn(rnn_input, (prev.h, prev.c))
 
-    <span class="c1"># Compute parameters for all choices made this step, by passing</span>
-    <span class="c1"># the RNN hidden state through another neural network.</span>
-    <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_loc</span><span class="p">,</span> <span class="n">z_where_scale</span><span class="p">,</span> <span class="n">z_what_loc</span><span class="p">,</span> <span class="n">z_what_scale</span> <span class="o">=</span> <span class="n">predict_basic</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    # Compute parameters for all choices made this step, by passing
+    # the RNN hidden state through another neural network.
+    z_pres_p, z_where_loc, z_where_scale, z_what_loc, z_what_scale = predict_basic(h)
 
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">z_pres_p</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">))</span>
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(z_pres_p * prev.z_pres))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_where_loc</span><span class="p">,</span> <span class="n">z_where_scale</span><span class="p">))</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_loc, z_where_scale))
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_what_loc</span><span class="p">,</span> <span class="n">z_what_scale</span><span class="p">))</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_loc, z_what_scale))
 
-    <span class="k">return</span> <span class="c1"># values for next step</span>
+    return # values for next step
 </pre></div>
 </div>
 </div>
@@ -893,66 +896,66 @@ call a “window”) through an additional network in order to compute the param
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTMCell</span><span class="p">(</span><span class="mi">2554</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>rnn = nn.LSTMCell(2554, 256)
 
-<span class="c1"># Takes pixel intensities of the attention window to parameters (mean,</span>
-<span class="c1"># standard deviation) of the distribution over the latent code,</span>
-<span class="c1"># z_what.</span>
-<span class="k">class</span> <span class="nc">Encoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+# Takes pixel intensities of the attention window to parameters (mean,
+# standard deviation) of the distribution over the latent code,
+# z_what.
+class Encoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.l1 = nn.Linear(400, 200)
+        self.l2 = nn.Linear(200, 100)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">h</span> <span class="o">=</span> <span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">l1</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">l2</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">a</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">50</span><span class="p">],</span> <span class="n">softplus</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span> <span class="mi">50</span><span class="p">:])</span>
+    def forward(self, data):
+        h = relu(self.l1(data))
+        a = self.l2(h)
+        return a[:, 0:50], softplus(a[:, 50:])
 
-<span class="n">encode</span> <span class="o">=</span> <span class="n">Encoder</span><span class="p">()</span>
+encode = Encoder()
 
-<span class="c1"># Takes the guide RNN hidden state to parameters of</span>
-<span class="c1"># the guide distributions over z_where and z_pres.</span>
-<span class="k">class</span> <span class="nc">Predict</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+# Takes the guide RNN hidden state to parameters of
+# the guide distributions over z_where and z_pres.
+class Predict(nn.Module):
+    def __init__(self, ):
+        super().__init__()
+        self.l = nn.Linear(256, 7)
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">l</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
-        <span class="n">z_pres_p</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># Squish to [0,1]</span>
-        <span class="n">z_where_loc</span> <span class="o">=</span> <span class="n">a</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
-        <span class="n">z_where_scale</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">:])</span> <span class="c1"># Squish to &gt;0</span>
-        <span class="k">return</span> <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_loc</span><span class="p">,</span> <span class="n">z_where_scale</span>
+    def forward(self, h):
+        a = self.l(h)
+        z_pres_p = sigmoid(a[:, 0:1]) # Squish to [0,1]
+        z_where_loc = a[:, 1:4]
+        z_where_scale = softplus(a[:, 4:]) # Squish to &gt;0
+        return z_pres_p, z_where_loc, z_where_scale
 
-<span class="n">predict</span> <span class="o">=</span> <span class="n">Predict</span><span class="p">()</span>
+predict = Predict()
 
-<span class="k">def</span> <span class="nf">guide_step_improved</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
+def guide_step_improved(t, data, prev):
 
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">h</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">c</span><span class="p">))</span>
-    <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_loc</span><span class="p">,</span> <span class="n">z_where_scale</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    rnn_input = torch.cat((data, prev.z_where, prev.z_what, prev.z_pres), 1)
+    h, c = rnn(rnn_input, (prev.h, prev.c))
+    z_pres_p, z_where_loc, z_where_scale = predict(h)
 
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">z_pres_p</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">)</span>
-                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(z_pres_p * prev.z_pres)
+                             .to_event(1))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_where_loc</span><span class="p">,</span> <span class="n">z_where_scale</span><span class="p">)</span>
-                              <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_loc, z_where_scale)
+                              .to_event(1))
 
-    <span class="c1"># New. Crop a small window from the input.</span>
-    <span class="n">x_att</span> <span class="o">=</span> <span class="n">image_to_object</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    # New. Crop a small window from the input.
+    x_att = image_to_object(z_where, data)
 
-    <span class="c1"># Compute the parameter of the distribution over z_what</span>
-    <span class="c1"># by passing the window through the encoder network.</span>
-    <span class="n">z_what_loc</span><span class="p">,</span> <span class="n">z_what_scale</span> <span class="o">=</span> <span class="n">encode</span><span class="p">(</span><span class="n">x_att</span><span class="p">)</span>
+    # Compute the parameter of the distribution over z_what
+    # by passing the window through the encoder network.
+    z_what_loc, z_what_scale = encode(x_att)
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_what_loc</span><span class="p">,</span> <span class="n">z_what_scale</span><span class="p">)</span>
-                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_loc, z_what_scale)
+                             .to_event(1))
 
-    <span class="k">return</span> <span class="c1"># values for next step</span>
+    return # values for next step
 </pre></div>
 </div>
 </div>
@@ -961,28 +964,28 @@ call a “window”) through an additional network in order to compute the param
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">z_where_inv</span><span class="p">(</span><span class="n">z_where</span><span class="p">):</span>
-    <span class="c1"># Take a batch of z_where vectors, and compute their &quot;inverse&quot;.</span>
-    <span class="c1"># That is, for each row compute:</span>
-    <span class="c1"># [s,x,y] -&gt; [1/s,-x/s,-y/s]</span>
-    <span class="c1"># These are the parameters required to perform the inverse of the</span>
-    <span class="c1"># spatial transform performed in the generative model.</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">z_where</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">z_where</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="n">z_where</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span> <span class="o">/</span> <span class="n">z_where</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">out</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def z_where_inv(z_where):
+    # Take a batch of z_where vectors, and compute their &quot;inverse&quot;.
+    # That is, for each row compute:
+    # [s,x,y] -&gt; [1/s,-x/s,-y/s]
+    # These are the parameters required to perform the inverse of the
+    # spatial transform performed in the generative model.
+    n = z_where.size(0)
+    out = torch.cat((torch.ones([1, 1]).type_as(z_where).expand(n, 1), -z_where[:, 1:]), 1)
+    out = out / z_where[:, 0:1]
+    return out
 
-<span class="k">def</span> <span class="nf">image_to_object</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">theta_inv</span> <span class="o">=</span> <span class="n">expand_z_where</span><span class="p">(</span><span class="n">z_where_inv</span><span class="p">(</span><span class="n">z_where</span><span class="p">))</span>
-    <span class="n">grid</span> <span class="o">=</span> <span class="n">affine_grid</span><span class="p">(</span><span class="n">theta_inv</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)))</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">grid_sample</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="n">grid</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+def image_to_object(z_where, image):
+    n = image.size(0)
+    theta_inv = expand_z_where(z_where_inv(z_where))
+    grid = affine_grid(theta_inv, torch.Size((n, 1, 20, 20)))
+    out = grid_sample(image.view(n, 1, 50, 50), grid)
+    return out.view(n, -1)
 </pre></div>
 </div>
 </div>
 <section id="Another-perspective">
-<h3>Another perspective<a class="headerlink" href="#Another-perspective" title="Permalink to this headline">¶</a></h3>
+<h3>Another perspective<a class="headerlink" href="#Another-perspective" title="Permalink to this heading">¶</a></h3>
 <p>So far we’ve considered the model and the guide in isolation, but we gain an interesting perspective if we zoom out and look at the model and guide computation as a whole. Doing so, we see that at each step AIR includes a sub-computation that has the same structure as a <a class="reference internal" href="vae.html"><span class="doc">Variational Auto-encoder</span></a> (VAE).</p>
 <p>To see this, notice that the guide passes the window through a neural network (the encoder) to generate the parameters of the distribution over a latent code, and the model passes samples from this latent code distribution through another neural network (the decoder) to generate an output window. This structure is highlighted in the following figure, reproduced from [1]:</p>
 <center>
@@ -996,12 +999,12 @@ call a “window”) through an additional network in order to compute the param
 </section>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
 <p>As we mentioned in the introduction, successfully performing inference in this model is a challenge. In particular, the presence of discrete choices in the model makes inference trickier than in a model in which all choices can be reparameterized. The underlying problem we face is that the gradient estimates we use in the optimization performed by variational inference have much higher variance in the presence of <a class="reference internal" href="svi_part_iii.html#Tricky-Case:-Non-reparameterizable-Random-Variables"><span class="std std-ref">non-reparameterizable
 choices</span></a>.</p>
 <p>To bring this variance under control, the paper applies a technique called “data dependent baselines” (AKA “neural baselines”) to the discrete choices in the model.</p>
 <section id="Data-dependent-baselines">
-<h3>Data dependent baselines<a class="headerlink" href="#Data-dependent-baselines" title="Permalink to this headline">¶</a></h3>
+<h3>Data dependent baselines<a class="headerlink" href="#Data-dependent-baselines" title="Permalink to this heading">¶</a></h3>
 <p>Happily for us, Pyro includes support for data dependent baselines. If you are not already familiar with this idea, you might want to read <a class="reference internal" href="svi_part_iii.html#Baselines-in-Pyro"><span class="std std-ref">our introduction</span></a> before continuing. As model authors we only have to implement the neural network, pass it our data as input, and feed its output to <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code>. Pyro’s inference back-end will ensure that the baseline is included in the gradient estimator used for inference, and that the network parameters are
 updated appropriately.</p>
 <p>Let’s see how we can add data dependent baselines to our AIR implementation. We need a neural network that can output a (scalar) baseline value at each discrete choice in the guide, having received a multi-mnist image and the values sampled by the guide so far as input. Notice that this is very similar to the structure of the guide network, and indeed we will again use a recurrent network.</p>
@@ -1010,19 +1013,19 @@ updated appropriately.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bl_rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTMCell</span><span class="p">(</span><span class="mi">2554</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
-<span class="n">bl_predict</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>bl_rnn = nn.LSTMCell(2554, 256)
+bl_predict = nn.Linear(256, 1)
 
-<span class="c1"># Use an RNN to compute the baseline value. This network takes the</span>
-<span class="c1"># input images and the values samples so far as input.</span>
-<span class="k">def</span> <span class="nf">baseline_step</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">x</span><span class="p">,</span>
-                           <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span>
-                           <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span>
-                           <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="o">.</span><span class="n">detach</span><span class="p">()),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span> <span class="o">=</span> <span class="n">bl_rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">bl_h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">bl_c</span><span class="p">))</span>
-    <span class="n">bl_value</span> <span class="o">=</span> <span class="n">bl_predict</span><span class="p">(</span><span class="n">bl_h</span><span class="p">)</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span>
-    <span class="k">return</span> <span class="n">bl_value</span><span class="p">,</span> <span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span>
+# Use an RNN to compute the baseline value. This network takes the
+# input images and the values samples so far as input.
+def baseline_step(x, prev):
+    rnn_input = torch.cat((x,
+                           prev.z_where.detach(),
+                           prev.z_what.detach(),
+                           prev.z_pres.detach()), 1)
+    bl_h, bl_c = bl_rnn(rnn_input, (prev.bl_h, prev.bl_c))
+    bl_value = bl_predict(bl_h) * prev.z_pres
+    return bl_value, bl_h, bl_c
 </pre></div>
 </div>
 </div>
@@ -1040,82 +1043,82 @@ the inference objective, so there’s no need to apply any variance reduction to
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">GuideState</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;GuideState&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;bl_h&#39;</span><span class="p">,</span> <span class="s1">&#39;bl_c&#39;</span><span class="p">,</span> <span class="s1">&#39;z_pres&#39;</span><span class="p">,</span> <span class="s1">&#39;z_where&#39;</span><span class="p">,</span> <span class="s1">&#39;z_what&#39;</span><span class="p">])</span>
-<span class="k">def</span> <span class="nf">initial_guide_state</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">GuideState</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">c</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">bl_h</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">bl_c</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-                      <span class="n">z_pres</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                      <span class="n">z_where</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
-                      <span class="n">z_what</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>GuideState = namedtuple(&#39;GuideState&#39;, [&#39;h&#39;, &#39;c&#39;, &#39;bl_h&#39;, &#39;bl_c&#39;, &#39;z_pres&#39;, &#39;z_where&#39;, &#39;z_what&#39;])
+def initial_guide_state(n):
+    return GuideState(h=torch.zeros(n, 256),
+                      c=torch.zeros(n, 256),
+                      bl_h=torch.zeros(n, 256),
+                      bl_c=torch.zeros(n, 256),
+                      z_pres=torch.ones(n, 1),
+                      z_where=torch.zeros(n, 3),
+                      z_what=torch.zeros(n, 50))
 
-<span class="k">def</span> <span class="nf">guide_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">):</span>
+def guide_step(t, data, prev):
 
-    <span class="n">rnn_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_where</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_what</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">h</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnn_input</span><span class="p">,</span> <span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">prev</span><span class="o">.</span><span class="n">c</span><span class="p">))</span>
-    <span class="n">z_pres_p</span><span class="p">,</span> <span class="n">z_where_loc</span><span class="p">,</span> <span class="n">z_where_scale</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    rnn_input = torch.cat((data, prev.z_where, prev.z_what, prev.z_pres), 1)
+    h, c = rnn(rnn_input, (prev.h, prev.c))
+    z_pres_p, z_where_loc, z_where_scale = predict(h)
 
-    <span class="c1"># Here we compute the baseline value, and pass it to sample.</span>
-    <span class="n">baseline_value</span><span class="p">,</span> <span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span> <span class="o">=</span> <span class="n">baseline_step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">prev</span><span class="p">)</span>
-    <span class="n">z_pres</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_pres_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">z_pres_p</span> <span class="o">*</span> <span class="n">prev</span><span class="o">.</span><span class="n">z_pres</span><span class="p">)</span>
-                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
-                         <span class="n">infer</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">baseline</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">baseline_value</span><span class="o">=</span><span class="n">baseline_value</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))))</span>
+    # Here we compute the baseline value, and pass it to sample.
+    baseline_value, bl_h, bl_c = baseline_step(data, prev)
+    z_pres = pyro.sample(&#39;z_pres_{}&#39;.format(t),
+                         dist.Bernoulli(z_pres_p * prev.z_pres)
+                             .to_event(1),
+                         infer=dict(baseline=dict(baseline_value=baseline_value.squeeze(-1))))
 
-    <span class="n">z_where</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_where_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                          <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_where_loc</span><span class="p">,</span> <span class="n">z_where_scale</span><span class="p">)</span>
-                              <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">z_pres</span><span class="p">)</span>
-                              <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    z_where = pyro.sample(&#39;z_where_{}&#39;.format(t),
+                          dist.Normal(z_where_loc, z_where_scale)
+                              .mask(z_pres)
+                              .to_event(1))
 
-    <span class="n">x_att</span> <span class="o">=</span> <span class="n">image_to_object</span><span class="p">(</span><span class="n">z_where</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    x_att = image_to_object(z_where, data)
 
-    <span class="n">z_what_loc</span><span class="p">,</span> <span class="n">z_what_scale</span> <span class="o">=</span> <span class="n">encode</span><span class="p">(</span><span class="n">x_att</span><span class="p">)</span>
+    z_what_loc, z_what_scale = encode(x_att)
 
-    <span class="n">z_what</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z_what_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                         <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z_what_loc</span><span class="p">,</span> <span class="n">z_what_scale</span><span class="p">)</span>
-                             <span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">z_pres</span><span class="p">)</span>
-                             <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    z_what = pyro.sample(&#39;z_what_{}&#39;.format(t),
+                         dist.Normal(z_what_loc, z_what_scale)
+                             .mask(z_pres)
+                             .to_event(1))
 
-    <span class="k">return</span> <span class="n">GuideState</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">bl_h</span><span class="o">=</span><span class="n">bl_h</span><span class="p">,</span> <span class="n">bl_c</span><span class="o">=</span><span class="n">bl_c</span><span class="p">,</span> <span class="n">z_pres</span><span class="o">=</span><span class="n">z_pres</span><span class="p">,</span> <span class="n">z_where</span><span class="o">=</span><span class="n">z_where</span><span class="p">,</span> <span class="n">z_what</span><span class="o">=</span><span class="n">z_what</span><span class="p">)</span>
+    return GuideState(h=h, c=c, bl_h=bl_h, bl_c=bl_c, z_pres=z_pres, z_where=z_where, z_what=z_what)
 
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># Register networks for optimization.</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;rnn&#39;</span><span class="p">,</span> <span class="n">rnn</span><span class="p">),</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;predict&#39;</span><span class="p">,</span> <span class="n">predict</span><span class="p">),</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;encode&#39;</span><span class="p">,</span> <span class="n">encode</span><span class="p">),</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;bl_rnn&#39;</span><span class="p">,</span> <span class="n">bl_rnn</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s1">&#39;bl_predict&#39;</span><span class="p">,</span> <span class="n">bl_predict</span><span class="p">)</span>
+def guide(data):
+    # Register networks for optimization.
+    pyro.module(&#39;rnn&#39;, rnn),
+    pyro.module(&#39;predict&#39;, predict),
+    pyro.module(&#39;encode&#39;, encode),
+    pyro.module(&#39;bl_rnn&#39;, bl_rnn)
+    pyro.module(&#39;bl_predict&#39;, bl_predict)
 
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">subsample_size</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span> <span class="k">as</span> <span class="n">indices</span><span class="p">:</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
-        <span class="n">state</span> <span class="o">=</span> <span class="n">initial_guide_state</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-        <span class="n">steps</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-            <span class="n">state</span> <span class="o">=</span> <span class="n">guide_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
-            <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">steps</span>
+    with pyro.plate(&#39;data&#39;, data.size(0), subsample_size=64) as indices:
+        batch = data[indices]
+        state = initial_guide_state(batch.size(0))
+        steps = []
+        for t in range(3):
+            state = guide_step(t, batch, state)
+            steps.append(state)
+        return steps
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Putting-it-all-together">
-<h3>Putting it all together<a class="headerlink" href="#Putting-it-all-together" title="Permalink to this headline">¶</a></h3>
+<h3>Putting it all together<a class="headerlink" href="#Putting-it-all-together" title="Permalink to this heading">¶</a></h3>
 <p>We have now completed the implementation of the model and the guide. As we have seen in earlier tutorials, we need write only a few more lines of code to begin performing inference:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">mnist</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>data = mnist.view(-1, 50 * 50)
 
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
-          <span class="n">guide</span><span class="p">,</span>
-          <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">}),</span>
-          <span class="n">loss</span><span class="o">=</span><span class="n">TraceGraph_ELBO</span><span class="p">())</span>
+svi = SVI(model,
+          guide,
+          optim.Adam({&#39;lr&#39;: 1e-4}),
+          loss=TraceGraph_ELBO())
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;i=</span><span class="si">{}</span><span class="s1">, elbo=</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">loss</span> <span class="o">/</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+for i in range(5):
+    loss = svi.step(data)
+    print(&#39;i={}, elbo={:.2f}&#39;.format(i, loss / data.size(0)))
 </pre></div>
 </div>
 </div>
@@ -1136,7 +1139,7 @@ model.</p>
 </section>
 </section>
 <section id="Results">
-<h2>Results<a class="headerlink" href="#Results" title="Permalink to this headline">¶</a></h2>
+<h2>Results<a class="headerlink" href="#Results" title="Permalink to this heading">¶</a></h2>
 <p>To sanity check our implementation we ran inference using our <a class="reference external" href="https://github.com/pyro-ppl/pyro/tree/dev/examples/air">standalone implementation</a> and compared its performance against some of the results reported in [1].</p>
 <p>Here we show progress made on the ELBO and training set count accuracy during optimization:</p>
 <center>
@@ -1160,7 +1163,7 @@ latent variables sampled from the guide back through the model to generate an ou
 <p>We used Pyro commit <code class="docutils literal notranslate"><span class="pre">c0b38ad</span></code> with PyTorch <code class="docutils literal notranslate"><span class="pre">0.2.0.post4</span></code>. Inference ran for approximately 4 hours on an NVIDIA K80 GPU. (Note that even though we set the random seed, this isn’t sufficient to make inference deterministic when using CUDA.)</p>
 </section>
 <section id="In-practice">
-<h2>In practice<a class="headerlink" href="#In-practice" title="Permalink to this headline">¶</a></h2>
+<h2>In practice<a class="headerlink" href="#In-practice" title="Permalink to this heading">¶</a></h2>
 <p>We found it important to pay attention to the following details in order to achieve good results with AIR.</p>
 <ul class="simple">
 <li><p>Inference is unlikely to recover correct object counts unless a small prior success probability for <code class="docutils literal notranslate"><span class="pre">z_pres</span></code> is used. In [1] this <a class="reference external" href="http://akosiorek.github.io/ml/2017/09/03/implementing-air.html">probability was annealed</a> from a value close to one to <code class="docutils literal notranslate"><span class="pre">1e-5</span></code> (or less) during optimization, though we found that a fixed value of around <code class="docutils literal notranslate"><span class="pre">0.01</span></code> worked well with our implementation.</p></li>
@@ -1170,7 +1173,7 @@ network. We found it necessary to use a larger learning rate for the baseline ne
 </ul>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Attend,</span> <span class="pre">Infer,</span> <span class="pre">Repeat:</span> <span class="pre">Fast</span> <span class="pre">Scene</span> <span class="pre">Understanding</span> <span class="pre">with</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>      S. M. Ali Eslami and Nicolas Heess and Theophane Weber and Yuval Tassa and Koray Kavukcuoglu and Geoffrey E. Hinton</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Spatial</span> <span class="pre">Transformer</span> <span class="pre">Networks</span></code>      Max Jaderberg and Karen Simonyan and Andrew Zisserman</p>
 </section>

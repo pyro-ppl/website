@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Writing guides using EasyGuide &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Writing guides using EasyGuide &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -190,8 +192,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Writing guides using EasyGuide</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Writing guides using EasyGuide</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/easyguide.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -311,10 +313,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -480,10 +483,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Writing-guides-using-EasyGuide">
-<h1>Writing guides using EasyGuide<a class="headerlink" href="#Writing-guides-using-EasyGuide" title="Permalink to this headline">¶</a></h1>
+<h1>Writing guides using EasyGuide<a class="headerlink" href="#Writing-guides-using-EasyGuide" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial describes the <a class="reference external" href="http://docs.pyro.ai/en/stable/contrib.easyguide.html">pyro.contrib.easyguide</a> module. This tutorial assumes the reader is already familiar with <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">SVI</a> and <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a>.</p>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>For simple black-box guides, try using components in <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html">pyro.infer.autoguide</a>.</p></li>
 <li><p>For more complex guides, try using components in <a class="reference external" href="http://docs.pyro.ai/en/stable/contrib.easyguide.html">pyro.contrib.easyguide</a>.</p></li>
@@ -497,7 +500,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Modeling-time-series-data">Modeling time series data</a></p></li>
 <li><p><a class="reference external" href="#Writing-a-guide-without-EasyGuide">Writing a guide without EasyGuide</a></p></li>
@@ -508,40 +511,40 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.contrib.easyguide</span> <span class="kn">import</span> <span class="n">easy_guide</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+import torch
+import pyro
+import pyro.distributions as dist
+from pyro.infer import SVI, Trace_ELBO
+from pyro.contrib.easyguide import easy_guide
+from pyro.optim import Adam
+from torch.distributions import constraints
 
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
+smoke_test = (&#39;CI&#39; in os.environ)
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
 </pre></div>
 </div>
 </div>
 <section id="Modeling-time-series-data">
-<h3>Modeling time series data<a class="headerlink" href="#Modeling-time-series-data" title="Permalink to this headline">¶</a></h3>
+<h3>Modeling time series data<a class="headerlink" href="#Modeling-time-series-data" title="Permalink to this heading">¶</a></h3>
 <p>Consider a time-series model with a slowly-varying continuous latent state and Bernoulli observations with a logistic link function.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">subsample</span><span class="p">,</span> <span class="n">full_size</span><span class="p">):</span>
-    <span class="n">batch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-    <span class="n">num_time_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-    <span class="n">drift</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;drift&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">full_size</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="n">subsample</span><span class="p">):</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="mf">0.</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_time_steps</span><span class="p">):</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;state_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                            <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">drift</span><span class="p">))</span>
-            <span class="n">batch</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
-                                   <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">z</span><span class="p">),</span>
-                                   <span class="n">obs</span><span class="o">=</span><span class="n">batch</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(batch, subsample, full_size):
+    batch = list(batch)
+    num_time_steps = len(batch)
+    drift = pyro.sample(&quot;drift&quot;, dist.LogNormal(-1, 0.5))
+    with pyro.plate(&quot;data&quot;, full_size, subsample=subsample):
+        z = 0.
+        for t in range(num_time_steps):
+            z = pyro.sample(&quot;state_{}&quot;.format(t),
+                            dist.Normal(z, drift))
+            batch[t] = pyro.sample(&quot;obs_{}&quot;.format(t),
+                                   dist.Bernoulli(logits=z),
+                                   obs=batch[t])
+    return torch.stack(batch)
 </pre></div>
 </div>
 </div>
@@ -550,50 +553,50 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">full_size</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="n">num_time_steps</span> <span class="o">=</span> <span class="mi">7</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">123456789</span><span class="p">)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">model</span><span class="p">([</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_time_steps</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">full_size</span><span class="p">),</span> <span class="n">full_size</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_time_steps</span><span class="p">,</span> <span class="n">full_size</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>full_size = 100
+num_time_steps = 7
+pyro.set_rng_seed(123456789)
+data = model([None] * num_time_steps, torch.arange(full_size), full_size)
+assert data.shape == (num_time_steps, full_size)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Writing-a-guide-without-EasyGuide">
-<h3>Writing a guide without EasyGuide<a class="headerlink" href="#Writing-a-guide-without-EasyGuide" title="Permalink to this headline">¶</a></h3>
+<h3>Writing a guide without EasyGuide<a class="headerlink" href="#Writing-a-guide-without-EasyGuide" title="Permalink to this heading">¶</a></h3>
 <p>Consider a possible guide for this model where we point-estimate the <code class="docutils literal notranslate"><span class="pre">drift</span></code> parameter using a <code class="docutils literal notranslate"><span class="pre">Delta</span></code> distribution, and then model local time series using shared uncertainty but local means, using a <code class="docutils literal notranslate"><span class="pre">LowRankMultivariateNormal</span></code> distribution. There is a single global sample site which we can model with a <code class="docutils literal notranslate"><span class="pre">param</span></code> and <code class="docutils literal notranslate"><span class="pre">sample</span></code> statement. Then we sample a global pair of uncertainty parameters <code class="docutils literal notranslate"><span class="pre">cov_diag</span></code> and <code class="docutils literal notranslate"><span class="pre">cov_factor</span></code>. Next we sample a local <code class="docutils literal notranslate"><span class="pre">loc</span></code> parameter using
 <code class="docutils literal notranslate"><span class="pre">pyro.param(...,</span> <span class="pre">event_dim=...)</span></code> and an auxiliary sample site. Finally we unpack that auxiliary site into one element per time series. The auxiliary-unpacked-to-<code class="docutils literal notranslate"><span class="pre">Delta</span></code>s pattern is quite common.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rank</span> <span class="o">=</span> <span class="mi">3</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>rank = 3
 
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">subsample</span><span class="p">,</span> <span class="n">full_size</span><span class="p">):</span>
-    <span class="n">num_time_steps</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">shape</span>
+def guide(batch, subsample, full_size):
+    num_time_steps, batch_size = batch.shape
 
-    <span class="c1"># MAP estimate the drift.</span>
-    <span class="n">drift_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;drift_loc&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
-                           <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;drift&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">drift_loc</span><span class="p">))</span>
+    # MAP estimate the drift.
+    drift_loc = pyro.param(&quot;drift_loc&quot;, lambda: torch.tensor(0.1),
+                           constraint=constraints.positive)
+    pyro.sample(&quot;drift&quot;, dist.Delta(drift_loc))
 
-    <span class="c1"># Model local states using shared uncertainty + local mean.</span>
-    <span class="n">cov_diag</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_cov_diag&quot;</span><span class="p">,</span>
-                          <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">num_time_steps</span><span class="p">,),</span> <span class="mf">0.01</span><span class="p">),</span>
-                         <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">cov_factor</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_cov_factor&quot;</span><span class="p">,</span>
-                            <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_time_steps</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">full_size</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="n">subsample</span><span class="p">):</span>
-        <span class="c1"># Sample local mean.</span>
-        <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_loc&quot;</span><span class="p">,</span>
-                         <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">full_size</span><span class="p">,</span> <span class="n">num_time_steps</span><span class="p">),</span> <span class="mf">0.5</span><span class="p">),</span>
-                         <span class="n">event_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">states</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;states&quot;</span><span class="p">,</span>
-                             <span class="n">dist</span><span class="o">.</span><span class="n">LowRankMultivariateNormal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">cov_factor</span><span class="p">,</span> <span class="n">cov_diag</span><span class="p">),</span>
-                             <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;is_auxiliary&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
-        <span class="c1"># Unpack the joint states into one sample site per time step.</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_time_steps</span><span class="p">):</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;state_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">states</span><span class="p">[:,</span> <span class="n">t</span><span class="p">]))</span>
+    # Model local states using shared uncertainty + local mean.
+    cov_diag = pyro.param(&quot;state_cov_diag&quot;,
+                          lambda: torch.full((num_time_steps,), 0.01),
+                         constraint=constraints.positive)
+    cov_factor = pyro.param(&quot;state_cov_factor&quot;,
+                            lambda: torch.randn(num_time_steps, rank) * 0.01)
+    with pyro.plate(&quot;data&quot;, full_size, subsample=subsample):
+        # Sample local mean.
+        loc = pyro.param(&quot;state_loc&quot;,
+                         lambda: torch.full((full_size, num_time_steps), 0.5),
+                         event_dim=1)
+        states = pyro.sample(&quot;states&quot;,
+                             dist.LowRankMultivariateNormal(loc, cov_factor, cov_diag),
+                             infer={&quot;is_auxiliary&quot;: True})
+        # Unpack the joint states into one sample site per time step.
+        for t in range(num_time_steps):
+            pyro.sample(&quot;state_{}&quot;.format(t), dist.Delta(states[:, t]))
 </pre></div>
 </div>
 </div>
@@ -602,22 +605,22 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">101</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
-    <span class="n">full_size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">123456789</span><span class="p">)</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">}),</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
-    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_epochs</span><span class="p">):</span>
-        <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">while</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">full_size</span><span class="p">:</span>
-            <span class="n">subsample</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">pos</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">)</span>
-            <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">pos</span><span class="p">:</span><span class="n">pos</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
-            <span class="n">pos</span> <span class="o">+=</span> <span class="n">batch_size</span>
-            <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">subsample</span><span class="p">,</span> <span class="n">full_size</span><span class="o">=</span><span class="n">full_size</span><span class="p">))</span>
-        <span class="n">epoch_loss</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;epoch </span><span class="si">{}</span><span class="s2"> loss = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="n">data</span><span class="o">.</span><span class="n">numel</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def train(guide, num_epochs=1 if smoke_test else 101, batch_size=20):
+    full_size = data.size(-1)
+    pyro.get_param_store().clear()
+    pyro.set_rng_seed(123456789)
+    svi = SVI(model, guide, Adam({&quot;lr&quot;: 0.02}), Trace_ELBO())
+    for epoch in range(num_epochs):
+        pos = 0
+        losses = []
+        while pos &lt; full_size:
+            subsample = torch.arange(pos, pos + batch_size)
+            batch = data[:, pos:pos + batch_size]
+            pos += batch_size
+            losses.append(svi.step(batch, subsample, full_size=full_size))
+        epoch_loss = sum(losses) / len(losses)
+        if epoch % 10 == 0:
+            print(&quot;epoch {} loss = {}&quot;.format(epoch, epoch_loss / data.numel()))
 </pre></div>
 </div>
 </div>
@@ -625,37 +628,37 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>train(guide)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Using-EasyGuide">
-<h3>Using EasyGuide<a class="headerlink" href="#Using-EasyGuide" title="Permalink to this headline">¶</a></h3>
+<h3>Using EasyGuide<a class="headerlink" href="#Using-EasyGuide" title="Permalink to this heading">¶</a></h3>
 <p>Now let’s simplify using the <code class="docutils literal notranslate"><span class="pre">&#64;easy_guide</span></code> decorator. Our modifications are: 1. Decorate with <code class="docutils literal notranslate"><span class="pre">&#64;easy_guide</span></code> and add <code class="docutils literal notranslate"><span class="pre">self</span></code> to args. 2. Replace the <code class="docutils literal notranslate"><span class="pre">Delta</span></code> guide for drift with a simple <code class="docutils literal notranslate"><span class="pre">map_estimate()</span></code>. 3. Select a <code class="docutils literal notranslate"><span class="pre">group</span></code> of model sites and read their concatenated <code class="docutils literal notranslate"><span class="pre">event_shape</span></code>. 4. Replace the auxiliary site and <code class="docutils literal notranslate"><span class="pre">Delta</span></code> slices with a single <code class="docutils literal notranslate"><span class="pre">group.sample()</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@easy_guide</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">subsample</span><span class="p">,</span> <span class="n">full_size</span><span class="p">):</span>
-    <span class="c1"># MAP estimate the drift.</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">map_estimate</span><span class="p">(</span><span class="s2">&quot;drift&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@easy_guide(model)
+def guide(self, batch, subsample, full_size):
+    # MAP estimate the drift.
+    self.map_estimate(&quot;drift&quot;)
 
-    <span class="c1"># Model local states using shared uncertainty + local mean.</span>
-    <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">match</span><span class="o">=</span><span class="s2">&quot;state_[0-9]*&quot;</span><span class="p">)</span>  <span class="c1"># Selects all local variables.</span>
-    <span class="n">cov_diag</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_cov_diag&quot;</span><span class="p">,</span>
-                          <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">event_shape</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
-                          <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">cov_factor</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_cov_factor&quot;</span><span class="p">,</span>
-                            <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">rank</span><span class="p">,))</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">)</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">full_size</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="n">subsample</span><span class="p">):</span>
-        <span class="c1"># Sample local mean.</span>
-        <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_loc&quot;</span><span class="p">,</span>
-                         <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">full_size</span><span class="p">,)</span> <span class="o">+</span> <span class="n">group</span><span class="o">.</span><span class="n">event_shape</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
-                         <span class="n">event_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># Automatically sample the joint latent, then unpack and replay model sites.</span>
-        <span class="n">group</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LowRankMultivariateNormal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">cov_factor</span><span class="p">,</span> <span class="n">cov_diag</span><span class="p">))</span>
+    # Model local states using shared uncertainty + local mean.
+    group = self.group(match=&quot;state_[0-9]*&quot;)  # Selects all local variables.
+    cov_diag = pyro.param(&quot;state_cov_diag&quot;,
+                          lambda: torch.full(group.event_shape, 0.01),
+                          constraint=constraints.positive)
+    cov_factor = pyro.param(&quot;state_cov_factor&quot;,
+                            lambda: torch.randn(group.event_shape + (rank,)) * 0.01)
+    with self.plate(&quot;data&quot;, full_size, subsample=subsample):
+        # Sample local mean.
+        loc = pyro.param(&quot;state_loc&quot;,
+                         lambda: torch.full((full_size,) + group.event_shape, 0.5),
+                         event_dim=1)
+        # Automatically sample the joint latent, then unpack and replay model sites.
+        group.sample(&quot;states&quot;, dist.LowRankMultivariateNormal(loc, cov_factor, cov_diag))
 </pre></div>
 </div>
 </div>
@@ -664,39 +667,39 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>train(guide)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Amortized-guides">
-<h3>Amortized guides<a class="headerlink" href="#Amortized-guides" title="Permalink to this headline">¶</a></h3>
+<h3>Amortized guides<a class="headerlink" href="#Amortized-guides" title="Permalink to this heading">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">EasyGuide</span></code> also makes it easy to write amortized guides (guides where we learn a function that predicts latent variables from data, rather than learning one parameter per datapoint). Let’s modify the last guide to predict the latent <code class="docutils literal notranslate"><span class="pre">loc</span></code> as an affine function of observed data, rather than memorizing each data point’s latent variable. This amortized guide is more useful in practice because it can handle new data.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@easy_guide</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">subsample</span><span class="p">,</span> <span class="n">full_size</span><span class="p">):</span>
-    <span class="n">num_time_steps</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">shape</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">map_estimate</span><span class="p">(</span><span class="s2">&quot;drift&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@easy_guide(model)
+def guide(self, batch, subsample, full_size):
+    num_time_steps, batch_size = batch.shape
+    self.map_estimate(&quot;drift&quot;)
 
-    <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">match</span><span class="o">=</span><span class="s2">&quot;state_[0-9]*&quot;</span><span class="p">)</span>
-    <span class="n">cov_diag</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_cov_diag&quot;</span><span class="p">,</span>
-                          <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">event_shape</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
-                          <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">cov_factor</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;state_cov_factor&quot;</span><span class="p">,</span>
-                            <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">event_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">rank</span><span class="p">,))</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">)</span>
+    group = self.group(match=&quot;state_[0-9]*&quot;)
+    cov_diag = pyro.param(&quot;state_cov_diag&quot;,
+                          lambda: torch.full(group.event_shape, 0.01),
+                          constraint=constraints.positive)
+    cov_factor = pyro.param(&quot;state_cov_factor&quot;,
+                            lambda: torch.randn(group.event_shape + (rank,)) * 0.01)
 
-    <span class="c1"># Predict latent propensity as an affine function of observed data.</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nn&quot;</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">event_shape</span><span class="o">.</span><span class="n">numel</span><span class="p">(),</span> <span class="n">group</span><span class="o">.</span><span class="n">event_shape</span><span class="o">.</span><span class="n">numel</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">num_time_steps</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;state_nn&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="p">)</span>
-    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">full_size</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="n">subsample</span><span class="p">):</span>
-        <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
-        <span class="n">group</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LowRankMultivariateNormal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">cov_factor</span><span class="p">,</span> <span class="n">cov_diag</span><span class="p">))</span>
+    # Predict latent propensity as an affine function of observed data.
+    if not hasattr(self, &quot;nn&quot;):
+        self.nn = torch.nn.Linear(group.event_shape.numel(), group.event_shape.numel())
+        self.nn.weight.data.fill_(1.0 / num_time_steps)
+        self.nn.bias.data.fill_(-0.5)
+    pyro.module(&quot;state_nn&quot;, self.nn)
+    with self.plate(&quot;data&quot;, full_size, subsample=subsample):
+        loc = self.nn(batch.t())
+        group.sample(&quot;states&quot;, dist.LowRankMultivariateNormal(loc, cov_factor, cov_diag))
 </pre></div>
 </div>
 </div>
@@ -704,7 +707,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>train(guide)
 </pre></div>
 </div>
 </div>

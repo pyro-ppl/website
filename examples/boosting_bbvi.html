@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Boosting Black Box Variational Inference &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Boosting Black Box Variational Inference &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -201,8 +203,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Boosting Black Box Variational Inference</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Boosting Black Box Variational Inference</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/boosting_bbvi.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -322,10 +324,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -491,14 +494,14 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Boosting-Black-Box-Variational-Inference">
-<h1>Boosting Black Box Variational Inference<a class="headerlink" href="#Boosting-Black-Box-Variational-Inference" title="Permalink to this headline">¶</a></h1>
+<h1>Boosting Black Box Variational Inference<a class="headerlink" href="#Boosting-Black-Box-Variational-Inference" title="Permalink to this heading">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
 <p>This tutorial demonstrates how to implement boosting black box Variational Inference [1] in Pyro. In boosting Variational Inference [2], we approximate a target distribution with an iteratively selected mixture of densities. In cases where a single denisity provided by regular Variational Inference doesn’t adequately approximate a target density, boosting VI thus offers a simple way of getting more complex approximations. We show how this can be implemented as a relatively straightforward
 extension of Pyro’s SVI.</p>
 </section>
 <section id="Contents">
-<h2>Contents<a class="headerlink" href="#Contents" title="Permalink to this headline">¶</a></h2>
+<h2>Contents<a class="headerlink" href="#Contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#theoretical-background">Theoretical Background</a></p>
 <ul>
@@ -518,9 +521,9 @@ extension of Pyro’s SVI.</p>
 </ul>
 </section>
 <section id="Theoretical-Background">
-<h2>Theoretical Background<a class="headerlink" href="#Theoretical-Background" title="Permalink to this headline">¶</a></h2>
+<h2>Theoretical Background<a class="headerlink" href="#Theoretical-Background" title="Permalink to this heading">¶</a></h2>
 <section id="Variational-Inference">
-<h3>Variational Inference<a class="headerlink" href="#Variational-Inference" title="Permalink to this headline">¶</a></h3>
+<h3>Variational Inference<a class="headerlink" href="#Variational-Inference" title="Permalink to this heading">¶</a></h3>
 <p>For an introduction to regular Variational Inference, we recommend having a look at <a class="reference external" href="https://pyro.ai/examples/svi_part_i.html">the tutorial on SVI in Pyro</a> and this excellent review [3].</p>
 <p>Briefly, Variational Inference allows us to find approximations of probability densities which are intractable to compute analytically. For instance, one might have observed variables <span class="math notranslate nohighlight">\(\textbf{x}\)</span>, latent variables <span class="math notranslate nohighlight">\(\textbf{z}\)</span> and a joint distribution <span class="math notranslate nohighlight">\(p(\textbf{x}, \textbf{z})\)</span>. One can then use Variational Inference to approximate <span class="math notranslate nohighlight">\(p(\textbf{z}|\textbf{x})\)</span>. To do so, one first chooses a set of tractable densities, a variational family, and then tries to find the
 element of this set which most closely approximates the target distribution <span class="math notranslate nohighlight">\(p(\textbf{z}|\textbf{x})\)</span>. This approximating density is found by maximizing the Evidence Lower BOund (ELBO):</p>
@@ -529,7 +532,7 @@ element of this set which most closely approximates the target distribution <spa
 <p>where <span class="math notranslate nohighlight">\(q(\mathbf{z})\)</span> is the approximating density.</p>
 </section>
 <section id="id1">
-<h3>Boosting Black Box Variational Inference<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<h3>Boosting Black Box Variational Inference<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <p>In boosting black box Variational inference (BBBVI), we approximate the target density with a mixture of densities from the variational family:</p>
 <div class="math notranslate nohighlight">
 \[q^t(\mathbf{z}) = \sum_{i=1}^t \gamma_i s_i(\mathbf{z})\]</div>
@@ -546,32 +549,32 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 </section>
 </section>
 <section id="BBBVI-in-Pyro">
-<h2>BBBVI in Pyro<a class="headerlink" href="#BBBVI-in-Pyro" title="Permalink to this headline">¶</a></h2>
+<h2>BBBVI in Pyro<a class="headerlink" href="#BBBVI-in-Pyro" title="Permalink to this heading">¶</a></h2>
 <p>To implement boosting black box variational inference in Pyro, we need to consider the following points: 1. The approximation components <span class="math notranslate nohighlight">\(s_{t}(\mathbf{z})\)</span> (guides). 2. The RELBO. 3. The approximation itself <span class="math notranslate nohighlight">\(q^t(\mathbf{z})\)</span>. 4. Using Pyro’s SVI to find new components of the approximation.</p>
 <p>We will illustrate these points by looking at simple example: approximating a bimodal posterior.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+from collections import defaultdict
+from functools import partial
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">scipy.stats</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.distributions.constraints</span> <span class="k">as</span> <span class="nn">constraints</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">pyro.poutine</span> <span class="kn">import</span> <span class="n">block</span><span class="p">,</span> <span class="n">replay</span><span class="p">,</span> <span class="n">trace</span>
+import numpy as np
+import pyro
+import pyro.distributions as dist
+import scipy.stats
+import torch
+import torch.distributions.constraints as constraints
+from matplotlib import pyplot
+from pyro.infer import SVI, Trace_ELBO
+from pyro.optim import Adam
+from pyro.poutine import block, replay, trace
 <br/></pre></div>
 </div>
 </div>
 <section id="The-Model">
-<h3>The Model<a class="headerlink" href="#The-Model" title="Permalink to this headline">¶</a></h3>
+<h3>The Model<a class="headerlink" href="#The-Model" title="Permalink to this heading">¶</a></h3>
 <p>Boosting BBVI is particularly useful when we want to approximate multimodal distributions. In this tutorial, we’ll thus consider the following model:</p>
 <div class="math notranslate nohighlight">
 \[\mathbf{z} \sim \mathcal{N}(0,5)\]</div>
@@ -583,20 +586,20 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">prior_loc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">])</span>
-    <span class="n">prior_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">5.</span><span class="p">])</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">prior_loc</span><span class="p">,</span> <span class="n">prior_scale</span><span class="p">))</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(data):
+    prior_loc = torch.tensor([0.])
+    prior_scale = torch.tensor([5.])
+    z = pyro.sample(&#39;z&#39;, dist.Normal(prior_loc, prior_scale))
+    scale = torch.tensor([0.1])
 
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="p">,</span> <span class="n">scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    with pyro.plate(&#39;data&#39;, len(data)):
+        pyro.sample(&#39;x&#39;, dist.Normal(z*z, scale), obs=data)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="The-Guide">
-<h3>The Guide<a class="headerlink" href="#The-Guide" title="Permalink to this headline">¶</a></h3>
+<h3>The Guide<a class="headerlink" href="#The-Guide" title="Permalink to this heading">¶</a></h3>
 <p>Next, we specify the guide which in our case will make up the components of our mixture. Recall that in Pyro the guide needs to take the same arguments as the model which is why our guide function also takes the data as an input.</p>
 <p>We also need to make sure that every <code class="docutils literal notranslate"><span class="pre">pyro.sample()</span></code> statement from the model has a matching <code class="docutils literal notranslate"><span class="pre">pyro.sample()</span></code> statement in the guide. In our case, we include <code class="docutils literal notranslate"><span class="pre">z</span></code> in both the model and the guide.</p>
 <p>In contrast to regular SVI, our guide takes an additional argument: <code class="docutils literal notranslate"><span class="pre">index</span></code>. Having this argument allows us to easily create new guides in each iteration of the greedy algorithm. Specifically, we make use of <code class="docutils literal notranslate"><span class="pre">partial()</span></code> from the <a class="reference external" href="https://docs.python.org/3.7/library/functools.html">functools library</a> to create guides which only take <code class="docutils literal notranslate"><span class="pre">data</span></code> as an argument. The statement <code class="docutils literal notranslate"><span class="pre">partial(guide,</span> <span class="pre">index=t)</span></code> creates a guide that will take only <code class="docutils literal notranslate"><span class="pre">data</span></code> as an input and which has trainable parameters
@@ -606,16 +609,16 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-    <span class="n">scale_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;scale_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span> <span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">loc_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;loc_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]))</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc_q</span><span class="p">,</span> <span class="n">scale_q</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def guide(data, index):
+    scale_q = pyro.param(&#39;scale_{}&#39;.format(index), torch.tensor([1.0]), constraints.positive)
+    loc_q = pyro.param(&#39;loc_{}&#39;.format(index), torch.tensor([0.0]))
+    pyro.sample(&quot;z&quot;, dist.Normal(loc_q, scale_q))
 </pre></div>
 </div>
 </div>
 </section>
 <section id="The-RELBO">
-<h3>The RELBO<a class="headerlink" href="#The-RELBO" title="Permalink to this headline">¶</a></h3>
+<h3>The RELBO<a class="headerlink" href="#The-RELBO" title="Permalink to this heading">¶</a></h3>
 <p>We implement the RELBO as a function which can be passed to Pyro’s SVI class in place of ELBO to find the approximation components <span class="math notranslate nohighlight">\(s_t(z)\)</span>. Recall that the RELBO has the following form:</p>
 <div class="math notranslate nohighlight">
 \[\mathbb{E}_s[\log p(\mathbf{x},\mathbf{z})] - \lambda \mathbb{E}_s[\log s(\mathbf{z})] - \mathbb{E}_s[\log q^t(\mathbf{z})]\]</div>
@@ -630,55 +633,55 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">relbo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">approximation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;approximation&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def relbo(model, guide, *args, **kwargs):
+    approximation = kwargs.pop(&#39;approximation&#39;)
 
-    <span class="c1"># We first compute the elbo, but record a guide trace for use below.</span>
-    <span class="n">traced_guide</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
-    <span class="n">elbo</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">loss_fn</span> <span class="o">=</span> <span class="n">elbo</span><span class="o">.</span><span class="n">differentiable_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">traced_guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    # We first compute the elbo, but record a guide trace for use below.
+    traced_guide = trace(guide)
+    elbo = pyro.infer.Trace_ELBO(max_plate_nesting=1)
+    loss_fn = elbo.differentiable_loss(model, traced_guide, *args, **kwargs)
 
-    <span class="c1"># We do not want to update parameters of previously fitted components</span>
-    <span class="c1"># and thus block all parameters in the approximation apart from z.</span>
-    <span class="n">guide_trace</span> <span class="o">=</span> <span class="n">traced_guide</span><span class="o">.</span><span class="n">trace</span>
-    <span class="n">replayed_approximation</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">replay</span><span class="p">(</span><span class="n">block</span><span class="p">(</span><span class="n">approximation</span><span class="p">,</span> <span class="n">expose</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]),</span> <span class="n">guide_trace</span><span class="p">))</span>
-    <span class="n">approximation_trace</span> <span class="o">=</span> <span class="n">replayed_approximation</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    # We do not want to update parameters of previously fitted components
+    # and thus block all parameters in the approximation apart from z.
+    guide_trace = traced_guide.trace
+    replayed_approximation = trace(replay(block(approximation, expose=[&#39;z&#39;]), guide_trace))
+    approximation_trace = replayed_approximation.get_trace(*args, **kwargs)
 
-    <span class="n">relbo</span> <span class="o">=</span> <span class="o">-</span><span class="n">loss_fn</span> <span class="o">-</span> <span class="n">approximation_trace</span><span class="o">.</span><span class="n">log_prob_sum</span><span class="p">()</span>
+    relbo = -loss_fn - approximation_trace.log_prob_sum()
 
-    <span class="c1"># By convention, the negative (R)ELBO is returned.</span>
-    <span class="k">return</span> <span class="o">-</span><span class="n">relbo</span>
+    # By convention, the negative (R)ELBO is returned.
+    return -relbo
 </pre></div>
 </div>
 </div>
 </section>
 <section id="The-Approximation">
-<h3>The Approximation<a class="headerlink" href="#The-Approximation" title="Permalink to this headline">¶</a></h3>
+<h3>The Approximation<a class="headerlink" href="#The-Approximation" title="Permalink to this heading">¶</a></h3>
 <p>Our implementation of the approximation <span class="math notranslate nohighlight">\(q^t(z) = \sum_{i=1}^t \gamma_i s_i(z)\)</span> consists of a list of components, i.e. the guides from the greedy selection steps, and a list containing the mixture weights of the components. To sample from the approximation, we thus first sample a component according to the mixture weights. In a second step, we draw a sample from the corresponding component.</p>
 <p>Similarly as with the guide, we use <code class="docutils literal notranslate"><span class="pre">partial(approximation,</span> <span class="pre">components=components,</span> <span class="pre">weights=weights)</span></code> to get an approximation function which has the same signature as the model.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">approximation</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">components</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
-    <span class="n">assignment</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;assignment&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="n">assignment</span><span class="p">](</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">result</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def approximation(data, components, weights):
+    assignment = pyro.sample(&#39;assignment&#39;, dist.Categorical(weights))
+    result = components[assignment](data)
+    return result
 </pre></div>
 </div>
 </div>
 </section>
 <section id="The-Greedy-Algorithm">
-<h3>The Greedy Algorithm<a class="headerlink" href="#The-Greedy-Algorithm" title="Permalink to this headline">¶</a></h3>
+<h3>The Greedy Algorithm<a class="headerlink" href="#The-Greedy-Algorithm" title="Permalink to this heading">¶</a></h3>
 <p>We now have all the necessary parts to implement the greedy algorithm. First, we initialize the approximation:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initial_approximation</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">initial_approximation</span><span class="p">]</span>
-<span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.</span><span class="p">])</span>
-<span class="n">wrapped_approximation</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">approximation</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">components</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>initial_approximation = partial(guide, index=0)
+components = [initial_approximation]
+weights = torch.tensor([1.])
+wrapped_approximation = partial(approximation, components=components, weights=weights)
 </pre></div>
 </div>
 </div>
@@ -687,61 +690,61 @@ the term <span class="math notranslate nohighlight">\(- \mathbb{E}_s[\log q^t(\m
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># clear the param store in case we&#39;re in a REPL</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># clear the param store in case we&#39;re in a REPL
+pyro.clear_param_store()
 
-<span class="c1"># Sample observations from a Normal distribution with loc 4 and scale 0.1</span>
-<span class="n">n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">4.0</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">]))</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">100</span><span class="p">,))</span>
+# Sample observations from a Normal distribution with loc 4 and scale 0.1
+n = torch.distributions.Normal(torch.tensor([4.0]), torch.tensor([0.1]))
+data = n.sample((100,))
 
-<span class="c1">#T=2</span>
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">12000</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">n_iterations</span> <span class="o">=</span> <span class="mi">2</span>
-<span class="n">locs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">scales</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iterations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+#T=2
+smoke_test = (&#39;CI&#39; in os.environ)
+n_steps = 2 if smoke_test else 12000
+pyro.set_rng_seed(2)
+n_iterations = 2
+locs = [0]
+scales = [0]
+for t in range(1, n_iterations + 1):
 
-    <span class="c1"># Create guide that only takes data as argument</span>
-    <span class="n">wrapped_guide</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
-    <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
+    # Create guide that only takes data as argument
+    wrapped_guide = partial(guide, index=t)
+    losses = []
 
-    <span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)}</span>
-    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
+    adam_params = {&quot;lr&quot;: 0.01, &quot;betas&quot;: (0.90, 0.999)}
+    optimizer = Adam(adam_params)
 
-    <span class="c1"># Pass our custom RELBO to SVI as the loss function.</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">wrapped_guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">relbo</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-        <span class="c1"># Pass the existing approximation to SVI.</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">approximation</span><span class="o">=</span><span class="n">wrapped_approximation</span><span class="p">)</span>
-        <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+    # Pass our custom RELBO to SVI as the loss function.
+    svi = SVI(model, wrapped_guide, optimizer, loss=relbo)
+    for step in range(n_steps):
+        # Pass the existing approximation to SVI.
+        loss = svi.step(data, approximation=wrapped_approximation)
+        losses.append(loss)
 
-        <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        if step % 100 == 0:
+            print(&#39;.&#39;, end=&#39; &#39;)
 
-    <span class="c1"># Update the list of approximation components.</span>
-    <span class="n">components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wrapped_guide</span><span class="p">)</span>
+    # Update the list of approximation components.
+    components.append(wrapped_guide)
 
-    <span class="c1"># Set new mixture weight.</span>
-    <span class="n">new_weight</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    # Set new mixture weight.
+    new_weight = 2 / (t + 1)
 
-    <span class="c1"># In this specific case, we set the mixture weight of the second component to 0.5.</span>
-    <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="n">new_weight</span> <span class="o">=</span> <span class="mf">0.5</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">new_weight</span><span class="p">)</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">weights</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">new_weight</span><span class="p">])))</span>
+    # In this specific case, we set the mixture weight of the second component to 0.5.
+    if t == 2:
+        new_weight = 0.5
+    weights = weights * (1-new_weight)
+    weights = torch.cat((weights, torch.tensor([new_weight])))
 
-    <span class="c1"># Update the approximation</span>
-    <span class="n">wrapped_approximation</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">approximation</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">components</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+    # Update the approximation
+    wrapped_approximation = partial(approximation, components=components, weights=weights)
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Parameters of component </span><span class="si">{}</span><span class="s1">:&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;scale_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-    <span class="n">scales</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-    <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;loc_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-    <span class="n">locs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loc = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loc</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;scale = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scale</span><span class="p">))</span>
+    print(&#39;Parameters of component {}:&#39;.format(t))
+    scale = pyro.param(&quot;scale_{}&quot;.format(t)).item()
+    scales.append(scale)
+    loc = pyro.param(&quot;loc_{}&quot;.format(t)).item()
+    locs.append(loc)
+    print(&#39;loc = {}&#39;.format(loc))
+    print(&#39;scale = {}&#39;.format(scale))
 </pre></div>
 </div>
 </div>
@@ -762,19 +765,19 @@ scale = 0.06008879840373993
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the resulting approximation</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
-<span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
-<span class="n">total_approximation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iterations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-    <span class="n">Y</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">locs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="n">scales</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
-    <span class="n">total_approximation</span> <span class="o">+=</span> <span class="n">Y</span>
-<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">total_approximation</span><span class="p">)</span>
-<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span> <span class="s1">&#39;k*&#39;</span><span class="p">)</span>
-<span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Approximation of posterior over z&#39;</span><span class="p">)</span>
-<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;probability density&#39;</span><span class="p">)</span>
-<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Plot the resulting approximation
+X = np.arange(-10, 10, 0.1)
+pyplot.figure(figsize=(10, 4), dpi=100).set_facecolor(&#39;white&#39;)
+total_approximation = np.zeros(X.shape)
+for i in range(1, n_iterations + 1):
+    Y = weights[i].item() * scipy.stats.norm.pdf((X - locs[i]) / scales[i])
+    pyplot.plot(X, Y)
+    total_approximation += Y
+pyplot.plot(X, total_approximation)
+pyplot.plot(data.data.numpy(), np.zeros(len(data)), &#39;k*&#39;)
+pyplot.title(&#39;Approximation of posterior over z&#39;)
+pyplot.ylabel(&#39;probability density&#39;)
+pyplot.show()
 </pre></div>
 </div>
 </div>
@@ -789,151 +792,151 @@ scale = 0.06008879840373993
 </section>
 </section>
 <section id="The-Complete-Implementation">
-<h2>The Complete Implementation<a class="headerlink" href="#The-Complete-Implementation" title="Permalink to this headline">¶</a></h2>
+<h2>The Complete Implementation<a class="headerlink" href="#The-Complete-Implementation" title="Permalink to this heading">¶</a></h2>
 <p>Putting all the components together, we then get the complete implementation of boosting black box Variational Inference:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+from collections import defaultdict
+from functools import partial
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">scipy.stats</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.distributions.constraints</span> <span class="k">as</span> <span class="nn">constraints</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">pyro.poutine</span> <span class="kn">import</span> <span class="n">block</span><span class="p">,</span> <span class="n">replay</span><span class="p">,</span> <span class="n">trace</span>
+import numpy as np
+import pyro
+import pyro.distributions as dist
+import scipy.stats
+import torch
+import torch.distributions.constraints as constraints
+from matplotlib import pyplot
+from pyro.infer import SVI, Trace_ELBO
+from pyro.optim import Adam
+from pyro.poutine import block, replay, trace
 
-<span class="c1"># this is for running the notebook in our testing framework</span>
-<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">12000</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+# this is for running the notebook in our testing framework
+n_steps = 2 if smoke_test else 12000
+pyro.set_rng_seed(2)
 
-<span class="c1"># clear the param store in case we&#39;re in a REPL</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+# clear the param store in case we&#39;re in a REPL
+pyro.clear_param_store()
 
-<span class="c1"># Sample observations from a Normal distribution with loc 4 and scale 0.1</span>
-<span class="n">n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">4.0</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">]))</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">100</span><span class="p">,))</span>
-
-
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-    <span class="n">scale_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;scale_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span> <span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">loc_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s1">&#39;loc_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]))</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc_q</span><span class="p">,</span> <span class="n">scale_q</span><span class="p">))</span>
+# Sample observations from a Normal distribution with loc 4 and scale 0.1
+n = torch.distributions.Normal(torch.tensor([4.0]), torch.tensor([0.1]))
+data = n.sample((100,))
 
 
-<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">prior_loc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">])</span>
-    <span class="n">prior_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">5.</span><span class="p">])</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">prior_loc</span><span class="p">,</span> <span class="n">prior_scale</span><span class="p">))</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.1</span><span class="p">])</span>
-
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="p">,</span> <span class="n">scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+def guide(data, index):
+    scale_q = pyro.param(&#39;scale_{}&#39;.format(index), torch.tensor([1.0]), constraints.positive)
+    loc_q = pyro.param(&#39;loc_{}&#39;.format(index), torch.tensor([0.0]))
+    pyro.sample(&quot;z&quot;, dist.Normal(loc_q, scale_q))
 
 
-<span class="k">def</span> <span class="nf">relbo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">approximation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;approximation&#39;</span><span class="p">)</span>
+def model(data):
+    prior_loc = torch.tensor([0.])
+    prior_scale = torch.tensor([5.])
+    z = pyro.sample(&#39;z&#39;, dist.Normal(prior_loc, prior_scale))
+    scale = torch.tensor([0.1])
 
-    <span class="c1"># We first compute the elbo, but record a guide trace for use below.</span>
-    <span class="n">traced_guide</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
-    <span class="n">elbo</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">loss_fn</span> <span class="o">=</span> <span class="n">elbo</span><span class="o">.</span><span class="n">differentiable_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">traced_guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-    <span class="c1"># We do not want to update parameters of previously fitted components</span>
-    <span class="c1"># and thus block all parameters in the approximation apart from z.</span>
-    <span class="n">guide_trace</span> <span class="o">=</span> <span class="n">traced_guide</span><span class="o">.</span><span class="n">trace</span>
-    <span class="n">replayed_approximation</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">replay</span><span class="p">(</span><span class="n">block</span><span class="p">(</span><span class="n">approximation</span><span class="p">,</span> <span class="n">expose</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]),</span> <span class="n">guide_trace</span><span class="p">))</span>
-    <span class="n">approximation_trace</span> <span class="o">=</span> <span class="n">replayed_approximation</span><span class="o">.</span><span class="n">get_trace</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-    <span class="n">relbo</span> <span class="o">=</span> <span class="o">-</span><span class="n">loss_fn</span> <span class="o">-</span> <span class="n">approximation_trace</span><span class="o">.</span><span class="n">log_prob_sum</span><span class="p">()</span>
-
-    <span class="c1"># By convention, the negative (R)ELBO is returned.</span>
-    <span class="k">return</span> <span class="o">-</span><span class="n">relbo</span>
+    with pyro.plate(&#39;data&#39;, len(data)):
+        pyro.sample(&#39;x&#39;, dist.Normal(z*z, scale), obs=data)
 
 
-<span class="k">def</span> <span class="nf">approximation</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">components</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
-    <span class="n">assignment</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;assignment&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="n">assignment</span><span class="p">](</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">result</span>
+def relbo(model, guide, *args, **kwargs):
+    approximation = kwargs.pop(&#39;approximation&#39;)
+
+    # We first compute the elbo, but record a guide trace for use below.
+    traced_guide = trace(guide)
+    elbo = pyro.infer.Trace_ELBO(max_plate_nesting=1)
+    loss_fn = elbo.differentiable_loss(model, traced_guide, *args, **kwargs)
+
+    # We do not want to update parameters of previously fitted components
+    # and thus block all parameters in the approximation apart from z.
+    guide_trace = traced_guide.trace
+    replayed_approximation = trace(replay(block(approximation, expose=[&#39;z&#39;]), guide_trace))
+    approximation_trace = replayed_approximation.get_trace(*args, **kwargs)
+
+    relbo = -loss_fn - approximation_trace.log_prob_sum()
+
+    # By convention, the negative (R)ELBO is returned.
+    return -relbo
 
 
-<span class="k">def</span> <span class="nf">boosting_bbvi</span><span class="p">():</span>
-    <span class="c1"># T=2</span>
-    <span class="n">n_iterations</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="n">initial_approximation</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">initial_approximation</span><span class="p">]</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.</span><span class="p">])</span>
-    <span class="n">wrapped_approximation</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">approximation</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">components</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-
-    <span class="n">locs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">scales</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iterations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-
-        <span class="c1"># Create guide that only takes data as argument</span>
-        <span class="n">wrapped_guide</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">guide</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)}</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
-
-        <span class="c1"># Pass our custom RELBO to SVI as the loss function.</span>
-        <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">wrapped_guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">relbo</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-            <span class="c1"># Pass the existing approximation to SVI.</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">approximation</span><span class="o">=</span><span class="n">wrapped_approximation</span><span class="p">)</span>
-            <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
-
-        <span class="c1"># Update the list of approximation components.</span>
-        <span class="n">components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wrapped_guide</span><span class="p">)</span>
-
-        <span class="c1"># Set new mixture weight.</span>
-        <span class="n">new_weight</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
-        <span class="c1"># In this specific case, we set the mixture weight of the second component to 0.5.</span>
-        <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">new_weight</span> <span class="o">=</span> <span class="mf">0.5</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">new_weight</span><span class="p">)</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">weights</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">new_weight</span><span class="p">])))</span>
-
-        <span class="c1"># Update the approximation</span>
-        <span class="n">wrapped_approximation</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">approximation</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">components</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Parameters of component </span><span class="si">{}</span><span class="s1">:&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;scale_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="n">scales</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-        <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;loc_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="n">locs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loc = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loc</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;scale = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scale</span><span class="p">))</span>
+def approximation(data, components, weights):
+    assignment = pyro.sample(&#39;assignment&#39;, dist.Categorical(weights))
+    result = components[assignment](data)
+    return result
 
 
-    <span class="c1"># Plot the resulting approximation</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
-    <span class="n">total_approximation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_iterations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="n">Y</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">locs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="n">scales</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
-        <span class="n">total_approximation</span> <span class="o">+=</span> <span class="n">Y</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">total_approximation</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span> <span class="s1">&#39;k*&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Approximation of posterior over z&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;probability density&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+def boosting_bbvi():
+    # T=2
+    n_iterations = 2
+    initial_approximation = partial(guide, index=0)
+    components = [initial_approximation]
+    weights = torch.tensor([1.])
+    wrapped_approximation = partial(approximation, components=components, weights=weights)
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">boosting_bbvi</span><span class="p">()</span>
+    locs = [0]
+    scales = [0]
+
+    for t in range(1, n_iterations + 1):
+
+        # Create guide that only takes data as argument
+        wrapped_guide = partial(guide, index=t)
+        losses = []
+
+        adam_params = {&quot;lr&quot;: 0.01, &quot;betas&quot;: (0.90, 0.999)}
+        optimizer = Adam(adam_params)
+
+        # Pass our custom RELBO to SVI as the loss function.
+        svi = SVI(model, wrapped_guide, optimizer, loss=relbo)
+        for step in range(n_steps):
+            # Pass the existing approximation to SVI.
+            loss = svi.step(data, approximation=wrapped_approximation)
+            losses.append(loss)
+
+            if step % 100 == 0:
+                print(&#39;.&#39;, end=&#39; &#39;)
+
+        # Update the list of approximation components.
+        components.append(wrapped_guide)
+
+        # Set new mixture weight.
+        new_weight = 2 / (t + 1)
+
+        # In this specific case, we set the mixture weight of the second component to 0.5.
+        if t == 2:
+            new_weight = 0.5
+        weights = weights * (1-new_weight)
+        weights = torch.cat((weights, torch.tensor([new_weight])))
+
+        # Update the approximation
+        wrapped_approximation = partial(approximation, components=components, weights=weights)
+
+        print(&#39;Parameters of component {}:&#39;.format(t))
+        scale = pyro.param(&quot;scale_{}&quot;.format(t)).item()
+        scales.append(scale)
+        loc = pyro.param(&quot;loc_{}&quot;.format(t)).item()
+        locs.append(loc)
+        print(&#39;loc = {}&#39;.format(loc))
+        print(&#39;scale = {}&#39;.format(scale))
+
+
+    # Plot the resulting approximation
+    X = np.arange(-10, 10, 0.1)
+    pyplot.figure(figsize=(10, 4), dpi=100).set_facecolor(&#39;white&#39;)
+    total_approximation = np.zeros(X.shape)
+    for i in range(1, n_iterations + 1):
+        Y = weights[i].item() * scipy.stats.norm.pdf((X - locs[i]) / scales[i])
+        pyplot.plot(X, Y)
+        total_approximation += Y
+    pyplot.plot(X, total_approximation)
+    pyplot.plot(data.data.numpy(), np.zeros(len(data)), &#39;k*&#39;)
+    pyplot.title(&#39;Approximation of posterior over z&#39;)
+    pyplot.ylabel(&#39;probability density&#39;)
+    pyplot.show()
+
+if __name__ == &#39;__main__&#39;:
+    boosting_bbvi()
 <br/></pre></div>
 </div>
 </div>
@@ -958,7 +961,7 @@ scale = 0.01308442372828722
 </div>
 </div>
 <section id="References">
-<h3>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h3>
+<h3>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h3>
 <p>[1] Locatello, Francesco, et al. “Boosting black box variational inference.” Advances in Neural Information Processing Systems. 2018.</p>
 <p>[2] Ranganath, Rajesh, Sean Gerrish, and David Blei. “Black box variational inference.” Artificial Intelligence and Statistics. 2014.</p>
 <p>[3] Blei, David M., Alp Kucukelbir, and Jon D. McAuliffe. “Variational inference: A review for statisticians.” Journal of the American statistical Association 112.518 (2017): 859-877.</p>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MLE and MAP Estimation &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>MLE and MAP Estimation &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -184,8 +186,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>MLE and MAP Estimation</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">MLE and MAP Estimation</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/mle_map.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -305,10 +307,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -474,19 +477,19 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="MLE-and-MAP-Estimation">
-<h1>MLE and MAP Estimation<a class="headerlink" href="#MLE-and-MAP-Estimation" title="Permalink to this headline">¶</a></h1>
+<h1>MLE and MAP Estimation<a class="headerlink" href="#MLE-and-MAP-Estimation" title="Permalink to this heading">¶</a></h1>
 <p>In this short tutorial we review how to do Maximum Likelihood (MLE) and Maximum a Posteriori (MAP) estimation in Pyro.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="o">%</span><span class="k">matplotlib</span> inline
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import torch
+from torch.distributions import constraints
+import pyro
+import pyro.distributions as dist
+from pyro.infer import SVI, Trace_ELBO
+import matplotlib.pyplot as plt
+%matplotlib inline
 </pre></div>
 </div>
 </div>
@@ -495,13 +498,13 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-<span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>data = torch.zeros(10)
+data[0:6] = 1.0
 
-<span class="k">def</span> <span class="nf">original_model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+def original_model(data):
+    f = pyro.sample(&quot;latent_fairness&quot;, dist.Beta(10.0, 10.0))
+    with pyro.plate(&quot;data&quot;, data.size(0)):
+        pyro.sample(&quot;obs&quot;, dist.Bernoulli(f), obs=data)
 </pre></div>
 </div>
 </div>
@@ -510,34 +513,34 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">201</span><span class="p">):</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-    <span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">lr</span><span class="p">}</span>
-    <span class="n">adam</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">adam</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def train(model, guide, lr=0.005, n_steps=201):
+    pyro.clear_param_store()
+    adam_params = {&quot;lr&quot;: lr}
+    adam = pyro.optim.Adam(adam_params)
+    svi = SVI(model, guide, adam, loss=Trace_ELBO())
 
-    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">50</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;[iter </span><span class="si">{}</span><span class="s1">]  loss: </span><span class="si">{:.4f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
+    for step in range(n_steps):
+        loss = svi.step(data)
+        if step % 50 == 0:
+            print(&#39;[iter {}]  loss: {:.4f}&#39;.format(step, loss))
 </pre></div>
 </div>
 </div>
 <section id="MLE">
-<h2>MLE<a class="headerlink" href="#MLE" title="Permalink to this headline">¶</a></h2>
+<h2>MLE<a class="headerlink" href="#MLE" title="Permalink to this heading">¶</a></h2>
 <p>Our model has a single latent variable <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code>. To do Maximum Likelihood Estimation we simply “demote” our latent variable <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> to a Pyro parameter.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model_mle</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># note that we need to include the interval constraint;</span>
-    <span class="c1"># in original_model() this constraint appears implicitly in</span>
-    <span class="c1"># the support of the Beta distribution.</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
-                   <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model_mle(data):
+    # note that we need to include the interval constraint;
+    # in original_model() this constraint appears implicitly in
+    # the support of the Beta distribution.
+    f = pyro.param(&quot;latent_fairness&quot;, torch.tensor(0.5),
+                   constraint=constraints.unit_interval)
+    with pyro.plate(&quot;data&quot;, data.size(0)):
+        pyro.sample(&quot;obs&quot;, dist.Bernoulli(f), obs=data)
 </pre></div>
 </div>
 </div>
@@ -546,7 +549,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">model_mle</span><span class="p">,</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,),</span> <span class="n">render_distributions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">render_params</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.render_model(model_mle, model_args=(data,), render_distributions=True, render_params=True)
 </pre></div>
 </div>
 </div>
@@ -562,8 +565,8 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide_mle</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="k">pass</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def guide_mle(data):
+    pass
 </pre></div>
 </div>
 </div>
@@ -572,7 +575,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">model_mle</span><span class="p">,</span> <span class="n">guide_mle</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>train(model_mle, guide_mle)
 </pre></div>
 </div>
 </div>
@@ -592,8 +595,8 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mle_estimate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Our MLE estimate of the latent fairness is </span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mle_estimate</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mle_estimate = pyro.param(&quot;latent_fairness&quot;).item()
+print(&quot;Our MLE estimate of the latent fairness is {:.3f}&quot;.format(mle_estimate))
 </pre></div>
 </div>
 </div>
@@ -610,8 +613,8 @@ Our MLE estimate of the latent fairness is 0.600
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The analytical MLE estimate of the latent fairness is </span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-      <span class="n">data</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;The analytical MLE estimate of the latent fairness is {:.3f}&quot;.format(
+      data.mean()))
 </pre></div>
 </div>
 </div>
@@ -629,8 +632,8 @@ The analytical MLE estimate of the latent fairness is 0.600
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nll</span> <span class="o">=</span> <span class="o">-</span><span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">mle_estimate</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The negative log likelihood given latent fairness = </span><span class="si">{</span><span class="n">mle_estimate</span><span class="si">:</span><span class="s2">0.3f</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">nll</span><span class="si">:</span><span class="s2">0.4f</span><span class="si">}</span><span class="s2"> which matches the loss obtained via our training procedure.&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>nll = -dist.Bernoulli(mle_estimate).log_prob(data).sum()
+print(f&quot;The negative log likelihood given latent fairness = {mle_estimate:0.3f} is {nll:0.4f} which matches the loss obtained via our training procedure.&quot;)
 </pre></div>
 </div>
 </div>
@@ -644,13 +647,13 @@ The negative log likelihood given latent fairness = 0.600 is 6.7301 which matche
 </div>
 </section>
 <section id="MAP">
-<h2>MAP<a class="headerlink" href="#MAP" title="Permalink to this headline">¶</a></h2>
+<h2>MAP<a class="headerlink" href="#MAP" title="Permalink to this heading">¶</a></h2>
 <p>With Maximum a Posteriori estimation, we also get a point estimate of our latent variables. The difference to MLE is that these estimates will be regularized by the prior. We can understand the difference between the model we use for MLE and MAP via the rendering below, where we can see <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> is a <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> in original model.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">original_model</span><span class="p">,</span> <span class="n">model_args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,),</span> <span class="n">render_distributions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.render_model(original_model, model_args=(data,), render_distributions=True)
 </pre></div>
 </div>
 </div>
@@ -666,10 +669,10 @@ The negative log likelihood given latent fairness = 0.600 is 6.7301 which matche
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide_map</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">f_map</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;f_map&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
-                       <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">unit_interval</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">f_map</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def guide_map(data):
+    f_map = pyro.param(&quot;f_map&quot;, torch.tensor(0.5),
+                       constraint=constraints.unit_interval)
+    pyro.sample(&quot;latent_fairness&quot;, dist.Delta(f_map))
 </pre></div>
 </div>
 </div>
@@ -678,7 +681,7 @@ The negative log likelihood given latent fairness = 0.600 is 6.7301 which matche
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">original_model</span><span class="p">,</span> <span class="n">guide_map</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>train(original_model, guide_map)
 </pre></div>
 </div>
 </div>
@@ -698,8 +701,8 @@ The negative log likelihood given latent fairness = 0.600 is 6.7301 which matche
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">map_estimate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;f_map&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Our MAP estimate of the latent fairness is </span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">map_estimate</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>map_estimate = pyro.param(&quot;f_map&quot;).item()
+print(&quot;Our MAP estimate of the latent fairness is {:.3f}&quot;.format(map_estimate))
 </pre></div>
 </div>
 </div>
@@ -718,13 +721,13 @@ calculate the MAP estimate given the <code class="docutils literal notranslate">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Prior~Beta(10, 10)&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Latent Fairness&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">mle_estimate</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;MLE&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">map_estimate</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-.&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;MAP&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Prior Mean&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.44</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">borderaxespad</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>x = torch.linspace(0.0, 1.0, 100)
+plt.plot(x, dist.Beta(10, 10).log_prob(x).exp(), label=&#39;Prior~Beta(10, 10)&#39;)
+plt.xlabel(&quot;Latent Fairness&quot;)
+plt.axvline(mle_estimate, color=&#39;k&#39;, linestyle=&#39;--&#39;, label=&#39;MLE&#39;)
+plt.axvline(map_estimate, color=&#39;r&#39;, linestyle=&#39;-.&#39;, label=&#39;MAP&#39;)
+plt.axvline(0.5, color=&#39;g&#39;, linestyle=&#39;:&#39;, label=&#39;Prior Mean&#39;)
+plt.legend(bbox_to_anchor=(1.44,1), borderaxespad=0)
 </pre></div>
 </div>
 </div>
@@ -747,18 +750,18 @@ calculate the MAP estimate given the <code class="docutils literal notranslate">
 </section>
 </section>
 <section id="Doing-the-same-thing-with-AutoGuides">
-<h1>Doing the same thing with AutoGuides<a class="headerlink" href="#Doing-the-same-thing-with-AutoGuides" title="Permalink to this headline">¶</a></h1>
+<h1>Doing the same thing with AutoGuides<a class="headerlink" href="#Doing-the-same-thing-with-AutoGuides" title="Permalink to this heading">¶</a></h1>
 <p>In the above we defined guides by hand. It’s often much easier to rely on Pyro’s <a class="reference external" href="https://docs.pyro.ai/en/stable/infer.autoguide.html?highlight=autoguide">AutoGuide machinery</a>. Let’s see how we can do MLE and MAP inference using AutoGuides.</p>
 <p>To do MLE estimation we first use <code class="docutils literal notranslate"><span class="pre">`mask(False)</span></code> &lt;<a class="reference external" href="https://docs.pyro.ai/en/stable/poutine.html?highlight=mask#pyro.poutine.handlers.mask">https://docs.pyro.ai/en/stable/poutine.html?highlight=mask#pyro.poutine.handlers.mask</a>&gt;`__ to instruct Pyro to ignore the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> of the latent variable <code class="docutils literal notranslate"><span class="pre">latent_fairness</span></code> in the model. (Note we need to do this for every latent variable.) This way the only non-zero <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> in the model will be from the Bernoulli likelihood and ELBO maximization will be equivalent to likelihood maximization.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">masked_model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span>
-                    <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="kc">False</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def masked_model(data):
+    f = pyro.sample(&quot;latent_fairness&quot;,
+                    dist.Beta(10.0, 10.0).mask(False))
+    with pyro.plate(&quot;data&quot;, data.size(0)):
+        pyro.sample(&quot;obs&quot;, dist.Bernoulli(f), obs=data)
 </pre></div>
 </div>
 </div>
@@ -767,10 +770,10 @@ calculate the MAP estimate given the <code class="docutils literal notranslate">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">autoguide_mle</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">autoguide</span><span class="o">.</span><span class="n">AutoDelta</span><span class="p">(</span><span class="n">masked_model</span><span class="p">)</span>
-<span class="n">train</span><span class="p">(</span><span class="n">masked_model</span><span class="p">,</span> <span class="n">autoguide_mle</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Our MLE estimate of the latent fairness is </span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-      <span class="n">autoguide_mle</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>autoguide_mle = pyro.infer.autoguide.AutoDelta(masked_model)
+train(masked_model, autoguide_mle)
+print(&quot;Our MLE estimate of the latent fairness is {:.3f}&quot;.format(
+      autoguide_mle.median(data)[&quot;latent_fairness&quot;].item()))
 </pre></div>
 </div>
 </div>
@@ -792,10 +795,10 @@ Our MLE estimate of the latent fairness is 0.598
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">autoguide_map</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">autoguide</span><span class="o">.</span><span class="n">AutoDelta</span><span class="p">(</span><span class="n">original_model</span><span class="p">)</span>
-<span class="n">train</span><span class="p">(</span><span class="n">original_model</span><span class="p">,</span> <span class="n">autoguide_map</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Our MAP estimate of the latent fairness is </span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-      <span class="n">autoguide_map</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>autoguide_map = pyro.infer.autoguide.AutoDelta(original_model)
+train(original_model, autoguide_map)
+print(&quot;Our MAP estimate of the latent fairness is {:.3f}&quot;.format(
+      autoguide_map.median(data)[&quot;latent_fairness&quot;].item()))
 </pre></div>
 </div>
 </div>
@@ -817,10 +820,10 @@ Our MAP estimate of the latent fairness is 0.536
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">original_model_uniform_prior</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">1.0</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def original_model_uniform_prior(data):
+    f = pyro.sample(&quot;latent_fairness&quot;, dist.Uniform(low=0.0, high=1.0))
+    with pyro.plate(&quot;data&quot;, data.size(0)):
+        pyro.sample(&quot;obs&quot;, dist.Bernoulli(f), obs=data)
 </pre></div>
 </div>
 </div>
@@ -828,10 +831,10 @@ Our MAP estimate of the latent fairness is 0.536
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">autoguide_map_uniform_prior</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">autoguide</span><span class="o">.</span><span class="n">AutoDelta</span><span class="p">(</span><span class="n">original_model_uniform_prior</span><span class="p">)</span>
-<span class="n">train</span><span class="p">(</span><span class="n">original_model_uniform_prior</span><span class="p">,</span> <span class="n">autoguide_map_uniform_prior</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Our MAP estimate of the latent fairness under the Uniform prior is </span><span class="si">{:.3f}</span><span class="s2"> matching the MLE estimate&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-      <span class="n">autoguide_map_uniform_prior</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>autoguide_map_uniform_prior = pyro.infer.autoguide.AutoDelta(original_model_uniform_prior)
+train(original_model_uniform_prior, autoguide_map_uniform_prior)
+print(&quot;Our MAP estimate of the latent fairness under the Uniform prior is {:.3f} matching the MLE estimate&quot;.format(
+      autoguide_map_uniform_prior.median(data)[&quot;latent_fairness&quot;].item()))
 </pre></div>
 </div>
 </div>

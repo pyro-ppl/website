@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pyro.contrib.funsor, a new backend for Pyro - New primitives (Part 1) &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>pyro.contrib.funsor, a new backend for Pyro - New primitives (Part 1) &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -191,8 +193,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active"><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/contrib_funsor_intro_i.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -312,10 +314,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -481,30 +484,30 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="pyro.contrib.funsor,-a-new-backend-for-Pyro---New-primitives-(Part-1)">
-<h1><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)<a class="headerlink" href="#pyro.contrib.funsor,-a-new-backend-for-Pyro---New-primitives-(Part-1)" title="Permalink to this headline">¶</a></h1>
+<h1><code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for Pyro - New primitives (Part 1)<a class="headerlink" href="#pyro.contrib.funsor,-a-new-backend-for-Pyro---New-primitives-(Part-1)" title="Permalink to this heading">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
 <p>In this tutorial we’ll cover the basics of <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>, a new backend for the Pyro probabilistic programming system that is intended to replace the current internals of Pyro and significantly expand its capabilities as both a modelling tool and an inference research platform.</p>
 <p>This tutorial is aimed at readers interested in developing custom inference algorithms and understanding Pyro’s current and future internals. As such, the material here assumes some familiarity with the <a class="reference external" href="https://pyro.ai/api/">generic Pyro API package</a> <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code> and with Funsor. Additional documentation for Funsor can be found on <a class="reference external" href="https://funsor.pyro.ai/en/stable/">the Pyro website</a>, on <a class="reference external" href="https://github.com/pyro-ppl/funsor">GitHub</a>, and in the research paper <a class="reference external" href="https://arxiv.org/abs/1910.10775">“Functional Tensors for
 Probabilistic Programming.”</a> Those who are less interested in such details should find that they can already use the general-purpose algorithms in <code class="docutils literal notranslate"><span class="pre">contrib.funsor</span></code> with their existing Pyro models via <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code>.</p>
 </section>
 <section id="Reinterpreting-existing-Pyro-models-with-pyroapi">
-<h2>Reinterpreting existing Pyro models with <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code><a class="headerlink" href="#Reinterpreting-existing-Pyro-models-with-pyroapi" title="Permalink to this headline">¶</a></h2>
+<h2>Reinterpreting existing Pyro models with <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code><a class="headerlink" href="#Reinterpreting-existing-Pyro-models-with-pyroapi" title="Permalink to this heading">¶</a></h2>
 <p>The new backend uses the <code class="docutils literal notranslate"><span class="pre">pyroapi</span></code> package to integrate with existing Pyro code.</p>
 <p>First, we import some dependencies:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from collections import OrderedDict
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">funsor</span>
-<span class="kn">from</span> <span class="nn">pyro</span> <span class="kn">import</span> <span class="n">set_rng_seed</span> <span class="k">as</span> <span class="n">pyro_set_rng_seed</span>
+import torch
+import funsor
+from pyro import set_rng_seed as pyro_set_rng_seed
 
-<span class="n">funsor</span><span class="o">.</span><span class="n">set_backend</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span><span class="p">)</span>
-<span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">pyro_set_rng_seed</span><span class="p">(</span><span class="mi">101</span><span class="p">)</span>
+funsor.set_backend(&quot;torch&quot;)
+torch.set_default_dtype(torch.float32)
+pyro_set_rng_seed(101)
 </pre></div>
 </div>
 </div>
@@ -513,27 +516,27 @@ Probabilistic Programming.”</a> Those who are less interested in such details 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro.contrib.funsor</span>
-<span class="kn">import</span> <span class="nn">pyroapi</span>
-<span class="kn">from</span> <span class="nn">pyroapi</span> <span class="kn">import</span> <span class="n">handlers</span><span class="p">,</span> <span class="n">infer</span><span class="p">,</span> <span class="n">ops</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">pyro</span>
-<span class="kn">from</span> <span class="nn">pyroapi</span> <span class="kn">import</span> <span class="n">distributions</span> <span class="k">as</span> <span class="n">dist</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import pyro.contrib.funsor
+import pyroapi
+from pyroapi import handlers, infer, ops, optim, pyro
+from pyroapi import distributions as dist
 
-<span class="c1"># this is already done in pyro.contrib.funsor, but we repeat it here</span>
-<span class="n">pyroapi</span><span class="o">.</span><span class="n">register_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">distributions</span><span class="o">=</span><span class="s2">&quot;pyro.distributions&quot;</span><span class="p">,</span>
-    <span class="n">handlers</span><span class="o">=</span><span class="s2">&quot;pyro.contrib.funsor.handlers&quot;</span><span class="p">,</span>
-    <span class="n">infer</span><span class="o">=</span><span class="s2">&quot;pyro.contrib.funsor.infer&quot;</span><span class="p">,</span>
-    <span class="n">ops</span><span class="o">=</span><span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-    <span class="n">optim</span><span class="o">=</span><span class="s2">&quot;pyro.optim&quot;</span><span class="p">,</span>
-    <span class="n">pyro</span><span class="o">=</span><span class="s2">&quot;pyro.contrib.funsor&quot;</span><span class="p">,</span>
-<span class="p">))</span>
+# this is already done in pyro.contrib.funsor, but we repeat it here
+pyroapi.register_backend(&quot;contrib.funsor&quot;, dict(
+    distributions=&quot;pyro.distributions&quot;,
+    handlers=&quot;pyro.contrib.funsor.handlers&quot;,
+    infer=&quot;pyro.contrib.funsor.infer&quot;,
+    ops=&quot;torch&quot;,
+    optim=&quot;pyro.optim&quot;,
+    pyro=&quot;pyro.contrib.funsor&quot;,
+))
 </pre></div>
 </div>
 </div>
 <p>And we’re off! From here on, any <code class="docutils literal notranslate"><span class="pre">pyro.(...)</span></code> statement should be understood as dispatching to the new backend.</p>
 </section>
 <section id="Two-new-primitives:-to_funsor-and-to_data">
-<h2>Two new primitives: <code class="docutils literal notranslate"><span class="pre">to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">to_data</span></code><a class="headerlink" href="#Two-new-primitives:-to_funsor-and-to_data" title="Permalink to this headline">¶</a></h2>
+<h2>Two new primitives: <code class="docutils literal notranslate"><span class="pre">to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">to_data</span></code><a class="headerlink" href="#Two-new-primitives:-to_funsor-and-to_data" title="Permalink to this heading">¶</a></h2>
 <p>The first and most important new concept in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> is the new pair of primitives <code class="docutils literal notranslate"><span class="pre">pyro.to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code>.</p>
 <p>These are <em>effectful</em> versions of <code class="docutils literal notranslate"><span class="pre">funsor.to_funsor</span></code> and <code class="docutils literal notranslate"><span class="pre">funsor.to_data</span></code>, i.e. versions whose behavior can be intercepted, controlled, or used to trigger side effects by Pyro’s library of algebraic effect handlers. Let’s briefly review these two underlying functions before diving into the effectful versions in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>.</p>
 <p>As one might expect from the name, <code class="docutils literal notranslate"><span class="pre">to_funsor</span></code> takes as inputs objects that are not <code class="docutils literal notranslate"><span class="pre">funsor.Funsor</span></code>s and attempts to convert them into Funsor terms. For example, calling <code class="docutils literal notranslate"><span class="pre">funsor.to_funsor</span></code> on a Python number converts it to a <code class="docutils literal notranslate"><span class="pre">funsor.terms.Number</span></code> object:</p>
@@ -541,11 +544,11 @@ Probabilistic Programming.”</a> Those who are less interested in such details 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">funsor_one</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">funsor_one</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">funsor_one</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>funsor_one = funsor.to_funsor(float(1))
+print(funsor_one, type(funsor_one))
 
-<span class="n">funsor_two</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">2.</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">funsor_two</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">funsor_two</span><span class="p">))</span>
+funsor_two = funsor.to_funsor(torch.tensor(2.))
+print(funsor_two, type(funsor_two))
 </pre></div>
 </div>
 </div>
@@ -563,11 +566,11 @@ tensor(2.) &lt;class &#39;funsor.tensor.Tensor&#39;&gt;
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_one</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">terms</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="s1">&#39;real&#39;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">data_one</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_one</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>data_one = funsor.to_data(funsor.terms.Number(float(1), &#39;real&#39;))
+print(data_one, type(data_one))
 
-<span class="n">data_two</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">2.</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(),</span> <span class="s1">&#39;real&#39;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">data_two</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_two</span><span class="p">))</span>
+data_two = funsor.to_data(funsor.Tensor(torch.tensor(2.), OrderedDict(), &#39;real&#39;))
+print(data_two, type(data_two))
 </pre></div>
 </div>
 </div>
@@ -585,8 +588,8 @@ tensor(2.) &lt;class &#39;torch.Tensor&#39;&gt;
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">var_x</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Reals</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">var_x</span><span class="p">,</span> <span class="n">var_x</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">var_x</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>var_x = funsor.to_funsor(&quot;x&quot;, output=funsor.Reals[2])
+print(var_x, var_x.inputs, var_x.output)
 </pre></div>
 </div>
 </div>
@@ -605,30 +608,30 @@ x OrderedDict([(&#39;x&#39;, Reals[2])]) Reals[2]
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ambiguous_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ambiguous tensor: shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ambiguous_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ambiguous_tensor = torch.zeros((3, 1, 2))
+print(&quot;Ambiguous tensor: shape = {}&quot;.format(ambiguous_tensor.shape))
 
-<span class="c1"># case 1: treat all dimensions as output/event dimensions</span>
-<span class="n">funsor1</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">ambiguous_tensor</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Reals</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Case 1: inputs = </span><span class="si">{}</span><span class="s2">, output = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">funsor1</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">funsor1</span><span class="o">.</span><span class="n">output</span><span class="p">))</span>
+# case 1: treat all dimensions as output/event dimensions
+funsor1 = funsor.to_funsor(ambiguous_tensor, output=funsor.Reals[3, 1, 2])
+print(&quot;Case 1: inputs = {}, output = {}&quot;.format(funsor1.inputs, funsor1.output))
 
-<span class="c1"># case 2: treat the leftmost dimension as a batch dimension</span>
-<span class="c1"># note that dimension -1 in dim_to_name here refers to the rightmost *batch dimension*,</span>
-<span class="c1"># i.e. dimension -3 of ambiguous_tensor, the rightmost dimension not included in the output shape.</span>
-<span class="n">funsor2</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">ambiguous_tensor</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Reals</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dim_to_name</span><span class="o">=</span><span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Case 2: inputs = </span><span class="si">{}</span><span class="s2">, output = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">funsor2</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">funsor2</span><span class="o">.</span><span class="n">output</span><span class="p">))</span>
+# case 2: treat the leftmost dimension as a batch dimension
+# note that dimension -1 in dim_to_name here refers to the rightmost *batch dimension*,
+# i.e. dimension -3 of ambiguous_tensor, the rightmost dimension not included in the output shape.
+funsor2 = funsor.to_funsor(ambiguous_tensor, output=funsor.Reals[1, 2], dim_to_name={-1: &quot;a&quot;})
+print(&quot;Case 2: inputs = {}, output = {}&quot;.format(funsor2.inputs, funsor2.output))
 
-<span class="c1"># case 3: treat the leftmost 2 dimensions as batch dimensions; empty batch dimensions are ignored</span>
-<span class="c1"># note that dimensions -1 and -2 in dim_to_name here refer to the rightmost *batch dimensions*,</span>
-<span class="c1"># i.e. dimensions -2 and -3 of ambiguous_tensor, the rightmost dimensions not included in the output shape.</span>
-<span class="n">funsor3</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">ambiguous_tensor</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Reals</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">dim_to_name</span><span class="o">=</span><span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Case 3: inputs = </span><span class="si">{}</span><span class="s2">, output = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">funsor3</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">funsor3</span><span class="o">.</span><span class="n">output</span><span class="p">))</span>
+# case 3: treat the leftmost 2 dimensions as batch dimensions; empty batch dimensions are ignored
+# note that dimensions -1 and -2 in dim_to_name here refer to the rightmost *batch dimensions*,
+# i.e. dimensions -2 and -3 of ambiguous_tensor, the rightmost dimensions not included in the output shape.
+funsor3 = funsor.to_funsor(ambiguous_tensor, output=funsor.Reals[2], dim_to_name={-1: &quot;b&quot;, -2: &quot;a&quot;})
+print(&quot;Case 3: inputs = {}, output = {}&quot;.format(funsor3.inputs, funsor3.output))
 
-<span class="c1"># case 4: treat all dimensions as batch dimensions; empty batch dimensions are ignored</span>
-<span class="c1"># note that dimensions -1, -2 and -3 in dim_to_name here refer to the rightmost *batch dimensions*,</span>
-<span class="c1"># i.e. dimensions -1, -2 and -3 of ambiguous_tensor, the rightmost dimensions not included in the output shape.</span>
-<span class="n">funsor4</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">ambiguous_tensor</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Real</span><span class="p">,</span> <span class="n">dim_to_name</span><span class="o">=</span><span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Case 4: inputs = </span><span class="si">{}</span><span class="s2">, output = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">funsor4</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">funsor4</span><span class="o">.</span><span class="n">output</span><span class="p">))</span>
+# case 4: treat all dimensions as batch dimensions; empty batch dimensions are ignored
+# note that dimensions -1, -2 and -3 in dim_to_name here refer to the rightmost *batch dimensions*,
+# i.e. dimensions -1, -2 and -3 of ambiguous_tensor, the rightmost dimensions not included in the output shape.
+funsor4 = funsor.to_funsor(ambiguous_tensor, output=funsor.Real, dim_to_name={-1: &quot;c&quot;, -2: &quot;b&quot;, -3: &quot;a&quot;})
+print(&quot;Case 4: inputs = {}, output = {}&quot;.format(funsor4.inputs, funsor4.output))
 </pre></div>
 </div>
 </div>
@@ -649,20 +652,20 @@ Case 4: inputs = OrderedDict([(&#39;a&#39;, Bint[3, ]), (&#39;c&#39;, Bint[2, ])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ambiguous_funsor</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">b</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s1">&#39;real&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ambiguous funsor: inputs = </span><span class="si">{}</span><span class="s2">, shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ambiguous_funsor</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">ambiguous_funsor</span><span class="o">.</span><span class="n">output</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ambiguous_funsor = funsor.Tensor(torch.zeros((3, 2)), OrderedDict(a=funsor.Bint[3], b=funsor.Bint[2]), &#39;real&#39;)
+print(&quot;Ambiguous funsor: inputs = {}, shape = {}&quot;.format(ambiguous_funsor.inputs, ambiguous_funsor.output))
 
-<span class="c1"># case 1: the simplest version</span>
-<span class="n">tensor1</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">ambiguous_funsor</span><span class="p">,</span> <span class="n">name_to_dim</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Case 1: shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tensor1</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+# case 1: the simplest version
+tensor1 = funsor.to_data(ambiguous_funsor, name_to_dim={&quot;a&quot;: -2, &quot;b&quot;: -1})
+print(&quot;Case 1: shape = {}&quot;.format(tensor1.shape))
 
-<span class="c1"># case 2: an empty dimension between a and b</span>
-<span class="n">tensor2</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">ambiguous_funsor</span><span class="p">,</span> <span class="n">name_to_dim</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Case 2: shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tensor2</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+# case 2: an empty dimension between a and b
+tensor2 = funsor.to_data(ambiguous_funsor, name_to_dim={&quot;a&quot;: -3, &quot;b&quot;: -1})
+print(&quot;Case 2: shape = {}&quot;.format(tensor2.shape))
 
-<span class="c1"># case 3: permuting the input dimensions</span>
-<span class="n">tensor3</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">ambiguous_funsor</span><span class="p">,</span> <span class="n">name_to_dim</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Case 3: shape = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tensor3</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+# case 3: permuting the input dimensions
+tensor3 = funsor.to_data(ambiguous_funsor, name_to_dim={&quot;a&quot;: -1, &quot;b&quot;: -2})
+print(&quot;Case 3: shape = {}&quot;.format(tensor3.shape))
 </pre></div>
 </div>
 </div>
@@ -682,22 +685,22 @@ Case 3: shape = torch.Size([2, 3])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">name_to_dim</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>name_to_dim = OrderedDict()
 
-<span class="n">funsor_x</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,)),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s1">&#39;real&#39;</span><span class="p">)</span>
-<span class="n">name_to_dim</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
-<span class="n">tensor_x</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_x</span><span class="p">,</span> <span class="n">name_to_dim</span><span class="o">=</span><span class="n">name_to_dim</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">name_to_dim</span><span class="p">,</span> <span class="n">funsor_x</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+funsor_x = funsor.Tensor(torch.ones((2,)), OrderedDict(x=funsor.Bint[2]), &#39;real&#39;)
+name_to_dim.update({&quot;x&quot;: -1})
+tensor_x = funsor.to_data(funsor_x, name_to_dim=name_to_dim)
+print(name_to_dim, funsor_x.inputs, tensor_x.shape)
 
-<span class="n">funsor_y</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">x</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s1">&#39;real&#39;</span><span class="p">)</span>
-<span class="n">name_to_dim</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">})</span>
-<span class="n">tensor_y</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_y</span><span class="p">,</span> <span class="n">name_to_dim</span><span class="o">=</span><span class="n">name_to_dim</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">name_to_dim</span><span class="p">,</span> <span class="n">funsor_y</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+funsor_y = funsor.Tensor(torch.ones((3, 2)), OrderedDict(y=funsor.Bint[3], x=funsor.Bint[2]), &#39;real&#39;)
+name_to_dim.update({&quot;y&quot;: -2})
+tensor_y = funsor.to_data(funsor_y, name_to_dim=name_to_dim)
+print(name_to_dim, funsor_y.inputs, tensor_y.shape)
 
-<span class="n">funsor_z</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">z</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="s1">&#39;real&#39;</span><span class="p">)</span>
-<span class="n">name_to_dim</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">3</span><span class="p">})</span>
-<span class="n">tensor_z</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_z</span><span class="p">,</span> <span class="n">name_to_dim</span><span class="o">=</span><span class="n">name_to_dim</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">name_to_dim</span><span class="p">,</span> <span class="n">funsor_z</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_z</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+funsor_z = funsor.Tensor(torch.ones((2, 3)), OrderedDict(z=funsor.Bint[2], y=funsor.Bint[3]), &#39;real&#39;)
+name_to_dim.update({&quot;z&quot;: -3})
+tensor_z = funsor.to_data(funsor_z, name_to_dim=name_to_dim)
+print(name_to_dim, funsor_z.inputs, tensor_z.shape)
 </pre></div>
 </div>
 </div>
@@ -716,18 +719,18 @@ OrderedDict([(&#39;x&#39;, -1), (&#39;y&#39;, -2), (&#39;z&#39;, -3)]) OrderedDi
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
-    <span class="n">funsor_x</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,)),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s1">&#39;real&#39;</span><span class="p">)</span>
-    <span class="n">tensor_x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_x</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">funsor_x</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
+    funsor_x = funsor.Tensor(torch.ones((2,)), OrderedDict(x=funsor.Bint[2]), &#39;real&#39;)
+    tensor_x = pyro.to_data(funsor_x)
+    print(funsor_x.inputs, tensor_x.shape)
 
-    <span class="n">funsor_y</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">x</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="s1">&#39;real&#39;</span><span class="p">)</span>
-    <span class="n">tensor_y</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_y</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">funsor_y</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_y = funsor.Tensor(torch.ones((3, 2)), OrderedDict(y=funsor.Bint[3], x=funsor.Bint[2]), &#39;real&#39;)
+    tensor_y = pyro.to_data(funsor_y)
+    print(funsor_y.inputs, tensor_y.shape)
 
-    <span class="n">funsor_z</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">z</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="s1">&#39;real&#39;</span><span class="p">)</span>
-    <span class="n">tensor_z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_z</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">funsor_z</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_z</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_z = funsor.Tensor(torch.ones((2, 3)), OrderedDict(z=funsor.Bint[2], y=funsor.Bint[3]), &#39;real&#39;)
+    tensor_z = pyro.to_data(funsor_z)
+    print(funsor_z.inputs, tensor_z.shape)
 </pre></div>
 </div>
 </div>
@@ -746,19 +749,19 @@ OrderedDict([(&#39;z&#39;, Bint[2, ]), (&#39;y&#39;, Bint[3, ])]) torch.Size([2,
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
 
-    <span class="n">probs</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">probs</span><span class="p">),</span> <span class="n">probs</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">probs</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    probs = funsor.Tensor(torch.tensor([0.5, 0.4, 0.7]), OrderedDict(batch=funsor.Bint[3]))
+    print(type(probs), probs.inputs, probs.output)
 
-    <span class="n">x</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    x = funsor.Tensor(torch.tensor([0., 1., 0., 1.]), OrderedDict(x=funsor.Bint[4]))
+    print(type(x), x.inputs, x.output)
 
-    <span class="n">dx</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">probs</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dx</span><span class="p">),</span> <span class="n">dx</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+    dx = dist.Bernoulli(pyro.to_data(probs))
+    print(type(dx), dx.shape())
 
-    <span class="n">px</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">dx</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">output</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Real</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">px</span><span class="p">),</span> <span class="n">px</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">px</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    px = pyro.to_funsor(dx.log_prob(pyro.to_data(x)), output=funsor.Real)
+    print(type(px), px.inputs, px.output)
 </pre></div>
 </div>
 </div>
@@ -778,13 +781,13 @@ OrderedDict([(&#39;z&#39;, Bint[2, ]), (&#39;y&#39;, Bint[3, ])]) torch.Size([2,
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
 
-    <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]),</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Real</span><span class="p">,</span> <span class="n">dim_to_name</span><span class="o">=</span><span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">})</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x: &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    x = pyro.to_funsor(torch.tensor([0., 1.]), funsor.Real, dim_to_name={-1: &quot;x&quot;})
+    print(&quot;x: &quot;, type(x), x.inputs, x.output)
 
-    <span class="n">px</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_funsor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Real</span><span class="p">,</span> <span class="n">dim_to_name</span><span class="o">=</span><span class="p">{</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;y&quot;</span><span class="p">})</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;px: &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">px</span><span class="p">),</span> <span class="n">px</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">px</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    px = pyro.to_funsor(torch.ones(2, 3), funsor.Real, dim_to_name={-2: &quot;x&quot;, -1: &quot;y&quot;})
+    print(&quot;px: &quot;, type(px), px.inputs, px.output)
 </pre></div>
 </div>
 </div>
@@ -799,7 +802,7 @@ px:  &lt;class &#39;funsor.tensor.Tensor&#39;&gt; OrderedDict([(&#39;x&#39;, Bin
 </div>
 </section>
 <section id="Dealing-with-large-numbers-of-variables:-(re-)introducing-pyro.markov">
-<h2>Dealing with large numbers of variables: (re-)introducing <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code><a class="headerlink" href="#Dealing-with-large-numbers-of-variables:-(re-)introducing-pyro.markov" title="Permalink to this headline">¶</a></h2>
+<h2>Dealing with large numbers of variables: (re-)introducing <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code><a class="headerlink" href="#Dealing-with-large-numbers-of-variables:-(re-)introducing-pyro.markov" title="Permalink to this heading">¶</a></h2>
 <p>So far, so good. However, what if the number of different named dimensions continues to increase? We face two problems: first, reusing the fixed number of available positional dimensions (25 in PyTorch), and second, computing shape information with time complexity that is independent of the number of variables.</p>
 <p>A fully general automated solution to this problem would require deeper integration with Python or PyTorch. Instead, as an intermediate solution, we introduce the second key concept in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>: the <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> annotation, a way to indicate the shelf life of certain variables. <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> is already part of Pyro (see enumeration tutorial) but the implementation in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> is fresh.</p>
 <p>The primary constraint on the design of <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> is backwards compatibility: in order for <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code> to be compatible with the large range of existing Pyro models, the new implementation had to match the shape semantics of Pyro’s existing enumeration machinery as closely as possible.</p>
@@ -807,10 +810,10 @@ px:  &lt;class &#39;funsor.tensor.Tensor&#39;&gt; OrderedDict([(&#39;x&#39;, Bin
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]),</span> <span class="n">OrderedDict</span><span class="p">({</span><span class="s2">&quot;x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">):</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">]})))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shape of x[</span><span class="si">{}</span><span class="s2">]: &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
+    for i in pyro.markov(range(10)):
+        x = pyro.to_data(funsor.Tensor(torch.tensor([0., 1.]), OrderedDict({&quot;x{}&quot;.format(i): funsor.Bint[2]})))
+        print(&quot;Shape of x[{}]: &quot;.format(str(i)), x.shape)
 </pre></div>
 </div>
 </div>
@@ -838,10 +841,10 @@ possible.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">history</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]),</span> <span class="n">OrderedDict</span><span class="p">({</span><span class="s2">&quot;x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">):</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">2</span><span class="p">]})))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shape of x[</span><span class="si">{}</span><span class="s2">]: &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
+    for i in pyro.markov(range(10), history=2):
+        x = pyro.to_data(funsor.Tensor(torch.tensor([0., 1.]), OrderedDict({&quot;x{}&quot;.format(i): funsor.Bint[2]})))
+        print(&quot;Shape of x[{}]: &quot;.format(str(i)), x.shape)
 </pre></div>
 </div>
 </div>
@@ -864,20 +867,20 @@ Shape of x[9]:  torch.Size([2, 1, 1, 1, 1])
 </div>
 </section>
 <section id="Use-cases-beyond-enumeration:-global-and-visible-dimensions">
-<h2>Use cases beyond enumeration: global and visible dimensions<a class="headerlink" href="#Use-cases-beyond-enumeration:-global-and-visible-dimensions" title="Permalink to this headline">¶</a></h2>
+<h2>Use cases beyond enumeration: global and visible dimensions<a class="headerlink" href="#Use-cases-beyond-enumeration:-global-and-visible-dimensions" title="Permalink to this heading">¶</a></h2>
 <section id="Global-dimensions">
-<h3>Global dimensions<a class="headerlink" href="#Global-dimensions" title="Permalink to this headline">¶</a></h3>
+<h3>Global dimensions<a class="headerlink" href="#Global-dimensions" title="Permalink to this heading">¶</a></h3>
 <p>It is sometimes useful to have dimensions and variables ignore the <code class="docutils literal notranslate"><span class="pre">pyro.markov</span></code> structure of a program and remain active in arbitrarily deeply nested <code class="docutils literal notranslate"><span class="pre">markov</span></code> and <code class="docutils literal notranslate"><span class="pre">named</span></code> contexts. For example, suppose we wanted to draw a batch of samples from a Pyro model’s joint distribution. To accomplish this we indicate to <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> that a dimension should be treated as “global” (<code class="docutils literal notranslate"><span class="pre">DimType.GLOBAL</span></code>) via the <code class="docutils literal notranslate"><span class="pre">dim_type</span></code> keyword argument.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.contrib.funsor.handlers.runtime</span> <span class="kn">import</span> <span class="n">_DIM_STACK</span><span class="p">,</span> <span class="n">DimType</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from pyro.contrib.funsor.handlers.runtime import _DIM_STACK, DimType
 
-<span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
-    <span class="n">funsor_particle_ids</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">10</span><span class="p">]))</span>
-    <span class="n">tensor_particle_ids</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_particle_ids</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">GLOBAL</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;New global dimension: &quot;</span><span class="p">,</span> <span class="n">funsor_particle_ids</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_particle_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
+    funsor_particle_ids = funsor.Tensor(torch.arange(10), OrderedDict(n=funsor.Bint[10]))
+    tensor_particle_ids = pyro.to_data(funsor_particle_ids, dim_type=DimType.GLOBAL)
+    print(&quot;New global dimension: &quot;, funsor_particle_ids.inputs, tensor_particle_ids.shape)
 </pre></div>
 </div>
 </div>
@@ -894,23 +897,23 @@ New global dimension:  OrderedDict([(&#39;n&#39;, Bint[10, ])]) torch.Size([10, 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.contrib.funsor.handlers.runtime</span> <span class="kn">import</span> <span class="n">_DIM_STACK</span><span class="p">,</span> <span class="n">DimType</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from pyro.contrib.funsor.handlers.runtime import _DIM_STACK, DimType
 
-<span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
+with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
 
-    <span class="n">funsor_plate1_ids</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">plate1</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">10</span><span class="p">]))</span>
-    <span class="n">tensor_plate1_ids</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_plate1_ids</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">GLOBAL</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;New global dimension: &quot;</span><span class="p">,</span> <span class="n">funsor_plate1_ids</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_plate1_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_plate1_ids = funsor.Tensor(torch.arange(10), OrderedDict(plate1=funsor.Bint[10]))
+    tensor_plate1_ids = pyro.to_data(funsor_plate1_ids, dim_type=DimType.GLOBAL)
+    print(&quot;New global dimension: &quot;, funsor_plate1_ids.inputs, tensor_plate1_ids.shape)
 
-    <span class="n">funsor_plate2_ids</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">9</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">plate2</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">9</span><span class="p">]))</span>
-    <span class="n">tensor_plate2_ids</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_plate2_ids</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">GLOBAL</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Another new global dimension: &quot;</span><span class="p">,</span> <span class="n">funsor_plate2_ids</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_plate2_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_plate2_ids = funsor.Tensor(torch.arange(9), OrderedDict(plate2=funsor.Bint[9]))
+    tensor_plate2_ids = pyro.to_data(funsor_plate2_ids, dim_type=DimType.GLOBAL)
+    print(&quot;Another new global dimension: &quot;, funsor_plate2_ids.inputs, tensor_plate2_ids.shape)
 
-    <span class="k">del</span> <span class="n">_DIM_STACK</span><span class="o">.</span><span class="n">global_frame</span><span class="p">[</span><span class="s2">&quot;plate1&quot;</span><span class="p">]</span>
+    del _DIM_STACK.global_frame[&quot;plate1&quot;]
 
-    <span class="n">funsor_plate3_ids</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">plate3</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">10</span><span class="p">]))</span>
-    <span class="n">tensor_plate3_ids</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_plate1_ids</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">GLOBAL</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;A third new global dimension after recycling: &quot;</span><span class="p">,</span> <span class="n">funsor_plate3_ids</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_plate3_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_plate3_ids = funsor.Tensor(torch.arange(10), OrderedDict(plate3=funsor.Bint[10]))
+    tensor_plate3_ids = pyro.to_data(funsor_plate1_ids, dim_type=DimType.GLOBAL)
+    print(&quot;A third new global dimension after recycling: &quot;, funsor_plate3_ids.inputs, tensor_plate3_ids.shape)
 </pre></div>
 </div>
 </div>
@@ -927,31 +930,31 @@ A third new global dimension after recycling:  OrderedDict([(&#39;plate3&#39;, B
 <p>Performing this deallocation directly is often unnecessary, and we include this interaction primarily to illuminate the internals of <code class="docutils literal notranslate"><span class="pre">pyro.contrib.funsor</span></code>. Instead, effect handlers that introduce global dimensions, like <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>, may inherit from the <code class="docutils literal notranslate"><span class="pre">GlobalNamedMessenger</span></code> effect handler which deallocates global dimensions generically upon entry and exit. We will see an example of this in the next tutorial.</p>
 </section>
 <section id="Visible-dimensions">
-<h3>Visible dimensions<a class="headerlink" href="#Visible-dimensions" title="Permalink to this headline">¶</a></h3>
+<h3>Visible dimensions<a class="headerlink" href="#Visible-dimensions" title="Permalink to this heading">¶</a></h3>
 <p>We might also wish to preserve the meaning of the shape of a tensor of data. For this we indicate to <code class="docutils literal notranslate"><span class="pre">pyro.to_data</span></code> that a dimension should be treated as not merely global but “visible” (<code class="docutils literal notranslate"><span class="pre">DimTypes.VISIBLE</span></code>). By default, the 4 rightmost batch dimensions are reserved as “visible” dimensions, but this can be changed by setting the <code class="docutils literal notranslate"><span class="pre">first_available_dim</span></code> attribute of the global state object <code class="docutils literal notranslate"><span class="pre">_DIM_STACK</span></code>.</p>
 <p>Users who have come across <code class="docutils literal notranslate"><span class="pre">pyro.infer.TraceEnum_ELBO</span></code>’s <code class="docutils literal notranslate"><span class="pre">max_plate_nesting</span></code> argument are already familiar with this distinction.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prev_first_available_dim</span> <span class="o">=</span> <span class="n">_DIM_STACK</span><span class="o">.</span><span class="n">set_first_available_dim</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>prev_first_available_dim = _DIM_STACK.set_first_available_dim(-2)
 
-<span class="k">with</span> <span class="n">pyroapi</span><span class="o">.</span><span class="n">pyro_backend</span><span class="p">(</span><span class="s2">&quot;contrib.funsor&quot;</span><span class="p">),</span> <span class="n">handlers</span><span class="o">.</span><span class="n">named</span><span class="p">():</span>
+with pyroapi.pyro_backend(&quot;contrib.funsor&quot;), handlers.named():
 
-    <span class="n">funsor_local_ids</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">9</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">9</span><span class="p">]))</span>
-    <span class="n">tensor_local_ids</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_local_ids</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">LOCAL</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tensor with new local dimension: &quot;</span><span class="p">,</span> <span class="n">funsor_local_ids</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_local_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_local_ids = funsor.Tensor(torch.arange(9), OrderedDict(k=funsor.Bint[9]))
+    tensor_local_ids = pyro.to_data(funsor_local_ids, dim_type=DimType.LOCAL)
+    print(&quot;Tensor with new local dimension: &quot;, funsor_local_ids.inputs, tensor_local_ids.shape)
 
-    <span class="n">funsor_global_ids</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">10</span><span class="p">]))</span>
-    <span class="n">tensor_global_ids</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_global_ids</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">GLOBAL</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tensor with new global dimension: &quot;</span><span class="p">,</span> <span class="n">funsor_global_ids</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_global_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_global_ids = funsor.Tensor(torch.arange(10), OrderedDict(n=funsor.Bint[10]))
+    tensor_global_ids = pyro.to_data(funsor_global_ids, dim_type=DimType.GLOBAL)
+    print(&quot;Tensor with new global dimension: &quot;, funsor_global_ids.inputs, tensor_global_ids.shape)
 
-    <span class="n">funsor_data_ids</span> <span class="o">=</span> <span class="n">funsor</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">funsor</span><span class="o">.</span><span class="n">Bint</span><span class="p">[</span><span class="mi">11</span><span class="p">]))</span>
-    <span class="n">tensor_data_ids</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">to_data</span><span class="p">(</span><span class="n">funsor_data_ids</span><span class="p">,</span> <span class="n">dim_type</span><span class="o">=</span><span class="n">DimType</span><span class="o">.</span><span class="n">VISIBLE</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tensor with new visible dimension: &quot;</span><span class="p">,</span> <span class="n">funsor_data_ids</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">tensor_data_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    funsor_data_ids = funsor.Tensor(torch.arange(11), OrderedDict(m=funsor.Bint[11]))
+    tensor_data_ids = pyro.to_data(funsor_data_ids, dim_type=DimType.VISIBLE)
+    print(&quot;Tensor with new visible dimension: &quot;, funsor_data_ids.inputs, tensor_data_ids.shape)
 
-<span class="c1"># we also need to reset the first_available_dim after we&#39;re done</span>
-<span class="n">_DIM_STACK</span><span class="o">.</span><span class="n">set_first_available_dim</span><span class="p">(</span><span class="n">prev_first_available_dim</span><span class="p">)</span>
+# we also need to reset the first_available_dim after we&#39;re done
+_DIM_STACK.set_first_available_dim(prev_first_available_dim)
 </pre></div>
 </div>
 </div>

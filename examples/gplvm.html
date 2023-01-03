@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaussian Process Latent Variable Model &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Gaussian Process Latent Variable Model &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -188,8 +190,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Gaussian Process Latent Variable Model</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Gaussian Process Latent Variable Model</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/gplvm.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -309,10 +311,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -478,7 +481,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Gaussian-Process-Latent-Variable-Model">
-<h1>Gaussian Process Latent Variable Model<a class="headerlink" href="#Gaussian-Process-Latent-Variable-Model" title="Permalink to this headline">¶</a></h1>
+<h1>Gaussian Process Latent Variable Model<a class="headerlink" href="#Gaussian-Process-Latent-Variable-Model" title="Permalink to this heading">¶</a></h1>
 <p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction#Gaussian_process_latent_variable_models">Gaussian Process Latent Variable Model</a> (GPLVM) is a dimensionality reduction method that uses a Gaussian process to learn a low-dimensional representation of (potentially) high-dimensional data. In the typical setting of Gaussian process regression, where we are given inputs <span class="math notranslate nohighlight">\(X\)</span> and outputs <span class="math notranslate nohighlight">\(y\)</span>, we choose a kernel and learn hyperparameters that best describe the mapping
 from <span class="math notranslate nohighlight">\(X\)</span> to <span class="math notranslate nohighlight">\(y\)</span>. In the GPLVM, we are not given <span class="math notranslate nohighlight">\(X\)</span>: we are only given <span class="math notranslate nohighlight">\(y\)</span>. So we need to learn <span class="math notranslate nohighlight">\(X\)</span> along with the kernel hyperparameters.</p>
 <p>We do not do maximum likelihood inference on <span class="math notranslate nohighlight">\(X\)</span>. Instead, we set a Gaussian prior for <span class="math notranslate nohighlight">\(X\)</span> and learn the mean and variance of the approximate (gaussian) posterior <span class="math notranslate nohighlight">\(q(X|y)\)</span>. In this notebook, we show how this can be done using the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> module. In particular we reproduce a result described in [2].</p>
@@ -486,40 +489,40 @@ from <span class="math notranslate nohighlight">\(X\)</span> to <span class="mat
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Parameter</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+import matplotlib.pyplot as plt
+import pandas as pd
+import torch
+from torch.nn import Parameter
 
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="k">as</span> <span class="nn">gp</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.ops.stats</span> <span class="k">as</span> <span class="nn">stats</span>
+import pyro
+import pyro.contrib.gp as gp
+import pyro.distributions as dist
+import pyro.ops.stats as stats
 
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>  <span class="c1"># ignore; used to check code integrity in the Pyro repo</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+smoke_test = (&#39;CI&#39; in os.environ)  # ignore; used to check code integrity in the Pyro repo
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
+pyro.set_rng_seed(1)
 </pre></div>
 </div>
 </div>
 <section id="Dataset">
-<h2>Dataset<a class="headerlink" href="#Dataset" title="Permalink to this headline">¶</a></h2>
+<h2>Dataset<a class="headerlink" href="#Dataset" title="Permalink to this heading">¶</a></h2>
 <p>The data we are going to use consists of <a class="reference external" href="https://en.wikipedia.org/wiki/Single-cell_analysis">single-cell</a> <a class="reference external" href="https://en.wikipedia.org/wiki/Real-time_polymerase_chain_reaction">qPCR</a> data for 48 genes obtained from mice (Guo <em>et al.</em>, [1]). This data is available at the <a class="reference external" href="https://github.com/sods/ods">Open Data Science repository</a>. The data contains 48 columns, with each column corresponding to (normalized) measurements of each gene. Cells differentiate during their development and these
 data were obtained at various stages of development. The various stages are labelled from the 1-cell stage to the 64-cell stage. For the 32-cell stage, the data is further differentiated into ‘trophectoderm’ (TE) and ‘inner cell mass’ (ICM). ICM further differentiates into ‘epiblast’ (EPI) and ‘primitive endoderm’ (PE) at the 64-cell stage. Each of the rows in the dataset is labelled with one of these stages.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># license: Copyright (c) 2014, the Open Data Science Initiative</span>
-<span class="c1"># license: https://www.elsevier.com/legal/elsevier-website-terms-and-conditions</span>
-<span class="n">URL</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/sods/ods/master/datasets/guo_qpcr.csv&quot;</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># license: Copyright (c) 2014, the Open Data Science Initiative
+# license: https://www.elsevier.com/legal/elsevier-website-terms-and-conditions
+URL = &quot;https://raw.githubusercontent.com/sods/ods/master/datasets/guo_qpcr.csv&quot;
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">URL</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data shape: </span><span class="si">{}</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">21</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data labels: </span><span class="si">{}</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">86</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Show a small subset of the data:&quot;</span><span class="p">)</span>
-<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+df = pd.read_csv(URL, index_col=0)
+print(&quot;Data shape: {}\n{}\n&quot;.format(df.shape, &quot;-&quot; * 21))
+print(&quot;Data labels: {}\n{}\n&quot;.format(df.index.unique().tolist(), &quot;-&quot; * 86))
+print(&quot;Show a small subset of the data:&quot;)
+df.head()
 </pre></div>
 </div>
 </div>
@@ -711,15 +714,15 @@ Show a small subset of the data:
 </div>
 </section>
 <section id="Modelling">
-<h2>Modelling<a class="headerlink" href="#Modelling" title="Permalink to this headline">¶</a></h2>
+<h2>Modelling<a class="headerlink" href="#Modelling" title="Permalink to this heading">¶</a></h2>
 <p>First, we need to define the output tensor <span class="math notranslate nohighlight">\(y\)</span>. To predict values for all <span class="math notranslate nohighlight">\(48\)</span> genes, we need <span class="math notranslate nohighlight">\(48\)</span> Gaussian processes. So the required shape for <span class="math notranslate nohighlight">\(y\)</span> is <code class="docutils literal notranslate"><span class="pre">num_GPs</span> <span class="pre">x</span> <span class="pre">num_data</span> <span class="pre">=</span> <span class="pre">48</span> <span class="pre">x</span> <span class="pre">437</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">())</span>
-<span class="c1"># we need to transpose data to correct its shape</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>data = torch.tensor(df.values, dtype=torch.get_default_dtype())
+# we need to transpose data to correct its shape
+y = data.t()
 </pre></div>
 </div>
 </div>
@@ -729,13 +732,13 @@ like our model to disentangle ‘capture time’ (<span class="math notranslate 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">capture_time</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">new_tensor</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">cell_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">cell_name</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">])</span>
-<span class="c1"># we scale the time into the interval [0, 1]</span>
-<span class="n">time</span> <span class="o">=</span> <span class="n">capture_time</span><span class="o">.</span><span class="n">log2</span><span class="p">()</span> <span class="o">/</span> <span class="mi">6</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>capture_time = y.new_tensor([int(cell_name.split(&quot; &quot;)[0]) for cell_name in df.index.values])
+# we scale the time into the interval [0, 1]
+time = capture_time.log2() / 6
 
-<span class="c1"># we setup the mean of our prior over X</span>
-<span class="n">X_prior_mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># shape: 437 x 2</span>
-<span class="n">X_prior_mean</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span>
+# we setup the mean of our prior over X
+X_prior_mean = torch.zeros(y.size(1), 2)  # shape: 437 x 2
+X_prior_mean[:, 0] = time
 </pre></div>
 </div>
 </div>
@@ -744,15 +747,15 @@ like our model to disentangle ‘capture time’ (<span class="math notranslate 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">kernel</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">lengthscale</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>kernel = gp.kernels.RBF(input_dim=2, lengthscale=torch.ones(2))
 
-<span class="c1"># we clone here so that we don&#39;t change our prior during the course of training</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">X_prior_mean</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span>
+# we clone here so that we don&#39;t change our prior during the course of training
+X = Parameter(X_prior_mean.clone())
 
-<span class="c1"># we will use SparseGPRegression model with num_inducing=32;</span>
-<span class="c1"># initial values for Xu are sampled randomly from X_prior_mean</span>
-<span class="n">Xu</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">X_prior_mean</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">gplvm</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SparseGPRegression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">Xu</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.01</span><span class="p">),</span> <span class="n">jitter</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+# we will use SparseGPRegression model with num_inducing=32;
+# initial values for Xu are sampled randomly from X_prior_mean
+Xu = stats.resample(X_prior_mean.clone(), 32)
+gplvm = gp.models.SparseGPRegression(X, y, kernel, Xu, noise=torch.tensor(0.01), jitter=1e-5)
 </pre></div>
 </div>
 </div>
@@ -761,26 +764,26 @@ like our model to disentangle ‘capture time’ (<span class="math notranslate 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># we use `.to_event()` to tell Pyro that the prior distribution for X has no batch_shape</span>
-<span class="n">gplvm</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">PyroSample</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">X_prior_mean</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">())</span>
-<span class="n">gplvm</span><span class="o">.</span><span class="n">autoguide</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># we use `.to_event()` to tell Pyro that the prior distribution for X has no batch_shape
+gplvm.X = pyro.nn.PyroSample(dist.Normal(X_prior_mean, 0.1).to_event())
+gplvm.autoguide(&quot;X&quot;, dist.Normal)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
 <p>As mentioned in the <a class="reference internal" href="gp.html"><span class="doc">Gaussian Processes tutorial</span></a>, we can use the helper function <a class="reference external" href="http://docs.pyro.ai/en/dev/contrib.gp.html#pyro.contrib.gp.util.train">gp.util.train</a> to train a Pyro GP module. By default, this helper function uses the Adam optimizer with a learning rate of <code class="docutils literal notranslate"><span class="pre">0.01</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># note that training is expected to take a minute or so</span>
-<span class="n">losses</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">gplvm</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">4000</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># note that training is expected to take a minute or so
+losses = gp.util.train(gplvm, num_steps=4000)
 
-<span class="c1"># let&#39;s plot the loss curve after 4000 steps of training</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+# let&#39;s plot the loss curve after 4000 steps of training
+plt.plot(losses)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -796,33 +799,33 @@ like our model to disentangle ‘capture time’ (<span class="math notranslate 
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gplvm</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;guide&quot;</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">gplvm</span><span class="o">.</span><span class="n">X</span>  <span class="c1"># draw a sample from the guide of the variable X</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>gplvm.mode = &quot;guide&quot;
+X = gplvm.X  # draw a sample from the guide of the variable X
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Visualizing-the-result">
-<h2>Visualizing the result<a class="headerlink" href="#Visualizing-the-result" title="Permalink to this headline">¶</a></h2>
+<h2>Visualizing the result<a class="headerlink" href="#Visualizing-the-result" title="Permalink to this heading">¶</a></h2>
 <p>Let’s see what we got by applying GPLVM to our dataset.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">colors</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">&quot;tab10&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">colors</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<span class="n">labels</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.figure(figsize=(8, 6))
+colors = plt.get_cmap(&quot;tab10&quot;).colors[::-1]
+labels = df.index.unique()
 
-<span class="n">X</span> <span class="o">=</span> <span class="n">gplvm</span><span class="o">.</span><span class="n">X_loc</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
-    <span class="n">X_i</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="n">label</span><span class="p">]</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_i</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X_i</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="p">[</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+X = gplvm.X_loc.detach().numpy()
+for i, label in enumerate(labels):
+    X_i = X[df.index == label]
+    plt.scatter(X_i[:, 0], X_i[:, 1], c=[colors[i]], label=label)
 
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;pseudotime&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;branching&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;GPLVM on Single-Cell qPCR data&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+plt.legend()
+plt.xlabel(&quot;pseudotime&quot;, fontsize=14)
+plt.ylabel(&quot;branching&quot;, fontsize=14)
+plt.title(&quot;GPLVM on Single-Cell qPCR data&quot;, fontsize=16)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -836,14 +839,14 @@ like our model to disentangle ‘capture time’ (<span class="math notranslate 
 <p>We can see that the first dimension of the latent <span class="math notranslate nohighlight">\(X\)</span> for each cell (horizontal axis) corresponds well with the observed capture time (colors). On the other hand, the 32 TE cell and 64 TE cell are clustered near each other. And the fact that ICM cells differentiate into PE and EPI can also be observed from the figure!</p>
 </section>
 <section id="Remarks">
-<h2>Remarks<a class="headerlink" href="#Remarks" title="Permalink to this headline">¶</a></h2>
+<h2>Remarks<a class="headerlink" href="#Remarks" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>The sparse version scales well (linearly) with the number of data points. So the GPLVM can be used with large datasets. Indeed in [2] the authors have applied GPLVM to a dataset with 68k peripheral blood mononuclear cells.</p></li>
 <li><p>Much of the power of Gaussian Processes lies in the function prior defined by the kernel. We recommend users try out different combinations of kernels for different types of datasets! For example, if the data contains periodicities, it might make sense to use a <a class="reference external" href="http://docs.pyro.ai/en/dev/contrib.gp.html#periodic">Periodic kernel</a>. Other kernels can also be found in the <a class="reference external" href="http://docs.pyro.ai/en/dev/contrib.gp.html#module-pyro.contrib.gp.kernels">Pyro GP docs</a>.</p></li>
 </ul>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Resolution</span> <span class="pre">of</span> <span class="pre">Cell</span> <span class="pre">Fate</span> <span class="pre">Decisions</span> <span class="pre">Revealed</span> <span class="pre">by</span> <span class="pre">Single-Cell</span> <span class="pre">Gene</span> <span class="pre">Expression</span> <span class="pre">Analysis</span> <span class="pre">from</span> <span class="pre">Zygote</span> <span class="pre">to</span> <span class="pre">Blastocyst</span></code>,     Guoji Guo, Mikael Huss, Guo Qing Tong, Chaoyang Wang, Li Li Sun, Neil D. Clarke, Paul Robson</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">GrandPrix:</span> <span class="pre">Scaling</span> <span class="pre">up</span> <span class="pre">the</span> <span class="pre">Bayesian</span> <span class="pre">GPLVM</span> <span class="pre">for</span> <span class="pre">single-cell</span> <span class="pre">data</span></code>,     Sumon Ahmed, Magnus Rattray, Alexis Boukouvalas</p>
 <p>[3] <code class="docutils literal notranslate"><span class="pre">Bayesian</span> <span class="pre">Gaussian</span> <span class="pre">Process</span> <span class="pre">Latent</span> <span class="pre">Variable</span> <span class="pre">Model</span></code>,     Michalis K. Titsias, Neil D. Lawrence</p>

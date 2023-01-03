@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -193,8 +195,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/svi_part_i.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -314,10 +316,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -483,10 +486,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="SVI-Part-I:-An-Introduction-to-Stochastic-Variational-Inference-in-Pyro">
-<h1>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro<a class="headerlink" href="#SVI-Part-I:-An-Introduction-to-Stochastic-Variational-Inference-in-Pyro" title="Permalink to this headline">¶</a></h1>
+<h1>SVI Part I: An Introduction to Stochastic Variational Inference in Pyro<a class="headerlink" href="#SVI-Part-I:-An-Introduction-to-Stochastic-Variational-Inference-in-Pyro" title="Permalink to this heading">¶</a></h1>
 <p>Pyro has been designed with particular attention paid to supporting stochastic variational inference as a general purpose inference algorithm. Let’s see how we go about doing variational inference in Pyro.</p>
 <section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this headline">¶</a></h2>
+<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this heading">¶</a></h2>
 <p>We’re going to assume we’ve already defined our model in Pyro (for more details on how this is done see <a class="reference internal" href="intro_long.html"><span class="doc">Introduction to Pyro</span></a>). As a quick reminder, the model is given as a stochastic function <code class="docutils literal notranslate"><span class="pre">model(*args,</span> <span class="pre">**kwargs)</span></code>, which, in the general case takes arguments. The different pieces of <code class="docutils literal notranslate"><span class="pre">model()</span></code> are encoded via the mapping:</p>
 <ol class="arabic simple">
 <li><p>observations <span class="math notranslate nohighlight">\(\Longleftrightarrow\)</span> <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> with the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument</p></li>
@@ -504,7 +507,7 @@ div.rendered_html tbody tr:hover {
 </ol>
 </section>
 <section id="Model-Learning">
-<h2>Model Learning<a class="headerlink" href="#Model-Learning" title="Permalink to this headline">¶</a></h2>
+<h2>Model Learning<a class="headerlink" href="#Model-Learning" title="Permalink to this heading">¶</a></h2>
 <p>In this context our criterion for learning a good model will be maximizing the log evidence, i.e. we want to find the value of <span class="math notranslate nohighlight">\(\theta\)</span> given by</p>
 <div class="math notranslate nohighlight">
 \[\theta_{\rm{max}} = \underset{\theta}{\operatorname{argmax}} \log p_{\theta}({\bf x})\]</div>
@@ -519,7 +522,7 @@ div.rendered_html tbody tr:hover {
 <p>Note that the denominator of this expression is the (usually intractable) evidence. Variational inference offers a scheme for finding <span class="math notranslate nohighlight">\(\theta_{\rm{max}}\)</span> and computing an approximation to the posterior <span class="math notranslate nohighlight">\(p_{\theta_{\rm{max}}}({\bf z} | {\bf x})\)</span>. Let’s see how that works.</p>
 </section>
 <section id="Guide">
-<h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this headline">¶</a></h2>
+<h2>Guide<a class="headerlink" href="#Guide" title="Permalink to this heading">¶</a></h2>
 <p>The basic idea is that we introduce a parameterized distribution <span class="math notranslate nohighlight">\(q_{\phi}({\bf z})\)</span>, where <span class="math notranslate nohighlight">\(\phi\)</span> are known as the variational parameters. This distribution is called the variational distribution in much of the literature, and in the context of Pyro it’s called the <strong>guide</strong> (one syllable instead of nine!). The guide will serve as an approximation to the posterior. We can think of <span class="math notranslate nohighlight">\(\phi\)</span> as parameterizing a space or family of probability distributions. Our goal will be to find
 the (not necessarily unique) probability distribution in that space that is the best possible approximation to the posterior distribution.</p>
 <p>Just like the model, the guide is encoded as a stochastic function <code class="docutils literal notranslate"><span class="pre">guide()</span></code> that contains <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> and <code class="docutils literal notranslate"><span class="pre">pyro.param</span></code> statements. It does <em>not</em> contain observed data, since the guide needs to be a properly normalized distribution. Note that Pyro enforces that <code class="docutils literal notranslate"><span class="pre">model()</span></code> and <code class="docutils literal notranslate"><span class="pre">guide()</span></code> have the same call signature, i.e. both callables should take the same arguments.</p>
@@ -538,7 +541,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 <p>Once we’ve specified a guide (we give some explicit examples below), we’re ready to proceed to inference. Learning will be setup as an optimization problem where each iteration of training takes a step in <span class="math notranslate nohighlight">\(\theta-\phi\)</span> space that moves the guide closer to the exact posterior. To do this we need to define an appropriate objective function.</p>
 </section>
 <section id="ELBO">
-<h2>ELBO<a class="headerlink" href="#ELBO" title="Permalink to this headline">¶</a></h2>
+<h2>ELBO<a class="headerlink" href="#ELBO" title="Permalink to this heading">¶</a></h2>
 <p>A simple derivation (for example see reference [1]) yields what we’re after: the evidence lower bound (ELBO). The ELBO, which is a function of both <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span>, is defined as an expectation w.r.t. to samples from the guide:</p>
 <div class="math notranslate nohighlight">
 \[{\rm ELBO} \equiv \mathbb{E}_{q_{\phi}({\bf z})} \left [
@@ -556,7 +559,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 <p>So at high level variational inference is easy: all we need to do is define a guide and compute gradients of the ELBO. Actually, computing gradients for general model and guide pairs leads to some complications (see the tutorial <a class="reference internal" href="svi_part_iii.html"><span class="doc">SVI Part III</span></a> for a discussion). For the purposes of this tutorial, let’s consider that a solved problem and look at the support that Pyro provides for doing variational inference.</p>
 </section>
 <section id="SVI-Class">
-<h2><code class="docutils literal notranslate"><span class="pre">SVI</span></code> Class<a class="headerlink" href="#SVI-Class" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">SVI</span></code> Class<a class="headerlink" href="#SVI-Class" title="Permalink to this heading">¶</a></h2>
 <p>In Pyro the machinery for doing variational inference is encapsulated in the <code class="docutils literal notranslate"><span class="pre">`SVI</span></code> &lt;<a class="reference external" href="https://docs.pyro.ai/en/stable/inference_algos.html?highlight=svi">https://docs.pyro.ai/en/stable/inference_algos.html?highlight=svi</a>&gt;`__ class.</p>
 <p>The user needs to provide three things: the model, the guide, and an optimizer. We’ve discussed the model and guide above and we’ll discuss the optimizer in some detail below, so let’s assume we have all three ingredients at hand. To construct an instance of <code class="docutils literal notranslate"><span class="pre">SVI</span></code> that will do optimization via the ELBO objective, the user writes</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro</span>
@@ -572,7 +575,7 @@ a random variable <code class="docutils literal notranslate"><span class="pre">z
 <p>For the case where the loss is the ELBO, both methods also accept an optional argument <code class="docutils literal notranslate"><span class="pre">num_particles</span></code>, which denotes the number of samples used to compute the loss (in the case of <code class="docutils literal notranslate"><span class="pre">evaluate_loss</span></code>) and the loss and gradient (in the case of <code class="docutils literal notranslate"><span class="pre">step</span></code>).</p>
 </section>
 <section id="Optimizers">
-<h2>Optimizers<a class="headerlink" href="#Optimizers" title="Permalink to this headline">¶</a></h2>
+<h2>Optimizers<a class="headerlink" href="#Optimizers" title="Permalink to this heading">¶</a></h2>
 <p>In Pyro, the model and guide are allowed to be arbitrary stochastic functions provided that</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">guide</span></code> doesn’t contain <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statements with the <code class="docutils literal notranslate"><span class="pre">obs</span></code> argument</p></li>
@@ -605,7 +608,7 @@ a simple example to illustrate the API:</p>
 <p>This simply tells Pyro to use a learning rate of <code class="docutils literal notranslate"><span class="pre">0.010</span></code> for the Pyro parameter <code class="docutils literal notranslate"><span class="pre">my_special_parameter</span></code> and a learning rate of <code class="docutils literal notranslate"><span class="pre">0.001</span></code> for all other parameters.</p>
 </section>
 <section id="A-simple-example">
-<h2>A simple example<a class="headerlink" href="#A-simple-example" title="Permalink to this headline">¶</a></h2>
+<h2>A simple example<a class="headerlink" href="#A-simple-example" title="Permalink to this heading">¶</a></h2>
 <p>We finish with a simple example. You’ve been given a two-sided coin. You want to determine whether the coin is fair or not, i.e. whether it falls heads or tails with the same frequency. You have a prior belief about the likely fairness of the coin based on two observations:</p>
 <ul class="simple">
 <li><p>it’s a standard quarter issued by the US Mint</p></li>
@@ -670,86 +673,86 @@ a simple example to illustrate the API:</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.distributions.constraints</span> <span class="k">as</span> <span class="nn">constraints</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import math
+import os
+import torch
+import torch.distributions.constraints as constraints
+import pyro
+from pyro.optim import Adam
+from pyro.infer import SVI, Trace_ELBO
+import pyro.distributions as dist
 
-<span class="c1"># this is for running the notebook in our testing framework</span>
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2000</span>
+# this is for running the notebook in our testing framework
+smoke_test = (&#39;CI&#39; in os.environ)
+n_steps = 2 if smoke_test else 2000
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
 
-<span class="c1"># clear the param store in case we&#39;re in a REPL</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+# clear the param store in case we&#39;re in a REPL
+pyro.clear_param_store()
 
-<span class="c1"># create some data with 6 observed heads and 4 observed tails</span>
-<span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
-    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
-    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+# create some data with 6 observed heads and 4 observed tails
+data = []
+for _ in range(6):
+    data.append(torch.tensor(1.0))
+for _ in range(4):
+    data.append(torch.tensor(0.0))
 
-<span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># define the hyperparameters that control the Beta prior</span>
-    <span class="n">alpha0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span>
-    <span class="n">beta0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span>
-    <span class="c1"># sample f from the Beta prior</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="n">alpha0</span><span class="p">,</span> <span class="n">beta0</span><span class="p">))</span>
-    <span class="c1"># loop over the observed data</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
-        <span class="c1"># observe datapoint i using the ernoulli likelihood</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+def model(data):
+    # define the hyperparameters that control the Beta prior
+    alpha0 = torch.tensor(10.0)
+    beta0 = torch.tensor(10.0)
+    # sample f from the Beta prior
+    f = pyro.sample(&quot;latent_fairness&quot;, dist.Beta(alpha0, beta0))
+    # loop over the observed data
+    for i in range(len(data)):
+        # observe datapoint i using the ernoulli likelihood
+        pyro.sample(&quot;obs_{}&quot;.format(i), dist.Bernoulli(f), obs=data[i])
 
-<span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># register the two variational parameters with Pyro</span>
-    <span class="c1"># - both parameters will have initial value 15.0.</span>
-    <span class="c1"># - because we invoke constraints.positive, the optimizer</span>
-    <span class="c1"># will take gradients on the unconstrained parameters</span>
-    <span class="c1"># (which are related to the constrained parameters by a log)</span>
-    <span class="n">alpha_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;alpha_q&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">15.0</span><span class="p">),</span>
-                         <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">beta_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;beta_q&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">15.0</span><span class="p">),</span>
-                        <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="c1"># sample latent_fairness from the distribution Beta(alpha_q, beta_q)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;latent_fairness&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="n">alpha_q</span><span class="p">,</span> <span class="n">beta_q</span><span class="p">))</span>
+def guide(data):
+    # register the two variational parameters with Pyro
+    # - both parameters will have initial value 15.0.
+    # - because we invoke constraints.positive, the optimizer
+    # will take gradients on the unconstrained parameters
+    # (which are related to the constrained parameters by a log)
+    alpha_q = pyro.param(&quot;alpha_q&quot;, torch.tensor(15.0),
+                         constraint=constraints.positive)
+    beta_q = pyro.param(&quot;beta_q&quot;, torch.tensor(15.0),
+                        constraint=constraints.positive)
+    # sample latent_fairness from the distribution Beta(alpha_q, beta_q)
+    pyro.sample(&quot;latent_fairness&quot;, dist.Beta(alpha_q, beta_q))
 
-<span class="c1"># setup the optimizer</span>
-<span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.0005</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)}</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
+# setup the optimizer
+adam_params = {&quot;lr&quot;: 0.0005, &quot;betas&quot;: (0.90, 0.999)}
+optimizer = Adam(adam_params)
 
-<span class="c1"># setup the inference algorithm</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+# setup the inference algorithm
+svi = SVI(model, guide, optimizer, loss=Trace_ELBO())
 
-<span class="c1"># do gradient steps</span>
-<span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-    <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+# do gradient steps
+for step in range(n_steps):
+    svi.step(data)
+    if step % 100 == 0:
+        print(&#39;.&#39;, end=&#39;&#39;)
 
-<span class="c1"># grab the learned variational parameters</span>
-<span class="n">alpha_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;alpha_q&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-<span class="n">beta_q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;beta_q&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+# grab the learned variational parameters
+alpha_q = pyro.param(&quot;alpha_q&quot;).item()
+beta_q = pyro.param(&quot;beta_q&quot;).item()
 
-<span class="c1"># here we use some facts about the Beta distribution</span>
-<span class="c1"># compute the inferred mean of the coin&#39;s fairness</span>
-<span class="n">inferred_mean</span> <span class="o">=</span> <span class="n">alpha_q</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha_q</span> <span class="o">+</span> <span class="n">beta_q</span><span class="p">)</span>
-<span class="c1"># compute inferred standard deviation</span>
-<span class="n">factor</span> <span class="o">=</span> <span class="n">beta_q</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha_q</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">alpha_q</span> <span class="o">+</span> <span class="n">beta_q</span><span class="p">))</span>
-<span class="n">inferred_std</span> <span class="o">=</span> <span class="n">inferred_mean</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+# here we use some facts about the Beta distribution
+# compute the inferred mean of the coin&#39;s fairness
+inferred_mean = alpha_q / (alpha_q + beta_q)
+# compute inferred standard deviation
+factor = beta_q / (alpha_q * (1.0 + alpha_q + beta_q))
+inferred_std = inferred_mean * math.sqrt(factor)
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Based on the data and our prior belief, the fairness &quot;</span> <span class="o">+</span>
-      <span class="s2">&quot;of the coin is </span><span class="si">%.3f</span><span class="s2"> +- </span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">inferred_mean</span><span class="p">,</span> <span class="n">inferred_std</span><span class="p">))</span>
+print(&quot;\nBased on the data and our prior belief, the fairness &quot; +
+      &quot;of the coin is %.3f +- %.3f&quot; % (inferred_mean, inferred_std))
 </pre></div>
 </div>
 </div>
 <section id="Sample-output:">
-<h3>Sample output:<a class="headerlink" href="#Sample-output:" title="Permalink to this headline">¶</a></h3>
+<h3>Sample output:<a class="headerlink" href="#Sample-output:" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>based on the data and our prior belief, the fairness of the coin is 0.532 +- 0.090
 </pre></div>
 </div>
@@ -757,7 +760,7 @@ a simple example to illustrate the API:</p>
 </section>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Automated</span> <span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Probabilistic</span> <span class="pre">Programming</span></code>,      David Wingate, Theo Weber</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Black</span> <span class="pre">Box</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,     Rajesh Ranganath, Sean Gerrish, David M. Blei</p>
 <p>[3] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>

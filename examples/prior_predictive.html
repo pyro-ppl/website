@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive posterior predictives checks &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Interactive posterior predictives checks &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -186,8 +188,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Interactive posterior predictives checks</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Interactive posterior predictives checks</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/prior_predictive.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -307,10 +309,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -476,12 +479,12 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Interactive-posterior-predictives-checks">
-<h1>Interactive posterior predictives checks<a class="headerlink" href="#Interactive-posterior-predictives-checks" title="Permalink to this headline">¶</a></h1>
+<h1>Interactive posterior predictives checks<a class="headerlink" href="#Interactive-posterior-predictives-checks" title="Permalink to this heading">¶</a></h1>
 <p>This notebook demonstrates how to interactively examine model priors using <a class="reference external" href="https://ipywidgets.readthedocs.io/en/stable/">ipywidgets</a>.</p>
 <p>⚠️ This notebook is intended to be run interactively. Please run locally or <a class="reference external" href="https://colab.research.google.com/github/pyro-ppl/pyro/blob/dev/tutorial/source/prior_predictive.ipynb">Open in Colab</a>.</p>
 <p>The first step in <a class="reference external" href="https://arxiv.org/abs/2011.01808">Bayesian workflow</a> is to create a model. The second step is to check prior samples from the model. This notebook shows how to interactively check prior samples and tune parameters of the top level prior distribution while visualizing model outputs.</p>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Wrap your model in a plotting function.</p></li>
 <li><p>Use <a class="reference external" href="https://ipywidgets.readthedocs.io/en/stable/examples/Using%20Interact.html">ipywidgets.interact()</a> to create sliders for each parameter of your prior.</p></li>
@@ -491,7 +494,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip install -q pyro-ppl  # <span class="k">for</span> colab
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>!pip install -q pyro-ppl  # for colab
 </pre></div>
 </div>
 </div>
@@ -499,17 +502,17 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="n">interact</span><span class="p">,</span> <span class="n">FloatSlider</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.resampler</span> <span class="kn">import</span> <span class="n">Resampler</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+from ipywidgets import interact, FloatSlider
+import matplotlib.pyplot as plt
+import torch
+import pyro
+import pyro.distributions as dist
+import pyro.poutine as poutine
+from pyro.infer.resampler import Resampler
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>  <span class="c1"># for CI testing only</span>
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
+smoke_test = (&#39;CI&#39; in os.environ)  # for CI testing only
 </pre></div>
 </div>
 </div>
@@ -517,18 +520,18 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="c1"># Sample parameters from the prior.</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;df&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-    <span class="n">p_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;p_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># process noise</span>
-    <span class="n">m_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;m_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># measurement noise</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(T: int = 1000, data=None):
+    # Sample parameters from the prior.
+    df = pyro.sample(&quot;df&quot;, dist.LogNormal(0, 1))
+    p_scale = pyro.sample(&quot;p_scale&quot;, dist.LogNormal(0, 1))  # process noise
+    m_scale = pyro.sample(&quot;m_scale&quot;, dist.LogNormal(0, 1))  # measurement noise
 
-    <span class="c1"># Simulate a time series.</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;dt&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-        <span class="n">process_noise</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;process_noise&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">StudentT</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p_scale</span><span class="p">))</span>
-    <span class="n">trend</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;trend&quot;</span><span class="p">,</span> <span class="n">process_noise</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">trend</span><span class="p">,</span> <span class="n">m_scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    # Simulate a time series.
+    with pyro.plate(&quot;dt&quot;, T):
+        process_noise = pyro.sample(&quot;process_noise&quot;, dist.StudentT(df, 0, p_scale))
+    trend = pyro.deterministic(&quot;trend&quot;, process_noise.cumsum(-1))
+    with pyro.plate(&quot;t&quot;, T):
+        return pyro.sample(&quot;obs&quot;, dist.Normal(trend, m_scale), obs=data)
 </pre></div>
 </div>
 </div>
@@ -536,18 +539,18 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_trajectory</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">p_scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">m_scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">df</span><span class="p">),</span>
-        <span class="s2">&quot;p_scale&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">p_scale</span><span class="p">),</span>
-        <span class="s2">&quot;m_scale&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">m_scale</span><span class="p">),</span>
-    <span class="p">}</span>
-    <span class="n">trajectory</span> <span class="o">=</span> <span class="n">poutine</span><span class="o">.</span><span class="n">condition</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)()</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trajectory</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_trajectory(df=1.0, p_scale=1.0, m_scale=1.0):
+    pyro.set_rng_seed(12345)
+    data = {
+        &quot;df&quot;: torch.as_tensor(df),
+        &quot;p_scale&quot;: torch.as_tensor(p_scale),
+        &quot;m_scale&quot;: torch.as_tensor(m_scale),
+    }
+    trajectory = poutine.condition(model, data)()
+    plt.figure(figsize=(8, 4)).patch.set_color(&quot;white&quot;)
+    plt.plot(trajectory)
+    plt.xlabel(&quot;time&quot;)
+    plt.ylabel(&quot;obs&quot;)
 </pre></div>
 </div>
 </div>
@@ -556,12 +559,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interact</span><span class="p">(</span>
-    <span class="n">plot_trajectory</span><span class="p">,</span>
-    <span class="n">df</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">10.0</span><span class="p">),</span>
-    <span class="n">p_scale</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
-    <span class="n">m_scale</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">10.0</span><span class="p">),</span>
-<span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>interact(
+    plot_trajectory,
+    df=FloatSlider(value=1.0, min=0.01, max=10.0),
+    p_scale=FloatSlider(value=0.1, min=0.01, max=1.0),
+    m_scale=FloatSlider(value=1.0, min=0.01, max=10.0),
+);
 </pre></div>
 </div>
 </div>
@@ -576,18 +579,18 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model2</span><span class="p">(</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">df1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">p0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">p1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">m0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">m1</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-    <span class="c1"># Sample parameters from the prior.</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;df&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">df0</span><span class="p">,</span> <span class="n">df1</span><span class="p">))</span>
-    <span class="n">p_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;p_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">))</span>  <span class="c1"># process noise</span>
-    <span class="n">m_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;m_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">m0</span><span class="p">,</span> <span class="n">m1</span><span class="p">))</span>  <span class="c1"># measurement noise</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model2(T: int = 1000, data=None, df0=0, df1=1, p0=0, p1=1, m0=0, m1=1):
+    # Sample parameters from the prior.
+    df = pyro.sample(&quot;df&quot;, dist.LogNormal(df0, df1))
+    p_scale = pyro.sample(&quot;p_scale&quot;, dist.LogNormal(p0, p1))  # process noise
+    m_scale = pyro.sample(&quot;m_scale&quot;, dist.LogNormal(m0, m1))  # measurement noise
 
-    <span class="c1"># Simulate a time series.</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;dt&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-        <span class="n">process_noise</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;process_noise&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">StudentT</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p_scale</span><span class="p">))</span>
-    <span class="n">trend</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;trend&quot;</span><span class="p">,</span> <span class="n">process_noise</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">trend</span><span class="p">,</span> <span class="n">m_scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    # Simulate a time series.
+    with pyro.plate(&quot;dt&quot;, T):
+        process_noise = pyro.sample(&quot;process_noise&quot;, dist.StudentT(df, 0, p_scale))
+    trend = pyro.deterministic(&quot;trend&quot;, process_noise.cumsum(-1))
+    with pyro.plate(&quot;t&quot;, T):
+        return pyro.sample(&quot;obs&quot;, dist.Normal(trend, m_scale), obs=data)
 </pre></div>
 </div>
 </div>
@@ -595,14 +598,14 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_trajectories</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;trajectories&quot;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">):</span>
-        <span class="n">trajectories</span> <span class="o">=</span> <span class="n">model2</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trajectories</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_trajectories(**kwargs):
+    pyro.set_rng_seed(12345)
+    with pyro.plate(&quot;trajectories&quot;, 20, dim=-2):
+        trajectories = model2(**kwargs)
+    plt.figure(figsize=(8, 5)).patch.set_color(&quot;white&quot;)
+    plt.plot(trajectories.T)
+    plt.xlabel(&quot;time&quot;)
+    plt.ylabel(&quot;obs&quot;)
 </pre></div>
 </div>
 </div>
@@ -610,15 +613,15 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interact</span><span class="p">(</span>
-    <span class="n">plot_trajectories</span><span class="p">,</span>
-    <span class="n">df0</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
-    <span class="n">df1</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-    <span class="n">p0</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
-    <span class="n">p1</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-    <span class="n">m0</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
-    <span class="n">m1</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-<span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>interact(
+    plot_trajectories,
+    df0=FloatSlider(value=0.0, min=-5, max=5),
+    df1=FloatSlider(value=1.0, min=0.1, max=10),
+    p0=FloatSlider(value=0.0, min=-5, max=5),
+    p1=FloatSlider(value=1.0, min=0.1, max=10),
+    m0=FloatSlider(value=0.0, min=-5, max=5),
+    m1=FloatSlider(value=1.0, min=0.1, max=10),
+);
 </pre></div>
 </div>
 </div>
@@ -630,20 +633,20 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>Yikes! It looks like our initial priors generated very weird trajectories, but we can slide to find better priors. Try increasing <code class="docutils literal notranslate"><span class="pre">df0</span></code>.</p>
 <section id="Resampler">
-<h3>Resampler<a class="headerlink" href="#Resampler" title="Permalink to this headline">¶</a></h3>
+<h3>Resampler<a class="headerlink" href="#Resampler" title="Permalink to this heading">¶</a></h3>
 <p>For more expensive simulations, sampling may be too slow to interactively generate samples at each change. As a computational trick we can draw many samples once from a diffuse distribution, then resample them from a modified distribution – provided we importance sample or resample. Pyro provides an importance <a class="reference external" href="https://docs.pyro.ai/en/stable/infer.util.html#pyro.infer.resampler.Resampler">Resampler</a> to aid in interactively visualizing expensive models.</p>
 <p>We’ll start with our original model and create a way to make parametrized partial models with given priors. These partial models are just the top half our our model, the top level parameters.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_partial_model</span><span class="p">(</span><span class="n">df0</span><span class="p">,</span> <span class="n">df1</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">m0</span><span class="p">,</span> <span class="n">m1</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">partial_model</span><span class="p">():</span>
-        <span class="c1"># Sample parameters from the prior.</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;df&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">df0</span><span class="p">,</span> <span class="n">df1</span><span class="p">))</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;p_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">))</span>  <span class="c1"># process noise</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;m_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="n">m0</span><span class="p">,</span> <span class="n">m1</span><span class="p">))</span>  <span class="c1"># measurement noise</span>
-    <span class="k">return</span> <span class="n">partial_model</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def make_partial_model(df0, df1, p0, p1, m0, m1):
+    def partial_model():
+        # Sample parameters from the prior.
+        pyro.sample(&quot;df&quot;, dist.LogNormal(df0, df1))
+        pyro.sample(&quot;p_scale&quot;, dist.LogNormal(p0, p1))  # process noise
+        pyro.sample(&quot;m_scale&quot;, dist.LogNormal(m0, m1))  # measurement noise
+    return partial_model
 </pre></div>
 </div>
 </div>
@@ -652,9 +655,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">partial_guide</span> <span class="o">=</span> <span class="n">make_partial_model</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-<span class="n">resampler</span> <span class="o">=</span> <span class="n">Resampler</span><span class="p">(</span><span class="n">partial_guide</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">num_guide_samples</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+partial_guide = make_partial_model(0, 10, 0, 10, 0, 10)
+resampler = Resampler(partial_guide, model, num_guide_samples=10000)
 </pre></div>
 </div>
 </div>
@@ -672,14 +675,14 @@ Wall time: 934 ms
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_resampled</span><span class="p">(</span><span class="n">df0</span><span class="p">,</span> <span class="n">df1</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">m0</span><span class="p">,</span> <span class="n">m1</span><span class="p">):</span>
-    <span class="n">partial_model</span> <span class="o">=</span> <span class="n">make_partial_model</span><span class="p">(</span><span class="n">df0</span><span class="p">,</span> <span class="n">df1</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">m0</span><span class="p">,</span> <span class="n">m1</span><span class="p">)</span>
-    <span class="n">samples</span> <span class="o">=</span> <span class="n">resampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">partial_model</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-    <span class="n">trajectories</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trajectories</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_resampled(df0, df1, p0, p1, m0, m1):
+    partial_model = make_partial_model(df0, df1, p0, p1, m0, m1)
+    samples = resampler.sample(partial_model, num_samples=20)
+    trajectories = samples[&quot;obs&quot;]
+    plt.figure(figsize=(8, 5)).patch.set_color(&quot;white&quot;)
+    plt.plot(trajectories.T)
+    plt.xlabel(&quot;time&quot;)
+    plt.ylabel(&quot;obs&quot;)
 </pre></div>
 </div>
 </div>
@@ -687,15 +690,15 @@ Wall time: 934 ms
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interact</span><span class="p">(</span>
-    <span class="n">plot_resampled</span><span class="p">,</span>
-    <span class="n">df0</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
-    <span class="n">df1</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-    <span class="n">p0</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
-    <span class="n">p1</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-    <span class="n">m0</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
-    <span class="n">m1</span><span class="o">=</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-<span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>interact(
+    plot_resampled,
+    df0=FloatSlider(value=0.0, min=-5, max=5),
+    df1=FloatSlider(value=1.0, min=0.1, max=10),
+    p0=FloatSlider(value=0.0, min=-5, max=5),
+    p1=FloatSlider(value=1.0, min=0.1, max=10),
+    m0=FloatSlider(value=0.0, min=-5, max=5),
+    m1=FloatSlider(value=1.0, min=0.1, max=10),
+);
 </pre></div>
 </div>
 </div>
@@ -710,16 +713,16 @@ Wall time: 934 ms
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;df&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># &lt;-- changed 0 to 4</span>
-    <span class="n">p_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;p_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># &lt;-- changed 0 to 1</span>
-    <span class="n">m_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;m_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(T: int = 1000, data=None):
+    df = pyro.sample(&quot;df&quot;, dist.LogNormal(4, 1))  # &lt;-- changed 0 to 4
+    p_scale = pyro.sample(&quot;p_scale&quot;, dist.LogNormal(1, 1))  # &lt;-- changed 0 to 1
+    m_scale = pyro.sample(&quot;m_scale&quot;, dist.LogNormal(0, 1))
 
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;dt&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-        <span class="n">process_noise</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;process_noise&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">StudentT</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p_scale</span><span class="p">))</span>
-    <span class="n">trend</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;trend&quot;</span><span class="p">,</span> <span class="n">process_noise</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">trend</span><span class="p">,</span> <span class="n">m_scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    with pyro.plate(&quot;dt&quot;, T):
+        process_noise = pyro.sample(&quot;process_noise&quot;, dist.StudentT(df, 0, p_scale))
+    trend = pyro.deterministic(&quot;trend&quot;, process_noise.cumsum(-1))
+    with pyro.plate(&quot;t&quot;, T):
+        return pyro.sample(&quot;obs&quot;, dist.Normal(trend, m_scale), obs=data)
 </pre></div>
 </div>
 </div>

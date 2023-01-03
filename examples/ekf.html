@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kalman Filter &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Kalman Filter &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -186,8 +188,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Kalman Filter</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Kalman Filter</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/ekf.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -307,10 +309,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -476,11 +479,11 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Kalman-Filter">
-<h1>Kalman Filter<a class="headerlink" href="#Kalman-Filter" title="Permalink to this headline">¶</a></h1>
+<h1>Kalman Filter<a class="headerlink" href="#Kalman-Filter" title="Permalink to this heading">¶</a></h1>
 <p>Kalman filters are linear models for state estimation of dynamic systems [1]. They have been the de facto standard in many robotics and tracking/prediction applications because they are well suited for systems with uncertainty about an observable dynamic process. They use a “observe, predict, correct” paradigm to extract information from an otherwise noisy signal. In Pyro, we can build differentiable Kalman filters with learnable parameters using the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.tracking</span></code>
 <a class="reference external" href="http://docs.pyro.ai/en/dev/contrib.tracking.html#module-pyro.contrib.tracking.extended_kalman_filter">library</a></p>
 <section id="Dynamic-process">
-<h2>Dynamic process<a class="headerlink" href="#Dynamic-process" title="Permalink to this headline">¶</a></h2>
+<h2>Dynamic process<a class="headerlink" href="#Dynamic-process" title="Permalink to this heading">¶</a></h2>
 <p>To start, consider this simple motion model:</p>
 <div class="math notranslate nohighlight">
 \[X_{k+1} = FX_k + \mathbf{W}_k\]</div>
@@ -489,7 +492,7 @@ div.rendered_html tbody tr:hover {
 <p>where <span class="math notranslate nohighlight">\(k\)</span> is the state, <span class="math notranslate nohighlight">\(X\)</span> is the signal estimate, <span class="math notranslate nohighlight">\(Z_k\)</span> is the observed value at timestep <span class="math notranslate nohighlight">\(k\)</span>, <span class="math notranslate nohighlight">\(\mathbf{W}_k\)</span> and <span class="math notranslate nohighlight">\(\mathbf{V}_k\)</span> are independent noise processes (ie <span class="math notranslate nohighlight">\(\mathbb{E}[w_k v_j^T] = 0\)</span> for all <span class="math notranslate nohighlight">\(j, k\)</span>) which we’ll approximate as Gaussians. Note that the state transitions are linear.</p>
 </section>
 <section id="Kalman-Update">
-<h2>Kalman Update<a class="headerlink" href="#Kalman-Update" title="Permalink to this headline">¶</a></h2>
+<h2>Kalman Update<a class="headerlink" href="#Kalman-Update" title="Permalink to this heading">¶</a></h2>
 <p>At each time step, we perform a prediction for the mean and covariance:</p>
 <div class="math notranslate nohighlight">
 \[\hat{X}_k = F\hat{X}_{k-1}\]</div>
@@ -506,7 +509,7 @@ div.rendered_html tbody tr:hover {
 <p>For an in-depth derivation, see [2]</p>
 </section>
 <section id="Nonlinear-Estimation:-Extended-Kalman-Filter">
-<h2>Nonlinear Estimation: Extended Kalman Filter<a class="headerlink" href="#Nonlinear-Estimation:-Extended-Kalman-Filter" title="Permalink to this headline">¶</a></h2>
+<h2>Nonlinear Estimation: Extended Kalman Filter<a class="headerlink" href="#Nonlinear-Estimation:-Extended-Kalman-Filter" title="Permalink to this heading">¶</a></h2>
 <p>What if our system is non-linear, eg in GPS navigation? Consider the following non-linear system:</p>
 <div class="math notranslate nohighlight">
 \[X_{k+1} = \mathbf{f}(X_k) + \mathbf{W}_k\]</div>
@@ -535,22 +538,22 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">math</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+import math
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoDelta</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">,</span> <span class="n">config_enumerate</span>
-<span class="kn">from</span> <span class="nn">pyro.contrib.tracking.extended_kalman_filter</span> <span class="kn">import</span> <span class="n">EKFState</span>
-<span class="kn">from</span> <span class="nn">pyro.contrib.tracking.distributions</span> <span class="kn">import</span> <span class="n">EKFDistribution</span>
-<span class="kn">from</span> <span class="nn">pyro.contrib.tracking.dynamic_models</span> <span class="kn">import</span> <span class="n">NcvContinuous</span>
-<span class="kn">from</span> <span class="nn">pyro.contrib.tracking.measurements</span> <span class="kn">import</span> <span class="n">PositionMeasurement</span>
+import torch
+import pyro
+import pyro.distributions as dist
+from pyro.infer.autoguide import AutoDelta
+from pyro.optim import Adam
+from pyro.infer import SVI, Trace_ELBO, config_enumerate
+from pyro.contrib.tracking.extended_kalman_filter import EKFState
+from pyro.contrib.tracking.distributions import EKFDistribution
+from pyro.contrib.tracking.dynamic_models import NcvContinuous
+from pyro.contrib.tracking.measurements import PositionMeasurement
 
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
+smoke_test = (&#39;CI&#39; in os.environ)
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
 </pre></div>
 </div>
 </div>
@@ -558,24 +561,24 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dt</span> <span class="o">=</span> <span class="mf">1e-2</span>
-<span class="n">num_frames</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">dim</span> <span class="o">=</span> <span class="mi">4</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>dt = 1e-2
+num_frames = 10
+dim = 4
 
-<span class="c1"># Continuous model</span>
-<span class="n">ncv</span> <span class="o">=</span> <span class="n">NcvContinuous</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+# Continuous model
+ncv = NcvContinuous(dim, 2.0)
 
-<span class="c1"># Truth trajectory</span>
-<span class="n">xs_truth</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
-<span class="c1"># initial direction</span>
-<span class="n">theta0_truth</span> <span class="o">=</span> <span class="mf">0.0</span>
-<span class="c1"># initial state</span>
-<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-    <span class="n">xs_truth</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta0_truth</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta0_truth</span><span class="p">)])</span>
-    <span class="k">for</span> <span class="n">frame_num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_frames</span><span class="p">):</span>
-        <span class="c1"># sample independent process noise</span>
-        <span class="n">dx</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;process_noise_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">frame_num</span><span class="p">),</span> <span class="n">ncv</span><span class="o">.</span><span class="n">process_noise_dist</span><span class="p">(</span><span class="n">dt</span><span class="p">))</span>
-        <span class="n">xs_truth</span><span class="p">[</span><span class="n">frame_num</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">ncv</span><span class="p">(</span><span class="n">xs_truth</span><span class="p">[</span><span class="n">frame_num</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span> <span class="o">+</span> <span class="n">dx</span>
+# Truth trajectory
+xs_truth = torch.zeros(num_frames, dim)
+# initial direction
+theta0_truth = 0.0
+# initial state
+with torch.no_grad():
+    xs_truth[0, :] = torch.tensor([0.0, 0.0,  math.cos(theta0_truth), math.sin(theta0_truth)])
+    for frame_num in range(1, num_frames):
+        # sample independent process noise
+        dx = pyro.sample(&#39;process_noise_{}&#39;.format(frame_num), ncv.process_noise_dist(dt))
+        xs_truth[frame_num, :] = ncv(xs_truth[frame_num-1, :], dt=dt) + dx
 </pre></div>
 </div>
 </div>
@@ -584,16 +587,16 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Measurements</span>
-<span class="n">measurements</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="c1"># no correlations</span>
-<span class="n">cov</span> <span class="o">=</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-    <span class="c1"># sample independent measurement noise</span>
-    <span class="n">dzs</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;dzs&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">MultivariateNormal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">((</span><span class="n">num_frames</span><span class="p">,)))</span>
-    <span class="c1"># compute measurement means</span>
-    <span class="n">zs</span> <span class="o">=</span> <span class="n">xs_truth</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">dzs</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Measurements
+measurements = []
+mean = torch.zeros(2)
+# no correlations
+cov = 1e-5 * torch.eye(2)
+with torch.no_grad():
+    # sample independent measurement noise
+    dzs = pyro.sample(&#39;dzs&#39;, dist.MultivariateNormal(mean, cov).expand((num_frames,)))
+    # compute measurement means
+    zs = xs_truth[:, :2] + dzs
 </pre></div>
 </div>
 </div>
@@ -602,16 +605,16 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="c1"># a HalfNormal can be used here as well</span>
-    <span class="n">R</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;pv_cov&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfCauchy</span><span class="p">(</span><span class="mf">2e-6</span><span class="p">))</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-    <span class="n">Q</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;measurement_cov&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfCauchy</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">))</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-    <span class="c1"># observe the measurements</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s1">&#39;track_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">EKFDistribution</span><span class="p">(</span><span class="n">xs_truth</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">R</span><span class="p">,</span> <span class="n">ncv</span><span class="p">,</span>
-                                                      <span class="n">Q</span><span class="p">,</span> <span class="n">time_steps</span><span class="o">=</span><span class="n">num_frames</span><span class="p">),</span>
-                <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(data):
+    # a HalfNormal can be used here as well
+    R = pyro.sample(&#39;pv_cov&#39;, dist.HalfCauchy(2e-6)) * torch.eye(4)
+    Q = pyro.sample(&#39;measurement_cov&#39;, dist.HalfCauchy(1e-6)) * torch.eye(2)
+    # observe the measurements
+    pyro.sample(&#39;track_{}&#39;.format(i), EKFDistribution(xs_truth[0], R, ncv,
+                                                      Q, time_steps=num_frames),
+                obs=data)
 
-<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoDelta</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>  <span class="c1"># MAP estimation</span>
+guide = AutoDelta(model)  # MAP estimation
 </pre></div>
 </div>
 </div>
@@ -619,16 +622,16 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">optim</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">2e-2</span><span class="p">})</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">(</span><span class="n">retain_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>optim = pyro.optim.Adam({&#39;lr&#39;: 2e-2})
+svi = SVI(model, guide, optim, loss=Trace_ELBO(retain_graph=True))
 
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+pyro.set_rng_seed(0)
+pyro.clear_param_store()
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">250</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span><span class="p">):</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">10</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loss: &#39;</span><span class="p">,</span> <span class="n">loss</span><span class="p">)</span>
+for i in range(250 if not smoke_test else 2):
+    loss = svi.step(zs)
+    if not i % 10:
+        print(&#39;loss: &#39;, loss)
 </pre></div>
 </div>
 </div>
@@ -636,11 +639,11 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># retrieve states for visualization</span>
-<span class="n">R</span> <span class="o">=</span> <span class="n">guide</span><span class="p">()[</span><span class="s1">&#39;pv_cov&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-<span class="n">Q</span> <span class="o">=</span> <span class="n">guide</span><span class="p">()[</span><span class="s1">&#39;measurement_cov&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">ekf_dist</span> <span class="o">=</span> <span class="n">EKFDistribution</span><span class="p">(</span><span class="n">xs_truth</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">R</span><span class="p">,</span> <span class="n">ncv</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">time_steps</span><span class="o">=</span><span class="n">num_frames</span><span class="p">)</span>
-<span class="n">states</span><span class="o">=</span> <span class="n">ekf_dist</span><span class="o">.</span><span class="n">filter_states</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># retrieve states for visualization
+R = guide()[&#39;pv_cov&#39;] * torch.eye(4)
+Q = guide()[&#39;measurement_cov&#39;] * torch.eye(2)
+ekf_dist = EKFDistribution(xs_truth[0], R, ncv, Q, time_steps=num_frames)
+states= ekf_dist.filter_states(zs)
 </pre></div>
 </div>
 </div>
@@ -657,7 +660,7 @@ div.rendered_html tbody tr:hover {
     </figcaption> </center>
 </figure></center></section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
 <p>[1] Kalman, R. E. <em>A New Approach to Linear Filtering and Prediction Problems.</em> 1960</p>
 <p>[2] Welch, Greg, and Bishop, Gary. <em>An Introduction to the Kalman Filter.</em> 2006.</p>
 </section>

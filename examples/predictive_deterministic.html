@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Example: Utilizing Predictive and Deterministic with MCMC and SVI &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Example: Utilizing Predictive and Deterministic with MCMC and SVI &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -191,8 +193,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Example: Utilizing Predictive and Deterministic with MCMC and SVI</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Example: Utilizing Predictive and Deterministic with MCMC and SVI</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/predictive_deterministic.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -312,10 +314,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -481,7 +484,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Example:-Utilizing-Predictive-and-Deterministic-with-MCMC-and-SVI">
-<h1>Example: Utilizing Predictive and Deterministic with MCMC and SVI<a class="headerlink" href="#Example:-Utilizing-Predictive-and-Deterministic-with-MCMC-and-SVI" title="Permalink to this headline">¶</a></h1>
+<h1>Example: Utilizing Predictive and Deterministic with MCMC and SVI<a class="headerlink" href="#Example:-Utilizing-Predictive-and-Deterministic-with-MCMC-and-SVI" title="Permalink to this heading">¶</a></h1>
 <p>In this short tutorial we’ll see how to use <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> statements inside a model and inspect its samples with <code class="docutils literal notranslate"><span class="pre">Predictive</span></code> class. Additionally a <code class="docutils literal notranslate"><span class="pre">GammaPoisson</span></code> distribution will be discussed as it’ll be used within our model.</p>
 <p>Check out other tutorials that use <code class="docutils literal notranslate"><span class="pre">Predictive</span></code> and <code class="docutils literal notranslate"><span class="pre">Deterministic</span></code>:</p>
 <ul class="simple">
@@ -492,36 +495,36 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_regression</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span><span class="p">,</span> <span class="n">Predictive</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.mcmc.util</span> <span class="kn">import</span> <span class="n">summary</span>
-<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">torch</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.datasets import make_regression
+import pyro.distributions as dist
+from pyro.infer import MCMC, NUTS, Predictive
+from pyro.infer.mcmc.util import summary
+from pyro.distributions import constraints
+import pyro
+import torch
 
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">101</span><span class="p">)</span>
+pyro.set_rng_seed(101)
 
-<span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="o">%</span><span class="k">config</span> InlineBackend.figure_format=&#39;retina&#39;
+%matplotlib inline
+%config InlineBackend.figure_format=&#39;retina&#39;
 </pre></div>
 </div>
 </div>
 <section id="Data-generation">
-<h2>Data generation<a class="headerlink" href="#Data-generation" title="Permalink to this headline">¶</a></h2>
+<h2>Data generation<a class="headerlink" href="#Data-generation" title="Permalink to this heading">¶</a></h2>
 <p>Let’s generate our data with <code class="docutils literal notranslate"><span class="pre">sklearn.datasets.make_regression</span></code> method where we can determine the number of features, bias and noise power. Also we’ll transform the target variable and make it a <code class="docutils literal notranslate"><span class="pre">torch</span></code> tensor.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">make_regression</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="mf">150.</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">108</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>X, y = make_regression(n_features=1, bias=150., noise=5., random_state=108)
 
-<span class="n">X_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
-<span class="n">y_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">((</span><span class="n">y</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mf">100000.</span> <span class="o">+</span> <span class="mf">10.</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
-<span class="n">y_</span><span class="o">.</span><span class="n">round_</span><span class="p">()</span><span class="o">.</span><span class="n">clamp_</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">);</span>
+X_ = torch.tensor(X, dtype=torch.float)
+y_ = torch.tensor((y**3)/100000. + 10., dtype=torch.float)
+y_.round_().clamp_(min=0);
 </pre></div>
 </div>
 </div>
@@ -529,9 +532,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.scatter(X_, y_)
+plt.ylabel(&#39;y&#39;)
+plt.xlabel(&#39;x&#39;);
 </pre></div>
 </div>
 </div>
@@ -544,7 +547,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Model-definition">
-<h2>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this headline">¶</a></h2>
+<h2>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this heading">¶</a></h2>
 <p>In our model we first sample coefficient from a normal distribution with zero mean and sampled standard deviation. We use <code class="docutils literal notranslate"><span class="pre">to_event(1)</span></code> to move the expanded dimension from <code class="docutils literal notranslate"><span class="pre">batch_shape</span></code> to <code class="docutils literal notranslate"><span class="pre">event_shape</span></code> as we want to sample from a multivariate normal distribution. <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> part is used to register a <code class="docutils literal notranslate"><span class="pre">name</span></code> whose <code class="docutils literal notranslate"><span class="pre">value</span></code> is fully determined by arguments passed to it. Here we use <code class="docutils literal notranslate"><span class="pre">softplus</span></code> to be sure that the resulting <code class="docutils literal notranslate"><span class="pre">rate</span></code> isn’t negative. Then we use vectorized version
 of <code class="docutils literal notranslate"><span class="pre">plate</span></code> to record <code class="docutils literal notranslate"><span class="pre">counts</span></code> from passed dataset as they were sampled from <code class="docutils literal notranslate"><span class="pre">GammaPoisson</span></code> distribution.</p>
 <p>For now this model might be a little obscure but later we will dive into sampled data to better grasp it’s internals.</p>
@@ -552,27 +555,27 @@ of <code class="docutils literal notranslate"><span class="pre">plate</span></co
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">counts</span><span class="p">):</span>
-    <span class="n">N</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-    <span class="n">coef</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;coef&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="n">P</span><span class="p">])</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-    <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">deterministic</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">coef</span> <span class="o">@</span> <span class="n">features</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
-    <span class="n">concentration</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;concentration&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;bins&quot;</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;counts&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">GammaPoisson</span><span class="p">(</span><span class="n">concentration</span><span class="p">,</span> <span class="n">rate</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(features, counts):
+    N, P = features.shape
+    scale = pyro.sample(&quot;scale&quot;, dist.LogNormal(0, 1))
+    coef = pyro.sample(&quot;coef&quot;, dist.Normal(0, scale).expand([P]).to_event(1))
+    rate = pyro.deterministic(&quot;rate&quot;, torch.nn.functional.softplus(coef @ features.T))
+    concentration = pyro.sample(&quot;concentration&quot;, dist.LogNormal(0, 1))
+    with pyro.plate(&quot;bins&quot;, N):
+        return pyro.sample(&quot;counts&quot;, dist.GammaPoisson(concentration, rate), obs=counts)
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
 <p>Inference will be done with MCMC algorithm. IMPORTANT! Please note that only <code class="docutils literal notranslate"><span class="pre">scale</span></code> and <code class="docutils literal notranslate"><span class="pre">coef</span></code> variables are returned in samples dict. <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> parts are available via <code class="docutils literal notranslate"><span class="pre">Predictive</span></code>, similarly as observed samples.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">mcmc</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>nuts_kernel = NUTS(model)
+mcmc = MCMC(nuts_kernel, num_samples=500)
 </pre></div>
 </div>
 </div>
@@ -580,9 +583,9 @@ of <code class="docutils literal notranslate"><span class="pre">plate</span></co
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
 
-<span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">);</span>
+mcmc.run(X_, y_);
 </pre></div>
 </div>
 </div>
@@ -615,9 +618,9 @@ Wall time: 23.2 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span>
-<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>samples = mcmc.get_samples()
+for k, v in samples.items():
+    print(f&quot;{k}: {tuple(v.shape)}&quot;)
 </pre></div>
 </div>
 </div>
@@ -635,9 +638,9 @@ scale: (500,)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">predictive</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">samples</span><span class="p">)(</span><span class="n">X_</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">predictive</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>predictive = Predictive(model, samples)(X_, None)
+for k, v in predictive.items():
+    print(f&quot;{k}: {tuple(v.shape)}&quot;)
 </pre></div>
 </div>
 </div>
@@ -655,19 +658,19 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">prepare_counts_df</span><span class="p">(</span><span class="n">predictive</span><span class="p">):</span>
-    <span class="n">counts</span> <span class="o">=</span> <span class="n">predictive</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-    <span class="n">counts_mean</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">counts_std</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def prepare_counts_df(predictive):
+    counts = predictive[&#39;counts&#39;].numpy()
+    counts_mean = counts.mean(axis=0)
+    counts_std = counts.std(axis=0)
 
-    <span class="n">counts_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s2">&quot;feat&quot;</span><span class="p">:</span> <span class="n">X_</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
-    <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">counts_mean</span><span class="p">,</span>
-    <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="n">counts_mean</span> <span class="o">+</span> <span class="n">counts_std</span><span class="p">,</span>
-    <span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="n">counts_mean</span> <span class="o">-</span> <span class="n">counts_std</span><span class="p">,</span>
-    <span class="p">})</span>
+    counts_df = pd.DataFrame({
+    &quot;feat&quot;: X_.squeeze(),
+    &quot;mean&quot;: counts_mean,
+    &quot;high&quot;: counts_mean + counts_std,
+    &quot;low&quot;: counts_mean - counts_std,
+    })
 
-    <span class="k">return</span> <span class="n">counts_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">])</span>
+    return counts_df.sort_values(by=[&#39;feat&#39;])
 </pre></div>
 </div>
 </div>
@@ -675,7 +678,7 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">counts_df</span> <span class="o">=</span> <span class="n">prepare_counts_df</span><span class="p">(</span><span class="n">predictive</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>counts_df = prepare_counts_df(predictive)
 </pre></div>
 </div>
 </div>
@@ -683,11 +686,11 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;low&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.scatter(X_, y_, c=&#39;r&#39;)
+plt.ylabel(&#39;y&#39;)
+plt.xlabel(&#39;x&#39;)
+plt.plot(counts_df[&#39;feat&#39;], counts_df[&#39;mean&#39;])
+plt.fill_between(counts_df[&#39;feat&#39;], counts_df[&#39;high&#39;], counts_df[&#39;low&#39;], alpha=0.5);
 </pre></div>
 </div>
 </div>
@@ -701,7 +704,7 @@ rate: (500, 1, 100)
 <p>But where do these values (and uncertainty) come from? Let’s find out!</p>
 </section>
 <section id="Inspecting-deterministic-part">
-<h2>Inspecting deterministic part<a class="headerlink" href="#Inspecting-deterministic-part" title="Permalink to this headline">¶</a></h2>
+<h2>Inspecting deterministic part<a class="headerlink" href="#Inspecting-deterministic-part" title="Permalink to this heading">¶</a></h2>
 <p>Now let’s move to the essence of this tutorial. <code class="docutils literal notranslate"><span class="pre">GammaPoisson</span></code> distribution used here and parameterized with (<code class="docutils literal notranslate"><span class="pre">concentration</span></code>, <code class="docutils literal notranslate"><span class="pre">rate</span></code>) arguments is basically an alternative parametrization of <code class="docutils literal notranslate"><span class="pre">NegativeBinomial</span></code> distribution.</p>
 <p><code class="docutils literal notranslate"><span class="pre">NegativeBinomial</span></code> answers a question: How many successes will we record before seeing <code class="docutils literal notranslate"><span class="pre">r</span></code> failures (overall) if each trial wins with probability <code class="docutils literal notranslate"><span class="pre">p</span></code>?</p>
 <p>The reparametrization occurs as follows:</p>
@@ -714,8 +717,8 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Concentration mean: &#39;</span><span class="p">,</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;concentration&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Concentration std: &#39;</span><span class="p">,</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;concentration&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Concentration mean: &#39;, samples[&#39;concentration&#39;].mean().item())
+print(&#39;Concentration std: &#39;, samples[&#39;concentration&#39;].std().item())
 </pre></div>
 </div>
 </div>
@@ -732,8 +735,8 @@ Concentration std:  0.7892239689826965
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Coef mean: &#39;</span><span class="p">,</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;coef&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Coef std: &#39;</span><span class="p">,</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;coef&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Coef mean: &#39;, samples[&#39;coef&#39;].mean().item())
+print(&#39;Coef std: &#39;, samples[&#39;coef&#39;].std().item())
 </pre></div>
 </div>
 </div>
@@ -751,8 +754,8 @@ Coef std:  0.036095619201660156
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rates</span> <span class="o">=</span> <span class="n">predictive</span><span class="p">[</span><span class="s1">&#39;rate&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
-<span class="n">rates_reparam</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">rates</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span> <span class="c1"># here&#39;s reparametrization</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>rates = predictive[&#39;rate&#39;].squeeze()
+rates_reparam = 1. / (rates + 1.) # here&#39;s reparametrization
 </pre></div>
 </div>
 </div>
@@ -761,17 +764,17 @@ Coef std:  0.036095619201660156
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, (ax1, ax2) = plt.subplots(1, 2)
+fig.set_size_inches(13, 4)
 
-<span class="n">ax1</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">rates_reparam</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;rate means&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">rates_reparam</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;std&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;rate stds&#39;</span><span class="p">);</span>
+ax1.scatter(X_, rates_reparam.mean(axis=0))
+ax1.set_ylabel(&#39;mean&#39;)
+ax1.set_xlabel(&#39;x&#39;)
+ax1.set_title(&#39;rate means&#39;)
+ax2.scatter(X_, rates_reparam.std(axis=0))
+ax2.set_ylabel(&#39;std&#39;)
+ax2.set_xlabel(&#39;x&#39;)
+ax2.set_title(&#39;rate stds&#39;);
 </pre></div>
 </div>
 </div>
@@ -788,23 +791,23 @@ Coef std:  0.036095619201660156
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, (ax1, ax2) = plt.subplots(1, 2)
+fig.set_size_inches(13, 4)
 
-<span class="n">ax1</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">])</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;low&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;concentration&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="o">-</span><span class="mf">0.46</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;fitted model&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">rates_reparam</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="o">-</span><span class="mf">0.46</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;rate means&#39;</span><span class="p">);</span>
+ax1.scatter(X_, y_, c=&#39;r&#39;)
+ax1.plot(counts_df[&#39;feat&#39;], counts_df[&#39;mean&#39;])
+ax1.fill_between(counts_df[&#39;feat&#39;], counts_df[&#39;high&#39;], counts_df[&#39;low&#39;], alpha=0.5)
+ax1.axhline(samples[&#39;concentration&#39;].mean().item(), c=&#39;g&#39;, linestyle=&#39;dashed&#39;)
+ax1.axvline(-0.46, c=&#39;g&#39;, linestyle=&#39;dashed&#39;)
+ax1.set_ylabel(&#39;y&#39;)
+ax1.set_xlabel(&#39;x&#39;)
+ax1.set_title(&#39;fitted model&#39;)
+ax2.scatter(X_, rates_reparam.mean(axis=0))
+ax2.axhline(0.5, c=&#39;g&#39;, linestyle=&#39;dashed&#39;)
+ax2.axvline(-0.46, c=&#39;g&#39;, linestyle=&#39;dashed&#39;)
+ax2.set_ylabel(&#39;mean&#39;)
+ax2.set_xlabel(&#39;x&#39;)
+ax2.set_title(&#39;rate means&#39;);
 </pre></div>
 </div>
 </div>
@@ -818,35 +821,35 @@ Coef std:  0.036095619201660156
 <p>It indeed does. Red lines show that 28 successes and rate 0.5 are located with the same <code class="docutils literal notranslate"><span class="pre">x</span></code> argument.</p>
 </section>
 <section id="SVI-approach">
-<h2>SVI approach<a class="headerlink" href="#SVI-approach" title="Permalink to this headline">¶</a></h2>
+<h2>SVI approach<a class="headerlink" href="#SVI-approach" title="Permalink to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">Predictive</span></code> class can also be used with the SVI method. In the next section we will use it with <code class="docutils literal notranslate"><span class="pre">AutoGuide</span></code>’s guide and manually designed one.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoNormal</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from pyro.infer import SVI, Trace_ELBO
+from pyro.optim import Adam
+from pyro.infer.autoguide import AutoNormal
 </pre></div>
 </div>
 </div>
 <section id="Manually-defined-guide">
-<h3>Manually defined guide<a class="headerlink" href="#Manually-defined-guide" title="Permalink to this headline">¶</a></h3>
+<h3>Manually defined guide<a class="headerlink" href="#Manually-defined-guide" title="Permalink to this heading">¶</a></h3>
 <p>First we define our guide with all <code class="docutils literal notranslate"><span class="pre">sample</span></code> sites that are present in the model and parametrize them with learnable parameters. Then we perform gradient descent with <code class="docutils literal notranslate"><span class="pre">Adam</span></code> optimizer.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">counts</span><span class="p">):</span>
-    <span class="n">N</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def guide(features, counts):
+    N, P = features.shape
 
-    <span class="n">scale_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;scale_param&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">loc_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;loc_param&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">scale_param</span><span class="p">))</span>
-    <span class="n">coef</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;coef&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc_param</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="n">P</span><span class="p">])</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    scale_param = pyro.param(&quot;scale_param&quot;, torch.tensor(0.1), constraint=constraints.positive)
+    loc_param = pyro.param(&quot;loc_param&quot;, torch.tensor(0.0))
+    scale = pyro.sample(&quot;scale&quot;, dist.Delta(scale_param))
+    coef = pyro.sample(&quot;coef&quot;, dist.Normal(loc_param, scale).expand([P]).to_event(1))
 
-    <span class="n">concentration_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;concentration_param&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">concentration</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;concentration&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Delta</span><span class="p">(</span><span class="n">concentration_param</span><span class="p">))</span>
+    concentration_param = pyro.param(&quot;concentration_param&quot;, torch.tensor(0.1), constraint=constraints.positive)
+    concentration = pyro.sample(&quot;concentration&quot;, dist.Delta(concentration_param))
 </pre></div>
 </div>
 </div>
@@ -854,12 +857,12 @@ Coef std:  0.036095619201660156
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.clear_param_store()
 
-<span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)}</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
+adam_params = {&quot;lr&quot;: 0.005, &quot;betas&quot;: (0.90, 0.999)}
+optimizer = Adam(adam_params)
 
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+svi = SVI(model, guide, optimizer, loss=Trace_ELBO())
 </pre></div>
 </div>
 </div>
@@ -867,14 +870,14 @@ Coef std:  0.036095619201660156
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
 
-<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">5001</span>
+n_steps = 5001
 
-<span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loss: &#39;</span><span class="p">,</span> <span class="n">loss</span><span class="p">)</span>
+for step in range(n_steps):
+    loss = svi.step(X_, y_)
+    if step % 1000 == 0:
+        print(&#39;Loss: &#39;, loss)
 </pre></div>
 </div>
 </div>
@@ -898,7 +901,7 @@ Wall time: 21.3 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">list</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>list(pyro.get_param_store().items())
 </pre></div>
 </div>
 </div>
@@ -917,9 +920,9 @@ Wall time: 21.3 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">predictive_svi</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="n">guide</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">)(</span><span class="n">X_</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">predictive_svi</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>predictive_svi = Predictive(model, guide=guide, num_samples=500)(X_, None)
+for k, v in predictive_svi.items():
+    print(f&quot;{k}: {tuple(v.shape)}&quot;)
 </pre></div>
 </div>
 </div>
@@ -939,7 +942,7 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">counts_df</span> <span class="o">=</span> <span class="n">prepare_counts_df</span><span class="p">(</span><span class="n">predictive_svi</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>counts_df = prepare_counts_df(predictive_svi)
 </pre></div>
 </div>
 </div>
@@ -947,11 +950,11 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;low&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.scatter(X_, y_, c=&#39;r&#39;)
+plt.ylabel(&#39;y&#39;)
+plt.xlabel(&#39;x&#39;)
+plt.plot(counts_df[&#39;feat&#39;], counts_df[&#39;mean&#39;])
+plt.fill_between(counts_df[&#39;feat&#39;], counts_df[&#39;high&#39;], counts_df[&#39;low&#39;], alpha=0.5);
 </pre></div>
 </div>
 </div>
@@ -964,20 +967,20 @@ rate: (500, 1, 100)
 </div>
 </section>
 <section id="AutoGuide">
-<h3>AutoGuide<a class="headerlink" href="#AutoGuide" title="Permalink to this headline">¶</a></h3>
+<h3>AutoGuide<a class="headerlink" href="#AutoGuide" title="Permalink to this heading">¶</a></h3>
 <p>Another approach for conducting SVI is to rely on automatic guide generation. Here we use <code class="docutils literal notranslate"><span class="pre">AutoNormal</span></code> that underneath uses a normal distribution with a diagonal covariance matrix.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.clear_param_store()
 
-<span class="n">adam_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.005</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)}</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">adam_params</span><span class="p">)</span>
+adam_params = {&quot;lr&quot;: 0.005, &quot;betas&quot;: (0.90, 0.999)}
+optimizer = Adam(adam_params)
 
-<span class="n">auto_guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+auto_guide = AutoNormal(model)
 
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">auto_guide</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">Trace_ELBO</span><span class="p">())</span>
+svi = SVI(model, auto_guide, optimizer, loss=Trace_ELBO())
 </pre></div>
 </div>
 </div>
@@ -985,14 +988,14 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
 
-<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">3001</span>
+n_steps = 3001
 
-<span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loss: &#39;</span><span class="p">,</span> <span class="n">loss</span><span class="p">)</span>
+for step in range(n_steps):
+    loss = svi.step(X_, y_)
+    if step % 1000 == 0:
+        print(&#39;Loss: &#39;, loss)
 </pre></div>
 </div>
 </div>
@@ -1013,7 +1016,7 @@ Wall time: 19 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">auto_guide</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>auto_guide(X_, y_)
 </pre></div>
 </div>
 </div>
@@ -1033,7 +1036,7 @@ Wall time: 19 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">list</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>list(pyro.get_param_store().items())
 </pre></div>
 </div>
 </div>
@@ -1063,9 +1066,9 @@ Wall time: 19 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">predictive_svi</span> <span class="o">=</span> <span class="n">Predictive</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="n">auto_guide</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">)(</span><span class="n">X_</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">predictive_svi</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>predictive_svi = Predictive(model, guide=auto_guide, num_samples=500)(X_, None)
+for k, v in predictive_svi.items():
+    print(f&quot;{k}: {tuple(v.shape)}&quot;)
 </pre></div>
 </div>
 </div>
@@ -1085,7 +1088,7 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">counts_df</span> <span class="o">=</span> <span class="n">prepare_counts_df</span><span class="p">(</span><span class="n">predictive_svi</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>counts_df = prepare_counts_df(predictive_svi)
 </pre></div>
 </div>
 </div>
@@ -1093,11 +1096,11 @@ rate: (500, 1, 100)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">y_</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;feat&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">],</span> <span class="n">counts_df</span><span class="p">[</span><span class="s1">&#39;low&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.scatter(X_, y_, c=&#39;r&#39;)
+plt.ylabel(&#39;y&#39;)
+plt.xlabel(&#39;x&#39;)
+plt.plot(counts_df[&#39;feat&#39;], counts_df[&#39;mean&#39;])
+plt.fill_between(counts_df[&#39;feat&#39;], counts_df[&#39;high&#39;], counts_df[&#39;low&#39;], alpha=0.5);
 </pre></div>
 </div>
 </div>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Rational Speech Act framework &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>The Rational Speech Act framework &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -180,8 +182,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>The Rational Speech Act framework</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">The Rational Speech Act framework</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/RSA-implicature.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -301,10 +303,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -470,7 +473,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="The-Rational-Speech-Act-framework">
-<h1>The Rational Speech Act framework<a class="headerlink" href="#The-Rational-Speech-Act-framework" title="Permalink to this headline">¶</a></h1>
+<h1>The Rational Speech Act framework<a class="headerlink" href="#The-Rational-Speech-Act-framework" title="Permalink to this heading">¶</a></h1>
 <p>Human language depends on the assumption of <em>cooperativity</em>, that speakers attempt to provide relevant information to the listener; listeners can use this assumption to reason <em>pragmatically</em> about the likely state of the world given the utterance chosen by the speaker.</p>
 <p>The Rational Speech Act framework formalizes these ideas using probabiistic decision making and reasoning.</p>
 <p>Note: This notebook must be run against Pyro 4392d54a220c328ee356600fb69f82166330d3d6 or later.</p>
@@ -478,19 +481,19 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#first some imports</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>  <span class="c1"># double precision for numerical stability</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#first some imports
+import torch
+torch.set_default_dtype(torch.float64)  # double precision for numerical stability
 
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">argparse</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+import collections
+import argparse
+import matplotlib.pyplot as plt
 
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
+import pyro
+import pyro.distributions as dist
+import pyro.poutine as poutine
 
-<span class="kn">from</span> <span class="nn">search_inference</span> <span class="kn">import</span> <span class="n">HashingMarginal</span><span class="p">,</span> <span class="n">memoize</span><span class="p">,</span> <span class="n">Search</span>
+from search_inference import HashingMarginal, memoize, Search
 </pre></div>
 </div>
 </div>
@@ -499,8 +502,8 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">Marginal</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">memoize</span><span class="p">(</span><span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">HashingMarginal</span><span class="p">(</span><span class="n">Search</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def Marginal(fn):
+    return memoize(lambda *args: HashingMarginal(Search(fn).run(*args)))
 </pre></div>
 </div>
 </div>
@@ -513,11 +516,11 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">literal_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">):</span>
-    <span class="n">state</span> <span class="o">=</span> <span class="n">state_prior</span><span class="p">()</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;literal_meaning&quot;</span><span class="p">,</span> <span class="mf">0.</span> <span class="k">if</span> <span class="n">meaning</span><span class="p">(</span><span class="n">utterance</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="mf">999999.</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@Marginal
+def literal_listener(utterance):
+    state = state_prior()
+    pyro.factor(&quot;literal_meaning&quot;, 0. if meaning(utterance, state) else -999999.)
+    return state
 </pre></div>
 </div>
 </div>
@@ -530,13 +533,13 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">speaker</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
-    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.</span>
-    <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">alpha</span><span class="p">)):</span>
-        <span class="n">utterance</span> <span class="o">=</span> <span class="n">utterance_prior</span><span class="p">()</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;listener&quot;</span><span class="p">,</span> <span class="n">literal_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">state</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">utterance</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@Marginal
+def speaker(state):
+    alpha = 1.
+    with poutine.scale(scale=torch.tensor(alpha)):
+        utterance = utterance_prior()
+        pyro.sample(&quot;listener&quot;, literal_listener(utterance), obs=state)
+    return utterance
 </pre></div>
 </div>
 </div>
@@ -548,11 +551,11 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">pragmatic_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">):</span>
-    <span class="n">state</span> <span class="o">=</span> <span class="n">state_prior</span><span class="p">()</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;speaker&quot;</span><span class="p">,</span> <span class="n">speaker</span><span class="p">(</span><span class="n">state</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">utterance</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@Marginal
+def pragmatic_listener(utterance):
+    state = state_prior()
+    pyro.sample(&quot;speaker&quot;, speaker(state), obs=utterance)
+    return state
 </pre></div>
 </div>
 </div>
@@ -562,15 +565,15 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">total_number</span> <span class="o">=</span> <span class="mi">4</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>total_number = 4
 
-<span class="k">def</span> <span class="nf">state_prior</span><span class="p">():</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">total_number</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_number</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">n</span>
+def state_prior():
+    n = pyro.sample(&quot;state&quot;, dist.Categorical(probs=torch.ones(total_number+1) / total_number+1))
+    return n
 
-<span class="k">def</span> <span class="nf">utterance_prior</span><span class="p">():</span>
-    <span class="n">ix</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;utt&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">))</span>
-    <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;none&quot;</span><span class="p">,</span><span class="s2">&quot;some&quot;</span><span class="p">,</span><span class="s2">&quot;all&quot;</span><span class="p">][</span><span class="n">ix</span><span class="p">]</span>
+def utterance_prior():
+    ix = pyro.sample(&quot;utt&quot;, dist.Categorical(probs=torch.ones(3) / 3))
+    return [&quot;none&quot;,&quot;some&quot;,&quot;all&quot;][ix]
 </pre></div>
 </div>
 </div>
@@ -579,14 +582,14 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meanings</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">N</span><span class="p">:</span> <span class="n">N</span><span class="o">==</span><span class="mi">0</span><span class="p">,</span>
-    <span class="s2">&quot;some&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">N</span><span class="p">:</span> <span class="n">N</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">,</span>
-    <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">N</span><span class="p">:</span> <span class="n">N</span><span class="o">==</span><span class="n">total_number</span><span class="p">,</span>
-<span class="p">}</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>meanings = {
+    &quot;none&quot;: lambda N: N==0,
+    &quot;some&quot;: lambda N: N&gt;0,
+    &quot;all&quot;: lambda N: N==total_number,
+}
 
-<span class="k">def</span> <span class="nf">meaning</span><span class="p">(</span><span class="n">utterance</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">meanings</span><span class="p">[</span><span class="n">utterance</span><span class="p">](</span><span class="n">state</span><span class="p">)</span>
+def meaning(utterance, state):
+    return meanings[utterance](state)
 </pre></div>
 </div>
 </div>
@@ -595,21 +598,21 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#silly plotting helper:</span>
-<span class="k">def</span> <span class="nf">plot_dist</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
-    <span class="n">support</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">()</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">()]</span>
-    <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">support</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#silly plotting helper:
+def plot_dist(d):
+    support = d.enumerate_support()
+    data = [d.log_prob(s).exp().item() for s in d.enumerate_support()]
+    names = list(map(str, support))
 
-    <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
-    <span class="n">width</span> <span class="o">=</span> <span class="mf">0.3</span>
-    <span class="n">bins</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">-</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">rotation_mode</span><span class="o">=</span><span class="s2">&quot;anchor&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+    ax = plt.subplot(111)
+    width = 0.3
+    bins = [x-width/2 for x in range(1, len(data) + 1)]
+    ax.bar(bins,data,width=width)
+    ax.set_xticks(list(range(1, len(data) + 1)))
+    ax.set_xticklabels(names, rotation=45, rotation_mode=&quot;anchor&quot;, ha=&quot;right&quot;)
 
-<span class="n">interp_dist</span> <span class="o">=</span> <span class="n">pragmatic_listener</span><span class="p">(</span><span class="s2">&quot;some&quot;</span><span class="p">)</span>
-<span class="n">plot_dist</span><span class="p">(</span><span class="n">interp_dist</span><span class="p">)</span>
+interp_dist = pragmatic_listener(&quot;some&quot;)
+plot_dist(interp_dist)
 </pre></div>
 </div>
 </div>

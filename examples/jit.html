@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Using the PyTorch JIT Compiler with Pyro &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Using the PyTorch JIT Compiler with Pyro &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -189,8 +191,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Using the PyTorch JIT Compiler with Pyro</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Using the PyTorch JIT Compiler with Pyro</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/jit.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -310,10 +312,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -479,10 +482,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Using-the-PyTorch-JIT-Compiler-with-Pyro">
-<h1>Using the PyTorch JIT Compiler with Pyro<a class="headerlink" href="#Using-the-PyTorch-JIT-Compiler-with-Pyro" title="Permalink to this headline">¶</a></h1>
+<h1>Using the PyTorch JIT Compiler with Pyro<a class="headerlink" href="#Using-the-PyTorch-JIT-Compiler-with-Pyro" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial shows how to use the PyTorch <a class="reference external" href="https://pytorch.org/docs/master/jit.html">jit compiler</a> in Pyro models.</p>
 <section id="Summary:">
-<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this headline">¶</a></h2>
+<h2>Summary:<a class="headerlink" href="#Summary:" title="Permalink to this heading">¶</a></h2>
 <ul>
 <li><p>You can use compiled functions in Pyro models.</p></li>
 <li><p>You cannot use pyro primitives inside compiled functions.</p></li>
@@ -501,7 +504,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Introduction">Introduction</a></p></li>
 <li><p><a class="reference external" href="#A-simple-model">A simple model</a></p></li>
@@ -511,46 +514,46 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">from</span> <span class="nn">pyro</span> <span class="kn">import</span> <span class="n">poutine</span>
-<span class="kn">from</span> <span class="nn">pyro.distributions.util</span> <span class="kn">import</span> <span class="n">broadcast_shape</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">Trace_ELBO</span><span class="p">,</span> <span class="n">JitTrace_ELBO</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span><span class="p">,</span> <span class="n">JitTraceEnum_ELBO</span><span class="p">,</span> <span class="n">SVI</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.mcmc</span> <span class="kn">import</span> <span class="n">MCMC</span><span class="p">,</span> <span class="n">NUTS</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoDiagonalNormal</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+import torch
+import pyro
+import pyro.distributions as dist
+from torch.distributions import constraints
+from pyro import poutine
+from pyro.distributions.util import broadcast_shape
+from pyro.infer import Trace_ELBO, JitTrace_ELBO, TraceEnum_ELBO, JitTraceEnum_ELBO, SVI
+from pyro.infer.mcmc import MCMC, NUTS
+from pyro.infer.autoguide import AutoDiagonalNormal
+from pyro.optim import Adam
 
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
+smoke_test = (&#39;CI&#39; in os.environ)
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
 </pre></div>
 </div>
 </div>
 <section id="Introduction">
-<h3>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h3>
+<h3>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h3>
 <p>PyTorch 1.0 includes a <a class="reference external" href="https://pytorch.org/docs/master/jit.html">jit compiler</a> to speed up models. You can think of compilation as a “static mode”, whereas PyTorch usually operates in “eager mode”.</p>
 <p>Pyro supports the jit compiler in two ways. First you can use compiled functions inside Pyro models (but those functions cannot contain Pyro primitives). Second, you can use Pyro’s jit inference algorithms to compile entire inference steps; in static models this can reduce the Python overhead of Pyro models and speed up inference.</p>
 <p>The rest of this tutorial focuses on Pyro’s jitted inference algorithms: <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.trace_elbo.JitTrace_ELBO">JitTrace_ELBO</a>, <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.tracegraph_elbo.JitTraceGraph_ELBO">JitTraceGraph_ELBO</a>, <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.traceenum_elbo.JitTraceEnum_ELBO">JitTraceEnum_ELBO</a>,
 <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#pyro.infer.trace_mean_field_elbo.JitTraceMeanField_ELBO">JitMeanField_ELBO</a>, <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.HMC">HMC(jit_compile=True)</a>, and <a class="reference external" href="http://docs.pyro.ai/en/dev/mcmc.html#pyro.infer.mcmc.NUTS">NUTS(jit_compile=True)</a>. For further reading, see the <a class="reference external" href="https://github.com/pyro-ppl/pyro/tree/dev/examples">examples/</a> directory, where most examples include a <code class="docutils literal notranslate"><span class="pre">--jit</span></code> option to run in compiled mode.</p>
 </section>
 <section id="A-simple-model">
-<h3>A simple model<a class="headerlink" href="#A-simple-model" title="Permalink to this headline">¶</a></h3>
+<h3>A simple model<a class="headerlink" href="#A-simple-model" title="Permalink to this heading">¶</a></h3>
 <p>Let’s start with a simple Gaussian model and an <a class="reference external" href="http://docs.pyro.ai/en/dev/infer.autoguide.html">autoguide</a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">))</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(data):
+    loc = pyro.sample(&quot;loc&quot;, dist.Normal(0., 10.))
+    scale = pyro.sample(&quot;scale&quot;, dist.LogNormal(0., 3.))
+    with pyro.plate(&quot;data&quot;, data.size(0)):
+        pyro.sample(&quot;obs&quot;, dist.Normal(loc, scale), obs=data)
 
-<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoDiagonalNormal</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+guide = AutoDiagonalNormal(model)
 
-<span class="n">data</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">100</span><span class="p">,))</span>
+data = dist.Normal(0.5, 2.).sample((100,))
 </pre></div>
 </div>
 </div>
@@ -559,12 +562,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">elbo</span> <span class="o">=</span> <span class="n">Trace_ELBO</span><span class="p">()</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">}),</span> <span class="n">elbo</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">1000</span><span class="p">):</span>
-    <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+pyro.clear_param_store()
+elbo = Trace_ELBO()
+svi = SVI(model, guide, Adam({&#39;lr&#39;: 0.01}), elbo)
+for i in range(2 if smoke_test else 1000):
+    svi.step(data)
 </pre></div>
 </div>
 </div>
@@ -587,15 +590,15 @@ Wall time: 2.76 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+pyro.clear_param_store()
 
-<span class="n">guide</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># Do any lazy initialization before compiling.</span>
+guide(data)  # Do any lazy initialization before compiling.
 
-<span class="n">elbo</span> <span class="o">=</span> <span class="n">JitTrace_ELBO</span><span class="p">()</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">}),</span> <span class="n">elbo</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">1000</span><span class="p">):</span>
-    <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+elbo = JitTrace_ELBO()
+svi = SVI(model, guide, Adam({&#39;lr&#39;: 0.01}), elbo)
+for i in range(2 if smoke_test else 1000):
+    svi.step(data)
 </pre></div>
 </div>
 </div>
@@ -614,10 +617,10 @@ Wall time: 1.16 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">mcmc_run</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+nuts_kernel = NUTS(model)
+pyro.set_rng_seed(1)
+mcmc_run = MCMC(nuts_kernel, num_samples=100).run(data)
 </pre></div>
 </div>
 </div>
@@ -642,10 +645,10 @@ Wall time: 4.7 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">jit_compile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_jit_warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">mcmc_run</span> <span class="o">=</span> <span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+nuts_kernel = NUTS(model, jit_compile=True, ignore_jit_warnings=True)
+pyro.set_rng_seed(1)
+mcmc_run = MCMC(nuts_kernel, num_samples=100).run(data)
 </pre></div>
 </div>
 </div>
@@ -668,7 +671,7 @@ Wall time: 2.09 s
 <p>We notice a significant increase in sampling throughput when JIT compilation is enabled.</p>
 </section>
 <section id="Varying-structure">
-<h3>Varying structure<a class="headerlink" href="#Varying-structure" title="Permalink to this headline">¶</a></h3>
+<h3>Varying structure<a class="headerlink" href="#Varying-structure" title="Permalink to this heading">¶</a></h3>
 <p>Time series models often run on datasets of multiple time series with different lengths. To accomodate varying structure like this, Pyro requires models to separate all model inputs into tensors and non-tensors.<span class="math notranslate nohighlight">\(^\dagger\)</span></p>
 <ul class="simple">
 <li><p>Non-tensor inputs should be passed as <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> to the model and guide. These can determine model structure, so that a model is compiled for each value of the passed <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</p></li>
@@ -679,28 +682,28 @@ Wall time: 2.09 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">num_sequences</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">state_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">):</span>
-    <span class="c1"># This is a Gaussian HMM model.</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">):</span>
-        <span class="n">trans</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;trans&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Dirichlet</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">state_dim</span><span class="p">)))</span>
-        <span class="n">emit_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;emit_loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">10.</span><span class="p">))</span>
-    <span class="n">emit_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;emit_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(sequence, num_sequences, length, state_dim=16):
+    # This is a Gaussian HMM model.
+    with pyro.plate(&quot;states&quot;, state_dim):
+        trans = pyro.sample(&quot;trans&quot;, dist.Dirichlet(0.5 * torch.ones(state_dim)))
+        emit_loc = pyro.sample(&quot;emit_loc&quot;, dist.Normal(0., 10.))
+    emit_scale = pyro.sample(&quot;emit_scale&quot;, dist.LogNormal(0., 3.))
 
-    <span class="c1"># We&#39;re doing manual data subsampling, so we need to scale to actual data size.</span>
-    <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">num_sequences</span><span class="p">):</span>
-        <span class="c1"># We&#39;ll use enumeration inference over the hidden x.</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">markov</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">)):</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;x_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">trans</span><span class="p">[</span><span class="n">x</span><span class="p">]),</span>
-                            <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;y_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">emit_loc</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">emit_scale</span><span class="p">),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="n">sequence</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+    # We&#39;re doing manual data subsampling, so we need to scale to actual data size.
+    with poutine.scale(scale=num_sequences):
+        # We&#39;ll use enumeration inference over the hidden x.
+        x = 0
+        for t in pyro.markov(range(length)):
+            x = pyro.sample(&quot;x_{}&quot;.format(t), dist.Categorical(trans[x]),
+                            infer={&quot;enumerate&quot;: &quot;parallel&quot;})
+            pyro.sample(&quot;y_{}&quot;.format(t), dist.Normal(emit_loc[x], emit_scale),
+                        obs=sequence[t])
 
-<span class="n">guide</span> <span class="o">=</span> <span class="n">AutoDiagonalNormal</span><span class="p">(</span><span class="n">poutine</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">expose</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;trans&quot;</span><span class="p">,</span> <span class="s2">&quot;emit_scale&quot;</span><span class="p">,</span> <span class="s2">&quot;emit_loc&quot;</span><span class="p">]))</span>
+guide = AutoDiagonalNormal(poutine.block(model, expose=[&quot;trans&quot;, &quot;emit_scale&quot;, &quot;emit_loc&quot;]))
 
-<span class="c1"># This is fake data of different lengths.</span>
-<span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span><span class="mi">24</span><span class="p">]</span> <span class="o">*</span> <span class="mi">50</span> <span class="o">+</span> <span class="p">[</span><span class="mi">48</span><span class="p">]</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="p">[</span><span class="mi">72</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span>
-<span class="n">sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="k">for</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">lengths</span><span class="p">]</span>
+# This is fake data of different lengths.
+lengths = [24] * 50 + [48] * 20 + [72] * 5
+sequences = [torch.randn(length) for length in lengths]
 </pre></div>
 </div>
 </div>
@@ -709,14 +712,14 @@ Wall time: 2.09 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">elbo</span> <span class="o">=</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">}),</span> <span class="n">elbo</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">10</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
-        <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span>                                            <span class="c1"># tensor args</span>
-                 <span class="n">num_sequences</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">),</span> <span class="n">length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">))</span>  <span class="c1"># non-tensor args</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+pyro.clear_param_store()
+elbo = TraceEnum_ELBO(max_plate_nesting=1)
+svi = SVI(model, guide, Adam({&#39;lr&#39;: 0.01}), elbo)
+for i in range(1 if smoke_test else 10):
+    for sequence in sequences:
+        svi.step(sequence,                                            # tensor args
+                 num_sequences=len(sequences), length=len(sequence))  # non-tensor args
 </pre></div>
 </div>
 </div>
@@ -739,18 +742,18 @@ Wall time: 52.8 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+pyro.clear_param_store()
 
-<span class="c1"># Do any lazy initialization before compiling.</span>
-<span class="n">guide</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">num_sequences</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">),</span> <span class="n">length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+# Do any lazy initialization before compiling.
+guide(sequences[0], num_sequences=len(sequences), length=len(sequences[0]))
 
-<span class="n">elbo</span> <span class="o">=</span> <span class="n">JitTraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">Adam</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">}),</span> <span class="n">elbo</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">10</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
-        <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span>                                            <span class="c1"># tensor args</span>
-                 <span class="n">num_sequences</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">),</span> <span class="n">length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">))</span>  <span class="c1"># non-tensor args</span>
+elbo = JitTraceEnum_ELBO(max_plate_nesting=1)
+svi = SVI(model, guide, Adam({&#39;lr&#39;: 0.01}), elbo)
+for i in range(1 if smoke_test else 10):
+    for sequence in sequences:
+        svi.step(sequence,                                            # tensor args
+                 num_sequences=len(sequences), length=len(sequence))  # non-tensor args
 </pre></div>
 </div>
 </div>

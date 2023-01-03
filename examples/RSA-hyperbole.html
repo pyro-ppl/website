@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Understanding Hyperbole using RSA &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Understanding Hyperbole using RSA &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -184,8 +186,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Understanding Hyperbole using RSA</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Understanding Hyperbole using RSA</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/RSA-hyperbole.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -305,10 +307,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -474,7 +477,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Understanding-Hyperbole-using-RSA">
-<h1>Understanding Hyperbole using RSA<a class="headerlink" href="#Understanding-Hyperbole-using-RSA" title="Permalink to this headline">¶</a></h1>
+<h1>Understanding Hyperbole using RSA<a class="headerlink" href="#Understanding-Hyperbole-using-RSA" title="Permalink to this heading">¶</a></h1>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&quot;My new kettle cost a million dollars.&quot;
 </pre></div>
 </div>
@@ -484,19 +487,19 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#first some imports</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>  <span class="c1"># double precision for numerical stability</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#first some imports
+import torch
+torch.set_default_dtype(torch.float64)  # double precision for numerical stability
 
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">argparse</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+import collections
+import argparse
+import matplotlib.pyplot as plt
 
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
+import pyro
+import pyro.distributions as dist
+import pyro.poutine as poutine
 
-<span class="kn">from</span> <span class="nn">search_inference</span> <span class="kn">import</span> <span class="n">HashingMarginal</span><span class="p">,</span> <span class="n">memoize</span><span class="p">,</span> <span class="n">Search</span>
+from search_inference import HashingMarginal, memoize, Search
 </pre></div>
 </div>
 </div>
@@ -505,8 +508,8 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">Marginal</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">memoize</span><span class="p">(</span><span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">HashingMarginal</span><span class="p">(</span><span class="n">Search</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def Marginal(fn):
+    return memoize(lambda *args: HashingMarginal(Search(fn).run(*args)))
 </pre></div>
 </div>
 </div>
@@ -515,33 +518,33 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">State</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;State&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">,</span> <span class="s2">&quot;arousal&quot;</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>State = collections.namedtuple(&quot;State&quot;, [&quot;price&quot;, &quot;arousal&quot;])
 
-<span class="k">def</span> <span class="nf">price_prior</span><span class="p">():</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">51</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">501</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1001</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">5001</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">10001</span><span class="p">]</span>
-    <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.4205</span><span class="p">,</span> <span class="mf">0.3865</span><span class="p">,</span> <span class="mf">0.0533</span><span class="p">,</span> <span class="mf">0.0538</span><span class="p">,</span> <span class="mf">0.0223</span><span class="p">,</span> <span class="mf">0.0211</span><span class="p">,</span> <span class="mf">0.0112</span><span class="p">,</span> <span class="mf">0.0111</span><span class="p">,</span> <span class="mf">0.0083</span><span class="p">,</span> <span class="mf">0.0120</span><span class="p">])</span>
-    <span class="n">ix</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;price&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">probs</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">values</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+def price_prior():
+    values = [50, 51, 500, 501, 1000, 1001, 5000, 5001, 10000, 10001]
+    probs = torch.tensor([0.4205, 0.3865, 0.0533, 0.0538, 0.0223, 0.0211, 0.0112, 0.0111, 0.0083, 0.0120])
+    ix = pyro.sample(&quot;price&quot;, dist.Categorical(probs=probs))
+    return values[ix]
 
-<span class="k">def</span> <span class="nf">arousal_prior</span><span class="p">(</span><span class="n">price</span><span class="p">):</span>
-    <span class="n">probs</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="mi">50</span><span class="p">:</span> <span class="mf">0.3173</span><span class="p">,</span>
-        <span class="mi">51</span><span class="p">:</span> <span class="mf">0.3173</span><span class="p">,</span>
-        <span class="mi">500</span><span class="p">:</span> <span class="mf">0.7920</span><span class="p">,</span>
-        <span class="mi">501</span><span class="p">:</span> <span class="mf">0.7920</span><span class="p">,</span>
-        <span class="mi">1000</span><span class="p">:</span> <span class="mf">0.8933</span><span class="p">,</span>
-        <span class="mi">1001</span><span class="p">:</span> <span class="mf">0.8933</span><span class="p">,</span>
-        <span class="mi">5000</span><span class="p">:</span> <span class="mf">0.9524</span><span class="p">,</span>
-        <span class="mi">5001</span><span class="p">:</span> <span class="mf">0.9524</span><span class="p">,</span>
-        <span class="mi">10000</span><span class="p">:</span> <span class="mf">0.9864</span><span class="p">,</span>
-        <span class="mi">10001</span><span class="p">:</span> <span class="mf">0.9864</span>
-    <span class="p">}</span>
-    <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;arousal&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">probs</span><span class="p">[</span><span class="n">price</span><span class="p">]))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span>
+def arousal_prior(price):
+    probs = {
+        50: 0.3173,
+        51: 0.3173,
+        500: 0.7920,
+        501: 0.7920,
+        1000: 0.8933,
+        1001: 0.8933,
+        5000: 0.9524,
+        5001: 0.9524,
+        10000: 0.9864,
+        10001: 0.9864
+    }
+    return pyro.sample(&quot;arousal&quot;, dist.Bernoulli(probs=probs[price])).item() == 1
 
-<span class="k">def</span> <span class="nf">state_prior</span><span class="p">():</span>
-    <span class="n">price</span> <span class="o">=</span> <span class="n">price_prior</span><span class="p">()</span>
-    <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="n">price</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="n">arousal_prior</span><span class="p">(</span><span class="n">price</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">state</span>
+def state_prior():
+    price = price_prior()
+    state = State(price=price, arousal=arousal_prior(price))
+    return state
 </pre></div>
 </div>
 </div>
@@ -554,27 +557,27 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">qud</span><span class="p">):</span>
-    <span class="n">v</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;proj&quot;</span><span class="p">,</span><span class="n">dist</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">qud_fns</span><span class="p">[</span><span class="n">qud</span><span class="p">](</span><span class="n">v</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@Marginal
+def project(dist,qud):
+    v = pyro.sample(&quot;proj&quot;,dist)
+    return qud_fns[qud](v)
 
-<span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">literal_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">):</span>
-    <span class="n">state</span><span class="o">=</span><span class="n">state_prior</span><span class="p">()</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;literal_meaning&quot;</span><span class="p">,</span> <span class="mf">0.</span> <span class="k">if</span> <span class="n">meaning</span><span class="p">(</span><span class="n">utterance</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="mf">999999.</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span>
+@Marginal
+def literal_listener(utterance):
+    state=state_prior()
+    pyro.factor(&quot;literal_meaning&quot;, 0. if meaning(utterance, state.price) else -999999.)
+    return state
 
-<span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">speaker</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">qud</span><span class="p">):</span>
-    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.</span>
-    <span class="n">qudValue</span> <span class="o">=</span> <span class="n">qud_fns</span><span class="p">[</span><span class="n">qud</span><span class="p">](</span><span class="n">state</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">alpha</span><span class="p">)):</span>
-        <span class="n">utterance</span> <span class="o">=</span> <span class="n">utterance_prior</span><span class="p">()</span>
-        <span class="n">literal_marginal</span> <span class="o">=</span> <span class="n">literal_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">)</span>
-        <span class="n">projected_literal</span> <span class="o">=</span> <span class="n">project</span><span class="p">(</span><span class="n">literal_marginal</span><span class="p">,</span> <span class="n">qud</span><span class="p">)</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;listener&quot;</span><span class="p">,</span> <span class="n">projected_literal</span><span class="p">,</span> <span class="n">obs</span><span class="o">=</span><span class="n">qudValue</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">utterance</span>
+@Marginal
+def speaker(state, qud):
+    alpha = 1.
+    qudValue = qud_fns[qud](state)
+    with poutine.scale(scale=torch.tensor(alpha)):
+        utterance = utterance_prior()
+        literal_marginal = literal_listener(utterance)
+        projected_literal = project(literal_marginal, qud)
+        pyro.sample(&quot;listener&quot;, projected_literal, obs=qudValue)
+    return utterance
 <br/></pre></div>
 </div>
 </div>
@@ -583,17 +586,17 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#The QUD functions we consider:</span>
-<span class="n">qud_fns</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
-    <span class="s2">&quot;arousal&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">arousal</span><span class="p">),</span>
-    <span class="s2">&quot;priceArousal&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">arousal</span><span class="p">),</span>
-<span class="p">}</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#The QUD functions we consider:
+qud_fns = {
+    &quot;price&quot;: lambda state: State(price=state.price, arousal=None),
+    &quot;arousal&quot;: lambda state: State(price=None, arousal=state.arousal),
+    &quot;priceArousal&quot;: lambda state: State(price=state.price, arousal=state.arousal),
+}
 
-<span class="k">def</span> <span class="nf">qud_prior</span><span class="p">():</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qud_fns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-    <span class="n">ix</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;qud&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)))</span>
-    <span class="k">return</span> <span class="n">values</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+def qud_prior():
+    values = list(qud_fns.keys())
+    ix = pyro.sample(&quot;qud&quot;, dist.Categorical(probs=torch.ones(len(values)) / len(values)))
+    return values[ix]
 </pre></div>
 </div>
 </div>
@@ -602,13 +605,13 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">utterance_prior</span><span class="p">():</span>
-    <span class="n">utterances</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">51</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">501</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1001</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">5001</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">10001</span><span class="p">]</span>
-    <span class="n">ix</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;utterance&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">utterances</span><span class="p">))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">utterances</span><span class="p">)))</span>
-    <span class="k">return</span> <span class="n">utterances</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def utterance_prior():
+    utterances = [50, 51, 500, 501, 1000, 1001, 5000, 5001, 10000, 10001]
+    ix = pyro.sample(&quot;utterance&quot;, dist.Categorical(probs=torch.ones(len(utterances)) / len(utterances)))
+    return utterances[ix]
 
-<span class="k">def</span> <span class="nf">meaning</span><span class="p">(</span><span class="n">utterance</span><span class="p">,</span> <span class="n">price</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">utterance</span> <span class="o">==</span> <span class="n">price</span>
+def meaning(utterance, price):
+    return utterance == price
 </pre></div>
 </div>
 </div>
@@ -617,23 +620,23 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#silly plotting helper:</span>
-<span class="k">def</span> <span class="nf">plot_dist</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
-    <span class="n">support</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">()</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">enumerate_support</span><span class="p">()]</span>
-    <span class="n">names</span> <span class="o">=</span> <span class="n">support</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#silly plotting helper:
+def plot_dist(d):
+    support = d.enumerate_support()
+    data = [d.log_prob(s).exp().item() for s in d.enumerate_support()]
+    names = support
 
-    <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
-    <span class="n">width</span><span class="o">=</span><span class="mf">0.3</span>
-    <span class="n">bins</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">-</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)))</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))))</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">names</span><span class="p">,</span><span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">rotation_mode</span><span class="o">=</span><span class="s2">&quot;anchor&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+    ax = plt.subplot(111)
+    width=0.3
+    bins = list(map(lambda x: x-width/2,range(1,len(data)+1)))
+    ax.bar(bins,data,width=width)
+    ax.set_xticks(list(map(lambda x: x, range(1,len(data)+1))))
+    ax.set_xticklabels(names,rotation=45, rotation_mode=&quot;anchor&quot;, ha=&quot;right&quot;)
 
 
-<span class="c1"># plot_dist( speaker(State(price=50, arousal=False), &quot;arousal&quot;) )</span>
-<span class="c1"># plot_dist( speaker(State(price=50, arousal=True), &quot;price&quot;) )</span>
-<span class="n">plot_dist</span><span class="p">(</span> <span class="n">speaker</span><span class="p">(</span><span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="s2">&quot;arousal&quot;</span><span class="p">)</span> <span class="p">)</span>
+# plot_dist( speaker(State(price=50, arousal=False), &quot;arousal&quot;) )
+# plot_dist( speaker(State(price=50, arousal=True), &quot;price&quot;) )
+plot_dist( speaker(State(price=50, arousal=True), &quot;arousal&quot;) )
 </pre></div>
 </div>
 </div>
@@ -650,13 +653,13 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">pragmatic_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">):</span>
-    <span class="n">state</span> <span class="o">=</span> <span class="n">state_prior</span><span class="p">()</span>
-    <span class="n">qud</span> <span class="o">=</span> <span class="n">qud_prior</span><span class="p">()</span>
-    <span class="n">speaker_marginal</span> <span class="o">=</span> <span class="n">speaker</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">qud</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;speaker&quot;</span><span class="p">,</span> <span class="n">speaker_marginal</span><span class="p">,</span> <span class="n">obs</span><span class="o">=</span><span class="n">utterance</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@Marginal
+def pragmatic_listener(utterance):
+    state = state_prior()
+    qud = qud_prior()
+    speaker_marginal = speaker(state, qud)
+    pyro.sample(&quot;speaker&quot;, speaker_marginal, obs=utterance)
+    return state
 </pre></div>
 </div>
 </div>
@@ -665,7 +668,7 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_dist</span><span class="p">(</span> <span class="n">pragmatic_listener</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span> <span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_dist( pragmatic_listener(10000) )
 </pre></div>
 </div>
 </div>
@@ -677,45 +680,45 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 </div>
 </div>
 <section id="Pragmatic-Halo">
-<h2>Pragmatic Halo<a class="headerlink" href="#Pragmatic-Halo" title="Permalink to this headline">¶</a></h2>
+<h2>Pragmatic Halo<a class="headerlink" href="#Pragmatic-Halo" title="Permalink to this heading">¶</a></h2>
 <p>“It cost fifty dollars” is often interpretted as costing <em>around</em> 50 – plausibly 51; yet “it cost fiftyone dollars” is interpretted as 51 and definitely not 50. This assymetric imprecision is often called the pragmatic halo or pragmatic slack.</p>
 <p>We can extend the hyperole model to capture this additional non-literal use of numbers by including QUD functions that collapse nearby numbers and assuming that round numbers are slightly more likely (because they are less difficult to utter).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#A helper to round a number to the nearest ten:</span>
-<span class="k">def</span> <span class="nf">approx</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="mf">10.</span>
-    <span class="n">div</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">b</span>
-    <span class="n">rounded</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">div</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">div</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">div</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">div</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="n">rounded</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#A helper to round a number to the nearest ten:
+def approx(x, b=None):
+    if b is None:
+        b = 10.
+    div = float(x)/b
+    rounded = int(div) + 1 if div - float(int(div)) &gt;= 0.5 else int(div)
+    return int(b) * rounded
 
-<span class="c1">#The QUD functions we consider:</span>
-<span class="n">qud_fns</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
-    <span class="s2">&quot;arousal&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">arousal</span><span class="p">),</span>
-    <span class="s2">&quot;priceArousal&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">,</span> <span class="n">arousal</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">arousal</span><span class="p">),</span>
-    <span class="s2">&quot;approxPrice&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="n">approx</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">),</span> <span class="n">arousal</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
-    <span class="s2">&quot;approxPriceArousal&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">(</span><span class="n">price</span><span class="o">=</span><span class="n">approx</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">),</span> <span class="n">arousal</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">arousal</span><span class="p">),</span>
-<span class="p">}</span>
+#The QUD functions we consider:
+qud_fns = {
+    &quot;price&quot;: lambda state: State(price=state.price, arousal=None),
+    &quot;arousal&quot;: lambda state: State(price=None, arousal=state.arousal),
+    &quot;priceArousal&quot;: lambda state: State(price=state.price, arousal=state.arousal),
+    &quot;approxPrice&quot;: lambda state: State(price=approx(state.price), arousal=None),
+    &quot;approxPriceArousal&quot;: lambda state: State(price=approx(state.price), arousal=state.arousal),
+}
 
-<span class="k">def</span> <span class="nf">qud_prior</span><span class="p">():</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qud_fns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-    <span class="n">ix</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;qud&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)))</span>
-    <span class="k">return</span> <span class="n">values</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+def qud_prior():
+    values = list(qud_fns.keys())
+    ix = pyro.sample(&quot;qud&quot;, dist.Categorical(probs=torch.ones(len(values)) / len(values)))
+    return values[ix]
 
-<span class="k">def</span> <span class="nf">utterance_cost</span><span class="p">(</span><span class="n">numberUtt</span><span class="p">):</span>
-    <span class="n">preciseNumberCost</span> <span class="o">=</span> <span class="mf">10.</span>
-    <span class="k">return</span> <span class="mf">0.</span> <span class="k">if</span> <span class="n">approx</span><span class="p">(</span><span class="n">numberUtt</span><span class="p">)</span> <span class="o">==</span> <span class="n">numberUtt</span> <span class="k">else</span> <span class="n">preciseNumberCost</span>
+def utterance_cost(numberUtt):
+    preciseNumberCost = 10.
+    return 0. if approx(numberUtt) == numberUtt else preciseNumberCost
 
-<span class="k">def</span> <span class="nf">utterance_prior</span><span class="p">():</span>
-    <span class="n">utterances</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">51</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">501</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1001</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">5001</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">10001</span><span class="p">]</span>
-    <span class="n">utteranceLogits</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">utterance_cost</span><span class="p">,</span> <span class="n">utterances</span><span class="p">)),</span>
-                                    <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-    <span class="n">ix</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;utterance&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">utteranceLogits</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">utterances</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+def utterance_prior():
+    utterances = [50, 51, 500, 501, 1000, 1001, 5000, 5001, 10000, 10001]
+    utteranceLogits = -torch.tensor(list(map(utterance_cost, utterances)),
+                                    dtype=torch.float64)
+    ix = pyro.sample(&quot;utterance&quot;, dist.Categorical(logits=utteranceLogits))
+    return utterances[ix]
 </pre></div>
 </div>
 </div>
@@ -724,30 +727,30 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">literal_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">):</span>
-    <span class="n">state</span><span class="o">=</span><span class="n">state_prior</span><span class="p">()</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="s2">&quot;literal_meaning&quot;</span><span class="p">,</span> <span class="mf">0.</span> <span class="k">if</span> <span class="n">meaning</span><span class="p">(</span><span class="n">utterance</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">price</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="mf">999999.</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@Marginal
+def literal_listener(utterance):
+    state=state_prior()
+    pyro.factor(&quot;literal_meaning&quot;, 0. if meaning(utterance, state.price) else -999999.)
+    return state
 
-<span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">speaker</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">qud</span><span class="p">):</span>
-    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.</span>
-    <span class="n">qudValue</span> <span class="o">=</span> <span class="n">qud_fns</span><span class="p">[</span><span class="n">qud</span><span class="p">](</span><span class="n">state</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">alpha</span><span class="p">)):</span>
-        <span class="n">utterance</span> <span class="o">=</span> <span class="n">utterance_prior</span><span class="p">()</span>
-        <span class="n">literal_marginal</span> <span class="o">=</span> <span class="n">literal_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">)</span>
-        <span class="n">projected_literal</span> <span class="o">=</span> <span class="n">project</span><span class="p">(</span><span class="n">literal_marginal</span><span class="p">,</span> <span class="n">qud</span><span class="p">)</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;listener&quot;</span><span class="p">,</span> <span class="n">projected_literal</span><span class="p">,</span> <span class="n">obs</span><span class="o">=</span><span class="n">qudValue</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">utterance</span>
+@Marginal
+def speaker(state, qud):
+    alpha = 1.
+    qudValue = qud_fns[qud](state)
+    with poutine.scale(scale=torch.tensor(alpha)):
+        utterance = utterance_prior()
+        literal_marginal = literal_listener(utterance)
+        projected_literal = project(literal_marginal, qud)
+        pyro.sample(&quot;listener&quot;, projected_literal, obs=qudValue)
+    return utterance
 
-<span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">pragmatic_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">):</span>
-    <span class="n">state</span> <span class="o">=</span> <span class="n">state_prior</span><span class="p">()</span>
-    <span class="n">qud</span> <span class="o">=</span> <span class="n">qud_prior</span><span class="p">()</span>
-    <span class="n">speaker_marginal</span> <span class="o">=</span> <span class="n">speaker</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">qud</span><span class="p">)</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;speaker&quot;</span><span class="p">,</span> <span class="n">speaker_marginal</span><span class="p">,</span> <span class="n">obs</span><span class="o">=</span><span class="n">utterance</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span>
+@Marginal
+def pragmatic_listener(utterance):
+    state = state_prior()
+    qud = qud_prior()
+    speaker_marginal = speaker(state, qud)
+    pyro.sample(&quot;speaker&quot;, speaker_marginal, obs=utterance)
+    return state
 </pre></div>
 </div>
 </div>
@@ -756,11 +759,11 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@Marginal</span>
-<span class="k">def</span> <span class="nf">pragmatic_listener_price_marginal</span><span class="p">(</span><span class="n">utterance</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;pm&quot;</span><span class="p">,</span> <span class="n">pragmatic_listener</span><span class="p">(</span><span class="n">utterance</span><span class="p">))</span><span class="o">.</span><span class="n">price</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@Marginal
+def pragmatic_listener_price_marginal(utterance):
+    return pyro.sample(&quot;pm&quot;, pragmatic_listener(utterance)).price
 
-<span class="n">plot_dist</span><span class="p">(</span><span class="n">pragmatic_listener_price_marginal</span><span class="p">(</span><span class="mi">50</span><span class="p">))</span>
+plot_dist(pragmatic_listener_price_marginal(50))
 </pre></div>
 </div>
 </div>
@@ -775,7 +778,7 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_dist</span><span class="p">(</span><span class="n">pragmatic_listener_price_marginal</span><span class="p">(</span><span class="mi">51</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_dist(pragmatic_listener_price_marginal(51))
 </pre></div>
 </div>
 </div>
@@ -788,7 +791,7 @@ expensive was it?” or “how am I feeling about the price?”; pragmatic liste
 </div>
 </section>
 <section id="Irony-and-More-Complex-Affect">
-<h2>Irony and More Complex Affect<a class="headerlink" href="#Irony-and-More-Complex-Affect" title="Permalink to this headline">¶</a></h2>
+<h2>Irony and More Complex Affect<a class="headerlink" href="#Irony-and-More-Complex-Affect" title="Permalink to this heading">¶</a></h2>
 <p>In the above hyperbole model we assumed a very simple model of affect: a single dimension with two values (high and low arousal). Actual affect is best represented as a two-dimensional space corresponding to valence and arousal. Kao and Goodman (2015) showed that extending the affect space to these two dimensions immediately introduces a new usage of numbers: verbal irony in which an utterance corresponding to a high-arousal positive valence state is used to convey a high-arousal but negative
 valence (or vice versa).</p>
 </section>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tracking an Unknown Number of Objects &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Tracking an Unknown Number of Objects &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -184,8 +186,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Tracking an Unknown Number of Objects</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Tracking an Unknown Number of Objects</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/tracking_1d.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -305,10 +307,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -474,29 +477,29 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Tracking-an-Unknown-Number-of-Objects">
-<h1>Tracking an Unknown Number of Objects<a class="headerlink" href="#Tracking-an-Unknown-Number-of-Objects" title="Permalink to this headline">¶</a></h1>
+<h1>Tracking an Unknown Number of Objects<a class="headerlink" href="#Tracking-an-Unknown-Number-of-Objects" title="Permalink to this heading">¶</a></h1>
 <p>While SVI can be used to learn components and assignments of a mixture model, pyro.contrib.tracking provides more efficient inference algorithms to estimate assignments. This notebook demonstrates how to use the <code class="docutils literal notranslate"><span class="pre">MarginalAssignmentPersistent</span></code> inside SVI.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.distributions</span> <span class="kn">import</span> <span class="n">constraints</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import math
+import os
+import torch
+from torch.distributions import constraints
+from matplotlib import pyplot
 
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">import</span> <span class="nn">pyro.poutine</span> <span class="k">as</span> <span class="nn">poutine</span>
-<span class="kn">from</span> <span class="nn">pyro.contrib.tracking.assignment</span> <span class="kn">import</span> <span class="n">MarginalAssignmentPersistent</span>
-<span class="kn">from</span> <span class="nn">pyro.distributions.util</span> <span class="kn">import</span> <span class="n">gather</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceEnum_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+import pyro
+import pyro.distributions as dist
+import pyro.poutine as poutine
+from pyro.contrib.tracking.assignment import MarginalAssignmentPersistent
+from pyro.distributions.util import gather
+from pyro.infer import SVI, TraceEnum_ELBO
+from pyro.optim import Adam
 
-<span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.3&#39;</span><span class="p">)</span>
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+%matplotlib inline
+assert pyro.__version__.startswith(&#39;1.8.4&#39;)
+smoke_test = (&#39;CI&#39; in os.environ)
 </pre></div>
 </div>
 </div>
@@ -505,9 +508,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_dynamics</span><span class="p">(</span><span class="n">num_frames</span><span class="p">):</span>
-    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">num_frames</span><span class="p">))</span> <span class="o">/</span> <span class="mi">4</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">time</span><span class="o">.</span><span class="n">cos</span><span class="p">(),</span> <span class="n">time</span><span class="o">.</span><span class="n">sin</span><span class="p">()],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def get_dynamics(num_frames):
+    time = torch.arange(float(num_frames)) / 4
+    return torch.stack([time.cos(), time.sin()], -1)
 </pre></div>
 </div>
 </div>
@@ -516,31 +519,31 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="c1"># Object model.</span>
-    <span class="n">num_objects</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expected_num_objects</span><span class="p">))</span>  <span class="c1"># Deterministic.</span>
-    <span class="n">states</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="n">num_objects</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def generate_data(args):
+    # Object model.
+    num_objects = int(round(args.expected_num_objects))  # Deterministic.
+    states = dist.Normal(0., 1.).sample((num_objects, 2))
 
-    <span class="c1"># Detection model.</span>
-    <span class="n">emitted</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">emission_prob</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">num_objects</span><span class="p">))</span>
-    <span class="n">num_spurious</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Poisson</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expected_num_spurious</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,))</span>
-    <span class="n">max_num_detections</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">num_spurious</span> <span class="o">+</span> <span class="n">emitted</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-    <span class="n">observations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">max_num_detections</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># position+confidence</span>
-    <span class="n">positions</span> <span class="o">=</span> <span class="n">get_dynamics</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">)</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">states</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
-    <span class="n">noisy_positions</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">emission_noise_scale</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">):</span>
-        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">emitted</span><span class="p">[</span><span class="n">t</span><span class="p">]):</span>
-            <span class="k">if</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">observations</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">noisy_positions</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
-                <span class="n">observations</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_spurious</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">n</span><span class="p">:</span>
-            <span class="n">observations</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="n">n</span><span class="p">,))</span>
-            <span class="n">observations</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    # Detection model.
+    emitted = dist.Bernoulli(args.emission_prob).sample((args.num_frames, num_objects))
+    num_spurious = dist.Poisson(args.expected_num_spurious).sample((args.num_frames,))
+    max_num_detections = int((num_spurious + emitted.sum(-1)).max())
+    observations = torch.zeros(args.num_frames, max_num_detections, 1+1) # position+confidence
+    positions = get_dynamics(args.num_frames).mm(states.t())
+    noisy_positions = dist.Normal(positions, args.emission_noise_scale).sample()
+    for t in range(args.num_frames):
+        j = 0
+        for i, e in enumerate(emitted[t]):
+            if e:
+                observations[t, j, 0] = noisy_positions[t, i]
+                observations[t, j, 1] = 1
+                j += 1
+        n = int(num_spurious[t])
+        if n:
+            observations[t, j:j+n, 0] = dist.Normal(0., 1.).sample((n,))
+            observations[t, j:j+n, 1] = 1
 
-    <span class="k">return</span> <span class="n">states</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">observations</span>
+    return states, positions, observations
 </pre></div>
 </div>
 </div>
@@ -548,42 +551,42 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">observations</span><span class="p">):</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;objects&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span><span class="p">):</span>
-        <span class="n">exists</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;exists&quot;</span><span class="p">,</span>
-                             <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expected_num_objects</span> <span class="o">/</span> <span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span><span class="p">))</span>
-        <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">exists</span><span class="o">.</span><span class="n">bool</span><span class="p">()):</span>
-            <span class="n">states</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">([</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">positions</span> <span class="o">=</span> <span class="n">get_dynamics</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">)</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">states</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;detections&quot;</span><span class="p">,</span> <span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
-        <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">):</span>
-            <span class="c1"># The combinatorial part of the log prob is approximated to allow independence.</span>
-            <span class="n">is_observed</span> <span class="o">=</span> <span class="p">(</span><span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">is_observed</span><span class="p">):</span>
-                <span class="n">assign</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;assign&quot;</span><span class="p">,</span>
-                                     <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
-            <span class="n">is_spurious</span> <span class="o">=</span> <span class="p">(</span><span class="n">assign</span> <span class="o">==</span> <span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span><span class="p">)</span>
-            <span class="n">is_real</span> <span class="o">=</span> <span class="n">is_observed</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">is_spurious</span>
-            <span class="n">num_observed</span> <span class="o">=</span> <span class="n">is_observed</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;is_real&quot;</span><span class="p">,</span>
-                        <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expected_num_objects</span> <span class="o">/</span> <span class="n">num_observed</span><span class="p">),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="n">is_real</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;is_spurious&quot;</span><span class="p">,</span>
-                        <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expected_num_spurious</span> <span class="o">/</span> <span class="n">num_observed</span><span class="p">),</span>
-                        <span class="n">obs</span><span class="o">=</span><span class="n">is_spurious</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def model(args, observations):
+    with pyro.plate(&quot;objects&quot;, args.max_num_objects):
+        exists = pyro.sample(&quot;exists&quot;,
+                             dist.Bernoulli(args.expected_num_objects / args.max_num_objects))
+        with poutine.mask(mask=exists.bool()):
+            states = pyro.sample(&quot;states&quot;, dist.Normal(0., 1.).expand([2]).to_event(1))
+            positions = get_dynamics(args.num_frames).mm(states.t())
+    with pyro.plate(&quot;detections&quot;, observations.shape[1]):
+        with pyro.plate(&quot;time&quot;, args.num_frames):
+            # The combinatorial part of the log prob is approximated to allow independence.
+            is_observed = (observations[..., -1] &gt; 0)
+            with poutine.mask(mask=is_observed):
+                assign = pyro.sample(&quot;assign&quot;,
+                                     dist.Categorical(torch.ones(args.max_num_objects + 1)))
+            is_spurious = (assign == args.max_num_objects)
+            is_real = is_observed &amp; ~is_spurious
+            num_observed = is_observed.float().sum(-1, True)
+            pyro.sample(&quot;is_real&quot;,
+                        dist.Bernoulli(args.expected_num_objects / num_observed),
+                        obs=is_real.float())
+            pyro.sample(&quot;is_spurious&quot;,
+                        dist.Bernoulli(args.expected_num_spurious / num_observed),
+                        obs=is_spurious.float())
 
-            <span class="c1"># The remaining continuous part is exact.</span>
-            <span class="n">observed_positions</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-            <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">is_real</span><span class="p">):</span>
-                <span class="n">bogus_position</span> <span class="o">=</span> <span class="n">positions</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-                <span class="n">augmented_positions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">positions</span><span class="p">,</span> <span class="n">bogus_position</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">predicted_positions</span> <span class="o">=</span> <span class="n">gather</span><span class="p">(</span><span class="n">augmented_positions</span><span class="p">,</span> <span class="n">assign</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;real_observations&quot;</span><span class="p">,</span>
-                            <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">predicted_positions</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">emission_noise_scale</span><span class="p">),</span>
-                            <span class="n">obs</span><span class="o">=</span><span class="n">observed_positions</span><span class="p">)</span>
-            <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">is_spurious</span><span class="p">):</span>
-                <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;spurious_observations&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">),</span>
-                            <span class="n">obs</span><span class="o">=</span><span class="n">observed_positions</span><span class="p">)</span>
+            # The remaining continuous part is exact.
+            observed_positions = observations[..., 0]
+            with poutine.mask(mask=is_real):
+                bogus_position = positions.new_zeros(args.num_frames, 1)
+                augmented_positions = torch.cat([positions, bogus_position], -1)
+                predicted_positions = gather(augmented_positions, assign, -1)
+                pyro.sample(&quot;real_observations&quot;,
+                            dist.Normal(predicted_positions, args.emission_noise_scale),
+                            obs=observed_positions)
+            with poutine.mask(mask=is_spurious):
+                pyro.sample(&quot;spurious_observations&quot;, dist.Normal(0., 1.),
+                            obs=observed_positions)
 </pre></div>
 </div>
 </div>
@@ -592,38 +595,38 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">observations</span><span class="p">):</span>
-    <span class="c1"># Initialize states randomly from the prior.</span>
-    <span class="n">states_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;states_loc&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="n">states_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;states_scale&quot;</span><span class="p">,</span>
-                              <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">states_loc</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">args</span><span class="o">.</span><span class="n">emission_noise_scale</span><span class="p">,</span>
-                              <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
-    <span class="n">positions</span> <span class="o">=</span> <span class="n">get_dynamics</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">)</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">states_loc</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def guide(args, observations):
+    # Initialize states randomly from the prior.
+    states_loc = pyro.param(&quot;states_loc&quot;, lambda: torch.randn(args.max_num_objects, 2))
+    states_scale = pyro.param(&quot;states_scale&quot;,
+                              lambda: torch.ones(states_loc.shape) * args.emission_noise_scale,
+                              constraint=constraints.positive)
+    positions = get_dynamics(args.num_frames).mm(states_loc.t())
 
-    <span class="c1"># Solve soft assignment problem.</span>
-    <span class="n">real_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">positions</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">args</span><span class="o">.</span><span class="n">emission_noise_scale</span><span class="p">)</span>
-    <span class="n">spurious_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
-    <span class="n">is_observed</span> <span class="o">=</span> <span class="p">(</span><span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="n">observed_positions</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">assign_logits</span> <span class="o">=</span> <span class="p">(</span><span class="n">real_dist</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">observed_positions</span><span class="p">)</span> <span class="o">-</span>
-                     <span class="n">spurious_dist</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">observed_positions</span><span class="p">)</span> <span class="o">+</span>
-                     <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expected_num_objects</span> <span class="o">*</span> <span class="n">args</span><span class="o">.</span><span class="n">emission_prob</span> <span class="o">/</span>
-                              <span class="n">args</span><span class="o">.</span><span class="n">expected_num_spurious</span><span class="p">))</span>
-    <span class="n">assign_logits</span><span class="p">[</span><span class="o">~</span><span class="n">is_observed</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
-    <span class="n">exists_logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span><span class="p">)</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span>
-        <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span> <span class="o">/</span> <span class="n">args</span><span class="o">.</span><span class="n">expected_num_objects</span><span class="p">))</span>
-    <span class="n">assignment</span> <span class="o">=</span> <span class="n">MarginalAssignmentPersistent</span><span class="p">(</span><span class="n">exists_logits</span><span class="p">,</span> <span class="n">assign_logits</span><span class="p">)</span>
+    # Solve soft assignment problem.
+    real_dist = dist.Normal(positions.unsqueeze(-2), args.emission_noise_scale)
+    spurious_dist = dist.Normal(0., 1.)
+    is_observed = (observations[..., -1] &gt; 0)
+    observed_positions = observations[..., 0].unsqueeze(-1)
+    assign_logits = (real_dist.log_prob(observed_positions) -
+                     spurious_dist.log_prob(observed_positions) +
+                     math.log(args.expected_num_objects * args.emission_prob /
+                              args.expected_num_spurious))
+    assign_logits[~is_observed] = -float(&#39;inf&#39;)
+    exists_logits = torch.empty(args.max_num_objects).fill_(
+        math.log(args.max_num_objects / args.expected_num_objects))
+    assignment = MarginalAssignmentPersistent(exists_logits, assign_logits)
 
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;objects&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span><span class="p">):</span>
-        <span class="n">exists</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;exists&quot;</span><span class="p">,</span> <span class="n">assignment</span><span class="o">.</span><span class="n">exists_dist</span><span class="p">,</span> <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
-        <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">exists</span><span class="o">.</span><span class="n">bool</span><span class="p">()):</span>
-            <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">states_loc</span><span class="p">,</span> <span class="n">states_scale</span><span class="p">)</span><span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;detections&quot;</span><span class="p">,</span> <span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
-        <span class="k">with</span> <span class="n">poutine</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">is_observed</span><span class="p">):</span>
-            <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">):</span>
-                <span class="n">assign</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;assign&quot;</span><span class="p">,</span> <span class="n">assignment</span><span class="o">.</span><span class="n">assign_dist</span><span class="p">,</span> <span class="n">infer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;enumerate&quot;</span><span class="p">:</span> <span class="s2">&quot;parallel&quot;</span><span class="p">})</span>
+    with pyro.plate(&quot;objects&quot;, args.max_num_objects):
+        exists = pyro.sample(&quot;exists&quot;, assignment.exists_dist, infer={&quot;enumerate&quot;: &quot;parallel&quot;})
+        with poutine.mask(mask=exists.bool()):
+            pyro.sample(&quot;states&quot;, dist.Normal(states_loc, states_scale).to_event(1))
+    with pyro.plate(&quot;detections&quot;, observations.shape[1]):
+        with poutine.mask(mask=is_observed):
+            with pyro.plate(&quot;time&quot;, args.num_frames):
+                assign = pyro.sample(&quot;assign&quot;, assignment.assign_dist, infer={&quot;enumerate&quot;: &quot;parallel&quot;})
 
-    <span class="k">return</span> <span class="n">assignment</span>
+    return assignment
 </pre></div>
 </div>
 </div>
@@ -632,34 +635,34 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">args</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;Args&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nb">object</span><span class="p">,),</span> <span class="p">{})</span>  <span class="c1"># A fake ArgumentParser.parse_args() result.</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>args = type(&#39;Args&#39;, (object,), {})  # A fake ArgumentParser.parse_args() result.
 
-<span class="n">args</span><span class="o">.</span><span class="n">num_frames</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span> <span class="o">=</span> <span class="mi">3</span>
-<span class="n">args</span><span class="o">.</span><span class="n">expected_num_objects</span> <span class="o">=</span> <span class="mf">2.</span>
-<span class="n">args</span><span class="o">.</span><span class="n">expected_num_spurious</span> <span class="o">=</span> <span class="mf">1.</span>
-<span class="n">args</span><span class="o">.</span><span class="n">emission_prob</span> <span class="o">=</span> <span class="mf">0.8</span>
-<span class="n">args</span><span class="o">.</span><span class="n">emission_noise_scale</span> <span class="o">=</span> <span class="mf">0.1</span>
+args.num_frames = 5
+args.max_num_objects = 3
+args.expected_num_objects = 2.
+args.expected_num_spurious = 1.
+args.emission_prob = 0.8
+args.emission_noise_scale = 0.1
 
-<span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span> <span class="o">&gt;=</span> <span class="n">args</span><span class="o">.</span><span class="n">expected_num_objects</span>
+assert args.max_num_objects &gt;= args.expected_num_objects
 </pre></div>
 </div>
 </div>
 <section id="Generate-data">
-<h2>Generate data<a class="headerlink" href="#Generate-data" title="Permalink to this headline">¶</a></h2>
+<h2>Generate data<a class="headerlink" href="#Generate-data" title="Permalink to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">true_states</span><span class="p">,</span> <span class="n">true_positions</span><span class="p">,</span> <span class="n">observations</span> <span class="o">=</span> <span class="n">generate_data</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-<span class="n">true_num_objects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_states</span><span class="p">)</span>
-<span class="n">max_num_detections</span> <span class="o">=</span> <span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-<span class="k">assert</span> <span class="n">true_states</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">true_num_objects</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">true_positions</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">true_num_objects</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">observations</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">max_num_detections</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;generated </span><span class="si">{:d}</span><span class="s2"> detections from </span><span class="si">{:d}</span><span class="s2"> objects&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-    <span class="p">(</span><span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">true_num_objects</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.set_rng_seed(0)
+true_states, true_positions, observations = generate_data(args)
+true_num_objects = len(true_states)
+max_num_detections = observations.shape[1]
+assert true_states.shape == (true_num_objects, 2)
+assert true_positions.shape == (args.num_frames, true_num_objects)
+assert observations.shape == (args.num_frames, max_num_detections, 1+1)
+print(&quot;generated {:d} detections from {:d} objects&quot;.format(
+    (observations[..., -1] &gt; 0).long().sum(), true_num_objects))
 </pre></div>
 </div>
 </div>
@@ -673,34 +676,34 @@ generated 16 detections from 2 objects
 </div>
 </section>
 <section id="Train">
-<h2>Train<a class="headerlink" href="#Train" title="Permalink to this headline">¶</a></h2>
+<h2>Train<a class="headerlink" href="#Train" title="Permalink to this heading">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_solution</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
-    <span class="n">assignment</span> <span class="o">=</span> <span class="n">guide</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
-    <span class="n">states_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;states_loc&quot;</span><span class="p">)</span>
-    <span class="n">positions</span> <span class="o">=</span> <span class="n">get_dynamics</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">)</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">states_loc</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">true_positions</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s1">&#39;k--&#39;</span><span class="p">)</span>
-    <span class="n">is_observed</span> <span class="o">=</span> <span class="p">(</span><span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="n">pos</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_frames</span><span class="p">))</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">time</span><span class="p">[</span><span class="n">is_observed</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
-                   <span class="n">pos</span><span class="p">[</span><span class="n">is_observed</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
-                   <span class="n">label</span><span class="o">=</span><span class="s1">&#39;observation&#39;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_num_objects</span><span class="p">):</span>
-        <span class="n">p_exist</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">exists_dist</span><span class="o">.</span><span class="n">probs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="n">position</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-        <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">p_exist</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Truth, observations, and predicted tracks &#39;</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;truth&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;prediction&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time step&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;position&#39;</span><span class="p">)</span>
-    <span class="n">pyplot</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_solution(message=&#39;&#39;):
+    assignment = guide(args, observations)
+    states_loc = pyro.param(&quot;states_loc&quot;)
+    positions = get_dynamics(args.num_frames).mm(states_loc.t())
+    pyplot.figure(figsize=(12,6)).patch.set_color(&#39;white&#39;)
+    pyplot.plot(true_positions.numpy(), &#39;k--&#39;)
+    is_observed = (observations[..., -1] &gt; 0)
+    pos = observations[..., 0]
+    time = torch.arange(float(args.num_frames)).unsqueeze(-1).expand_as(pos)
+    pyplot.scatter(time[is_observed].view(-1).numpy(),
+                   pos[is_observed].view(-1).numpy(), color=&#39;k&#39;, marker=&#39;+&#39;,
+                   label=&#39;observation&#39;)
+    for i in range(args.max_num_objects):
+        p_exist = assignment.exists_dist.probs[i].item()
+        position = positions[:, i].detach().numpy()
+        pyplot.plot(position, alpha=p_exist, color=&#39;C0&#39;)
+    pyplot.title(&#39;Truth, observations, and predicted tracks &#39; + message)
+    pyplot.plot([], &#39;k--&#39;, label=&#39;truth&#39;)
+    pyplot.plot([], color=&#39;C0&#39;, label=&#39;prediction&#39;)
+    pyplot.legend(loc=&#39;best&#39;)
+    pyplot.xlabel(&#39;time step&#39;)
+    pyplot.ylabel(&#39;position&#39;)
+    pyplot.tight_layout()
 </pre></div>
 </div>
 </div>
@@ -708,9 +711,9 @@ generated 16 detections from 2 objects
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
-<span class="n">plot_solution</span><span class="p">(</span><span class="s1">&#39;(before training)&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.set_rng_seed(1)
+pyro.clear_param_store()
+plot_solution(&#39;(before training)&#39;)
 </pre></div>
 </div>
 </div>
@@ -725,13 +728,13 @@ generated 16 detections from 2 objects
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">}),</span> <span class="n">TraceEnum_ELBO</span><span class="p">(</span><span class="n">max_plate_nesting</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">101</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">smoke_test</span> <span class="k">else</span> <span class="mi">2</span><span class="p">):</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;epoch </span><span class="si">{: &gt;4d}</span><span class="s2"> loss = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
-    <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>infer = SVI(model, guide, Adam({&quot;lr&quot;: 0.01}), TraceEnum_ELBO(max_plate_nesting=2))
+losses = []
+for epoch in range(101 if not smoke_test else 2):
+    loss = infer.step(args, observations)
+    if epoch % 10 == 0:
+        print(&quot;epoch {: &gt;4d} loss = {}&quot;.format(epoch, loss))
+    losses.append(loss)
 </pre></div>
 </div>
 </div>
@@ -757,7 +760,7 @@ epoch  100 loss = 74.1109313965
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">losses</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyplot.plot(losses);
 </pre></div>
 </div>
 </div>
@@ -772,7 +775,7 @@ epoch  100 loss = 74.1109313965
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_solution</span><span class="p">(</span><span class="s1">&#39;(after training)&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plot_solution(&#39;(after training)&#39;)
 </pre></div>
 </div>
 </div>

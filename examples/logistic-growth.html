@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Logistic growth models of SARS-CoV-2 lineage proportions &mdash; Pyro Tutorials 1.8.3 documentation</title>
+  <title>Logistic growth models of SARS-CoV-2 lineage proportions &mdash; Pyro Tutorials 1.8.4 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -35,7 +37,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.3
+                1.8.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -202,8 +204,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Logistic growth models of SARS-CoV-2 lineage proportions</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Logistic growth models of SARS-CoV-2 lineage proportions</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/logistic-growth.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -323,10 +325,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -492,11 +495,11 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Logistic-growth-models-of-SARS-CoV-2-lineage-proportions">
-<h1>Logistic growth models of SARS-CoV-2 lineage proportions<a class="headerlink" href="#Logistic-growth-models-of-SARS-CoV-2-lineage-proportions" title="Permalink to this headline">¶</a></h1>
+<h1>Logistic growth models of SARS-CoV-2 lineage proportions<a class="headerlink" href="#Logistic-growth-models-of-SARS-CoV-2-lineage-proportions" title="Permalink to this heading">¶</a></h1>
 <p>This notebook explores logistic growth models, with the goal of inferring the differential growth rates of different SARS-CoV-2 lineages over time. Before this tutorial you may want to familiarize yourself with <a class="reference external" href="http://pyro.ai/examples/intro_long.html">Pyro modeling basics</a> and <a class="reference external" href="http://pyro.ai/examples/tensor_shapes.html">tensor shapes</a> in Pyro and PyTorch.</p>
 <p><strong>WARNING</strong>: The purpose of this tutorial is to demonstrate Pyro’s modeling and inference syntax. Making reliable inferences about SARS-CoV-2 <strong>is not</strong> the purpose of this tutorial.</p>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="#Overview">Overview</a></p></li>
 <li><p><a class="reference external" href="#Loading-data">Loading data</a></p></li>
@@ -506,33 +509,33 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="#Generalizations">Generalizations</a></p></li>
 </ul>
 <section id="Overview">
-<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h3>
+<h3>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">¶</a></h3>
 <p>When different strains/lineages/variants of a virus like SARS-CoV-2 circulate in a population, those lineages that have the largest fitness will tend to dominate, and those lineages that are least fit will tend to be outcompeted by the fittest lineages. In this tutorial we set out to infer (differential) growth rates for different SARS-CoV-2 lineages using a spatio-temporal dataset of SARS-CoV-2 genetic sequences. We’ll start with the simplest possible model and then move on to more complex
 models with hierarchical structure.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">pyro</span>
-<span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
-<span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoNormal</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">ClippedAdam</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+import datetime
+from functools import partial
+import numpy as np
+import torch
+import pyro
+import pyro.distributions as dist
+from pyro.infer import SVI, Trace_ELBO
+from pyro.infer.autoguide import AutoNormal
+from pyro.optim import ClippedAdam
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
-<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using GPU&quot;</span><span class="p">)</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using CPU&quot;</span><span class="p">)</span>
+if torch.cuda.is_available():
+    print(&quot;Using GPU&quot;)
+    torch.set_default_tensor_type(&quot;torch.cuda.FloatTensor&quot;)
+else:
+    print(&quot;Using CPU&quot;)
 
-<span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>  <span class="c1"># for use in continuous integration testing</span>
+smoke_test = (&#39;CI&#39; in os.environ)  # for use in continuous integration testing
 </pre></div>
 </div>
 </div>
@@ -546,27 +549,27 @@ Using CPU
 </div>
 </section>
 <section id="Loading-data">
-<h3>Loading data<a class="headerlink" href="#Loading-data" title="Permalink to this headline">¶</a></h3>
+<h3>Loading data<a class="headerlink" href="#Loading-data" title="Permalink to this heading">¶</a></h3>
 <p>Our data consist of a few million genetic sequences of SARS-CoV-2 viruses, clustered into <a class="reference external" href="https://cov-lineages.org">PANGO lineages</a>, and aggregated into a few hundred regions globally and into 28-day time bins. Preprocessing was performed by Nextstrain’s <a class="reference external" href="https://docs.nextstrain.org/projects/ncov/en/latest/reference/remote_inputs.html">ncov</a> tool, and aggregation was performed by the Broad Institute’s
 <a class="reference external" href="https://github.com/broadinstitute/pyro-cov/blob/master/scripts/preprocess_nextstrain.py">pyro-cov</a> tool.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.contrib.examples.nextstrain</span> <span class="kn">import</span> <span class="n">load_nextstrain_counts</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_nextstrain_counts</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from pyro.contrib.examples.nextstrain import load_nextstrain_counts
+dataset = load_nextstrain_counts()
 
-<span class="k">def</span> <span class="nf">summarize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-            <span class="n">summarize</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="n">k</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> of shape </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> of length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="n">summarize</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+def summarize(x, name=&quot;&quot;):
+    if isinstance(x, dict):
+        for k, v in sorted(x.items()):
+            summarize(v, name + &quot;.&quot; + k if name else k)
+    elif isinstance(x, torch.Tensor):
+        print(f&quot;{name}: {type(x).__name__} of shape {tuple(x.shape)} on {x.device}&quot;)
+    elif isinstance(x, list):
+        print(f&quot;{name}: {type(x).__name__} of length {len(x)}&quot;)
+    else:
+        print(f&quot;{name}: {type(x).__name__}&quot;)
+summarize(dataset)
 </pre></div>
 </div>
 </div>
@@ -592,18 +595,18 @@ time_step_days: int
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="s2">&quot;time bin&quot;</span><span class="p">,</span> <span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;lineage&quot;</span><span class="p">]):</span>
-    <span class="n">counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">list</span><span class="p">({</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="n">i</span><span class="p">}))</span>
-    <span class="n">Y</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;# samples&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">wspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, axes = plt.subplots(1, 3, figsize=(8, 3), sharey=True)
+for i, name in enumerate([&quot;time bin&quot;, &quot;location&quot;, &quot;lineage&quot;]):
+    counts = dataset[&quot;counts&quot;].sum(list({0, 1, 2} - {i}))
+    Y = counts.sort(0, True).values
+    axes[i].plot(Y)
+    axes[i].set_xlim(0, None)
+    axes[0].set_ylim(1, None)
+    axes[i].set_yscale(&quot;log&quot;)
+    axes[i].set_xlabel(f&quot;rank&quot;, fontsize=18)
+    axes[i].set_title(f&quot;{len(Y)} {name}s&quot;)
+axes[0].set_ylabel(&quot;# samples&quot;, fontsize=18)
+plt.subplots_adjust(wspace=0.05);
 </pre></div>
 </div>
 </div>
@@ -615,49 +618,49 @@ time_step_days: int
 </div>
 </div>
 <section id="Helpers-for-manipulating-data">
-<h4>Helpers for manipulating data<a class="headerlink" href="#Helpers-for-manipulating-data" title="Permalink to this headline">¶</a></h4>
+<h4>Helpers for manipulating data<a class="headerlink" href="#Helpers-for-manipulating-data" title="Permalink to this heading">¶</a></h4>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_lineage_id</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Get lineage id from string name&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="p">])</span> <span class="o">==</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;lineages&#39;</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def get_lineage_id(s):
+    &quot;&quot;&quot;Get lineage id from string name&quot;&quot;&quot;
+    return np.argmax(np.array([s]) == dataset[&#39;lineages&#39;])
 
-<span class="k">def</span> <span class="nf">get_location_id</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Get location id from string name&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="p">])</span> <span class="o">==</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;locations&#39;</span><span class="p">])</span>
+def get_location_id(s):
+    &quot;&quot;&quot;Get location id from string name&quot;&quot;&quot;
+    return np.argmax(np.array([s]) == dataset[&#39;locations&#39;])
 
-<span class="k">def</span> <span class="nf">get_aggregated_counts_from_locations</span><span class="p">(</span><span class="n">locations</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Get aggregated counts from a list of locations&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:,</span> <span class="n">get_location_id</span><span class="p">(</span><span class="n">loc</span><span class="p">)]</span> <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">locations</span><span class="p">])</span>
+def get_aggregated_counts_from_locations(locations):
+    &quot;&quot;&quot;Get aggregated counts from a list of locations&quot;&quot;&quot;
+    return sum([dataset[&#39;counts&#39;][:, get_location_id(loc)] for loc in locations])
 
-<span class="n">start</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span>
-<span class="n">step</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">])</span>
-<span class="n">date_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">start</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;counts&quot;</span><span class="p">]))])</span>
+start = dataset[&quot;start_date&quot;]
+step = datetime.timedelta(days=dataset[&quot;time_step_days&quot;])
+date_range = np.array([start + step * t for t in range(len(dataset[&quot;counts&quot;]))])
 </pre></div>
 </div>
 </div>
 </section>
 </section>
 <section id="A-first-model">
-<h3>A first model<a class="headerlink" href="#A-first-model" title="Permalink to this headline">¶</a></h3>
+<h3>A first model<a class="headerlink" href="#A-first-model" title="Permalink to this heading">¶</a></h3>
 <p>First let’s zoom-in on Massachusetts and a few surrounding states:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">northeast_states</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;USA / Massachusetts&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / New York&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / Connecticut&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / New Hampshire&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / Vermont&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / New Jersey&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / Maine&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / Rhode Island&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;USA / Pennsylvania&#39;</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>northeast_states = [&#39;USA / Massachusetts&#39;,
+                    &#39;USA / New York&#39;,
+                    &#39;USA / Connecticut&#39;,
+                    &#39;USA / New Hampshire&#39;,
+                    &#39;USA / Vermont&#39;,
+                    &#39;USA / New Jersey&#39;,
+                    &#39;USA / Maine&#39;,
+                    &#39;USA / Rhode Island&#39;,
+                    &#39;USA / Pennsylvania&#39;]
 
-<span class="n">northeast_counts</span> <span class="o">=</span> <span class="n">get_aggregated_counts_from_locations</span><span class="p">(</span><span class="n">northeast_states</span><span class="p">)</span>
+northeast_counts = get_aggregated_counts_from_locations(northeast_states)
 </pre></div>
 </div>
 </div>
@@ -666,18 +669,18 @@ time_step_days: int
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The Alpha and Delta variants include many PANGO lineages, which we need to aggregate.</span>
-<span class="n">Q_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="n">lin</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;lineages&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">lin</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Q.&#39;</span><span class="p">]</span>
-<span class="n">AY_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="n">lin</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;lineages&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">lin</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;AY.&#39;</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># The Alpha and Delta variants include many PANGO lineages, which we need to aggregate.
+Q_lineages = [lin for lin in dataset[&#39;lineages&#39;] if lin[:2] == &#39;Q.&#39;]
+AY_lineages = [lin for lin in dataset[&#39;lineages&#39;] if lin[:3] == &#39;AY.&#39;]
 
-<span class="n">alpha_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;B.1.1.7&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">Q_lineages</span>
-<span class="n">delta_lineages</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;B.1.617.2&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">AY_lineages</span>
+alpha_lineages = [&#39;B.1.1.7&#39;] + Q_lineages
+delta_lineages = [&#39;B.1.617.2&#39;] + AY_lineages
 
-<span class="n">alpha_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_lineage_id</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">alpha_lineages</span><span class="p">]</span>
-<span class="n">delta_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_lineage_id</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span> <span class="k">for</span> <span class="n">lin</span> <span class="ow">in</span> <span class="n">delta_lineages</span><span class="p">]</span>
+alpha_ids = [get_lineage_id(lin) for lin in alpha_lineages]
+delta_ids = [get_lineage_id(lin) for lin in delta_lineages]
 
-<span class="n">alpha_counts</span> <span class="o">=</span> <span class="n">northeast_counts</span><span class="p">[:,</span> <span class="n">alpha_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">delta_counts</span> <span class="o">=</span> <span class="n">northeast_counts</span><span class="p">[:,</span> <span class="n">delta_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+alpha_counts = northeast_counts[:, alpha_ids].sum(-1)
+delta_counts = northeast_counts[:, delta_ids].sum(-1)
 </pre></div>
 </div>
 </div>
@@ -685,9 +688,9 @@ time_step_days: int
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let&#39;s combine the counts into a single tensor</span>
-<span class="n">alpha_delta_counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">alpha_counts</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">alpha_delta_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Let&#39;s combine the counts into a single tensor
+alpha_delta_counts = torch.stack([alpha_counts, delta_counts]).T
+print(alpha_delta_counts.shape)
 </pre></div>
 </div>
 </div>
@@ -704,22 +707,22 @@ torch.Size([27, 2])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We skip the first year or so of the pandemic when Alpha and Delta are not present</span>
-<span class="n">start_time</span> <span class="o">=</span> <span class="mi">13</span>
-<span class="n">total_counts</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_counts</span> <span class="o">+</span> <span class="n">delta_counts</span><span class="p">)[</span><span class="n">start_time</span><span class="p">:]</span>
-<span class="n">dates</span> <span class="o">=</span> <span class="n">date_range</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">alpha_counts</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span> <span class="o">/</span> <span class="n">total_counts</span><span class="p">,</span>
-         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Alpha&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span> <span class="o">/</span> <span class="n">total_counts</span><span class="p">,</span>
-         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Delta&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">dates</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">dates</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Proportion&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MonthLocator</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s2">&quot;%b %Y&quot;</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># We skip the first year or so of the pandemic when Alpha and Delta are not present
+start_time = 13
+total_counts = (alpha_counts + delta_counts)[start_time:]
+dates = date_range[start_time:]
+plt.figure(figsize=(7, 4))
+plt.plot(dates, alpha_counts[start_time:] / total_counts,
+         label=&#39;Alpha&#39;)
+plt.plot(dates, delta_counts[start_time:] / total_counts,
+         label=&#39;Delta&#39;)
+plt.xlim(min(dates), max(dates))
+plt.ylabel(&quot;Proportion&quot;, fontsize=18)
+plt.xticks(rotation=90)
+plt.gca().xaxis.set_major_locator(mpl.dates.MonthLocator())
+plt.gca().xaxis.set_major_formatter(mpl.dates.DateFormatter(&quot;%b %Y&quot;))
+plt.legend(fontsize=18)
+plt.tight_layout()
 </pre></div>
 </div>
 </div>
@@ -732,43 +735,43 @@ torch.Size([27, 2])
 </div>
 <p>We see that at first Alpha was dominant, but then Delta started outcompeting it until Delta became dominant.</p>
 <section id="Model-definition">
-<h4>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this headline">¶</a></h4>
+<h4>Model definition<a class="headerlink" href="#Model-definition" title="Permalink to this heading">¶</a></h4>
 <p>Instead of attempting to model how the total number of observed sequences varies as a function of time (which depends on complex human behavior), we instead model the <em>proportion</em> of sequences at each time step that are Alpha versus Delta. In other words if we observed 8 Alpha lineages and 2 Delta lineages at a given time step, we model the proportions 80% and 20% instead of the raw counts 8 and 2. To do this we use a <a class="reference external" href="https://en.wikipedia.org/wiki/Logistic_function">Logistic Growth</a> model
 with a <a class="reference external" href="https://pytorch.org/docs/stable/distributions.html#multinomial">Multinomial</a> distribution as the likelihood.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">basic_model</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
-    <span class="n">T</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def basic_model(counts):
+    T, L = counts.shape
 
-    <span class="c1"># Define plates over lineage and time</span>
-    <span class="n">lineage_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;lineages&quot;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">time_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    # Define plates over lineage and time
+    lineage_plate = pyro.plate(&quot;lineages&quot;, L, dim=-1)
+    time_plate = pyro.plate(&quot;time&quot;, T, dim=-2)
 
-    <span class="c1"># Define a growth rate (i.e. slope) and an init (i.e. intercept) for each lineage</span>
-    <span class="k">with</span> <span class="n">lineage_plate</span><span class="p">:</span>
-        <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    # Define a growth rate (i.e. slope) and an init (i.e. intercept) for each lineage
+    with lineage_plate:
+        rate = pyro.sample(&quot;rate&quot;, dist.Normal(0, 1))
+        init = pyro.sample(&quot;init&quot;, dist.Normal(0, 1))
 
-    <span class="c1"># We measure time in units of the SARS-CoV-2 generation time of 5.5 days</span>
-    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">5.5</span>
+    # We measure time in units of the SARS-CoV-2 generation time of 5.5 days
+    time = torch.arange(float(T)) * dataset[&quot;time_step_days&quot;] / 5.5
 
-    <span class="c1"># Assume lineages grow linearly in logit space</span>
-    <span class="n">logits</span> <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    # Assume lineages grow linearly in logit space
+    logits = init + rate * time[:, None]
 
-    <span class="c1"># We use the softmax function (the multivariate generalization of the</span>
-    <span class="c1"># sigmoid function) to define normalized probabilities from the logits</span>
-    <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">probs</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+    # We use the softmax function (the multivariate generalization of the
+    # sigmoid function) to define normalized probabilities from the logits
+    probs = torch.softmax(logits, dim=-1)
+    assert probs.shape == (T, L)
 
-    <span class="c1"># Observe counts via a multinomial likelihood.</span>
-    <span class="k">with</span> <span class="n">time_plate</span><span class="p">:</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-            <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
-            <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">probs</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">validate_args</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
-            <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span>
-        <span class="p">)</span>
+    # Observe counts via a multinomial likelihood.
+    with time_plate:
+        pyro.sample(
+            &quot;obs&quot;,
+            dist.Multinomial(probs=probs.unsqueeze(-2), validate_args=False),
+            obs=counts.unsqueeze(-2),
+        )
 </pre></div>
 </div>
 </div>
@@ -777,7 +780,7 @@ with a <a class="reference external" href="https://pytorch.org/docs/stable/distr
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">basic_model</span><span class="p">,</span> <span class="n">alpha_delta_counts</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.render_model(partial(basic_model, alpha_delta_counts))
 </pre></div>
 </div>
 </div>
@@ -790,51 +793,51 @@ with a <a class="reference external" href="https://pytorch.org/docs/stable/distr
 </div>
 </section>
 <section id="Define-a-helper-for-fitting-models">
-<h4>Define a helper for fitting models<a class="headerlink" href="#Define-a-helper-for-fitting-models" title="Permalink to this headline">¶</a></h4>
+<h4>Define a helper for fitting models<a class="headerlink" href="#Define-a-helper-for-fitting-models" title="Permalink to this heading">¶</a></h4>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fit_svi</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1001</span><span class="p">,</span> <span class="n">log_every</span><span class="o">=</span><span class="mi">250</span><span class="p">):</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>  <span class="c1"># clear parameters from previous runs</span>
-    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20211214</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">smoke_test</span><span class="p">:</span>
-        <span class="n">num_steps</span> <span class="o">=</span> <span class="mi">2</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def fit_svi(model, lr=0.1, num_steps=1001, log_every=250):
+    pyro.clear_param_store()  # clear parameters from previous runs
+    pyro.set_rng_seed(20211214)
+    if smoke_test:
+        num_steps = 2
 
-    <span class="c1"># Define a mean field guide (i.e. variational distribution)</span>
-    <span class="n">guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">init_scale</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
-    <span class="n">optim</span> <span class="o">=</span> <span class="n">ClippedAdam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">lr</span><span class="p">,</span> <span class="s2">&quot;lrd&quot;</span><span class="p">:</span> <span class="mf">0.1</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">num_steps</span><span class="p">)})</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">Trace_ELBO</span><span class="p">())</span>
+    # Define a mean field guide (i.e. variational distribution)
+    guide = AutoNormal(model, init_scale=0.01)
+    optim = ClippedAdam({&quot;lr&quot;: lr, &quot;lrd&quot;: 0.1 ** (1 / num_steps)})
+    svi = SVI(model, guide, optim, Trace_ELBO())
 
-    <span class="c1"># Train (i.e. do ELBO optimization) for num_steps iterations</span>
-    <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-        <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="n">log_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;step </span><span class="si">{</span><span class="n">step</span><span class="si">:</span><span class="s2"> &gt;4d</span><span class="si">}</span><span class="s2"> loss = </span><span class="si">{</span><span class="n">loss</span><span class="si">:</span><span class="s2">0.6g</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    # Train (i.e. do ELBO optimization) for num_steps iterations
+    losses = []
+    for step in range(num_steps):
+        loss = svi.step()
+        losses.append(loss)
+        if step % log_every == 0:
+            print(f&quot;step {step: &gt;4d} loss = {loss:0.6g}&quot;)
 
-    <span class="c1"># Plot to assess convergence.</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;SVI step&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;ELBO loss&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    # Plot to assess convergence.
+    plt.figure(figsize=(6, 3))
+    plt.plot(losses)
+    plt.xlabel(&quot;SVI step&quot;, fontsize=18)
+    plt.ylabel(&quot;ELBO loss&quot;, fontsize=18)
+    plt.tight_layout()
 
-    <span class="k">return</span> <span class="n">guide</span>
+    return guide
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Let’s-fit-basic_model-and-inspect-the-results">
-<h4>Let’s fit <code class="docutils literal notranslate"><span class="pre">basic_model</span></code> and inspect the results<a class="headerlink" href="#Let’s-fit-basic_model-and-inspect-the-results" title="Permalink to this headline">¶</a></h4>
+<h4>Let’s fit <code class="docutils literal notranslate"><span class="pre">basic_model</span></code> and inspect the results<a class="headerlink" href="#Let’s-fit-basic_model-and-inspect-the-results" title="Permalink to this heading">¶</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="c1"># We truncate the data to the period with non-zero counts</span>
-<span class="n">guide</span> <span class="o">=</span> <span class="n">fit_svi</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">basic_model</span><span class="p">,</span> <span class="n">alpha_delta_counts</span><span class="p">[</span><span class="mi">13</span><span class="p">:]),</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1501</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+# We truncate the data to the period with non-zero counts
+guide = fit_svi(partial(basic_model, alpha_delta_counts[13:]), num_steps=1501)
 </pre></div>
 </div>
 </div>
@@ -865,13 +868,13 @@ Wall time: 4.73 s
 </section>
 </section>
 <section id="Let’s-inspect-the-posterior-means-of-our-latent-parameters:">
-<h2>Let’s inspect the posterior means of our latent parameters:<a class="headerlink" href="#Let’s-inspect-the-posterior-means-of-our-latent-parameters:" title="Permalink to this headline">¶</a></h2>
+<h2>Let’s inspect the posterior means of our latent parameters:<a class="headerlink" href="#Let’s-inspect-the-posterior-means-of-our-latent-parameters:" title="Permalink to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>for k, v in guide.median().items():
+    print(k, v.data.cpu().numpy())
 </pre></div>
 </div>
 </div>
@@ -889,8 +892,8 @@ init [ 8.870546 -8.870401]
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiplicative advantage: </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-      <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;Multiplicative advantage: {:.2f}&quot;.format(
+      np.exp(guide.median()[&#39;rate&#39;][1] - guide.median()[&#39;rate&#39;][0])))
 </pre></div>
 </div>
 </div>
@@ -904,18 +907,18 @@ Multiplicative advantage: 1.72
 </div>
 <p>This seems like it might be an overestimate. Can we get better estimates by modeling each spatial region individually?</p>
 <section id="A-regional-model">
-<h3>A regional model<a class="headerlink" href="#A-regional-model" title="Permalink to this headline">¶</a></h3>
+<h3>A regional model<a class="headerlink" href="#A-regional-model" title="Permalink to this heading">¶</a></h3>
 <p>Instead of focusing on northeastern US states we now consider the entire global dataset and do not aggregate across regions.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># First extract the data we want to use</span>
-<span class="n">alpha_counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">alpha_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">delta_counts</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="n">delta_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">alpha_counts</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;counts.shape: &quot;</span><span class="p">,</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;number of regions: </span><span class="si">{</span><span class="n">counts</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># First extract the data we want to use
+alpha_counts = dataset[&#39;counts&#39;][:, :, alpha_ids].sum(-1)
+delta_counts = dataset[&#39;counts&#39;][:, :, delta_ids].sum(-1)
+counts = torch.stack([alpha_counts, delta_counts], dim=-1)
+print(&quot;counts.shape: &quot;, counts.shape)
+print(f&quot;number of regions: {counts.size(1)}&quot;)
 </pre></div>
 </div>
 </div>
@@ -932,19 +935,19 @@ number of regions: 202
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We skip the first year or so of the pandemic when Alpha and Delta are not present</span>
-<span class="n">start_time</span> <span class="o">=</span> <span class="mi">13</span>
-<span class="n">total_counts</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_counts</span> <span class="o">+</span> <span class="n">delta_counts</span><span class="p">)[</span><span class="n">start_time</span><span class="p">:]</span>
-<span class="n">dates</span> <span class="o">=</span> <span class="n">date_range</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dates</span><span class="p">,</span> <span class="n">delta_counts</span><span class="p">[</span><span class="n">start_time</span><span class="p">:]</span> <span class="o">/</span> <span class="n">total_counts</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C1&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">dates</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">dates</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Proportion&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MonthLocator</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">mpl</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s2">&quot;%b %Y&quot;</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Delta/(Alpha+Delta) in </span><span class="si">{</span><span class="n">counts</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> regions&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># We skip the first year or so of the pandemic when Alpha and Delta are not present
+start_time = 13
+total_counts = (alpha_counts + delta_counts)[start_time:]
+dates = date_range[start_time:]
+plt.figure(figsize=(7, 4))
+plt.plot(dates, delta_counts[start_time:] / total_counts, color=&quot;C1&quot;, lw=1, alpha=0.5)
+plt.xlim(min(dates), max(dates))
+plt.ylabel(&quot;Proportion&quot;, fontsize=18)
+plt.xticks(rotation=90)
+plt.gca().xaxis.set_major_locator(mpl.dates.MonthLocator())
+plt.gca().xaxis.set_major_formatter(mpl.dates.DateFormatter(&quot;%b %Y&quot;))
+plt.title(f&quot;Delta/(Alpha+Delta) in {counts.size(1)} regions&quot;, fontsize=18)
+plt.tight_layout()
 </pre></div>
 </div>
 </div>
@@ -959,38 +962,38 @@ number of regions: 202
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Model lineage proportions in each region as multivariate logistic growth</span>
-<span class="k">def</span> <span class="nf">regional_model</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
-    <span class="n">T</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Model lineage proportions in each region as multivariate logistic growth
+def regional_model(counts):
+    T, R, L = counts.shape
 
-    <span class="c1"># Now we also define a region plate in addition to the time/lineage plates</span>
-    <span class="n">lineage_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;lineages&quot;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">region_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">time_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+    # Now we also define a region plate in addition to the time/lineage plates
+    lineage_plate = pyro.plate(&quot;lineages&quot;, L, dim=-1)
+    region_plate = pyro.plate(&quot;region&quot;, R, dim=-2)
+    time_plate = pyro.plate(&quot;time&quot;, T, dim=-3)
 
-    <span class="c1"># We use the same growth rate (i.e. slope) for each region</span>
-    <span class="k">with</span> <span class="n">lineage_plate</span><span class="p">:</span>
-        <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    # We use the same growth rate (i.e. slope) for each region
+    with lineage_plate:
+        rate = pyro.sample(&quot;rate&quot;, dist.Normal(0, 1))
 
-    <span class="c1"># We allow the init to vary from region to region</span>
-    <span class="n">init_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="k">with</span> <span class="n">region_plate</span><span class="p">,</span> <span class="n">lineage_plate</span><span class="p">:</span>
-        <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">))</span>
+    # We allow the init to vary from region to region
+    init_scale = pyro.sample(&quot;init_scale&quot;, dist.LogNormal(0, 2))
+    with region_plate, lineage_plate:
+        init = pyro.sample(&quot;init&quot;, dist.Normal(0, init_scale))
 
-    <span class="c1"># We measure time in units of the SARS-CoV-2 generation time of 5.5 days</span>
-    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">5.5</span>
+    # We measure time in units of the SARS-CoV-2 generation time of 5.5 days
+    time = torch.arange(float(T)) * dataset[&quot;time_step_days&quot;] / 5.5
 
-    <span class="c1"># Instead of using the softmax function we directly use the</span>
-    <span class="c1"># logits parameterization of the Multinomial distribution</span>
-    <span class="n">logits</span> <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    # Instead of using the softmax function we directly use the
+    # logits parameterization of the Multinomial distribution
+    logits = init + rate * time[:, None, None]
 
-    <span class="c1"># Observe sequences via a multinomial likelihood.</span>
-    <span class="k">with</span> <span class="n">time_plate</span><span class="p">,</span> <span class="n">region_plate</span><span class="p">:</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-            <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
-            <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">validate_args</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
-            <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span>
-        <span class="p">)</span>
+    # Observe sequences via a multinomial likelihood.
+    with time_plate, region_plate:
+        pyro.sample(
+            &quot;obs&quot;,
+            dist.Multinomial(logits=logits.unsqueeze(-2), validate_args=False),
+            obs=counts.unsqueeze(-2),
+        )
 </pre></div>
 </div>
 </div>
@@ -998,7 +1001,7 @@ number of regions: 202
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model</span><span class="p">,</span> <span class="n">counts</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.render_model(partial(regional_model, counts))
 </pre></div>
 </div>
 </div>
@@ -1013,8 +1016,8 @@ number of regions: 202
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">guide</span> <span class="o">=</span> <span class="n">fit_svi</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model</span><span class="p">,</span> <span class="n">counts</span><span class="p">),</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">3001</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+guide = fit_svi(partial(regional_model, counts), num_steps=3001)
 </pre></div>
 </div>
 </div>
@@ -1051,8 +1054,8 @@ Wall time: 17.3 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiplicative advantage: </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-      <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;Multiplicative advantage: {:.2f}&quot;.format(
+      np.exp(guide.median()[&#39;rate&#39;][1] - guide.median()[&#39;rate&#39;][0])))
 </pre></div>
 </div>
 </div>
@@ -1067,45 +1070,45 @@ Multiplicative advantage: 1.17
 <p>Notice this is a lower estimate than the previous global estimate.</p>
 </section>
 <section id="An-alternative-regional-model">
-<h3>An alternative regional model<a class="headerlink" href="#An-alternative-regional-model" title="Permalink to this headline">¶</a></h3>
+<h3>An alternative regional model<a class="headerlink" href="#An-alternative-regional-model" title="Permalink to this heading">¶</a></h3>
 <p>The regional model we defined above assumed that the <code class="docutils literal notranslate"><span class="pre">rate</span></code> for each lineage did not vary between regions. Here we add additional hierarchical structure and allow the rate to vary from region to region.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">regional_model2</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
-    <span class="n">T</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def regional_model2(counts):
+    T, R, L = counts.shape
 
-    <span class="n">lineage_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;lineages&quot;</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">region_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">time_plate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
+    lineage_plate = pyro.plate(&quot;lineages&quot;, L, dim=-1)
+    region_plate = pyro.plate(&quot;region&quot;, R, dim=-2)
+    time_plate = pyro.plate(&quot;time&quot;, T, dim=-3)
 
-    <span class="c1"># We assume the init can vary a lot from region to region but</span>
-    <span class="c1"># that the rate varies considerably less.</span>
-    <span class="n">rate_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="n">init_scale</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init_scale&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    # We assume the init can vary a lot from region to region but
+    # that the rate varies considerably less.
+    rate_scale = pyro.sample(&quot;rate_scale&quot;, dist.LogNormal(-4, 2))
+    init_scale = pyro.sample(&quot;init_scale&quot;, dist.LogNormal(0, 2))
 
-    <span class="c1"># As before each lineage has a latent growth rate</span>
-    <span class="k">with</span> <span class="n">lineage_plate</span><span class="p">:</span>
-        <span class="n">rate_loc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate_loc&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    # As before each lineage has a latent growth rate
+    with lineage_plate:
+        rate_loc = pyro.sample(&quot;rate_loc&quot;, dist.Normal(0, 1))
 
-    <span class="c1"># We allow the rate and init to vary from region to region</span>
-    <span class="k">with</span> <span class="n">region_plate</span><span class="p">,</span> <span class="n">lineage_plate</span><span class="p">:</span>
-        <span class="c1"># The per-region per-lineage rate is governed by a hierarchical prior</span>
-        <span class="n">rate</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span>  <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">rate_loc</span><span class="p">,</span> <span class="n">rate_scale</span><span class="p">))</span>
-        <span class="n">init</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">))</span>
+    # We allow the rate and init to vary from region to region
+    with region_plate, lineage_plate:
+        # The per-region per-lineage rate is governed by a hierarchical prior
+        rate = pyro.sample(&quot;rate&quot;,  dist.Normal(rate_loc, rate_scale))
+        init = pyro.sample(&quot;init&quot;, dist.Normal(0, init_scale))
 
-    <span class="c1"># We measure time in units of the SARS-CoV-2 generation time of 5.5 days</span>
-    <span class="n">time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="o">*</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;time_step_days&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">5.5</span>
-    <span class="n">logits</span> <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">time</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    # We measure time in units of the SARS-CoV-2 generation time of 5.5 days
+    time = torch.arange(float(T)) * dataset[&quot;time_step_days&quot;] / 5.5
+    logits = init + rate * time[:, None, None]
 
-    <span class="c1"># Observe sequences via a multinomial likelihood.</span>
-    <span class="k">with</span> <span class="n">time_plate</span><span class="p">,</span> <span class="n">region_plate</span><span class="p">:</span>
-        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-            <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
-            <span class="n">dist</span><span class="o">.</span><span class="n">Multinomial</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">validate_args</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
-            <span class="n">obs</span><span class="o">=</span><span class="n">counts</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span>
-        <span class="p">)</span>
+    # Observe sequences via a multinomial likelihood.
+    with time_plate, region_plate:
+        pyro.sample(
+            &quot;obs&quot;,
+            dist.Multinomial(logits=logits.unsqueeze(-2), validate_args=False),
+            obs=counts.unsqueeze(-2),
+        )
 </pre></div>
 </div>
 </div>
@@ -1113,7 +1116,7 @@ Multiplicative advantage: 1.17
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyro</span><span class="o">.</span><span class="n">render_model</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model2</span><span class="p">,</span> <span class="n">counts</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pyro.render_model(partial(regional_model2, counts))
 </pre></div>
 </div>
 </div>
@@ -1128,8 +1131,8 @@ Multiplicative advantage: 1.17
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
-<span class="n">guide</span> <span class="o">=</span> <span class="n">fit_svi</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">regional_model2</span><span class="p">,</span> <span class="n">counts</span><span class="p">),</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">3001</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%%time
+guide = fit_svi(partial(regional_model2, counts), num_steps=3001)
 </pre></div>
 </div>
 </div>
@@ -1166,8 +1169,8 @@ Wall time: 25.1 s
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiplicative advantage: </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-      <span class="p">(</span><span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate_loc&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">guide</span><span class="o">.</span><span class="n">median</span><span class="p">()[</span><span class="s1">&#39;rate_loc&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">exp</span><span class="p">()))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&quot;Multiplicative advantage: {:.2f}&quot;.format(
+      (guide.median()[&#39;rate_loc&#39;][1] - guide.median()[&#39;rate_loc&#39;][0]).exp()))
 </pre></div>
 </div>
 </div>
@@ -1181,7 +1184,7 @@ Multiplicative advantage: 1.14
 </div>
 </section>
 <section id="Generalizations">
-<h3>Generalizations<a class="headerlink" href="#Generalizations" title="Permalink to this headline">¶</a></h3>
+<h3>Generalizations<a class="headerlink" href="#Generalizations" title="Permalink to this heading">¶</a></h3>
 <p>So far we’ve seen how to model two variants at a time either globally or split across multiple regions, and how to use <a class="reference external" href="https://docs.pyro.ai/en/stable/primitives.html#pyro.primitives.plate">pyro.plate</a> to model multiple variants or regions or times.</p>
 <p>What other models can you think of that might make epidemiological sense? Here are some ideas:</p>
 <ul class="simple">
