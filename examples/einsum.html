@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Example: Discrete Factor Graph Inference with Plated Einsum &mdash; Pyro Tutorials 1.8.4 documentation</title>
+  <title>Example: Discrete Factor Graph Inference with Plated Einsum &mdash; Pyro Tutorials 1.8.5 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -13,9 +13,6 @@
   <![endif]-->
   
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -31,15 +28,19 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html">
-            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.4
+                1.8.5
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -64,6 +65,7 @@
 <li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_lightning.html">Example: distributed training via PyTorch Lightning</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
 <ul>
@@ -180,7 +182,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Example: Discrete Factor Graph Inference with Plated Einsum</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/einsum.rst.txt" rel="nofollow"> View page source</a>
@@ -191,31 +193,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="example-discrete-factor-graph-inference-with-plated-einsum">
+  <section id="example-discrete-factor-graph-inference-with-plated-einsum">
 <h1>Example: Discrete Factor Graph Inference with Plated Einsum<a class="headerlink" href="#example-discrete-factor-graph-inference-with-plated-einsum" title="Permalink to this heading">¶</a></h1>
 <p><a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/einsum.py">View einsum.py on github</a></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copyright (c) 2017-2019 Uber Technologies, Inc.</span>
@@ -256,14 +234,13 @@
 
 
 <span class="k">def</span> <span class="nf">jit_prob</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Runs einsum to compute the partition function.</span>
 
 <span class="sd">    This is cheap but less numerically stable than using the torch_log backend.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;prob&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
-
         <span class="c1"># This simply wraps einsum for jit compilation.</span>
         <span class="k">def</span> <span class="nf">_einsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">einsum</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -274,14 +251,13 @@
 
 
 <span class="k">def</span> <span class="nf">jit_logprob</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Runs einsum to compute the log partition function.</span>
 
 <span class="sd">    This simulates evaluating an undirected graphical model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;logprob&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
-
         <span class="c1"># This simply wraps einsum for jit compilation.</span>
         <span class="k">def</span> <span class="nf">_einsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">einsum</span><span class="p">(</span>
@@ -294,14 +270,13 @@
 
 
 <span class="k">def</span> <span class="nf">jit_gradient</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Runs einsum and calls backward on the partition function.</span>
 
 <span class="sd">    This is simulates training an undirected graphical model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;gradient&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
-
         <span class="c1"># This wraps einsum for jit compilation, but we will call backward on the result.</span>
         <span class="k">def</span> <span class="nf">_einsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">einsum</span><span class="p">(</span>
@@ -326,7 +301,7 @@
 
 
 <span class="k">def</span> <span class="nf">_jit_adjoint</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Runs einsum in forward-backward mode using ``pyro.ops.adjoint``.</span>
 
 <span class="sd">    This simulates serving predictions from an undirected graphical model.</span>
@@ -334,7 +309,6 @@
     <span class="n">backend</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;backend&quot;</span><span class="p">,</span> <span class="s2">&quot;pyro.ops.einsum.torch_sample&quot;</span><span class="p">)</span>
     <span class="n">key</span> <span class="o">=</span> <span class="n">backend</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">),</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plates&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_CACHE</span><span class="p">:</span>
-
         <span class="c1"># This wraps a complete adjoint algorithm call.</span>
         <span class="nd">@ignore_jit_warnings</span><span class="p">()</span>
         <span class="k">def</span> <span class="nf">_forward_backward</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">):</span>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Example: distributed training via Horovod &mdash; Pyro Tutorials 1.8.5 documentation</title>
+  <title>Example: distributed training via PyTorch Lightning &mdash; Pyro Tutorials 1.8.5 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -19,8 +19,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Example: distributed training via PyTorch Lightning" href="svi_lightning.html" />
-    <link rel="prev" title="Using the PyTorch JIT Compiler with Pyro" href="jit.html" /> 
+    <link rel="next" title="Variational Autoencoders" href="vae.html" />
+    <link rel="prev" title="Example: distributed training via Horovod" href="svi_horovod.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -64,8 +64,8 @@
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Example: distributed training via Horovod</a></li>
-<li class="toctree-l1"><a class="reference internal" href="svi_lightning.html">Example: distributed training via PyTorch Lightning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example: distributed training via PyTorch Lightning</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
 <ul>
@@ -183,9 +183,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Example: distributed training via Horovod</li>
+      <li class="breadcrumb-item active">Example: distributed training via PyTorch Lightning</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/svi_horovod.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/svi_lightning.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -193,54 +193,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="example-distributed-training-via-horovod">
-<h1>Example: distributed training via Horovod<a class="headerlink" href="#example-distributed-training-via-horovod" title="Permalink to this heading">¶</a></h1>
-<p>Unlike other examples, this example must be run under <a class="reference external" href="https://github.com/horovod/horovod/blob/master/docs/running.rst">horovodrun</a>, for example</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ horovodrun -np 2 examples/svi_horovod.py
+  <section id="example-distributed-training-via-pytorch-lightning">
+<h1>Example: distributed training via PyTorch Lightning<a class="headerlink" href="#example-distributed-training-via-pytorch-lightning" title="Permalink to this heading">¶</a></h1>
+<p>This script passes argparse arguments to PyTorch Lightning <code class="docutils literal notranslate"><span class="pre">Trainer</span></code> <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#trainer-in-python-scripts">automatically</a>, for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python examples/svi_lightning.py --accelerator gpu --devices 2 --max_epochs 100 --strategy ddp
 </pre></div>
 </div>
-<p>The only Horovod-specific component of Pyro is the <a class="reference external" href="https://docs.pyro.ai/en/latest/optimization.html#pyro.optim.horovod.HorovodOptimizer">HorovodOptimizer</a> class.</p>
-<p><a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/svi_horovod.py">View svi_horovod.py on github</a></p>
+<p><a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/svi_lightning.py">View svi_lightning.py on github</a></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copyright Contributors to the Pyro project.</span>
 <span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="c1"># Distributed training via Horovod.</span>
+<span class="c1"># Distributed training via Pytorch Lightning.</span>
 <span class="c1">#</span>
 <span class="c1"># This tutorial demonstrates how to distribute SVI training across multiple</span>
-<span class="c1"># machines (or multiple GPUs on one or more machines) using the Horovod</span>
-<span class="c1"># library. Horovod enables data-parallel training by aggregating stochastic</span>
-<span class="c1"># gradients at each step of training. Horovod is not intended for model</span>
-<span class="c1"># parallelism. We focus on integration between Horovod and Pyro. For further</span>
-<span class="c1"># details on distributed computing with Horovod, see</span>
-<span class="c1">#   https://horovod.readthedocs.io/en/stable</span>
+<span class="c1"># machines (or multiple GPUs on one or more machines) using the PyTorch Lightning</span>
+<span class="c1"># library. PyTorch Lightning enables data-parallel training by aggregating stochastic</span>
+<span class="c1"># gradients at each step of training. We focus on integration between PyTorch Lightning and Pyro.</span>
+<span class="c1"># For further details on distributed computing with PyTorch Lightning, see</span>
+<span class="c1">#   https://lightning.ai/docs/pytorch/latest</span>
 <span class="c1">#</span>
-<span class="c1"># This assumes you have installed horovod, e.g. via</span>
-<span class="c1">#   pip install pyro-ppl[horovod]</span>
-<span class="c1"># For detailed instructions see</span>
-<span class="c1">#   https://horovod.readthedocs.io/en/stable/install.html</span>
-<span class="c1"># On my mac laptop I was able to install horovod with</span>
-<span class="c1">#   CFLAGS=-mmacosx-version-min=10.15 HOROVOD_WITH_PYTORCH=1 \</span>
-<span class="c1">#   pip install --no-cache-dir &#39;horovod[pytorch]&#39;</span>
-<span class="c1">#</span>
-<span class="c1"># Finally, you&#39;ll need to run this script via horovodrun, e.g.</span>
-<span class="c1">#   horovodrun -np 2 python svi_horovod.py</span>
-<span class="c1"># For details on running Horovod see</span>
-<span class="c1">#   https://github.com/horovod/horovod/blob/master/docs/running.rst</span>
+<span class="c1"># This assumes you have installed pytorch lightning, e.g. via</span>
+<span class="c1">#   pip install pyro-ppl[lightning]</span>
 
 <span class="kn">import</span> <span class="nn">argparse</span>
 
+<span class="kn">import</span> <span class="nn">pytorch_lightning</span> <span class="k">as</span> <span class="nn">pl</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
 
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.distributions</span> <span class="k">as</span> <span class="nn">dist</span>
-<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">Trace_ELBO</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">Trace_ELBO</span>
 <span class="kn">from</span> <span class="nn">pyro.infer.autoguide</span> <span class="kn">import</span> <span class="n">AutoNormal</span>
 <span class="kn">from</span> <span class="nn">pyro.nn</span> <span class="kn">import</span> <span class="n">PyroModule</span>
-<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span><span class="p">,</span> <span class="n">HorovodOptimizer</span>
 
 
-<span class="c1"># We define a model as usual, with no reference to Horovod.</span>
+<span class="c1"># We define a model as usual, with no reference to Pytorch Lightning.</span>
 <span class="c1"># This model is data parallel and supports subsampling.</span>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">PyroModule</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
@@ -262,112 +249,80 @@
             <span class="k">return</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">),</span> <span class="n">obs</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 
 
-<span class="c1"># The following is a standard training loop. To emphasize the Horovod-specific</span>
-<span class="c1"># parts, we&#39;ve guarded them by `if args.horovod:`.</span>
+<span class="c1"># We define an ELBO loss, a PyTorch optimizer, and a training step in our PyroLightningModule.</span>
+<span class="c1"># Note that we are using a PyTorch optimizer instead of a Pyro optimizer and</span>
+<span class="c1"># we are using ``training_step`` instead of Pyro&#39;s SVI machinery.</span>
+<span class="k">class</span> <span class="nc">PyroLightningModule</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_fn</span><span class="p">:</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">elbo</span><span class="o">.</span><span class="n">ELBOModule</span><span class="p">,</span> <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_fn</span> <span class="o">=</span> <span class="n">loss_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="o">.</span><span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">guide</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="o">.</span><span class="n">guide</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">lr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictive</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Predictive</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">guide</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictive</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Training step for Pyro training.&quot;&quot;&quot;</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_fn</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">)</span>
+        <span class="c1"># Logging to TensorBoard by default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;train_loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span>
+
+    <span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure an optimizer.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_fn</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">)</span>
+
+
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="c1"># Create a model, synthetic data, and a guide.</span>
+    <span class="c1"># Create a model, synthetic data, a guide, and a lightning module.</span>
     <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">module_local_params</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
     <span class="n">covariates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">covariates</span><span class="p">)</span>
     <span class="n">guide</span> <span class="o">=</span> <span class="n">AutoNormal</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">horovod</span><span class="p">:</span>
-        <span class="c1"># Initialize Horovod and set PyTorch globals.</span>
-        <span class="kn">import</span> <span class="nn">horovod.torch</span> <span class="k">as</span> <span class="nn">hvd</span>
-
-        <span class="n">hvd</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">set_num_threads</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">hvd</span><span class="o">.</span><span class="n">local_rank</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="s2">&quot;torch.cuda.FloatTensor&quot;</span><span class="p">)</span>
-    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">device</span>
-
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">horovod</span><span class="p">:</span>
-        <span class="c1"># Initialize parameters and broadcast to all workers.</span>
-        <span class="n">guide</span><span class="p">(</span><span class="n">covariates</span><span class="p">[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">data</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># Initializes model and guide.</span>
-        <span class="n">hvd</span><span class="o">.</span><span class="n">broadcast_parameters</span><span class="p">(</span><span class="n">guide</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">root_rank</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">hvd</span><span class="o">.</span><span class="n">broadcast_parameters</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">root_rank</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-    <span class="c1"># Create an ELBO loss and a Pyro optimizer.</span>
-    <span class="n">elbo</span> <span class="o">=</span> <span class="n">Trace_ELBO</span><span class="p">()</span>
-    <span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">})</span>
-
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">horovod</span><span class="p">:</span>
-        <span class="c1"># Wrap the basic optimizer in a distributed optimizer.</span>
-        <span class="n">optim</span> <span class="o">=</span> <span class="n">HorovodOptimizer</span><span class="p">(</span><span class="n">optim</span><span class="p">)</span>
+    <span class="n">loss_fn</span> <span class="o">=</span> <span class="n">Trace_ELBO</span><span class="p">()(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">)</span>
+    <span class="n">training_plan</span> <span class="o">=</span> <span class="n">PyroLightningModule</span><span class="p">(</span><span class="n">loss_fn</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
 
     <span class="c1"># Create a dataloader.</span>
     <span class="n">dataset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">TensorDataset</span><span class="p">(</span><span class="n">covariates</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">horovod</span><span class="p">:</span>
-        <span class="c1"># Horovod requires a distributed sampler.</span>
-        <span class="n">sampler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">DistributedSampler</span><span class="p">(</span>
-            <span class="n">dataset</span><span class="p">,</span> <span class="n">hvd</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">hvd</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span>
-        <span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">sampler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">RandomSampler</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="s2">&quot;sampler&quot;</span><span class="p">:</span> <span class="n">sampler</span><span class="p">}</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cuda</span><span class="p">:</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_workers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;pin_memory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="c1"># Try to use forkserver to spawn workers instead of fork.</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="nb">hasattr</span><span class="p">(</span><span class="n">mp</span><span class="p">,</span> <span class="s2">&quot;_supports_context&quot;</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="n">mp</span><span class="o">.</span><span class="n">_supports_context</span>
-            <span class="ow">and</span> <span class="s2">&quot;forkserver&quot;</span> <span class="ow">in</span> <span class="n">mp</span><span class="o">.</span><span class="n">get_all_start_methods</span><span class="p">()</span>
-        <span class="p">):</span>
-            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;multiprocessing_context&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;forkserver&quot;</span>
-    <span class="n">dataloader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">dataloader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
 
-    <span class="c1"># Run stochastic variational inference.</span>
-    <span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">elbo</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">horovod</span><span class="p">:</span>
-            <span class="c1"># Set rng seeds on distributed samplers. This is required.</span>
-            <span class="n">sampler</span><span class="o">.</span><span class="n">set_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+    <span class="c1"># All relevant parameters need to be initialized before ``configure_optimizer`` is called.</span>
+    <span class="c1"># Since we used AutoNormal guide our parameters have not be initialized yet.</span>
+    <span class="c1"># Therefore we initialize the model and guide by running one mini-batch through the loss.</span>
+    <span class="n">mini_batch</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:</span> <span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
+    <span class="n">loss_fn</span><span class="p">(</span><span class="o">*</span><span class="n">mini_batch</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">step</span><span class="p">,</span> <span class="p">(</span><span class="n">covariates_batch</span><span class="p">,</span> <span class="n">data_batch</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dataloader</span><span class="p">):</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">covariates_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">data_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
-
-            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">horovod</span><span class="p">:</span>
-                <span class="c1"># Optionally average loss metric across workers.</span>
-                <span class="c1"># You can do this with arbitrary torch.Tensors.</span>
-                <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
-                <span class="n">loss</span> <span class="o">=</span> <span class="n">hvd</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="s2">&quot;loss&quot;</span><span class="p">)</span>
-                <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-
-                <span class="c1"># Print only on the rank=0 worker.</span>
-                <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">hvd</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;epoch </span><span class="si">{}</span><span class="s2"> step </span><span class="si">{}</span><span class="s2"> loss = </span><span class="si">{:0.4g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;epoch </span><span class="si">{}</span><span class="s2"> step </span><span class="si">{}</span><span class="s2"> loss = </span><span class="si">{:0.4g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
-
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">horovod</span><span class="p">:</span>
-        <span class="c1"># After we&#39;re done with the distributed parts of the program,</span>
-        <span class="c1"># we can shutdown all but the rank=0 worker.</span>
-        <span class="n">hvd</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">hvd</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span>
-
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">outfile</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;saving to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outfile</span><span class="p">))</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">:</span> <span class="n">guide</span><span class="p">},</span> <span class="n">args</span><span class="o">.</span><span class="n">outfile</span><span class="p">)</span>
+    <span class="c1"># Run stochastic variational inference using PyTorch Lightning Trainer.</span>
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span>
+        <span class="n">accelerator</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">accelerator</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">strategy</span><span class="p">,</span>
+        <span class="n">devices</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">devices</span><span class="p">,</span>
+        <span class="n">max_epochs</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training_plan</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="o">=</span><span class="n">dataloader</span><span class="p">)</span>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;1.8.5&quot;</span><span class="p">)</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Distributed training via Horovod&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--outfile&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--size&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--batch-size&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-epochs&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-lr&quot;</span><span class="p">,</span> <span class="s2">&quot;--learning-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--cuda&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--horovod&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--no-horovod&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_false&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;horovod&quot;</span><span class="p">)</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Distributed training via PyTorch Lightning&quot;</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--size&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--batch_size&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--learning_rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--seed&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20200723</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="c1"># pl.Trainer arguments.</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--accelerator&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--strategy&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--devices&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max_epochs&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
@@ -378,8 +333,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="jit.html" class="btn btn-neutral float-left" title="Using the PyTorch JIT Compiler with Pyro" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="svi_lightning.html" class="btn btn-neutral float-right" title="Example: distributed training via PyTorch Lightning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="svi_horovod.html" class="btn btn-neutral float-left" title="Example: distributed training via Horovod" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="vae.html" class="btn btn-neutral float-right" title="Variational Autoencoders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

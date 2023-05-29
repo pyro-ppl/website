@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Customizing SVI objectives and training loops &mdash; Pyro Tutorials 1.8.4 documentation</title>
+  <title>Customizing SVI objectives and training loops &mdash; Pyro Tutorials 1.8.5 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -13,9 +13,6 @@
   <![endif]-->
   
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -33,15 +30,19 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html">
-            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.4
+                1.8.5
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -66,6 +67,7 @@
 <li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_lightning.html">Example: distributed training via PyTorch Lightning</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
 <ul>
@@ -197,7 +199,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Customizing SVI objectives and training loops</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/custom_objectives.ipynb.txt" rel="nofollow"> View page source</a>
@@ -208,31 +210,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="Customizing-SVI-objectives-and-training-loops">
+  <section id="Customizing-SVI-objectives-and-training-loops">
 <h1>Customizing SVI objectives and training loops<a class="headerlink" href="#Customizing-SVI-objectives-and-training-loops" title="Permalink to this heading">¶</a></h1>
 <p>Pyro provides support for various optimization-based approaches to Bayesian inference, with <code class="docutils literal notranslate"><span class="pre">Trace_ELBO</span></code> serving as the basic implementation of SVI (stochastic variational inference). See the <a class="reference external" href="http://docs.pyro.ai/en/dev/inference_algos.html#module-pyro.infer.svi">docs</a> for more information on the various SVI implementations and SVI tutorials <a class="reference external" href="http://pyro.ai/examples/svi_part_i.html">I</a>, <a class="reference external" href="http://pyro.ai/examples/svi_part_ii.html">II</a>, and
 <a class="reference external" href="http://pyro.ai/examples/svi_part_iii.html">III</a> for background on SVI.</p>
@@ -300,8 +278,8 @@
 </pre></div>
 </div>
 <p>Then the only change we need to make is:</p>
-<div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- loss = loss_fn(model, guide)</span><span class="w"></span>
-<span class="gi">+ loss = loss_fn(model, guide) + my_custom_L2_regularizer(my_parameters)</span><span class="w"></span>
+<div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- loss = loss_fn(model, guide)</span>
+<span class="gi">+ loss = loss_fn(model, guide) + my_custom_L2_regularizer(my_parameters)</span>
 </pre></div>
 </div>
 </section>
@@ -309,8 +287,8 @@
 <h2>Example: Clipping Gradients<a class="headerlink" href="#Example:-Clipping-Gradients" title="Permalink to this heading">¶</a></h2>
 <p>For some models the loss gradient can explode during training, leading to overflow and <code class="docutils literal notranslate"><span class="pre">NaN</span></code> values. One way to protect against this is with gradient clipping. The optimizers in <code class="docutils literal notranslate"><span class="pre">pyro.optim</span></code> take an optional dictionary of <code class="docutils literal notranslate"><span class="pre">clip_args</span></code> which allows clipping either the gradient norm or the gradient value to fall within the given limit.</p>
 <p>To change the basic example above:</p>
-<div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- optimizer = pyro.optim.Adam({&quot;lr&quot;: 0.001, &quot;betas&quot;: (0.90, 0.999)})</span><span class="w"></span>
-<span class="gi">+ optimizer = pyro.optim.Adam({&quot;lr&quot;: 0.001, &quot;betas&quot;: (0.90, 0.999)}, {&quot;clip_norm&quot;: 10.0})</span><span class="w"></span>
+<div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- optimizer = pyro.optim.Adam({&quot;lr&quot;: 0.001, &quot;betas&quot;: (0.90, 0.999)})</span>
+<span class="gi">+ optimizer = pyro.optim.Adam({&quot;lr&quot;: 0.001, &quot;betas&quot;: (0.90, 0.999)}, {&quot;clip_norm&quot;: 10.0})</span>
 </pre></div>
 </div>
 <p>Further variants of gradient clipping can also be implemented manually by modifying the low-level pattern described above.</p>
@@ -318,8 +296,8 @@
 <section id="Example:-Scaling-the-Loss">
 <h2>Example: Scaling the Loss<a class="headerlink" href="#Example:-Scaling-the-Loss" title="Permalink to this heading">¶</a></h2>
 <p>Depending on the optimization algorithm, the scale of the loss may or not matter. Suppose we want to scale our loss function by the number of datapoints before we differentiate it. This is easily done:</p>
-<div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- loss = loss_fn(model, guide)</span><span class="w"></span>
-<span class="gi">+ loss = loss_fn(model, guide) / N_data</span><span class="w"></span>
+<div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">- loss = loss_fn(model, guide)</span>
+<span class="gi">+ loss = loss_fn(model, guide) / N_data</span>
 </pre></div>
 </div>
 <p>Note that in the case of SVI, where each term in the loss function is a log probability from the model or guide, this same effect can be achieved using <a class="reference external" href="http://docs.pyro.ai/en/dev/poutine.html#pyro.poutine.scale">poutine.scale</a>. For example we can use the <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code> decorator to scale both the model and guide:</p>
@@ -356,7 +334,7 @@
 </section>
 <section id="Example:-Mixing-Optimizers">
 <h2>Example: Mixing Optimizers<a class="headerlink" href="#Example:-Mixing-Optimizers" title="Permalink to this heading">¶</a></h2>
-<p>The various optimizers in <code class="docutils literal notranslate"><span class="pre">pyro.optim</span></code> allow the user to specify optimization settings (e.g. learning rates) on a per-parameter basis. But what if we want to use different optimization algorithms for different parameters? We can do this using Pyro’s <code class="docutils literal notranslate"><span class="pre">MultiOptimizer</span></code> (see below), but we can also achieve the same thing if we directly manipulate <code class="docutils literal notranslate"><span class="pre">differentiable_loss</span></code>:</p>
+<p>The various optimizers in <code class="docutils literal notranslate"><span class="pre">pyro.optim</span></code> allow the user to specify optimization settings (e.g. learning rates) on a per-parameter basis. But what if we want to use different optimization algorithms for different parameters? We can do this using Pyro’s <code class="docutils literal notranslate"><span class="pre">MultiOptimizer</span></code> (see below), but we can also achieve the same thing if we directly manipulate <code class="docutils literal notranslate"><span class="pre">differentiable_loss</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">adam</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">adam_parameters</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)})</span>
 <span class="n">sgd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">sgd_parameters</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">})</span>
 <span class="n">loss_fn</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span><span class="o">.</span><span class="n">differentiable_loss</span>
@@ -405,7 +383,7 @@
 <p>Note that this is basically what the <code class="docutils literal notranslate"><span class="pre">elbo</span></code> implementation in <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/pyro/contrib/minipyro.py">“mini-pyro”</a> looks like.</p>
 <section id="Example:-KL-Annealing">
 <h3>Example: KL Annealing<a class="headerlink" href="#Example:-KL-Annealing" title="Permalink to this heading">¶</a></h3>
-<p>In the <a class="reference external" href="http://pyro.ai/examples/dmm.html">Deep Markov Model Tutorial</a> the ELBO variational objective is modified during training. In particular the various KL-divergence terms between latent random variables are scaled downward (i.e. annealed) relative to the log probabilities of the observed data. In the tutorial this is accomplished using <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code>. We can accomplish the same thing by defining a custom loss function. This latter option is not a very elegant pattern but we include it
+<p>In the <a class="reference external" href="http://pyro.ai/examples/dmm.html">Deep Markov Model Tutorial</a> the ELBO variational objective is modified during training. In particular the various KL-divergence terms between latent random variables are scaled downward (i.e. annealed) relative to the log probabilities of the observed data. In the tutorial this is accomplished using <code class="docutils literal notranslate"><span class="pre">poutine.scale</span></code>. We can accomplish the same thing by defining a custom loss function. This latter option is not a very elegant pattern but we include it
 anyway to show the flexibility we have at our disposal.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">simple_elbo_kl_annealing</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># get the annealing factor and latents to anneal from the keyword</span>
