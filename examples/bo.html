@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bayesian Optimization &mdash; Pyro Tutorials 1.8.5 documentation</title>
+  <title>Bayesian Optimization &mdash; Pyro Tutorials 1.8.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-      <link rel="stylesheet" href="_static/nbsphinx-code-cells.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -31,19 +31,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="index.html">
-            
-              <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <a href="index.html">
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.5
+                1.8.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -194,8 +190,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Bayesian Optimization</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Bayesian Optimization</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/bo.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -205,12 +201,290 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Bayesian-Optimization">
-<h1>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Permalink to this heading">¶</a></h1>
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Bayesian-Optimization">
+<h1>Bayesian Optimization<a class="headerlink" href="#Bayesian-Optimization" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Bayesian_optimization">Bayesian optimization</a> is a powerful strategy for minimizing (or maximizing) objective functions that are costly to evaluate. It is an important component of <a class="reference external" href="https://en.wikipedia.org/wiki/Automated_machine_learning">automated machine learning</a> toolboxes such as <a class="reference external" href="https://automl.github.io/auto-sklearn/stable/">auto-sklearn</a>, <a class="reference external" href="http://www.cs.ubc.ca/labs/beta/Projects/autoweka/">auto-weka</a>, and
 <a class="reference external" href="https://scikit-optimize.github.io/">scikit-optimize</a>, where Bayesian optimization is used to select model hyperparameters. Bayesian optimization is used for a wide range of other applications as well; as cataloged in the review [2], these include interactive user-interfaces, robotics, environmental monitoring, information extraction, combinatorial optimization, sensor networks, adaptive Monte Carlo, experimental design, and reinforcement learning.</p>
 <section id="Problem-Setup">
-<h2>Problem Setup<a class="headerlink" href="#Problem-Setup" title="Permalink to this heading">¶</a></h2>
+<h2>Problem Setup<a class="headerlink" href="#Problem-Setup" title="Permalink to this headline">¶</a></h2>
 <p>We are given a minimization problem</p>
 <div class="math notranslate nohighlight">
 \[x^* = \text{arg}\min \ f(x),\]</div>
@@ -248,15 +522,15 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">pyro.contrib.gp</span> <span class="k">as</span> <span class="nn">gp</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.5&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.6&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Define-an-objective-function">
-<h2>Define an objective function<a class="headerlink" href="#Define-an-objective-function" title="Permalink to this heading">¶</a></h2>
-<p>For the purposes of demonstration, the objective function we are going to consider is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008) function</a>:</p>
+<h2>Define an objective function<a class="headerlink" href="#Define-an-objective-function" title="Permalink to this headline">¶</a></h2>
+<p>For the purposes of demonstration, the objective function we are going to consider is the <a class="reference external" href="https://www.sfu.ca/~ssurjano/forretal08.html">Forrester et al. (2008) function</a>:</p>
 <div class="math notranslate nohighlight">
 \[f(x) = (6x-2)^2 \sin(12x-4), \quad x\in [0, 1].\]</div>
 <p>This function has both a local minimum and a global minimum. The global minimum is at <span class="math notranslate nohighlight">\(x^* = 0.75725\)</span>.</p>
@@ -290,7 +564,7 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 </div>
 </section>
 <section id="Setting-a-Gaussian-Process-prior">
-<h2>Setting a Gaussian Process prior<a class="headerlink" href="#Setting-a-Gaussian-Process-prior" title="Permalink to this heading">¶</a></h2>
+<h2>Setting a Gaussian Process prior<a class="headerlink" href="#Setting-a-Gaussian-Process-prior" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_process">Gaussian processes</a> are a popular choice for a function priors due to their power and flexibility. The core of a Gaussian Process is its covariance function <span class="math notranslate nohighlight">\(k\)</span>, which governs the similarity of <span class="math notranslate nohighlight">\(f(x)\)</span> for pairs of input points. Here we will use a Gaussian Process as our prior for the objective function <span class="math notranslate nohighlight">\(f\)</span>. Given inputs <span class="math notranslate nohighlight">\(X\)</span> and the corresponding noisy observations <span class="math notranslate nohighlight">\(y\)</span>, the model takes the form</p>
 <div class="math notranslate nohighlight">
 \[f\sim\mathrm{MultivariateNormal}(0,k(X,X)),\]</div>
@@ -328,7 +602,7 @@ will guide the query points <span class="math notranslate nohighlight">\(x_n\)</
 </div>
 </section>
 <section id="Define-an-acquisition-function">
-<h2>Define an acquisition function<a class="headerlink" href="#Define-an-acquisition-function" title="Permalink to this heading">¶</a></h2>
+<h2>Define an acquisition function<a class="headerlink" href="#Define-an-acquisition-function" title="Permalink to this headline">¶</a></h2>
 <p>There are many reasonable options for the acquisition function (see references [1] and [2] for a list of popular choices and a discussion of their properties). Here we will use one that is ‘simple to implement and interpret,’ namely the ‘Lower Confidence Bound’ acquisition function. It is given by</p>
 <div class="math notranslate nohighlight">
 \[\alpha(x) = \mu(x) - \kappa \sigma(x)\]</div>
@@ -347,7 +621,7 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 </div>
 <p>The final component we need is a way to find (approximate) minimizing points <span class="math notranslate nohighlight">\(x_{\rm min}\)</span> of the acquisition function. There are several ways to proceed, including gradient-based and non-gradient-based techniques. Here we will follow the gradient-based approach. One of the possible drawbacks of gradient descent methods is that the minimization algorithm can get stuck at a local minimum. In this tutorial, we adopt a (very) simple approach to address this issue:</p>
 <ul class="simple">
-<li><p>First, we seed our minimization algorithm with 5 different values: i) one is chosen to be <span class="math notranslate nohighlight">\(x_{n-1}\)</span>, i.e. the candidate <span class="math notranslate nohighlight">\(x\)</span> used in the previous step; and ii) four are chosen uniformly at random from the domain of the objective function.</p></li>
+<li><p>First, we seed our minimization algorithm with 5 different values: i) one is chosen to be <span class="math notranslate nohighlight">\(x_{n-1}\)</span>, i.e. the candidate <span class="math notranslate nohighlight">\(x\)</span> used in the previous step; and ii) four are chosen uniformly at random from the domain of the objective function.</p></li>
 <li><p>We then run the minimization algorithm to approximate convergence for each seed value.</p></li>
 <li><p>Finally, from the five candidate <span class="math notranslate nohighlight">\(x\)</span>s identified by the minimization algorithm, we select the one that minimizes the acquisition function.</p></li>
 </ul>
@@ -380,7 +654,7 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 </div>
 </section>
 <section id="The-inner-loop-of-Bayesian-Optimization">
-<h2>The inner loop of Bayesian Optimization<a class="headerlink" href="#The-inner-loop-of-Bayesian-Optimization" title="Permalink to this heading">¶</a></h2>
+<h2>The inner loop of Bayesian Optimization<a class="headerlink" href="#The-inner-loop-of-Bayesian-Optimization" title="Permalink to this headline">¶</a></h2>
 <p>With the various helper functions defined above, we can now encapsulate the main logic of a single step of Bayesian Optimization in the function <code class="docutils literal notranslate"><span class="pre">next_x</span></code>:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -405,7 +679,7 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 </div>
 </section>
 <section id="Running-the-algorithm">
-<h2>Running the algorithm<a class="headerlink" href="#Running-the-algorithm" title="Permalink to this heading">¶</a></h2>
+<h2>Running the algorithm<a class="headerlink" href="#Running-the-algorithm" title="Permalink to this headline">¶</a></h2>
 <p>To illustrate how Bayesian Optimization works, we make a convenient plotting function that will help us visualize our algorithm’s progress.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -470,7 +744,7 @@ prefer candidates <span class="math notranslate nohighlight">\(x\)</span> in are
 <p>While this tutorial is only intended to be a brief introduction to Bayesian Optimization, we hope that we have been able to convey the basic underlying ideas. Consider watching the lecture by Nando de Freitas [3] for an excellent exposition of the basic theory. Finally, the reference paper [2] gives a review of recent research on Bayesian Optimization, together with many discussions about important technical details.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Practical</span> <span class="pre">bayesian</span> <span class="pre">optimization</span> <span class="pre">of</span> <span class="pre">machine</span> <span class="pre">learning</span> <span class="pre">algorithms</span></code>,     Jasper Snoek, Hugo Larochelle, and Ryan P. Adams</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Taking</span> <span class="pre">the</span> <span class="pre">human</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">loop:</span> <span class="pre">A</span> <span class="pre">review</span> <span class="pre">of</span> <span class="pre">bayesian</span> <span class="pre">optimization</span></code>,     Bobak Shahriari, Kevin Swersky, Ziyu Wang, Ryan P. Adams, and Nando De Freitas</p>
 <p>[3] <a class="reference external" href="https://www.youtube.com/watch?v=vz3D36VXefI">Machine learning - Bayesian optimization and multi-armed bandits</a></p>

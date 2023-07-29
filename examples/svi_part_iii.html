@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SVI Part III: ELBO Gradient Estimators &mdash; Pyro Tutorials 1.8.5 documentation</title>
+  <title>SVI Part III: ELBO Gradient Estimators &mdash; Pyro Tutorials 1.8.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-      <link rel="stylesheet" href="_static/nbsphinx-code-cells.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -31,19 +31,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="index.html">
-            
-              <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <a href="index.html">
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.5
+                1.8.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -203,8 +199,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">SVI Part III: ELBO Gradient Estimators</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>SVI Part III: ELBO Gradient Estimators</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/svi_part_iii.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -214,11 +210,289 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="SVI-Part-III:-ELBO-Gradient-Estimators">
-<h1>SVI Part III: ELBO Gradient Estimators<a class="headerlink" href="#SVI-Part-III:-ELBO-Gradient-Estimators" title="Permalink to this heading">¶</a></h1>
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="SVI-Part-III:-ELBO-Gradient-Estimators">
+<h1>SVI Part III: ELBO Gradient Estimators<a class="headerlink" href="#SVI-Part-III:-ELBO-Gradient-Estimators" title="Permalink to this headline">¶</a></h1>
 <section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this heading">¶</a></h2>
-<p>We’ve defined a Pyro model with observations <span class="math notranslate nohighlight">\({\bf x}\)</span> and latents <span class="math notranslate nohighlight">\({\bf z}\)</span> of the form <span class="math notranslate nohighlight">\(p_{\theta}({\bf x}, {\bf z}) = p_{\theta}({\bf x}|{\bf z}) p_{\theta}({\bf z})\)</span>. We’ve also defined a Pyro guide (i.e. a variational distribution) of the form <span class="math notranslate nohighlight">\(q_{\phi}({\bf z})\)</span>. Here <span class="math notranslate nohighlight">\({\theta}\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> are variational parameters for the model and guide, respectively. (In particular these are <em>not</em> random variables that call for a Bayesian treatment).</p>
+<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this headline">¶</a></h2>
+<p>We’ve defined a Pyro model with observations <span class="math notranslate nohighlight">\({\bf x}\)</span> and latents <span class="math notranslate nohighlight">\({\bf z}\)</span> of the form <span class="math notranslate nohighlight">\(p_{\theta}({\bf x}, {\bf z}) = p_{\theta}({\bf x}|{\bf z}) p_{\theta}({\bf z})\)</span>. We’ve also defined a Pyro guide (i.e. a variational distribution) of the form <span class="math notranslate nohighlight">\(q_{\phi}({\bf z})\)</span>. Here <span class="math notranslate nohighlight">\({\theta}\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> are variational parameters for the model and guide, respectively. (In particular these are <em>not</em> random variables that call for a Bayesian treatment).</p>
 <p>We’d like to maximize the log evidence <span class="math notranslate nohighlight">\(\log p_{\theta}({\bf x})\)</span> by maximizing the ELBO (the evidence lower bound) given by</p>
 <div class="math notranslate nohighlight">
 \[{\rm ELBO} \equiv \mathbb{E}_{q_{\phi}({\bf z})} \left [
@@ -236,19 +510,19 @@ f_{\phi}({\bf z}) \right]\]</div>
 <p>Let’s start with the easiest case.</p>
 </section>
 <section id="Easy-Case:-Reparameterizable-Random-Variables">
-<h2>Easy Case: Reparameterizable Random Variables<a class="headerlink" href="#Easy-Case:-Reparameterizable-Random-Variables" title="Permalink to this heading">¶</a></h2>
+<h2>Easy Case: Reparameterizable Random Variables<a class="headerlink" href="#Easy-Case:-Reparameterizable-Random-Variables" title="Permalink to this headline">¶</a></h2>
 <p>Suppose that we can reparameterize things such that</p>
 <div class="math notranslate nohighlight">
 \[\mathbb{E}_{q_{\phi}({\bf z})} \left [f_{\phi}({\bf z}) \right]
 =\mathbb{E}_{q({\bf \epsilon})} \left [f_{\phi}(g_{\phi}({\bf \epsilon})) \right]\]</div>
-<p>Crucially we’ve moved all the <span class="math notranslate nohighlight">\(\phi\)</span> dependence inside of the expectation; <span class="math notranslate nohighlight">\(q({\bf \epsilon})\)</span> is a fixed distribution with no dependence on <span class="math notranslate nohighlight">\(\phi\)</span>. This kind of reparameterization can be done for many distributions (e.g. the normal distribution); see reference [3] for a discussion. In this case we can pass the gradient straight through the expectation to get</p>
+<p>Crucially we’ve moved all the <span class="math notranslate nohighlight">\(\phi\)</span> dependence inside of the expectation; <span class="math notranslate nohighlight">\(q({\bf \epsilon})\)</span> is a fixed distribution with no dependence on <span class="math notranslate nohighlight">\(\phi\)</span>. This kind of reparameterization can be done for many distributions (e.g. the normal distribution); see reference [3] for a discussion. In this case we can pass the gradient straight through the expectation to get</p>
 <div class="math notranslate nohighlight">
 \[\nabla_{\phi}\mathbb{E}_{q({\bf \epsilon})} \left [f_{\phi}(g_{\phi}({\bf \epsilon})) \right]=
 \mathbb{E}_{q({\bf \epsilon})} \left [\nabla_{\phi}f_{\phi}(g_{\phi}({\bf \epsilon})) \right]\]</div>
 <p>Assuming <span class="math notranslate nohighlight">\(f(\cdot)\)</span> and <span class="math notranslate nohighlight">\(g(\cdot)\)</span> are sufficiently smooth, we can now get unbiased estimates of the gradient of interest by taking a Monte Carlo estimate of this expectation.</p>
 </section>
 <section id="Tricky-Case:-Non-reparameterizable-Random-Variables">
-<h2>Tricky Case: Non-reparameterizable Random Variables<a class="headerlink" href="#Tricky-Case:-Non-reparameterizable-Random-Variables" title="Permalink to this heading">¶</a></h2>
+<h2>Tricky Case: Non-reparameterizable Random Variables<a class="headerlink" href="#Tricky-Case:-Non-reparameterizable-Random-Variables" title="Permalink to this headline">¶</a></h2>
 <p>What if we can’t do the above reparameterization? Unfortunately this is the case for many distributions of interest, for example all discrete distributions. In this case our estimator takes a bit more complicated form.</p>
 <p>We begin by expanding the gradient of interest as</p>
 <div class="math notranslate nohighlight">
@@ -271,17 +545,17 @@ q_{\phi}({\bf z})\nabla_{\phi} \log q_{\phi}({\bf z})\]</div>
 <div class="math notranslate nohighlight">
 \[{\rm surrogate \;objective} \equiv
 \log q_{\phi}({\bf z}) \overline{f_{\phi}({\bf z})} + f_{\phi}({\bf z})\]</div>
-<p>Here the bar indicates that the term is held constant (i.e. it is not to be differentiated w.r.t. <span class="math notranslate nohighlight">\(\phi\)</span>). To get a (single-sample) Monte Carlo gradient estimate, we sample the latent random variables, compute the surrogate objective, and differentiate. The result is an unbiased estimate of <span class="math notranslate nohighlight">\(\nabla_{\phi}\mathbb{E}_{q_{\phi}({\bf z})} \left [ f_{\phi}({\bf z}) \right]\)</span>. In equations:</p>
+<p>Here the bar indicates that the term is held constant (i.e. it is not to be differentiated w.r.t. <span class="math notranslate nohighlight">\(\phi\)</span>). To get a (single-sample) Monte Carlo gradient estimate, we sample the latent random variables, compute the surrogate objective, and differentiate. The result is an unbiased estimate of <span class="math notranslate nohighlight">\(\nabla_{\phi}\mathbb{E}_{q_{\phi}({\bf z})} \left [ f_{\phi}({\bf z}) \right]\)</span>. In equations:</p>
 <div class="math notranslate nohighlight">
 \[\nabla_{\phi} {\rm ELBO} = \mathbb{E}_{q_{\phi}({\bf z})} \left [
 \nabla_{\phi} ({\rm surrogate \; objective}) \right]\]</div>
 </section>
 <section id="Variance-or-Why-I-Wish-I-Was-Doing-MLE-Deep-Learning">
-<h2>Variance or Why I Wish I Was Doing MLE Deep Learning<a class="headerlink" href="#Variance-or-Why-I-Wish-I-Was-Doing-MLE-Deep-Learning" title="Permalink to this heading">¶</a></h2>
+<h2>Variance or Why I Wish I Was Doing MLE Deep Learning<a class="headerlink" href="#Variance-or-Why-I-Wish-I-Was-Doing-MLE-Deep-Learning" title="Permalink to this headline">¶</a></h2>
 <p>We now have a general recipe for an unbiased gradient estimator of expectations of cost functions. Unfortunately, in the more general case where our <span class="math notranslate nohighlight">\(q(\cdot)\)</span> includes non-reparameterizable random variables, this estimator tends to have high variance. Indeed in many cases of interest the variance is so high that the estimator is effectively unusable. So we need strategies to reduce variance (for a discussion see reference [4]). We’re going to pursue two strategies. The first strategy
 takes advantage of the particular structure of the cost function <span class="math notranslate nohighlight">\(f(\cdot)\)</span>. The second strategy effectively introduces a way to reduce variance by using information from previous estimates of <span class="math notranslate nohighlight">\(\mathbb{E}_{q_{\phi}({\bf z})} [ f_{\phi}({\bf z})]\)</span>. As such it is somewhat analogous to using momentum in stochastic gradient descent.</p>
 <section id="Reducing-Variance-via-Dependency-Structure">
-<h3>Reducing Variance via Dependency Structure<a class="headerlink" href="#Reducing-Variance-via-Dependency-Structure" title="Permalink to this heading">¶</a></h3>
+<h3>Reducing Variance via Dependency Structure<a class="headerlink" href="#Reducing-Variance-via-Dependency-Structure" title="Permalink to this headline">¶</a></h3>
 <p>In the above discussion we stuck to a general cost function <span class="math notranslate nohighlight">\(f_{\phi}({\bf z})\)</span>. We could continue in this vein (the approach we’re about to discuss is applicable in the general case) but for concreteness let’s zoom back in. In the case of stochastic variational inference, we’re interested in a particular cost function of the form</p>
 <div class="math notranslate nohighlight">
 \[\log p_{\theta}({\bf x} | {\rm Pa}_p ({\bf x})) +
@@ -301,7 +575,7 @@ dealt with analytically to reduce variance—often goes under the name of Rao-Bl
 <p>Note that leveraging this dependency information might have small computation overhead, so <code class="docutils literal notranslate"><span class="pre">TraceGraph_ELBO</span></code> should only be used in the case where your model has non-reparameterizable random variables; in most applications <code class="docutils literal notranslate"><span class="pre">Trace_ELBO</span></code> suffices.</p>
 </section>
 <section id="An-Example-with-Rao-Blackwellization:">
-<h3>An Example with Rao-Blackwellization:<a class="headerlink" href="#An-Example-with-Rao-Blackwellization:" title="Permalink to this heading">¶</a></h3>
+<h3>An Example with Rao-Blackwellization:<a class="headerlink" href="#An-Example-with-Rao-Blackwellization:" title="Permalink to this headline">¶</a></h3>
 <p>Suppose we have a gaussian mixture model with <span class="math notranslate nohighlight">\(K\)</span> components. For each data point we: (i) first sample the component distribution <span class="math notranslate nohighlight">\(k \in [1,...,K]\)</span>; and (ii) observe the data point using the <span class="math notranslate nohighlight">\(k^{\rm th}\)</span> component distribution. The simplest way to write down a model of this sort is as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ks</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">probs</span><span class="p">)</span>
                           <span class="o">.</span><span class="n">to_event</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
@@ -322,7 +596,7 @@ dealt with analytically to reduce variance—often goes under the name of Rao-Bl
 <p>That’s all there is to it.</p>
 </section>
 <section id="Aside:-Dependency-tracking-in-Pyro">
-<h3>Aside: Dependency tracking in Pyro<a class="headerlink" href="#Aside:-Dependency-tracking-in-Pyro" title="Permalink to this heading">¶</a></h3>
+<h3>Aside: Dependency tracking in Pyro<a class="headerlink" href="#Aside:-Dependency-tracking-in-Pyro" title="Permalink to this headline">¶</a></h3>
 <p>Finally, a word about dependency tracking. Pyro uses the concept of provenance for tracking dependency within a stochastic function that includes arbitrary Python code (see reference [5]). In the programming language theory, the provenance of a variable refers to the history of variables or computations that contributed to its value. The simple example below demonstrates how provenance is tracked through PyTorch ops in Pyro, where provenance is a user-defined frozenset of objects:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyro.ops.provenance</span> <span class="kn">import</span> <span class="n">get_provenance</span><span class="p">,</span> <span class="n">track_provenance</span>
 
@@ -358,8 +632,8 @@ dealt with analytically to reduce variance—often goes under the name of Rao-Bl
 </div>
 </section>
 <section id="Reducing-Variance-with-Data-Dependent-Baselines">
-<h3>Reducing Variance with Data-Dependent Baselines<a class="headerlink" href="#Reducing-Variance-with-Data-Dependent-Baselines" title="Permalink to this heading">¶</a></h3>
-<p>The second strategy for reducing variance in our ELBO gradient estimator goes under the name of baselines (see e.g. reference [6]). It actually makes use of the same bit of math that underlies the variance reduction strategy discussed above, except now instead of removing terms we’re going to add terms. Basically, instead of removing terms with zero expectation that tend to <em>contribute</em> to the variance, we’re going to add specially chosen terms with zero expectation that work to <em>reduce</em> the
+<h3>Reducing Variance with Data-Dependent Baselines<a class="headerlink" href="#Reducing-Variance-with-Data-Dependent-Baselines" title="Permalink to this headline">¶</a></h3>
+<p>The second strategy for reducing variance in our ELBO gradient estimator goes under the name of baselines (see e.g. reference [6]). It actually makes use of the same bit of math that underlies the variance reduction strategy discussed above, except now instead of removing terms we’re going to add terms. Basically, instead of removing terms with zero expectation that tend to <em>contribute</em> to the variance, we’re going to add specially chosen terms with zero expectation that work to <em>reduce</em> the
 variance. As such, this is a control variate strategy.</p>
 <p>In more detail, the idea is to take advantage of the fact that for any constant <span class="math notranslate nohighlight">\(b\)</span>, the following identity holds</p>
 <div class="math notranslate nohighlight">
@@ -381,11 +655,11 @@ variance. As such, this is a control variate strategy.</p>
 \[\log q_{\phi}({\bf z}_i) \left(\overline{f_{\phi}({\bf z})}-b\right)\]</div>
 <p>Doing so doesn’t affect the mean of our gradient estimator but it does affect the variance. If we choose <span class="math notranslate nohighlight">\(b\)</span> wisely, we can hope to reduce the variance. In fact, <span class="math notranslate nohighlight">\(b\)</span> need not be a constant: it can depend on any of the random choices upstream (or sidestream) of <span class="math notranslate nohighlight">\({\bf z}_i\)</span>.</p>
 <section id="Baselines-in-Pyro">
-<h4>Baselines in Pyro<a class="headerlink" href="#Baselines-in-Pyro" title="Permalink to this heading">¶</a></h4>
+<h4>Baselines in Pyro<a class="headerlink" href="#Baselines-in-Pyro" title="Permalink to this headline">¶</a></h4>
 <p>There are several ways the user can instruct Pyro to use baselines in the context of stochastic variational inference. Since baselines can be attached to any non-reparameterizable random variable, the current baseline interface is at the level of the <code class="docutils literal notranslate"><span class="pre">pyro.sample</span></code> statement. In particular the baseline interface makes use of an argument <code class="docutils literal notranslate"><span class="pre">baseline</span></code>, which is a dictionary that specifies baseline options. Note that it only makes sense to specify baselines for sample statements within the guide
 (and not in the model).</p>
 <section id="Decaying-Average-Baseline">
-<h5>Decaying Average Baseline<a class="headerlink" href="#Decaying-Average-Baseline" title="Permalink to this heading">¶</a></h5>
+<h5>Decaying Average Baseline<a class="headerlink" href="#Decaying-Average-Baseline" title="Permalink to this headline">¶</a></h5>
 <p>The simplest baseline is constructed from a running average of recent samples of <span class="math notranslate nohighlight">\(\overline{f_{\phi}({\bf z})}\)</span>. In Pyro this kind of baseline can be invoked as follows</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">z</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
                 <span class="n">infer</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">baseline</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;use_decaying_avg_baseline&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
@@ -396,9 +670,9 @@ variance. As such, this is a control variate strategy.</p>
 </section>
 </section>
 <section id="Neural-Baselines">
-<h4>Neural Baselines<a class="headerlink" href="#Neural-Baselines" title="Permalink to this heading">¶</a></h4>
+<h4>Neural Baselines<a class="headerlink" href="#Neural-Baselines" title="Permalink to this headline">¶</a></h4>
 <p>In some cases a decaying average baseline works well. In others using a baseline that depends on upstream randomness is crucial for getting good variance reduction. A powerful approach for constructing such a baseline is to use a neural network that can be adapted during the course of learning. Pyro provides two ways to specify such a baseline (for an extended example see the <a class="reference internal" href="air.html"><span class="doc">AIR tutorial</span></a>).</p>
-<p>First the user needs to decide what inputs the baseline is going to consume (e.g. the current datapoint under consideration or the previously sampled random variable). Then the user needs to construct a <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> that encapsulates the baseline computation. This might look something like</p>
+<p>First the user needs to decide what inputs the baseline is going to consume (e.g. the current datapoint under consideration or the previously sampled random variable). Then the user needs to construct a <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> that encapsulates the baseline computation. This might look something like</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BaselineNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim_input</span><span class="p">,</span> <span class="n">dim_hidden</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -425,7 +699,7 @@ variance. As such, this is a control variate strategy.</p>
 <div class="math notranslate nohighlight">
 \[{\rm baseline\; loss} \equiv\left(\overline{f_{\phi}({\bf z})} - b  \right)^2\]</div>
 <p>which is used to adapt the parameters of the neural network. There’s no theorem that suggests this is the optimal loss function to use in this context (it’s not), but in practice it can work pretty well. Just as for the decaying average baseline, the idea is that a baseline that can track the mean <span class="math notranslate nohighlight">\(\overline{f_{\phi}({\bf z})}\)</span> will help reduce the variance. Under the hood <code class="docutils literal notranslate"><span class="pre">SVI</span></code> takes one step on the baseline loss in conjunction with a step on the ELBO.</p>
-<p>Note that in practice it can be important to use a different set of learning hyperparameters (e.g. a higher learning rate) for baseline parameters. In Pyro this can be done as follows:</p>
+<p>Note that in practice it can be important to use a different set of learning hyperparameters (e.g. a higher learning rate) for baseline parameters. In Pyro this can be done as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">per_param_args</span><span class="p">(</span><span class="n">param_name</span><span class="p">):</span>
     <span class="k">if</span> <span class="s1">&#39;baseline&#39;</span> <span class="ow">in</span> <span class="n">param_name</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.010</span><span class="p">}</span>
@@ -446,7 +720,7 @@ graph before they are fed into the neural network.</p>
 <p>This works as above, except in this case it’s the user’s responsibility to make sure that any autograd tape connecting <span class="math notranslate nohighlight">\(b\)</span> to the parameters of the model and guide has been cut. Or to say the same thing in language more familiar to PyTorch users, any inputs to <span class="math notranslate nohighlight">\(b\)</span> that depend on <span class="math notranslate nohighlight">\(\theta\)</span> or <span class="math notranslate nohighlight">\(\phi\)</span> need to be detached from the autograd graph with <code class="docutils literal notranslate"><span class="pre">detach()</span></code> statements.</p>
 </section>
 <section id="A-complete-example-with-baselines">
-<h4>A complete example with baselines<a class="headerlink" href="#A-complete-example-with-baselines" title="Permalink to this heading">¶</a></h4>
+<h4>A complete example with baselines<a class="headerlink" href="#A-complete-example-with-baselines" title="Permalink to this headline">¶</a></h4>
 <p>Recall that in the <a class="reference internal" href="svi_part_i.html"><span class="doc">first SVI tutorial</span></a> we considered a bernoulli-beta model for coin flips. Because the beta random variable is non-reparameterizable (or rather not easily reparameterizable), the corresponding ELBO gradients can be quite noisy. In that context we dealt with this problem by using a Beta distribution that provides (approximate) reparameterized gradients. Here we showcase how a simple decaying average baseline can reduce the variance in the case where the Beta
 distribution is treated as non-reparameterized (so that the ELBO gradient estimator is of the score function type). While we’re at it, we also use <code class="docutils literal notranslate"><span class="pre">plate</span></code> to write our model in a fully vectorized manner.</p>
 <p>Instead of directly comparing gradient variances, we’re going to see how many steps it takes for SVI to converge. Recall that for this particular model (because of conjugacy) we can compute the exact posterior. So to assess the utility of baselines in this context, we setup the following simple experiment. We initialize the guide at a specified set of variational parameters. We then do SVI until the variational parameters have gotten to within a fixed tolerance of the parameters of the exact
@@ -468,7 +742,7 @@ posterior. We do this both with and without the decaying average baseline. We th
 <span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span><span class="p">,</span> <span class="n">TraceGraph_ELBO</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.5&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.6&#39;</span><span class="p">)</span>
 
 <span class="c1"># this is for running the notebook in our testing framework</span>
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;CI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
@@ -571,7 +845,7 @@ Final absolute errors for the two variational parameters were 0.7991 &amp; 0.253
 </section>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Automated</span> <span class="pre">Variational</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Probabilistic</span> <span class="pre">Programming</span></code>,      David Wingate, Theo Weber</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Black</span> <span class="pre">Box</span> <span class="pre">Variational</span> <span class="pre">Inference</span></code>,     Rajesh Ranganath, Sean Gerrish, David M. Blei</p>
 <p>[3] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>

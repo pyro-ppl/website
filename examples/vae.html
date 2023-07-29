@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Variational Autoencoders &mdash; Pyro Tutorials 1.8.5 documentation</title>
+  <title>Variational Autoencoders &mdash; Pyro Tutorials 1.8.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-      <link rel="stylesheet" href="_static/nbsphinx-code-cells.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -31,19 +31,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="index.html">
-            
-              <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <a href="index.html">
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.5
+                1.8.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -192,8 +188,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Variational Autoencoders</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Variational Autoencoders</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/vae.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -203,10 +199,288 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Variational-Autoencoders">
-<h1>Variational Autoencoders<a class="headerlink" href="#Variational-Autoencoders" title="Permalink to this heading">¶</a></h1>
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Variational-Autoencoders">
+<h1>Variational Autoencoders<a class="headerlink" href="#Variational-Autoencoders" title="Permalink to this headline">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p>The variational autoencoder (VAE) is arguably the simplest setup that realizes deep probabilistic modeling. Note that we’re being careful in our choice of language here. The VAE isn’t a model as such—rather the VAE is a particular setup for doing variational inference for a certain class of models. The class of models is quite broad: basically any (unsupervised) density estimator with latent random variables. The basic structure of such a model is simple, almost deceptively so (see Fig. 1).</p>
 <center><figure><img src="_static/img/vae_model.png" style="width: 200px;"><figcaption> <font size="+1"><b>Figure 1</b>: the class of deep models we're interested in.</font></figcaption></figure></center><br><p>Here we’ve depicted the structure of the kind of model we’re interested in as a graphical model. We have <span class="math notranslate nohighlight">\(N\)</span> observed datapoints <span class="math notranslate nohighlight">\(\{ \bf x_i \}\)</span>. Each datapoint is generated by a (local) latent random variable <span class="math notranslate nohighlight">\(\bf z_i\)</span>. There is also a parameter <span class="math notranslate nohighlight">\(\theta\)</span>, which is global in the sense that all the datapoints depend on it (which is why it’s drawn outside the rectangle). Note that since <span class="math notranslate nohighlight">\(\theta\)</span> is a parameter, it’s not something we’re being Bayesian about. Finally,
 what’s of particular importance here is that we allow for each <span class="math notranslate nohighlight">\(\bf x_i\)</span> to depend on <span class="math notranslate nohighlight">\(\bf z_i\)</span> in a complex, non-linear way. In practice this dependency will be parameterized by a (deep) neural network with parameters <span class="math notranslate nohighlight">\(\theta\)</span>. It’s this non-linearity that makes inference for this class of models particularly challenging.</p>
@@ -219,9 +493,9 @@ what’s of particular importance here is that we allow for each <span class="ma
 <p>The graphical model representation is a useful way to think about the structure of the model, but it can also be fruitful to look at an explicit factorization of the joint probability density:</p>
 <div class="math notranslate nohighlight">
 \[p({\bf x}, {\bf z}) = \prod_{i=1}^N p_\theta({\bf x}_i | {\bf z}_i) p({\bf z}_i)\]</div>
-<p>The fact that <span class="math notranslate nohighlight">\(p({\bf x}, {\bf z})\)</span> breaks up into a product of terms like this makes it clear what we mean when we call <span class="math notranslate nohighlight">\(\bf z_i\)</span> a local random variable. For any particular <span class="math notranslate nohighlight">\(i\)</span>, only the single datapoint <span class="math notranslate nohighlight">\(\bf x_i\)</span> depends on <span class="math notranslate nohighlight">\(\bf z_i\)</span>. As such the <span class="math notranslate nohighlight">\(\{\bf z_i\}\)</span> describe local structure, i.e. structure that is private to each data point. This factorized structure also means that we can do subsampling during the course of learning. As such this sort of model
+<p>The fact that <span class="math notranslate nohighlight">\(p({\bf x}, {\bf z})\)</span> breaks up into a product of terms like this makes it clear what we mean when we call <span class="math notranslate nohighlight">\(\bf z_i\)</span> a local random variable. For any particular <span class="math notranslate nohighlight">\(i\)</span>, only the single datapoint <span class="math notranslate nohighlight">\(\bf x_i\)</span> depends on <span class="math notranslate nohighlight">\(\bf z_i\)</span>. As such the <span class="math notranslate nohighlight">\(\{\bf z_i\}\)</span> describe local structure, i.e. structure that is private to each data point. This factorized structure also means that we can do subsampling during the course of learning. As such this sort of model
 is amenable to the large data setting. (For more discussion on this and related topics see <a class="reference internal" href="svi_part_ii.html"><span class="doc">SVI Part II</span></a>.)</p>
-<p>That’s all there is to the model. Since the observations depend on the latent random variables in a complicated, non-linear way, we expect the posterior over the latents to have a complex structure. Consequently in order to do inference in this model we need to specify a flexibly family of guides (i.e. variational distributions). Since we want to be able to scale to large datasets, our guide is going to make use of amortization to keep the number of variational parameters under control (see <a class="reference internal" href="svi_part_ii.html"><span class="doc">SVI
+<p>That’s all there is to the model. Since the observations depend on the latent random variables in a complicated, non-linear way, we expect the posterior over the latents to have a complex structure. Consequently in order to do inference in this model we need to specify a flexibly family of guides (i.e. variational distributions). Since we want to be able to scale to large datasets, our guide is going to make use of amortization to keep the number of variational parameters under control (see <a class="reference internal" href="svi_part_ii.html"><span class="doc">SVI
 Part II</span></a> for a somewhat more general discussion of amortization).</p>
 <p>Recall that the job of the guide is to ‘guess’ good values for the latent random variables—good in the sense that they’re true to the model prior <em>and</em> true to the data. If we weren’t making use of amortization, we would introduce variational parameters <span class="math notranslate nohighlight">\(\{ \lambda_i \}\)</span> for <em>each</em> datapoint <span class="math notranslate nohighlight">\(\bf x_i\)</span>. These variational parameters would represent our belief about ‘good’ values of <span class="math notranslate nohighlight">\(\bf z_i\)</span>; for example, they could encode the mean and variance of a gaussian distribution in
 <span class="math notranslate nohighlight">\({\bf z}_i\)</span> space. Amortization means that, rather than introducing variational parameters <span class="math notranslate nohighlight">\(\{ \lambda_i \}\)</span>, we instead learn a <em>function</em> that maps each <span class="math notranslate nohighlight">\(\bf x_i\)</span> to an appropriate <span class="math notranslate nohighlight">\(\lambda_i\)</span>. Since we need this function to be flexible, we parameterize it as a neural network. We thus end up with a parameterized family of distributions over the latent <span class="math notranslate nohighlight">\(\bf z\)</span> space that can be instantiated for all <span class="math notranslate nohighlight">\(N\)</span> datapoint <span class="math notranslate nohighlight">\({\bf x}_i\)</span> (see Fig. 2).</p>
@@ -246,7 +520,7 @@ Part II</span></a> for a somewhat more general discussion of amortization).</p>
 <p>If we’ve learned good values for <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span>, <span class="math notranslate nohighlight">\(\bf x\)</span> and <span class="math notranslate nohighlight">\({\bf x}_{\rm reco}\)</span> should be similar. This should clarify how the word autoencoder ended up being used to describe this setup: the model is the decoder and the guide is the encoder. Together, they can be thought of as an autoencoder.</p>
 </section>
 <section id="VAE-in-Pyro">
-<h2>VAE in Pyro<a class="headerlink" href="#VAE-in-Pyro" title="Permalink to this heading">¶</a></h2>
+<h2>VAE in Pyro<a class="headerlink" href="#VAE-in-Pyro" title="Permalink to this headline">¶</a></h2>
 <p>Let’s see how we implement a VAE in Pyro. The dataset we’re going to model is MNIST, a collection of images of handwritten digits. Since this is a popular benchmark dataset, we can make use of PyTorch’s convenient data loader functionalities to reduce the amount of boilerplate code we need to write:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -272,7 +546,7 @@ Part II</span></a> for a somewhat more general discussion of amortization).</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.5&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.6&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">enable_validation</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="c1"># Enable smoke test - run the notebook cells on CI.</span>
@@ -384,11 +658,11 @@ Part II</span></a> for a somewhat more general discussion of amortization).</p>
 </div>
 <p>Note that <code class="docutils literal notranslate"><span class="pre">model()</span></code> is a callable that takes in a mini-batch of images <code class="docutils literal notranslate"><span class="pre">x</span></code> as input. This is a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> of size <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> x 784.</p>
 <p>The first thing we do inside of <code class="docutils literal notranslate"><span class="pre">model()</span></code> is register the (previously instantiated) decoder module with Pyro. Note that we give it an appropriate (and unique) name. This call to <code class="docutils literal notranslate"><span class="pre">pyro.module</span></code> lets Pyro know about all the parameters inside of the decoder network.</p>
-<p>Next we setup the hyperparameters for our prior, which is just a unit normal gaussian distribution. Note that: - we specifically designate independence amongst the data in our mini-batch (i.e. the leftmost dimension) via <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>. Also, note the use of <code class="docutils literal notranslate"><span class="pre">.to_event(1)</span></code> when sampling from the latent <code class="docutils literal notranslate"><span class="pre">z</span></code> - this ensures that instead of treating our sample as being generated from a univariate normal with <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">z_dim</span></code>, we treat them as being generated from a multivariate normal
+<p>Next we setup the hyperparameters for our prior, which is just a unit normal gaussian distribution. Note that: - we specifically designate independence amongst the data in our mini-batch (i.e. the leftmost dimension) via <code class="docutils literal notranslate"><span class="pre">pyro.plate</span></code>. Also, note the use of <code class="docutils literal notranslate"><span class="pre">.to_event(1)</span></code> when sampling from the latent <code class="docutils literal notranslate"><span class="pre">z</span></code> - this ensures that instead of treating our sample as being generated from a univariate normal with <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">z_dim</span></code>, we treat them as being generated from a multivariate normal
 distribution with diagonal covariance. As such, the log probabilities along each dimension is summed out when we evaluate <code class="docutils literal notranslate"><span class="pre">.log_prob</span></code> for a “latent” sample. Refer to the <a class="reference internal" href="tensor_shapes.html"><span class="doc">Tensor Shapes</span></a> tutorial for more details. - since we’re processing an entire mini-batch of images, we need the leftmost dimension of <code class="docutils literal notranslate"><span class="pre">z_loc</span></code> and <code class="docutils literal notranslate"><span class="pre">z_scale</span></code> to equal the mini-batch size - in case we’re on GPU, we use <code class="docutils literal notranslate"><span class="pre">new_zeros</span></code> and <code class="docutils literal notranslate"><span class="pre">new_ones</span></code> to ensure that newly created tensors are on the same
 GPU device.</p>
 <p>Next we sample the latent <code class="docutils literal notranslate"><span class="pre">z</span></code> from the prior, making sure to give the random variable a unique Pyro name <code class="docutils literal notranslate"><span class="pre">'latent'</span></code>. Then we pass <code class="docutils literal notranslate"><span class="pre">z</span></code> through the decoder network, which returns <code class="docutils literal notranslate"><span class="pre">loc_img</span></code>. We then score the observed images in the mini-batch <code class="docutils literal notranslate"><span class="pre">x</span></code> against the Bernoulli likelihood parametrized by <code class="docutils literal notranslate"><span class="pre">loc_img</span></code>. Note that we flatten <code class="docutils literal notranslate"><span class="pre">x</span></code> so that all the pixels are in the rightmost dimension.</p>
-<p>That’s all there is to it! Note how closely the flow of Pyro primitives in <code class="docutils literal notranslate"><span class="pre">model</span></code> follows the generative story of our model, e.g. as encapsulated by Figure 1. Now we move on to the guide:</p>
+<p>That’s all there is to it! Note how closely the flow of Pyro primitives in <code class="docutils literal notranslate"><span class="pre">model</span></code> follows the generative story of our model, e.g. as encapsulated by Figure 1. Now we move on to the guide:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -469,7 +743,7 @@ mini-batch dimension, and <code class="docutils literal notranslate"><span class
 (sub)modules into GPU memory.</p>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
 <p>We’re now ready for inference. Refer to the full code in the next section.</p>
 <p>First we instantiate an instance of the <code class="docutils literal notranslate"><span class="pre">VAE</span></code> module.</p>
 <div class="nbinput nblast docutils container">
@@ -525,7 +799,7 @@ mini-batch dimension, and <code class="docutils literal notranslate"><span class
 <p>Note that all the mini-batch logic is handled by the data loader. The meat of the training loop is <code class="docutils literal notranslate"><span class="pre">svi.step(x)</span></code>. There are two things we should draw attention to here:</p>
 <ul class="simple">
 <li><p>any arguments to <code class="docutils literal notranslate"><span class="pre">step</span></code> are passed to the model and the guide. consequently <code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">guide</span></code> need to have the same call signature</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">step</span></code> returns a noisy estimate of the loss (i.e. minus the ELBO). this estimate is not normalized in any way, so e.g. it scales with the size of the mini-batch</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step</span></code> returns a noisy estimate of the loss (i.e. minus the ELBO). this estimate is not normalized in any way, so e.g. it scales with the size of the mini-batch</p></li>
 </ul>
 <p>The logic for adding evaluation logic is analogous:</p>
 <div class="nbinput nblast docutils container">
@@ -553,7 +827,7 @@ mini-batch dimension, and <code class="docutils literal notranslate"><span class
 statement is stochastic, we’ll get different draws of z every time we run the reconstruct_img function. If we’ve learned a good model and guide—in particular if we’ve learned a good latent representation—this plurality of z samples will correspond to different styles of digit writing, and the reconstructed images should exhibit an interesting variety of different styles.</p>
 </section>
 <section id="Code-and-Sample-results">
-<h2>Code and Sample results<a class="headerlink" href="#Code-and-Sample-results" title="Permalink to this heading">¶</a></h2>
+<h2>Code and Sample results<a class="headerlink" href="#Code-and-Sample-results" title="Permalink to this headline">¶</a></h2>
 <p>Training corresponds to maximizing the evidence lower bound (ELBO) over the training dataset. We train for 100 iterations and evaluate the ELBO for the test dataset, see Figure 3.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -639,7 +913,7 @@ statement is stochastic, we’ll get different draws of z every time we run the 
 </center><p>See the full code on <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/vae/vae.py">Github</a>.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Auto-Encoding</span> <span class="pre">Variational</span> <span class="pre">Bayes</span></code>,     Diederik P Kingma, Max Welling</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">Stochastic</span> <span class="pre">Backpropagation</span> <span class="pre">and</span> <span class="pre">Approximate</span> <span class="pre">Inference</span> <span class="pre">in</span> <span class="pre">Deep</span> <span class="pre">Generative</span> <span class="pre">Models</span></code>,      Danilo Jimenez Rezende, Shakir Mohamed, Daan Wierstra</p>
 </section>

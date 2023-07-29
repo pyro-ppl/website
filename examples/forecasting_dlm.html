@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forecasting with Dynamic Linear Model (DLM) &mdash; Pyro Tutorials 1.8.5 documentation</title>
+  <title>Forecasting with Dynamic Linear Model (DLM) &mdash; Pyro Tutorials 1.8.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-      <link rel="stylesheet" href="_static/nbsphinx-code-cells.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -31,19 +31,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="index.html">
-            
-              <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <a href="index.html">
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.5
+                1.8.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -205,8 +201,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Forecasting with Dynamic Linear Model (DLM)</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Forecasting with Dynamic Linear Model (DLM)</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/forecasting_dlm.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -216,12 +212,290 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Forecasting-with-Dynamic-Linear-Model-(DLM)">
-<h1>Forecasting with Dynamic Linear Model (DLM)<a class="headerlink" href="#Forecasting-with-Dynamic-Linear-Model-(DLM)" title="Permalink to this heading">¶</a></h1>
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Forecasting-with-Dynamic-Linear-Model-(DLM)">
+<h1>Forecasting with Dynamic Linear Model (DLM)<a class="headerlink" href="#Forecasting-with-Dynamic-Linear-Model-(DLM)" title="Permalink to this headline">¶</a></h1>
 <p>Among state space models, Dynamic Linear Model (DLM) are one of the most popular models due to its explainability and ability to incorporate regressors with dynamic coefficients. Literature such as Harvey (1989) and Durbin and Koopman (2002) provide a complete review on the models. This notebook introduces a way to construct a vanlia DLM through Pyro and Forecaster modules. In the end, it provides an extension to incorporate flexible coefficients priors.</p>
 <p>See also: - <a class="reference external" href="http://pyro.ai/examples/forecasting_ii.html">Forecasting II: state space models</a></p>
 <section id="Workflow">
-<h2>Workflow<a class="headerlink" href="#Workflow" title="Permalink to this heading">¶</a></h2>
+<h2>Workflow<a class="headerlink" href="#Workflow" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>data simulation</p></li>
 <li><p>visualization of coefficients and response</p></li>
@@ -255,7 +529,7 @@
 <span class="kn">from</span> <span class="nn">pyro.ops.stats</span> <span class="kn">import</span> <span class="n">quantile</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.5&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.6&#39;</span><span class="p">)</span>
 
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">20200928</span><span class="p">)</span>
 
@@ -265,7 +539,7 @@
 </div>
 </div>
 <section id="Data-Simulation">
-<h3>Data Simulation<a class="headerlink" href="#Data-Simulation" title="Permalink to this heading">¶</a></h3>
+<h3>Data Simulation<a class="headerlink" href="#Data-Simulation" title="Permalink to this headline">¶</a></h3>
 <p>Assume we have observation <span class="math notranslate nohighlight">\(y_t\)</span> at time <span class="math notranslate nohighlight">\(t\)</span> such that</p>
 <div class="math notranslate nohighlight">
 \[y_t = x_t^T \beta_t + \epsilon_t\]</div>
@@ -314,7 +588,7 @@
 </div>
 </section>
 <section id="Visualization-of-response-and-coefficients">
-<h3>Visualization of response and coefficients<a class="headerlink" href="#Visualization-of-response-and-coefficients" title="Permalink to this heading">¶</a></h3>
+<h3>Visualization of response and coefficients<a class="headerlink" href="#Visualization-of-response-and-coefficients" title="Permalink to this headline">¶</a></h3>
 <p>Let’s take a look on the truth simulated from the previous block.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -342,7 +616,7 @@
 </div>
 </section>
 <section id="Train-and-validate-a-vanilla-DLM">
-<h3>Train and validate a vanilla DLM<a class="headerlink" href="#Train-and-validate-a-vanilla-DLM" title="Permalink to this heading">¶</a></h3>
+<h3>Train and validate a vanilla DLM<a class="headerlink" href="#Train-and-validate-a-vanilla-DLM" title="Permalink to this headline">¶</a></h3>
 <p>Let’s build a vanilla DLM following the dynmics we discussed previously.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -420,7 +694,7 @@ Wall time: 8.22 s
 </pre></div></div>
 </div>
 <section id="Posteriors-comparison">
-<h4>Posteriors comparison<a class="headerlink" href="#Posteriors-comparison" title="Permalink to this heading">¶</a></h4>
+<h4>Posteriors comparison<a class="headerlink" href="#Posteriors-comparison" title="Permalink to this headline">¶</a></h4>
 <p>We extract posteriors during the in-sample period and compare them against the truth.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -478,7 +752,7 @@ Wall time: 8.22 s
 <p>We can see that not all coefficients can be recovered in the vanilla model.</p>
 </section>
 <section id="Holdout-validation">
-<h4>Holdout validation<a class="headerlink" href="#Holdout-validation" title="Permalink to this heading">¶</a></h4>
+<h4>Holdout validation<a class="headerlink" href="#Holdout-validation" title="Permalink to this headline">¶</a></h4>
 <p>Here, we will visualize the holdout validation for comparison later.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -509,7 +783,7 @@ Wall time: 8.22 s
 </section>
 </section>
 <section id="Train-a-DLM-with-coefficients-priors-at-various-time-points">
-<h3>Train a DLM with coefficients priors at various time points<a class="headerlink" href="#Train-a-DLM-with-coefficients-priors-at-various-time-points" title="Permalink to this heading">¶</a></h3>
+<h3>Train a DLM with coefficients priors at various time points<a class="headerlink" href="#Train-a-DLM-with-coefficients-priors-at-various-time-points" title="Permalink to this headline">¶</a></h3>
 <p>Sometime user may have prior beliefs of certain coefficients at certain time point. This can be useful in cases where modelers can set an informative prior for those coefficients. For illustration, we create a simple evenly distributed time points and set priors on those points with the known value <span class="math notranslate nohighlight">\(B_t\)</span> as such</p>
 <div class="math notranslate nohighlight">
 \[\beta_t \sim \mathcal{N}_p(B_t, 0.5)\]</div>
@@ -546,7 +820,7 @@ Wall time: 8.22 s
 </pre></div></div>
 </div>
 <section id="Model-Training">
-<h4>Model Training<a class="headerlink" href="#Model-Training" title="Permalink to this heading">¶</a></h4>
+<h4>Model Training<a class="headerlink" href="#Model-Training" title="Permalink to this headline">¶</a></h4>
 <p>Now, let’s construct the new DLM which allows user import coefficents prior at certain time points.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -628,7 +902,7 @@ Wall time: 37.2 s
 </div>
 </section>
 <section id="Posterior-comparison">
-<h4>Posterior comparison<a class="headerlink" href="#Posterior-comparison" title="Permalink to this heading">¶</a></h4>
+<h4>Posterior comparison<a class="headerlink" href="#Posterior-comparison" title="Permalink to this headline">¶</a></h4>
 <p>Finally, let’s redo the exercise we did in previous section to check in-sample posteriors and holdout validation.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -684,7 +958,7 @@ Wall time: 37.2 s
 </div>
 </section>
 <section id="id1">
-<h4>Holdout validation<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h4>
+<h4>Holdout validation<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
@@ -724,14 +998,14 @@ torch.Size([1000, 28, 1]) torch.Size([28])
 </section>
 </section>
 <section id="Conclusion">
-<h3>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this heading">¶</a></h3>
+<h3>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p>We show how to create a classic DLM with Pyro that provides decent forecast result.</p></li>
 <li><p>With priors injection, we improve the model in getting more accurate coefficients and predictions.</p></li>
 </ol>
 </section>
 <section id="Reference">
-<h3>Reference<a class="headerlink" href="#Reference" title="Permalink to this heading">¶</a></h3>
+<h3>Reference<a class="headerlink" href="#Reference" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Harvey, C. A. (1989). <em>Forecasting, Structural Time Series and the Kalman Filter</em>, Cambridge University Press.</p></li>
 <li><p>Durbin, J., Koopman, S. J.. (2001). <em>Time Series Analysis by State Space Methods</em>, Oxford Statistical Science Series</p></li>

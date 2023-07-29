@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaussian Processes &mdash; Pyro Tutorials 1.8.5 documentation</title>
+  <title>Gaussian Processes &mdash; Pyro Tutorials 1.8.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
-      <link rel="stylesheet" href="_static/nbsphinx-code-cells.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -31,19 +31,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="index.html">
-            
-              <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
+            <a href="index.html">
+            <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.5
+                1.8.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -203,8 +199,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Gaussian Processes</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Gaussian Processes</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/gp.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -214,10 +210,288 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Gaussian-Processes">
-<h1>Gaussian Processes<a class="headerlink" href="#Gaussian-Processes" title="Permalink to this heading">¶</a></h1>
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Gaussian-Processes">
+<h1>Gaussian Processes<a class="headerlink" href="#Gaussian-Processes" title="Permalink to this headline">¶</a></h1>
 <section id="Introduction">
-<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_process">Gaussian Processes</a> have been used in supervised, unsupervised, and even reinforcement learning problems and are described by an elegant mathematical theory (for an overview of the subject see [1, 4]). They are also very attractive conceptually, since they offer an intuitive way to define priors over functions. And finally, since Gaussian Processes are formulated in a Bayesian setting, they come equipped with a powerful notion of uncertainty.</p>
 <p>Happily, Pyro offers some support for Gaussian Processes in the <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> module. The goal of this tutorial is to give a brief introduction to Gaussian Processes (GPs) in the context of this module. We will mostly be focusing on how to use the GP interface in Pyro and refer the reader to the references for more details about GPs in general.</p>
 <p>The model we’re interested in is defined by</p>
@@ -233,7 +507,7 @@
 <p>Here <span class="math notranslate nohighlight">\(\sigma^2\)</span> and <span class="math notranslate nohighlight">\(l\)</span> are parameters that specify the kernel; specifically, <span class="math notranslate nohighlight">\(\sigma^2\)</span> is a variance or amplitude squared and <span class="math notranslate nohighlight">\(l\)</span> is a lengthscale. We’ll get some intuition for these parameters below.</p>
 </section>
 <section id="Imports">
-<h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this heading">¶</a></h2>
+<h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this headline">¶</a></h2>
 <p>First, we import necessary modules.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -257,7 +531,7 @@
 
 
 <span class="n">smoke_test</span> <span class="o">=</span> <span class="s2">&quot;CI&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>  <span class="c1"># ignore; used to check code integrity in the Pyro repo</span>
-<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.5&#39;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;1.8.6&#39;</span><span class="p">)</span>
 <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">torch</span><span class="o">.</span><span class="n">set_default_tensor_type</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">DoubleTensor</span><span class="p">)</span>
 </pre></div>
@@ -324,7 +598,7 @@
 </div>
 </section>
 <section id="Data">
-<h2>Data<a class="headerlink" href="#Data" title="Permalink to this heading">¶</a></h2>
+<h2>Data<a class="headerlink" href="#Data" title="Permalink to this headline">¶</a></h2>
 <p>The data consist of <span class="math notranslate nohighlight">\(20\)</span> points sampled from</p>
 <div class="math notranslate nohighlight">
 \[y = 0.5\sin(3x) + \epsilon, \quad \epsilon \sim \mathcal{N}(0, 0.2).\]</div>
@@ -350,7 +624,7 @@
 </div>
 </section>
 <section id="Define-model">
-<h2>Define model<a class="headerlink" href="#Define-model" title="Permalink to this heading">¶</a></h2>
+<h2>Define model<a class="headerlink" href="#Define-model" title="Permalink to this headline">¶</a></h2>
 <p>First we define a RBF kernel, specifying the values of the two hyperparameters <code class="docutils literal notranslate"><span class="pre">variance</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscale</span></code>. Then we construct a <code class="docutils literal notranslate"><span class="pre">GPRegression</span></code> object. Here we feed in another hyperparameter, <code class="docutils literal notranslate"><span class="pre">noise</span></code>, that corresponds to <span class="math notranslate nohighlight">\(\epsilon\)</span> above.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -424,7 +698,7 @@
 </div>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">¶</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">¶</a></h2>
 <p>In the above we set the kernel hyperparameters by hand. If we want to learn the hyperparameters from the data, we need to do inference. In the simplest (conjugate) case we do gradient ascent on the log marginal likelihood. In <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code>, we can use any <a class="reference external" href="https://pytorch.org/docs/stable/optim.html">PyTorch optimizer</a> to optimize parameters of a model. In addition, we need a loss function which takes inputs are the pair model and guide and returns an ELBO loss (see <a class="reference internal" href="svi_part_i.html"><span class="doc">SVI Part
 I</span></a> tutorial).</p>
 <div class="nbinput nblast docutils container">
@@ -488,7 +762,7 @@ I</span></a> tutorial).</p>
 <img alt="_images/gp_21_0.png" src="_images/gp_21_0.png" />
 </div>
 </div>
-<p>Here the thick red curve is the mean prediction and the blue band represents the 2-sigma uncertainty around the mean. It seems we learned reasonable kernel hyperparameters, as both the mean and uncertainty give a reasonable fit to the data. (Note that learning could have easily gone wrong if we e.g. chose too large of a learning rate or chose bad initital hyperparameters.)</p>
+<p>Here the thick red curve is the mean prediction and the blue band represents the 2-sigma uncertainty around the mean. It seems we learned reasonable kernel hyperparameters, as both the mean and uncertainty give a reasonable fit to the data. (Note that learning could have easily gone wrong if we e.g. chose too large of a learning rate or chose bad initital hyperparameters.)</p>
 <p>Note that the kernel is only well-defined if <code class="docutils literal notranslate"><span class="pre">variance</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscale</span></code> are positive. Under the hood Pyro is using PyTorch constraints (see <a class="reference external" href="http://pytorch.org/docs/master/distributions.html#module-torch.distributions.constraints">docs</a>) to ensure that hyperparameters are constrained to the appropriate domains. Let’s see the constrained values we’ve learned.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -573,7 +847,7 @@ I</span></a> tutorial).</p>
 </div>
 <img alt="_images/gpr-fit.gif" src="_images/gpr-fit.gif" />
 <section id="Fit-the-model-using-MAP">
-<h3>Fit the model using MAP<a class="headerlink" href="#Fit-the-model-using-MAP" title="Permalink to this heading">¶</a></h3>
+<h3>Fit the model using MAP<a class="headerlink" href="#Fit-the-model-using-MAP" title="Permalink to this headline">¶</a></h3>
 <p>We need to define priors for the hyperparameters.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -654,8 +928,8 @@ noise = 0.042222216725349426
 </section>
 </section>
 <section id="Sparse-GPs">
-<h2>Sparse GPs<a class="headerlink" href="#Sparse-GPs" title="Permalink to this heading">¶</a></h2>
-<p>For large datasets computing the log marginal likelihood is costly due to the expensive matrix operations involved (e.g. see Section 2.2 of [1]). A variety of so-called ‘sparse’ variational methods have been developed to make GPs viable for larger datasets. This is a big area of research and we won’t be going into all the details. Instead we quickly show how we can use <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> to make use of these methods.</p>
+<h2>Sparse GPs<a class="headerlink" href="#Sparse-GPs" title="Permalink to this headline">¶</a></h2>
+<p>For large datasets computing the log marginal likelihood is costly due to the expensive matrix operations involved (e.g. see Section 2.2 of [1]). A variety of so-called ‘sparse’ variational methods have been developed to make GPs viable for larger datasets. This is a big area of research and we won’t be going into all the details. Instead we quickly show how we can use <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> in <code class="docutils literal notranslate"><span class="pre">pyro.contrib.gp</span></code> to make use of these methods.</p>
 <p>First, we generate more data.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
@@ -821,11 +1095,11 @@ noise = 0.042222216725349426
 <p>By default, <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> will use “VFE” as the inference method. We can use other methods by passing a different <code class="docutils literal notranslate"><span class="pre">approx</span></code> flag to <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code>.</p>
 </section>
 <section id="More-Sparse-GPs">
-<h2>More Sparse GPs<a class="headerlink" href="#More-Sparse-GPs" title="Permalink to this heading">¶</a></h2>
+<h2>More Sparse GPs<a class="headerlink" href="#More-Sparse-GPs" title="Permalink to this headline">¶</a></h2>
 <p>Both <code class="docutils literal notranslate"><span class="pre">GPRegression</span></code> and <code class="docutils literal notranslate"><span class="pre">SparseGPRegression</span></code> above are limited to Gaussian likelihoods. We can use other likelihoods with GPs—for example, we can use the Bernoulli likelihood for classification problems—but the inference problem becomes more difficult. In this section, we show how to use the <code class="docutils literal notranslate"><span class="pre">VariationalSparseGP</span></code> module, which can handle non-Gaussian likelihoods. So we can compare to what we’ve done above, we’re still going to use a Gaussian likelihood. The point is that the inference
 that’s being done under the hood can support other likelihoods.</p>
 <section id="Gaussian-Likelihood">
-<h3>Gaussian Likelihood<a class="headerlink" href="#Gaussian-Likelihood" title="Permalink to this heading">¶</a></h3>
+<h3>Gaussian Likelihood<a class="headerlink" href="#Gaussian-Likelihood" title="Permalink to this headline">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
@@ -875,7 +1149,7 @@ that’s being done under the hood can support other likelihoods.</p>
 </section>
 </section>
 <section id="GP-Classification">
-<h2>GP Classification<a class="headerlink" href="#GP-Classification" title="Permalink to this heading">¶</a></h2>
+<h2>GP Classification<a class="headerlink" href="#GP-Classification" title="Permalink to this headline">¶</a></h2>
 <p>We will now briefly discuss GP classification for multi-class classification. The two main changes needed to the model specification (in comparison to GP regression) are:</p>
 <div class="math notranslate nohighlight">
 \[p(y\mid f)=\mathrm{Softmax}(f)\]</div>
@@ -1042,7 +1316,7 @@ that’s being done under the hood can support other likelihoods.</p>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 <span class="n">y_hat</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accuracy: </span><span class="si">{</span><span class="p">(</span><span class="n">y_hat</span><span class="o">==</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">*</span><span class="mi">100</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="si">:</span><span class="s2">0.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accuracy: </span><span class="si">{</span><span class="p">(</span><span class="n">y_hat</span><span class="o">==</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">*</span><span class="mi">100</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="si">:</span><span class="s2">0.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1193,7 +1467,7 @@ Accuracy: 96.00%
 <p>We can see our model doing a good job in classifying the IRIS data based on the two features.</p>
 </section>
 <section id="Combining-Kernels">
-<h2>Combining Kernels<a class="headerlink" href="#Combining-Kernels" title="Permalink to this heading">¶</a></h2>
+<h2>Combining Kernels<a class="headerlink" href="#Combining-Kernels" title="Permalink to this headline">¶</a></h2>
 <p>We now look into combining different kernels. We will create a simple data set containing a linear trend and some periodicity.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
@@ -1275,7 +1549,7 @@ Accuracy: 96.00%
 <a class="reference external" href="https://github.com/pyro-ppl/pyro/blob/dev/examples/contrib/gp/sv-dkl.py">here</a>.</p>
 </section>
 <section id="Reference">
-<h2>Reference<a class="headerlink" href="#Reference" title="Permalink to this heading">¶</a></h2>
+<h2>Reference<a class="headerlink" href="#Reference" title="Permalink to this headline">¶</a></h2>
 <p>[1] <code class="docutils literal notranslate"><span class="pre">Deep</span> <span class="pre">Gaussian</span> <span class="pre">processes</span> <span class="pre">and</span> <span class="pre">variational</span> <span class="pre">propagation</span> <span class="pre">of</span> <span class="pre">uncertainty</span></code>,     Andreas Damianou</p>
 <p>[2] <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">unifying</span> <span class="pre">framework</span> <span class="pre">for</span> <span class="pre">sparse</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">approximation</span> <span class="pre">using</span> <span class="pre">power</span> <span class="pre">expectation</span> <span class="pre">propagation</span></code>,     Thang D. Bui, Josiah Yan, and Richard E. Turner</p>
 <p>[3] <code class="docutils literal notranslate"><span class="pre">Scalable</span> <span class="pre">variational</span> <span class="pre">Gaussian</span> <span class="pre">process</span> <span class="pre">classification</span></code>,     James Hensman, Alexander G. de G. Matthews, and Zoubin Ghahramani</p>
