@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SVI Part IV: Tips and Tricks &mdash; Pyro Tutorials 1.8.6 documentation</title>
+  <title>SVI Part IV: Tips and Tricks &mdash; Pyro Tutorials 1.8.6+1a11185c documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -35,7 +35,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.6
+                1.8.6+1a11185c
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -49,6 +49,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro_long.html">Introduction to Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="model_rendering.html">Automatic rendering of Pyro models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_rendering.html#Rendering-deterministic-variables">Rendering deterministic variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
@@ -84,15 +85,18 @@
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_torch.html">Example: using vanilla PyTorch to perform optimization in SVI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_lightning.html">Example: distributed training via PyTorch Lightning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_flow_guide.html">SVI with a Normalizing Flow guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
-<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_intro.html">Normalizing Flows - Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vae_flow_prior.html">Variational Autoencoder with a Normalizing Flow prior</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
@@ -323,7 +327,7 @@ see the code snippet <a class="reference external" href="https://github.com/pyro
 <section id="6.-If-you-are-having-trouble-constructing-a-custom-guide,-use-an-AutoGuide">
 <h3>6. If you are having trouble constructing a custom guide, use an AutoGuide<a class="headerlink" href="#6.-If-you-are-having-trouble-constructing-a-custom-guide,-use-an-AutoGuide" title="Permalink to this headline">¶</a></h3>
 <p>In order for a model/guide pair to lead to stable optimization a number of conditions need to be satisfied, some of which we have covered above. Sometimes it can be difficult to diagnose the reason for numerical instability or poor convergence. Among other reasons this is because the fundamental issue could arise in a number of different places: in the model, in the guide, or in the choice of optimization algorithm or hyperparameters.</p>
-<p>Sometimes the problem is actually in your model even though you think it’s in the guide. Conversely, sometimes the problem is in your guide even though you think it’s in the model or somewhere else. For these reasons it can be helpful to reduce the number of moving parts while you try to identify the underyling issue. One convenient way to do this is to replace your custom guide with a <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide">pyro.infer.AutoGuide</a>.</p>
+<p>Sometimes the problem is actually in your model even though you think it’s in the guide. Conversely, sometimes the problem is in your guide even though you think it’s in the model or somewhere else. For these reasons it can be helpful to reduce the number of moving parts while you try to identify the underlying issue. One convenient way to do this is to replace your custom guide with a <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#module-pyro.infer.autoguide">pyro.infer.AutoGuide</a>.</p>
 <p>For example, if all the latent variables in your model are continuous, you can try a <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autonormal">pyro.infer.AutoNormal</a> guide. Alternatively, you can use MAP inference instead of full-blown variational inference. See the <a class="reference external" href="http://pyro.ai/examples/mle_map.html">MLE/MAP</a> tutorial for further details. Once you have MAP inference working, there’s good reason to believe that your model is setup correctly (at least as far as basic numerical
 stability is concerned). If you’re interested in obtaining approximate posterior distributions, you can now follow-up with full-blown SVI. Indeed a natural order of operations might use the following sequence of increasingly flexible autoguides:</p>
 <p><a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autodelta">AutoDelta</a> → <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autonormal">AutoNormal</a> → <a class="reference external" href="http://docs.pyro.ai/en/stable/infer.autoguide.html#autolowrankmultivariatenormal">AutoLowRankMultivariateNormal</a></p>
@@ -363,8 +367,8 @@ worth taking more gradient steps with fewer particles than fewer gradient steps 
 </section>
 <section id="9.-Use-TraceMeanField_ELBO-if-applicable">
 <h3>9. Use <code class="docutils literal notranslate"><span class="pre">TraceMeanField_ELBO</span></code> if applicable<a class="headerlink" href="#9.-Use-TraceMeanField_ELBO-if-applicable" title="Permalink to this headline">¶</a></h3>
-<p>The basic <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> implementation in Pyro, <a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO">Trace_ELBO</a>, uses stochastic samples to estimate the KL divergence term. When analytic KL diverences are available, you may be able to lower ELBO variance by using analytic KL divergences instead. This functionality is provided by
-<a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO">TraceMeanField_ELBO</a>.</p>
+<p>The basic <code class="docutils literal notranslate"><span class="pre">ELBO</span></code> implementation in Pyro, <a class="reference external" href="http://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_elbo.Trace_ELBO">Trace_ELBO</a>, uses stochastic samples to estimate the KL divergence term. When analytic KL divergences are available, you may be able to lower ELBO variance by using analytic KL divergences instead. This functionality is provided by
+<a class="reference external" href="https://docs.pyro.ai/en/stable/inference_algos.html?highlight=tracemeanfield#pyro.infer.trace_mean_field_elbo.TraceMeanField_ELBO">TraceMeanField_ELBO</a>.</p>
 </section>
 <section id="10.-Consider-normalizing-your-ELBO">
 <h3>10. Consider normalizing your ELBO<a class="headerlink" href="#10.-Consider-normalizing-your-ELBO" title="Permalink to this headline">¶</a></h3>

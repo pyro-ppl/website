@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Example: distributed training via PyTorch Lightning &mdash; Pyro Tutorials 1.8.6 documentation</title>
+  <title>Example: distributed training via PyTorch Lightning &mdash; Pyro Tutorials 1.8.6+1a11185c documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/pyro.css" type="text/css" />
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -20,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Variational Autoencoders" href="vae.html" />
+    <link rel="next" title="SVI with a Normalizing Flow guide" href="svi_flow_guide.html" />
     <link rel="prev" title="Example: distributed training via Horovod" href="svi_horovod.html" /> 
 </head>
 
@@ -33,7 +33,7 @@
             <img src="_static/pyro_logo_wide.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.8.6
+                1.8.6+1a11185c
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -47,6 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_long.html">Introduction to Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="model_rendering.html">Automatic rendering of Pyro models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_rendering.html#Rendering-deterministic-variables">Rendering deterministic variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_i.html">SVI Part I: An Introduction to Stochastic Variational Inference in Pyro</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_ii.html">SVI Part II: Conditional Independence, Subsampling, and Amortization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_part_iii.html">SVI Part III: ELBO Gradient Estimators</a></li>
@@ -61,15 +62,18 @@
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">High-dimensional Bayesian workflow, with applications to SARS-CoV-2 strains</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prior_predictive.html">Interactive posterior predictives checks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="jit.html">Using the PyTorch JIT Compiler with Pyro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_torch.html">Example: using vanilla PyTorch to perform optimization in SVI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="svi_horovod.html">Example: distributed training via Horovod</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Example: distributed training via PyTorch Lightning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="svi_flow_guide.html">SVI with a Normalizing Flow guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Deep Generative Models</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="vae.html">Variational Autoencoders</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ss-vae.html">The Semi-Supervised VAE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cvae.html">Conditional Variational Auto-encoder</a></li>
-<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_i.html">Normalizing Flows - Introduction (Part 1)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="normalizing_flows_intro.html">Normalizing Flows - Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vae_flow_prior.html">Variational Autoencoder with a Normalizing Flow prior</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dmm.html">Deep Markov Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="air.html">Attend Infer Repeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cevae.html">Example: Causal Effect VAE</a></li>
@@ -238,7 +242,7 @@
 
 <span class="kn">import</span> <span class="nn">argparse</span>
 
-<span class="kn">import</span> <span class="nn">pytorch_lightning</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">lightning.pytorch</span> <span class="k">as</span> <span class="nn">pl</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">import</span> <span class="nn">pyro</span>
@@ -331,7 +335,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;1.8.6&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pyro</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;1.9.0&quot;</span><span class="p">)</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Distributed training via PyTorch Lightning&quot;</span>
     <span class="p">)</span>
@@ -355,7 +359,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="svi_horovod.html" class="btn btn-neutral float-left" title="Example: distributed training via Horovod" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="vae.html" class="btn btn-neutral float-right" title="Variational Autoencoders" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="svi_flow_guide.html" class="btn btn-neutral float-right" title="SVI with a Normalizing Flow guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
